@@ -1,0 +1,86 @@
+# حلقهٔ دانش — جدا از حلقهٔ عملیاتی (قانون ۸ سند یادگیری دائمی حمید).
+#
+# روزی یک بار منابع رسمی پنج انجین فاز ۱ (E00/E02/E18/E21/E23) هش و
+# مقایسه می‌شوند؛ فقط تغییر واقعی DISCOVERED می‌سازد. هیچ LLMای اینجا
+# صدا نمی‌شود — استخراج Claim دقیق کار ایجنت در نشست است، فقط روی
+# آیتم‌های جدید همین دفتر.
+name: Knowledge loop (phase 1)
+
+on:
+  schedule:
+    - cron: "23 5 * * *"        # روزی یک بار — دانش روزانه است، نه تیکی
+  workflow_dispatch:
+    inputs:
+      engines:
+        description: "انجین‌ها (خالی = پنج انجین فاز ۱)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: knowledge-loop
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: pyyaml
+        run: pip -q install pyyaml
+
+      - name: خودآزمایی حلقهٔ دانش
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_learning
+          python3 -m hamid.test_workflows
+
+      - name: پایش منابع (دوشنبه‌ها همهٔ ۲۶ انجین، بقیهٔ روزها هستهٔ فاز ۱)
+        working-directory: claude-liam-signal/python
+        run: |
+          if [ -n "${{ inputs.engines }}" ]; then
+            python3 -m research.source_monitor ${{ inputs.engines }}
+          elif [ "$(date -u +%u)" = "1" ]; then
+            python3 -m research.source_monitor all
+          else
+            python3 -m research.source_monitor
+          fi
+
+      - name: ثبت وضعیت جدید
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "noreply@anthropic.com"
+          git add brain/research/ || true
+          if git diff --cached --quiet; then
+            echo "منابع بدون تغییر — چیزی برای ثبت نیست"
+            exit 0
+          fi
+          git commit -m "حلقهٔ دانش $(date -u '+%Y-%m-%d %H:%M UTC')"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
+              # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
+              # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
+              # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain/research; then
+              echo "پوش نشد: مارکر تعارض باقی مانده"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "پوش نشد"
+          exit 1

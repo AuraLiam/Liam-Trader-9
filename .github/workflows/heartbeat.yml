@@ -1,0 +1,189 @@
+# ضربان — چرخه را خودش تکرار می‌کند، به کرون گیت‌هاب تکیه نمی‌کند.
+#
+# چرا این وجود دارد، با عدد:
+#
+#   کرون‌های این مخزن ۴ اجرا در ساعت می‌خواهند. اندازه‌گیری روی ۱۴ ساعت نشان داد
+#   گیت‌هاب فقط ۱ تا ۳ تا را می‌فرستد — یعنی همان موقع هم بیشتر از نیمی را
+#   می‌انداخت. بعد از ۲۳:۳۷ به‌کلی ایستاد: سه ساعت و نیم هیچ اجرای
+#   زمان‌بندی‌شده‌ای نیامد، در حالی که همهٔ ورک‌فلوها active بودند و اجرای دستی
+#   کار می‌کرد.
+#
+#   گیت‌هاب صریح می‌گوید رویداد schedule در ساعات شلوغ ممکن است به تأخیر بیفتد یا
+#   حذف شود. پس «هر نیم‌ساعت یک بار» با کرون یک آرزوست، نه یک تضمین.
+#
+# راه‌حل: یک اجرا که خودش داخلش حلقه می‌زند. یک بار روشن می‌شود و پنج ساعت و نیم
+# هر ۲۰ دقیقه چرخه را می‌چرخاند. حتی اگر گیت‌هاب بیشتر کرون‌ها را بیندازد، یک
+# شلیک موفق پنج ساعت پوشش می‌دهد.
+#
+# concurrency طوری تنظیم شده که همیشه حداکثر یکی در حال اجرا و یکی در صف باشد؛
+# گیت‌هاب اجرای در صفِ قدیمی‌تر را با جدید جایگزین می‌کند. پس تا وقتی هر پنج
+# ساعت و نیم دست‌کم یک کرون شلیک شود، پوشش قطع نمی‌شود.
+name: Heartbeat
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "چند دقیقه بچرخد"
+        default: "330"
+      every:
+        description: "فاصلهٔ هر چرخه به دقیقه"
+        default: "20"
+  schedule:
+    # ساعتی — ۱۰ اوت یک کرون ۲ساعتهٔ افتاده، یک ساعت حفره ساخت و حمید هشدار
+    # گرفت. نگهبانِ «فقط یک ضربان» اجرای اضافی را مجانی سبز رد می‌کند، پس
+    # کرون پرتراکم هزینه‌ای جز چند ثانیه ندارد و حفره را به دقیقه‌ها می‌رساند.
+    - cron: "9 * * * *"
+
+permissions:
+  contents: write
+  actions: write        # نگهبانِ داخل حلقه باید بتواند خط خوابیده را dispatch کند
+
+# بدون concurrency: صفِ جایگزین‌شونده هر بار یک اجرای «cancelled» قرمز در
+# اینباکس حمید می‌کاشت (اندازه‌گیری ۹ اوت: ۴ ضربدر در ۷۵ دقیقه، همه اجراهای
+# در صف که با dispatch بعدی جایگزین شدند). به‌جایش نگهبان اول کار: اگر ضربان
+# دیگری زنده است، این اجرا سبز و بی‌سروصدا تمام می‌شود؛ پوشش را کرون ۲ساعته
+# به‌علاوهٔ عیب‌یابِ پایشگرِ تازگی نگه می‌دارند.
+
+# نام منبعِ این خط تولید روی پیام‌های تلگرام (دستور حمید ۱۶ اوت).
+# پنل دیگر نام خودش را دارد؛ بدون این، دو منبع در کانال قاتی می‌شوند.
+env:
+  PANEL_NAME: aura liam mAx
+
+jobs:
+  beat:
+    runs-on: ubuntu-latest
+    # سقف گیت‌هاب ۳۶۰ دقیقه است؛ کمی زیرش می‌مانیم تا مرحلهٔ پایانی هم فرصت کند.
+    timeout-minutes: 355
+    steps:
+      - name: فقط یک ضربان
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          N=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/heartbeat.yml/runs?status=in_progress&per_page=10" \
+            | jq "[.workflow_runs[] | select(.id != ${{ github.run_id }})] | length" 2>/dev/null || echo 0)
+          if [ "${N:-0}" -gt 0 ]; then
+            echo "ضربان دیگری زنده است ($N اجرا) — این اجرا لازم نیست و سبز تمام می‌شود"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
+        with: { python-version: "3.11" }
+
+      - name: matplotlib برای چارت سیگنال
+        if: steps.guard.outputs.skip != 'true'
+        run: pip -q install matplotlib
+
+      - name: Git identity
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+
+      - name: چرخه، تا وقتی وقت هست
+        if: steps.guard.outputs.skip != 'true'
+        working-directory: claude-liam-signal/python
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_2: ${{ secrets.TELEGRAM_BOT_TOKEN_2 }}
+          TELEGRAM_CHAT_ID_2: ${{ secrets.TELEGRAM_CHAT_ID_2 }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+          CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
+        run: |
+          set +e   # یک چرخهٔ خراب نباید کل ضربان را بکشد
+          MINUTES="${{ github.event.inputs.minutes || '330' }}"
+          EVERY="${{ github.event.inputs.every || '20' }}"
+          END=$(( $(date +%s) + MINUTES * 60 ))
+          N=0
+          while [ "$(date +%s)" -lt "$END" ]; do
+            N=$((N + 1))
+            echo "───────── چرخهٔ $N — $(date -u '+%H:%M:%S UTC') ─────────"
+            # جستجوی وب فقط هر ششمین چرخه (تقریباً هر دو ساعت) — سهمیهٔ ماهانه
+            # با هر بیست دقیقه یک بار، سه روزه تمام می‌شد.
+            DEEP=""
+            [ $((N % 6)) -eq 1 ] && DEEP="--deep"
+            python3 -m hamid.intel $DEEP --quiet || true
+            python3 -m hamid.cycle --mode auto --symbols 100
+            echo "── انتشار"
+            cd "$GITHUB_WORKSPACE"
+            git add signals brain claude-liam-signal/backtests 2>/dev/null
+            if ! git diff --cached --quiet; then
+              git commit -q -m "ضربان $(date -u '+%Y-%m-%d %H:%M') UTC"
+              for a in 1 2 3; do
+                git push origin HEAD:main && break
+                git fetch origin main || true
+                if ! git merge --no-edit origin/main; then
+                  # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
+                  # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
+                  # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
+                  # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
+                  #
+                  # ۱۷ اوت: این‌جا exit 1 بود و سه بار در یک صبح **کل ضربان
+                  # چندساعته** را سرِ یک تصادمِ حل‌نشدنی کشت. انتشارِ این دور
+                  # از دست می‌رود ولی حلقه زنده می‌ماند — دور بعدی (۲۰ دقیقه
+                  # بعد) دوباره تلاش می‌کند و کار محلی جایی نمی‌رود. تصادمِ
+                  # واقعاً ناشناخته همچنان در لاگ resolver بلند اعلام می‌شود.
+                  python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                    || { git merge --abort; echo "انتشار این دور رد شد — تصادم ناشناخته"; break; }
+                  git commit --no-edit || git merge --abort
+                fi
+                # هرگز فایلی با نشانهٔ تعارض منتشر نشود — این یک بار اتفاق افتاد و
+                # فهرست یادگیری را بی‌صدا از کار انداخت.
+                if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals; then
+                  echo "انتشار متوقف شد: نشانهٔ تعارض باقی مانده"
+                  break
+                fi
+                sleep $((a * 3))
+              done
+            else
+              echo "چیزی تغییر نکرد"
+            fi
+            # و روی خود پنل. پنل از gh-pages می‌خواند، نه از main — بدون این،
+            # چرخه می‌چرخید و حمید یک فایل کهنه می‌دید.
+            git fetch origin gh-pages -q || true
+            rm -rf /tmp/ghp
+            if git worktree add /tmp/ghp origin/gh-pages --detach -q 2>/dev/null; then
+              mkdir -p /tmp/ghp/signals
+              cp signals/hamid-latest.json /tmp/ghp/signals/ 2>/dev/null || true
+              cp signals/telegram-log.json /tmp/ghp/signals/ 2>/dev/null || true
+              ( cd /tmp/ghp
+                git add signals
+                if ! git diff --cached --quiet; then
+                  git commit -q -m "ضربان $(date -u '+%H:%M') UTC"
+                  for a in 1 2 3; do
+                    git push origin HEAD:gh-pages -q && break
+                    git fetch origin gh-pages -q || true
+                    git rebase origin/gh-pages -q || { git rebase --abort; break; }
+                  done
+                fi )
+              git worktree remove /tmp/ghp --force 2>/dev/null || true
+            fi
+            cd claude-liam-signal/python
+            # بعد از انتشار: حالا مقایسهٔ پنل با آخرین چرخه معنی دارد
+            WATCHDOG_AFTER_PUBLISH=1 python3 -m hamid.watchdog --alert --quiet || true
+            # نگهبان داخل حلقه هم اجرا می‌شود. کرون خود نگهبان را گیت‌هاب
+            # می‌اندازد (اندازه‌گیری ۶ اوت: از ۰۴:۰۰ تا ۰۶:۳۵ هیچ شلیکی) —
+            # ولی این حلقه تا وقتی زنده است هر ۲۰ دقیقه یک معاینه می‌کند و
+            # خطی مثل Live scan را که کرونش افتاده، خودش بیدار می‌کند.
+            REVIVE=1 python3 medic.py || true
+            LEFT=$(( END - $(date +%s) ))
+            [ "$LEFT" -le $((EVERY * 60)) ] && break
+            echo "── $EVERY دقیقه صبر"
+            sleep $((EVERY * 60))
+          done
+          echo "ضربان تمام شد: $N چرخه"
+
+      - name: خلاصه
+        if: always()
+        run: echo "ضربان در $(date -u '+%H:%M UTC') تمام شد" >> $GITHUB_STEP_SUMMARY

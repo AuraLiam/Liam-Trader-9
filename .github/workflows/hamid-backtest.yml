@@ -1,0 +1,95 @@
+# آیا روش حمید سود می‌دهد؟
+#
+# The control measured selectivity: the method fires on 29% of real coins and 5%
+# of random walks, so it is finding something. This measures whether that
+# something is worth trading, which is a different question and the only one
+# that decides whether a daily signal count means anything.
+#
+# Runs on a schedule so the answer keeps up with the market rather than being a
+# thing that was true once in August.
+name: Hamid method backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "how many coins"
+        default: "25"
+      bars:
+        description: "15m candles per coin"
+        default: "1000"
+  schedule:
+    - cron: "41 3 * * *"
+  # راه‌انداز «push» عمداً برداشته شد.
+  #
+  # هر کامیت، سه‌چهار ورک‌فلوی سنگین را با هم روشن می‌کرد. آن‌ها همدیگر را کنسل
+  # می‌کردند و — مهم‌تر — زمان‌بند گیت‌هاب روی مخزنی که این‌قدر شلوغ باشد اجراهای
+  # کرون را می‌اندازد. اندازه‌گیری شد: بین ۲۳:۳۷ تا ۰۲:۰۶ هیچ اجرای زمان‌بندی‌شده‌ای
+  # انجام نشد، در حالی که همان ورک‌فلو قبلش ساعتی یک بار می‌آمد.
+  #
+  # وقتی لازم بود که کارها روی شاخه بودند و کرون از شاخهٔ غیر‌اصلی شلیک نمی‌کند.
+  # حالا همه روی main هستند. برای اجرای دستی، workflow_dispatch هست.
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: Backtest
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.backtest \
+            --symbols "${{ github.event.inputs.symbols || '25' }}" \
+            --bars "${{ github.event.inputs.bars || '1000' }}" \
+            | tee bt.txt
+
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -40 bt.txt 2>/dev/null || echo "no output"; echo '```'; } \
+            >> $GITHUB_STEP_SUMMARY
+
+      - name: Git identity
+        if: always()
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+
+      - name: Publish
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # ۱۶ اوت — علتِ خالی‌ماندن دفتر بک‌تست روش حمید، پیدا شد این‌جا:
+          #
+          # `hamid.backtest` دو چیز می‌نویسد. گزارشِ هر اجرا در
+          # claude-liam-signal/backtests، و **دفتر انباشتهٔ معامله‌ها** در
+          # brain/backtest/hamid-trades.jsonl. این مرحله فقط اولی را کامیت
+          # می‌کرد، پس دفترِ انباشته هر بار روی رانر ساخته می‌شد و با پایان
+          # job دور ریخته می‌شد. یعنی `accumulate()` — که تمام هدفش رشد
+          # نمونه در طول زمان است — هر روز از صفر شروع می‌کرد.
+          #
+          # بدون این دفتر، روش حمید هرگز نمونهٔ کافی برای حکم جمع نمی‌کند و
+          # کانال «دانش پایدار → تصمیم» برایش ساکت می‌ماند.
+          git add brain/backtest claude-liam-signal/backtests
+          git diff --cached --quiet && { echo "unchanged"; exit 0; }
+          git commit -q -m "Hamid method backtest $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for a in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((a * 3))
+          done
+          echo "پوش نشد — اجرای بعدی جبران می‌کند"
+          exit 1

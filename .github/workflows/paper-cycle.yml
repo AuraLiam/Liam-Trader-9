@@ -1,0 +1,57 @@
+# Runs a paper-trading cycle every two hours on GitHub's runners and commits the
+# report. The compute happens here rather than on the laptop, and the results
+# survive any machine being switched off.
+name: Paper trading cycle
+
+on:
+  schedule:
+    - cron: "13 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-cycle
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    steps:
+      # بدون ref پین‌شده. این به شاخهٔ کاری پین بود، و آن شاخه بعد از هر
+      # ادغام PR خودکار پاک می‌شود — پس checkout شکست می‌خورد و امتیازدهی
+      # اتاق‌ها دو روز بی‌صدا از کار افتاده بود. اجراهای زمان‌بندی‌شده روی
+      # main هستند و همان را هم باید بخوانند.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run cycle
+        env:
+          MARKETS: "600"
+        run: node tests/cycle.js | tee cycle-output.txt
+      - name: Commit report
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add claude-liam-signal/cycles
+          if git diff --cached --quiet; then
+            echo "nothing new"
+          else
+            git commit -m "Paper trading cycle $(date -u '+%Y-%m-%d %H:%M') UTC
+
+          Ran on a GitHub runner so the laptop stays free. Report and raw
+          per-slice numbers are in claude-liam-signal/cycles."
+            # به main، با تلاش مجدد — پوش خام به شاخهٔ آینه یک بار با جلو رفتن
+            # شاخه رد شد و ضربدر قرمز کاشت؛ اندازه‌گیری موفق بود و گزارشش گم شد.
+            for i in 1 2 3; do
+              git push origin HEAD:main && break
+              git pull --rebase origin main || true
+              sleep $((i*3))
+            done
+          fi
+      - name: Summary
+        run: cat claude-liam-signal/cycles/latest.md >> $GITHUB_STEP_SUMMARY

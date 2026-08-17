@@ -1,0 +1,73 @@
+# اتاق مستقل دامیننس — «هر ۵ دقیقه نظر خودش را بگوید» (حمید).
+# اندازه‌گیری ۱۲ اوت: کرون */5 در عمل ~ساعتی شلیک شد (۳۲ نقطه در ۳۲.۷ ساعت).
+# پس مسیر اصلی عوض شد: دامیننس حالا داخل هر دورِ زنجیرهٔ ۵دقیقه‌ایِ
+# pump-radar.yml اجرا می‌شود (همان زنجیره‌ای که قحطی کرون را قبلاً حل کرد).
+# این ورک‌فلو فقط تور ایمنی است — اگر زنجیره پاره شد، سری نمی‌میرد.
+name: Dominance room
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dominance
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: اگر زنجیره تازه است، کار تکراری نکن
+        id: fresh
+        run: |
+          AGE=$(python3 - <<'PY'
+          import json, time
+          try:
+              j = json.load(open("signals/dominance.json"))
+              print(int((time.time()*1000 - (j.get("generated") or 0)) / 60000))
+          except Exception:
+              print(999)
+          PY
+          )
+          echo "عمر خروجی: ${AGE} دقیقه"
+          if [ "$AGE" -lt 20 ]; then
+            echo "زنجیرهٔ اصلی زنده است — این تور ایمنی کنار می‌کشد"
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.fresh.outputs.skip != '1'
+        name: خوانش دامیننس
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.dominance
+      - if: steps.fresh.outputs.skip != '1'
+        name: ثبت (فقط اگر تغییر معنادار)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add brain/dominance-series.json signals/dominance.json 2>/dev/null || true
+          if ! git diff --cached --quiet 2>/dev/null; then
+            git commit -q -m "دامیننس $(date -u '+%H:%M') UTC"
+            for i in 1 2 3; do git push origin HEAD:main -q && break; git pull --rebase origin main -q || true; sleep $((i*2)); done
+          fi
+      - if: steps.fresh.outputs.skip != '1'
+        name: انتشار روی پنل
+        run: |
+          git fetch origin gh-pages -q || exit 0
+          rm -rf /tmp/ghd
+          git worktree add /tmp/ghd origin/gh-pages --detach -q || exit 0
+          mkdir -p /tmp/ghd/signals
+          cp signals/dominance.json /tmp/ghd/signals/ 2>/dev/null || true
+          cd /tmp/ghd
+          git add signals
+          if ! git diff --cached --quiet; then
+            git commit -q -m "دامیننس $(date -u '+%H:%M') UTC"
+            for i in 1 2 3; do git push origin HEAD:gh-pages -q && break; git fetch origin gh-pages -q||true; git rebase origin/gh-pages -q||{ git rebase --abort; break; }; done
+          fi

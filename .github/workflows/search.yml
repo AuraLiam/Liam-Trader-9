@@ -1,0 +1,67 @@
+# Overnight parameter search across hosted runners. Every candidate is fitted on
+# one set of markets and judged on markets it never saw, so a configuration that
+# only looks good in-sample cannot be adopted. The laptop is not involved.
+name: Overnight parameter search
+
+on:
+  schedule:
+    - cron: "41 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: search
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      # بدون ref پین‌شده. این به شاخهٔ کاری پین بود، و آن شاخه بعد از هر
+      # ادغام PR خودکار پاک می‌شود — پس checkout شکست می‌خورد و امتیازدهی
+      # اتاق‌ها دو روز بی‌صدا از کار افتاده بود. اجراهای زمان‌بندی‌شده روی
+      # main هستند و همان را هم باید بخوانند.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Search
+        env:
+          FIT: "200"
+          TEST: "200"
+          # زیر timeout-minutes بماند. اجرا خودش را متوقف می‌کند، کش را
+          # می‌نویسد و به مرحلهٔ commit می‌رسد — همان مرحله‌ای که ده شب
+          # متوالی به آن نرسید چون job دقیقاً روی ۵:۰۰ کنسل می‌شد.
+          BUDGET_MIN: "270"
+        run: node tests/search.js
+      - name: Commit findings
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add claude-liam-signal/cycles
+          if git diff --cached --quiet; then
+            echo "nothing new"
+          else
+            git commit -m "Parameter search $(date -u '+%Y-%m-%d') — fitted and judged on separate markets
+
+          Ranked on out-of-sample expectancy only; a candidate has to clear zero
+          on markets it never saw before it counts as a finding."
+            # به main پوش می‌شود — همان‌جایی که اجرای زمان‌بندی‌شده از آن
+            # می‌خواند. dkot7v واگرا شده بود و پوش rejected می‌شد: شب اول
+            # موفقیتِ گام Search، ۴.۵ ساعت اندازه‌گیری در همین گام سوخت.
+            # ریس با رادار/چرخه (هر ۳ دقیقه کامیت) با fetch+rebase حل می‌شود.
+            for i in 1 2 3 4 5; do
+              git push origin HEAD:main && exit 0
+              sleep $((2*i))
+              git fetch origin main
+              git rebase origin/main || { git rebase --abort; exit 1; }
+            done
+            exit 1
+          fi
+      - name: Summary
+        run: cat claude-liam-signal/cycles/search-latest.md >> $GITHUB_STEP_SUMMARY

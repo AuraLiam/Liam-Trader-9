@@ -1,0 +1,127 @@
+# پل ورودی TradingView — آلارم چارت حمید به سیستم می‌رسد.
+#
+# مسیر: آلارم TradingView (وب‌هوک) → n8n (05-tradingview-bridge.json) →
+# repository_dispatch → این ورک‌فلو → signals/tradingview-in.json (دفتر
+# append-only) + اطلاع تلگرام. ایجنت‌ها (رادار/چرخه/حلقهٔ زنده) این فایل
+# را مثل هر فید دیگری می‌خوانند.
+#
+# TradingView API عمومی ندارد؛ وب‌هوکِ آلارم تنها مسیر خروجی آن است —
+# نتیجه‌گیری ثبت‌شدهٔ ۱۵ اوت. این پل همان اتصال است.
+name: TradingView ingest
+
+on:
+  repository_dispatch:
+    types: [tradingview_alert]
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: "JSON آلارم (برای تست دستی مسیر دریافت)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tradingview-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: ثبت آلارم در دفتر ورودی
+        env:
+          PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.payload || toJSON(github.event.client_payload) }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, time
+          from pathlib import Path
+          p = Path("signals/tradingview-in.json")
+          try:
+              d = json.loads(p.read_text())
+              assert isinstance(d, list)
+          except Exception:
+              d = []
+          ev = json.loads(os.environ["PAYLOAD"])
+          ev["ingested_at"] = int(time.time() * 1000)
+          d.insert(0, ev)
+          d = d[:200]                      # دفتر ورودی، نه آرشیو ابدی
+          p.parent.mkdir(exist_ok=True)
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=1))
+          print(f"آلارم TradingView ثبت شد: {ev.get('symbol')} "
+                f"{ev.get('direction') or ''} @ {ev.get('price') or '?'}")
+          EOF
+
+      - name: اطلاع تلگرام (در صورت وجود Secret)
+        if: ${{ env.TG != '' }}
+        env:
+          TG: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.payload || toJSON(github.event.client_payload) }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request, urllib.parse
+          ev = json.loads(os.environ["PAYLOAD"])
+          sym = ev.get("symbol") or "?"
+          # ۱۶ اوت: حمید یک آلارمِ تستی گرفت و پرسید این قیمت از کجاست.
+          # عدد از خودِ بستهٔ تست آمده بود (raw: {"test": ...}) و تقریباً دو
+          # برابر قیمت واقعی بیت‌کوین بود. دو اصلاح: آلارم تستی اصلاً به
+          # تلگرام نرود، و پیام صریح بگوید «رسید است، سیگنال نیست».
+          raw = ev.get("raw") or {}
+          is_test = bool(raw.get("test")) if isinstance(raw, dict) else False
+          if is_test:
+              print("آلارم تستی — در دفتر ثبت شد ولی به تلگرام نمی‌رود")
+              raise SystemExit(0)
+          # قرار حمید (۱۶ اوت): هر پیام با امضای پنل خودش. برند از خود
+          # آلارم می‌آید (فیلد panel در JSON آلارم TradingView/n8n).
+          #
+          # دستور جدید حمید (۱۶ اوت، همان روز — جایگزین قاعدهٔ «بی‌امضا
+          # با برچسب برود»): فقط سه پنل مجازند به تلگرام برسند —
+          # «شایورا»، «لیام مکس / aura liam mAx» و «لیام تریدر ۹».
+          # هر پنل دیگری (از جمله «aura 369 codex valhalla») و هر آلارم
+          # بی‌امضا: در دفتر ورودی ثبت می‌شود ولی به تلگرام نمی‌رود.
+          panel_raw = (ev.get("panel")
+                       or (raw.get("panel") if isinstance(raw, dict) else None)
+                       or "")
+          def _norm(s):
+              s = str(s).lower()
+              for ch in (" ", "‌", "‏", "‎", "-", "_", "."):
+                  s = s.replace(ch, "")
+              return s.replace("۹", "9")  # ۹ فارسی → 9
+          _p = _norm(panel_raw)
+          ALLOWED = ("لیامتریدر9", "liamtrader9",
+                     "auraliammax", "لیاممکس", "liammax",
+                     "شایورا", "shaiora", "shayora", "shaiyora", "shayoora")
+          if not panel_raw or not any(a in _p for a in ALLOWED):
+              print(f"پنل «{panel_raw or 'بدون امضا'}» در فهرست مجاز نیست — "
+                    "در دفتر ثبت شد ولی به تلگرام نمی‌رود "
+                    "(مجاز: شایورا / لیام مکس / لیام تریدر ۹)")
+              raise SystemExit(0)
+          panel = panel_raw
+          txt = (f"🏷 {panel} · 📡 رسیدِ آلارم TradingView (سیگنال نیست)\n"
+                 f"{sym} {ev.get('direction') or ''} · TF {ev.get('tf') or '?'} · "
+                 f"قیمت اعلامیِ آلارم {ev.get('price') or '?'}\n"
+                 f"— وارد دفتر ورودی شد؛ قیمت از خودِ آلارم است، نه از تحلیل ما.")
+          data = urllib.parse.urlencode(
+              {"chat_id": os.environ["CHAT"], "text": txt}).encode()
+          urllib.request.urlopen(urllib.request.Request(
+              f"https://api.telegram.org/bot{os.environ['TG']}/sendMessage",
+              data=data), timeout=15)
+          EOF
+
+      - name: کامیت
+        run: |
+          git config user.name "TradingView Bridge"
+          git config user.email "tv-bridge@signal.ai"
+          git add signals/tradingview-in.json
+          git diff --cached --quiet && exit 0
+          git commit -m "آلارم TradingView $(date -u +'%H:%M UTC')"
+          for i in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            sleep $((2*i)); git fetch origin main; git rebase origin/main || exit 1
+          done
+          exit 1

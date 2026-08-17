@@ -1,0 +1,65 @@
+# Finds out which exchanges actually answer, and in what shape.
+#
+# Binance is blocked in Iran, which is where this panel is used. Choosing a
+# replacement from documentation is guesswork — field orders differ, some return
+# seconds and some milliseconds, and several return newest-first where Binance
+# returns oldest-first. Getting that wrong produces a chart that looks fine and
+# is reversed. So the adapter is written against observed responses.
+name: Probe data sources
+
+# `workflow_dispatch` and `schedule` are only offered for workflows on the
+# default branch, so until this merges the push trigger is what runs it.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 4 * * *"      # daily, so a source going down is noticed
+  # راه‌انداز «push» عمداً برداشته شد.
+  #
+  # هر کامیت، سه‌چهار ورک‌فلوی سنگین را با هم روشن می‌کرد. آن‌ها همدیگر را کنسل
+  # می‌کردند و — مهم‌تر — زمان‌بند گیت‌هاب روی مخزنی که این‌قدر شلوغ باشد اجراهای
+  # کرون را می‌اندازد. اندازه‌گیری شد: بین ۲۳:۳۷ تا ۰۲:۰۶ هیچ اجرای زمان‌بندی‌شده‌ای
+  # انجام نشد، در حالی که همان ورک‌فلو قبلش ساعتی یک بار می‌آمد.
+  #
+  # وقتی لازم بود که کارها روی شاخه بودند و کرون از شاخهٔ غیر‌اصلی شلیک نمی‌کند.
+  # حالا همه روی main هستند. برای اجرای دستی، workflow_dispatch هست.
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Whichever ref triggered this. It used to be pinned to the working
+      # branch, so a scheduled run on main probed branch code and then committed
+      # the result to main as if main had produced it.
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Probe
+        run: python3 claude-liam-signal/python/probe_sources.py | tee probe.txt
+      # The probe says what each venue returns. This says whether the adapter
+      # written against it actually works — from a machine that can reach them,
+      # which the development container cannot.
+      - name: Read real candles through the adapter
+        run: python3 claude-liam-signal/python/sources.py | tee -a probe.txt
+
+      - name: Check the parsers against the recorded replies
+        run: python3 claude-liam-signal/python/test_sources.py
+
+      - name: Summary
+        if: always()
+        run: |
+          { echo '```'; cat probe.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
+
+      - name: Commit the probe
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add brain/sources-probe.json
+          git diff --cached --quiet && { echo "unchanged"; exit 0; }
+          git commit -q -m "Source probe $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push origin HEAD:main || true

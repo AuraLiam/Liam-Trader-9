@@ -1,0 +1,218 @@
+# رادار پامپ خوشه‌ای — بیتیونیکس + توبیت، واقعاً هر ۵ دقیقه.
+#
+# اندازه‌گیری ۱۰ اوت: کرون */5 گیت‌هاب در ساعت شلوغی اصلاً شلیک نشد (یک
+# شکاف ۷۳ دقیقه‌ای ثبت شد). پس «هر ۵ دقیقه» را نمی‌شود به کرون سپرد: خود
+# job یک حلقهٔ ~۲۵ دقیقه‌ای است که ۵ بار رادار را می‌چرخاند و در پایان،
+# خودش را دوباره dispatch می‌کند — زنجیرهٔ پیوسته، مستقل از کرون. کرون و
+# مدیک فقط تور ایمنی برای وقتی‌اند که زنجیره پاره شود.
+#
+# پوش ضدتصادم: قبل از هر تلاش، درخت به origin/main برمی‌گردد و خروجی‌های
+# خودمان با --reapply دوباره می‌نشینند (آلارم‌ها merge، لاگ تلگرام اجتماع دو
+# نسخه، دفتر تاریخچه اجتماع کامل).
+name: Pump radar
+
+on:
+  schedule:
+    # فقط تور ایمنی — سازوکار اصلی، زنجیرهٔ self-dispatch داخل خود job است
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      token:
+        description: "توکن ربات (اگر Secret خالی است)"
+        required: false
+      chat_id:
+        description: "شناسهٔ چت (اگر Secret خالی است)"
+        required: false
+      min_pct:
+        description: "حداقل رشد ۲۴س برای گینر"
+        default: "5"
+
+permissions:
+  contents: write
+  actions: write        # dispatch بازانتشار Pages + زنجیرهٔ خودِ رادار
+
+concurrency:
+  group: pump-radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      # ورودی dispatch هرگز از مسیر ${{ }} وارد env نمی‌شود — گیت‌هاب بلوک env
+      # را در لاگ عمومی چاپ می‌کند و یک بار توکن همین‌طور افشا شد.
+      - name: ماسک کردن ورودی‌ها
+        run: |
+          for f in token chat_id; do
+            v=$(jq -r ".inputs.$f // empty" "$GITHUB_EVENT_PATH")
+            [ -n "$v" ] && echo "::add-mask::$v"
+          done
+          true
+
+      # زنجیره + کرونِ تور ایمنی می‌توانند هم‌زمان برسند؛ فقط یک حلقه بچرخد.
+      - name: فقط یک حلقه
+        id: guard
+        run: |
+          n=$(curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/pump-radar.yml/runs?status=in_progress&per_page=10" \
+            | jq --argjson me ${{ github.run_id }} '[.workflow_runs[] | select(.id != $me)] | length')
+          if [ "${n:-0}" -gt 0 ]; then
+            echo "حلقهٔ دیگری در حال چرخیدن است — این اجرا کنار می‌کشد"
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: matplotlib برای چارت پیک و هشدار ریزش
+        if: steps.guard.outputs.skip != '1'
+        run: pip -q install matplotlib pyyaml
+
+      - name: آزمون آفلاین
+        if: steps.guard.outputs.skip != '1'
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_pump_radar
+          python3 -m hamid.test_pump_watchlist
+          python3 -m hamid.test_dominance
+          python3 -m hamid.test_patterns
+          python3 -m hamid.test_orderblocks
+          python3 -m hamid.test_ob_intel
+          python3 -m hamid.test_deep
+          python3 -m hamid.test_mirror
+          python3 -m hamid.test_learning
+          python3 -m hamid.test_pump_study
+          python3 -m hamid.test_workflows
+          python3 -m hamid.test_fixit
+
+      - name: حلقهٔ ۵ دقیقه‌ای (۵ دور در یک job)
+        if: steps.guard.outputs.skip != '1'
+        id: loop
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_2: ${{ secrets.TELEGRAM_BOT_TOKEN_2 }}
+          TELEGRAM_CHAT_ID_2: ${{ secrets.TELEGRAM_CHAT_ID_2 }}
+        run: |
+          export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-$(jq -r '.inputs.token // empty' "$GITHUB_EVENT_PATH")}"
+          export TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-$(jq -r '.inputs.chat_id // empty' "$GITHUB_EVENT_PATH")}"
+          MIN=$(jq -r '.inputs.min_pct // empty' "$GITHUB_EVENT_PATH")
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          for k in 1 2 3 4 5 6 7 8; do
+            t0=$(date +%s)
+            echo "── دور $k از ۸ · $(date -u '+%H:%M:%S UTC') ──"
+            (cd claude-liam-signal/python && python3 -m hamid.pump_radar --min-pct "${MIN:-5}") || true
+
+            # ثبت روی main (ضدتصادم)
+            BK=/tmp/pump-radar-backup; mkdir -p "$BK"
+            cp signals/pump-radar.json "$BK/" 2>/dev/null || true
+            cp signals/bubbles.json "$BK/" 2>/dev/null || true
+            cp signals/telegram-log.json "$BK/" 2>/dev/null || true
+            cp brain/pump-radar-sent.json "$BK/" 2>/dev/null || true
+            cp brain/pump-history.json "$BK/" 2>/dev/null || true
+            cp brain/memory/lessons.json "$BK/" 2>/dev/null || true
+            # دفتر انتظار پامپ — ۱۶ اوت، تشخیص پاسبان C3.
+            # نبودنش این‌جا یک نامتقارنی ساخته بود که حافظهٔ دائمی را
+            # می‌خورد: sweep() نمادِ منقضی را حذف می‌کرد و درسش را
+            # می‌نوشت، بعد بازگشتِ درخت به origin/main دفتر را برمی‌گرداند
+            # (نماد برمی‌گشت) ولی درس در reapply زنده می‌ماند. یعنی حذف
+            # گم می‌شد و درس می‌ماند — و همان ۹ نماد هر ۳ دقیقه دوباره
+            # «منقضی» می‌شدند. ۲۶ ساعت، ۱۹۷ درس تکراری از ۳۰۰.
+            # (هر دو خط تولید مستقل به همین تشخیص رسیدند — اجتماعِ mergeِ ۱۷ اوت.)
+            cp brain/pump-watchlist.json "$BK/" 2>/dev/null || true
+            cp brain/pump-weakness-seen.json "$BK/" 2>/dev/null || true
+            for i in 1 2 3 4; do
+              git fetch origin main -q
+              git reset --hard origin/main -q
+              (cd claude-liam-signal/python && python3 -m hamid.pump_radar --reapply "$BK")
+              # دامیننس سوار همین زنجیره — کرون dominance.yml قحطی‌زده بود
+              # (اندازه‌گیری: ۳۲ نقطه در ۳۲.۷ ساعت یعنی عملاً ساعتی، نه ۵دقیقه‌ای).
+              # روی درخت تازهٔ origin/main اجرا می‌شود تا نقطهٔ جدید بی‌تصادم بنشیند.
+              (cd claude-liam-signal/python && python3 -m hamid.dominance) || true
+              # الگوهای BTC (۱س/۴س/۱روزه) و دامیننس — دستور حمید: پایش دائمی
+              (cd claude-liam-signal/python && python3 -m hamid.btc_patterns) || true
+              # اسکن استراتژی‌ها هم سوار همین زنجیره — شکایت حمید (۱۲ اوت):
+              # «همه سیگنال‌ها با هم می‌آیند». علت، اسکنِ دسته‌ایِ ~۲۰دقیقه‌ای
+              # بود: هرچه در یک اجرا تأیید شده بود یک‌جا می‌رفت. حالا هر ۵
+              # دقیقه اسکن می‌شود و سیگنال حداکثر یک کندل ۵د بعد از تأیید
+              # می‌رود. اسکن فقط در تلاش اول اجرا می‌شود؛ در تلاش‌های بعدیِ
+              # push خروجی‌هایش برگردانده و sent.json اجتماع می‌شود تا نه
+              # سیگنالی دوباره برود نه دفتر ضدتکرار گم شود.
+              if [ ! -f "/tmp/scan-done-$k" ]; then
+                (cd claude-liam-signal/python && timeout 240 python3 scan.py --symbols 60 --telegram) || true
+                touch "/tmp/scan-done-$k"
+                cp signals/latest.json /tmp/scan-latest.json 2>/dev/null || true
+                cp signals/sent.json /tmp/scan-sent.json 2>/dev/null || true
+              else
+                cp /tmp/scan-latest.json signals/latest.json 2>/dev/null || true
+                (cd claude-liam-signal/python && python3 -m hamid.merge_sent /tmp/scan-sent.json ../../signals/sent.json) || true
+              fi
+              git add signals brain 2>/dev/null || true
+              git diff --cached --quiet && { echo "چیزی برای ثبت نیست"; break; }
+              git commit -q -m "پامپ رادار $(date -u '+%Y-%m-%d %H:%M UTC')"
+              git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+              sleep $((i*2))
+            done
+
+            # انتشار روی پنل (gh-pages)
+            if git fetch origin gh-pages -q; then
+              rm -rf /tmp/ghp
+              if git worktree add /tmp/ghp origin/gh-pages --detach -q; then
+                mkdir -p /tmp/ghp/signals
+                cp signals/pump-radar.json /tmp/ghp/signals/ 2>/dev/null || true
+                cp signals/bubbles.json /tmp/ghp/signals/ 2>/dev/null || true
+                cp signals/telegram-log.json /tmp/ghp/signals/ 2>/dev/null || true
+                cp signals/dominance.json /tmp/ghp/signals/ 2>/dev/null || true
+                cp signals/latest.json /tmp/ghp/signals/ 2>/dev/null || true
+                cp signals/btc-patterns.json /tmp/ghp/signals/ 2>/dev/null || true
+                ( cd /tmp/ghp
+                  git add signals
+                  if ! git diff --cached --quiet; then
+                    git commit -q -m "پامپ رادار $(date -u '+%H:%M') UTC"
+                    for i in 1 2 3; do
+                      git push origin HEAD:gh-pages -q \
+                        && { echo "deployed=1" >> "$GITHUB_OUTPUT"; break; }
+                      git fetch origin gh-pages -q || true
+                      git rebase origin/gh-pages -q || { git rebase --abort; break; }
+                    done
+                  fi )
+                git worktree remove --force /tmp/ghp 2>/dev/null || true
+              fi
+            fi
+
+            # آزمایش حمید (۱۳ اوت): گام ۳ دقیقه به‌جای ۵. اگر خودِ کار بیش از
+            # ۱۸۰ ثانیه طول بکشد، حلقه بدون مکث پشت‌سرهم می‌چرخد — یعنی
+            # سریع‌ترین کادنسی که این زیرساخت واقعاً می‌دهد؛ عددش از لاگ
+            # قابل‌اندازه‌گیری است، نه از ادعا. (دور آخر صبر ندارد)
+            if [ "$k" -lt 8 ]; then
+              took=$(( $(date +%s) - t0 ))
+              wait=$(( 180 - took )); [ "$wait" -lt 5 ] && wait=5
+              echo "دور $k در ${took}ثانیه — ${wait}ثانیه تا دور بعد"
+              sleep "$wait"
+            fi
+          done
+
+      # سایت Pages فقط با dispatch یا کرون pages.yml تازه می‌شود
+      - name: بازانتشار Pages
+        if: steps.loop.outputs.deployed == '1'
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/pages.yml/dispatches" \
+            -d '{"ref":"main"}' || echo "dispatch نشد — کرون نیم‌ساعته جبران می‌کند"
+
+      # زنجیره: حلقهٔ بعدی را خودمان صدا می‌زنیم — کرون گیت‌هاب قابل اتکا نیست
+      - name: زنجیرهٔ حلقهٔ بعد
+        if: always() && steps.guard.outputs.skip != '1'
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/pump-radar.yml/dispatches" \
+            -d '{"ref":"main"}' \
+            && echo "حلقهٔ بعد صدا زده شد" \
+            || echo "dispatch نشد — کرون ربع‌ساعته و مدیک زنده‌اش می‌کنند"

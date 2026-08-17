@@ -1,0 +1,137 @@
+# میز تمرین ۲۰۰تایی — دستور حمید (۱۴ اوت): «هر یک ساعت حداقل ۲۰۰ ترید
+# کاغذی؛ هر ساعت ۱۰۰ ارز برتر را شناسایی می‌کنی و بلافاصله ترید کاغذی
+# ادامه دارد و با هر نتیجه ایجنت درس جدیدی یاد می‌گیرد.»
+#
+# اولین اجرا ~۸ روز تاریخ را بازپخش می‌کند (صدها معامله)؛ اجراهای بعد فقط
+# کندل‌های تازه را — ضدتکرار با مرز پیشروی هر ارز در trainer-state.json.
+name: Practice trainer (hourly)
+
+on:
+  schedule:
+    - cron: "41 * * * *"          # دقیقهٔ ۴۱ — دور از ازدحام چرخه‌های دیگر
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: practice-trainer
+  cancel-in-progress: false
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: خودآزمایی میز تمرین
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_trainer
+          python3 -m hamid.test_classify
+          python3 -m hamid.test_fill_books
+          python3 -m hamid.test_improve
+          python3 -m hamid.test_levels_db
+          python3 -m hamid.test_coin_history
+          python3 -m hamid.test_bridge
+
+      - name: تمرین — ۱۰۰ ارز برتر × سه تایم‌فریم، بازپخش بدون look-ahead
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.trainer
+
+      # پرکردن دفترهای نازک — دستور حمید: «دیتاهای پیپر سریع به نتیجه
+      # برسند.» اندازه‌گیری شد که پولبک دوم ۴۱۳ معامله کم دارد و با نرخ
+      # زندهٔ ~۸ در روز، ۵۰ روز طول می‌کشد. همان بازپخشِ ثابت‌شدهٔ
+      # backtest.walk حالا خروجی‌اش به دفتر تجربه هم می‌رود، پس همان
+      # سؤال در چند اجرا جواب می‌گیرد نه چند ماه.
+      # بودجه از ۱۰ به ۲۵ دقیقه: اجرای واقعی نشان داد در ۱۰ دقیقه فقط ۷ ارز
+      # از ۲۵ تمام می‌شوند (۹ معامله). job چهل دقیقه وقت دارد و میز تمرین
+      # فقط یک دقیقه‌اش را می‌گیرد، پس این وقت بی‌استفاده می‌ماند.
+      - name: پرکردن دفتر پولبک اول/دوم از تاریخ
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.fill_books --symbols 40 --bars 1200 --budget 1500 || true
+
+      # دسته‌بندی بلافاصله بعد از تمرین: «کدام استراتژی در کدام تایم‌فریم،
+      # کدام اردر بلاک روی کدام ارز» — روی همان معامله‌هایی که همین الان
+      # اضافه شدند، نه یک اجرای جدا که از دفتر عقب بیفتد.
+      - name: دسته‌بندی استراتژی × تایم‌فریم × اردر بلاک
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.classify
+
+      # تصمیم از نتیجه‌ها (دستور حمید ۱۵ اوت): تاریخچهٔ هر ارز و نحوهٔ
+      # واکنشش → پیشنهادِ شرط برای بهبود انجین. خروجی **پیشنهاد** است؛
+      # قانون ۱۲ می‌گوید هیچ تغییر استراتژی مستقیم وارد تولید نمی‌شود.
+      - name: پروفایل رفتاری ارزها و پیشنهاد بهبود
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.improve || true
+
+      # پل تمرین→سیگنال (گزینهٔ ۲، دستور حمید ۱۶ اوت): کشف روی دفتر تمرین
+      # با بونفرونی کامل، بعد **تکرار** روی دفتر سیگنال واقعی. فقط چیزی که
+      # روی هر دو نمونهٔ مستقل با یک علامت زنده ماند به رتبه‌بندی می‌رسد؛
+      # اندازهٔ اثرش هم از دفتر واقعی برداشته می‌شود نه از تمرین.
+      # همین‌جا کارنامهٔ پله‌های دروازه (گزینهٔ ۳) هم چاپ می‌شود.
+      - name: پل تمرین→سیگنال و کارنامهٔ پله‌های دروازه
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.bridge || true
+
+      # دانش انباشته: حکم امروزِ بک‌تست ثبت می‌شود و «پایدار» یعنی در چند
+      # اندازه‌گیریِ مستقل با علامت ثابت تکرار شده — نه یک روز شانسی.
+      - name: دفتر پایداری قانون‌ها
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.rule_ledger || true
+
+      # دیتابیس خطوط: خط روند و سطح، چندتایم‌فریمی، با اعتبار انباشته و
+      # چرخهٔ عمر ACTIVE/BROKEN/FLIPPED/HISTORICAL — خط پاک نمی‌شود.
+      - name: دیتابیس خط روند و حمایت/مقاومت
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.levels_db --symbols 40 || true
+
+      # جدول تاریخچهٔ هر ارز (دستور حمید ۱۶ اوت): کِی پامپ/دامپ کرده، و
+      # آن لحظه بیت‌کوین و دامیننس تتر کجا بودند. انباشته است — اجرای اول
+      # کل تاریخِ دردسترس، بعدها فقط ارز تازه و کندل تازه.
+      - name: جدول تاریخچهٔ نوسان ارزها
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.coin_history --symbols 200 --bars 1000 || true
+
+      - name: ثبت دفتر و درس‌ها
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "noreply@anthropic.com"
+          git add brain/paper/ brain/memory/ brain/learning/ brain/improve/ brain/levels/ brain/coins/ signals/classify.json signals/improve.json || true
+          if git diff --cached --quiet; then
+            echo "دادهٔ تازه‌ای نبود"
+            exit 0
+          fi
+          git commit -q -m "میز تمرین $(date -u '+%Y-%m-%d %H:%M UTC')"
+          # ریبیس روی فایل‌های تولیدشده تعارض بی‌دلیل می‌سازد (چرخه و رادار
+          # هم‌زمان به همین مسیرها می‌نویسند) و آن‌وقت rebase --abort یعنی
+          # کل کار دور ریخته می‌شود. الگوی خودِ مخزن: merge با «مال خودمان»
+          # برای دفتر تولیدشده، و رد کردن هر فایل دارای مارکر تعارض.
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              # فقط همان فایلی که این job تولید کرده، نه کل signals/ —
+              # چرخه هم‌زمان به signals/latest.json می‌نویسد و --ours روی
+              # کل پوشه می‌توانست خروجی تازهٔ آن را عقب ببرد.
+              # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
+              # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
+              # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
+              # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals/classify.json; then
+              echo "پوش نشد: مارکر تعارض باقی مانده"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "پوش نشد — اجرای بعدی جبران می‌کند (دفتر محلی سالم است)"
+          exit 1
