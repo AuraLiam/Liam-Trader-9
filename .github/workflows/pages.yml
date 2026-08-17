@@ -27,14 +27,32 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # محافظ (۱۷ اوت): اگر Pages در حالت «deploy از شاخه» است (build_type
+      # legacy)، دیپلوی artifact این‌جا فقط با آن مسابقه می‌دهد و قرمز می‌شود.
+      # در آن حالت، سبزِ بی‌کار درست است — پوش gh-pages خودش دیپلوی می‌کند.
+      - id: mode
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bt=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('build_type',''))" \
+            || echo unknown)
+          echo "build_type=$bt" >> "$GITHUB_OUTPUT"
+          [ "$bt" = "legacy" ] && echo "Pages در حالت شاخه‌ای است — دیپلوی artifact لازم نیست" || true
       - uses: actions/checkout@v4
+        if: steps.mode.outputs.build_type != 'legacy'
         with:
           ref: gh-pages
       - uses: actions/configure-pages@v5
+        if: steps.mode.outputs.build_type != 'legacy'
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
+        if: steps.mode.outputs.build_type != 'legacy'
         with:
           path: .
       - id: deployment
+        if: steps.mode.outputs.build_type != 'legacy'
         uses: actions/deploy-pages@v4
