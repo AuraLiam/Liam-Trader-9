@@ -38,7 +38,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 OUT = ROOT / "brain" / "medic.json"
 
-PAGES = "https://auraliam18.github.io/.sognal"
+PAGES = "https://auraliam.github.io/Liam-Trader-9"
 HAMID_MAX_MIN = 45      # ضربان هر ۲۰ دقیقه می‌زند؛ دو چرخهٔ ازدست‌رفته یعنی مشکل
 SCAN_MAX_MIN = 60
 
@@ -161,7 +161,7 @@ def examine():
         since = time.strftime("%Y-%m-%dT%H:%M:%SZ",
                               time.gmtime(time.time() - 6 * 3600))
         req = urllib.request.Request(
-            "https://api.github.com/repos/Auraliam18/.sognal/actions/runs"
+            "https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/runs"
             f"?status=failure&per_page=40&created=%3E{since}", headers=hdr)
         with urllib.request.urlopen(req, timeout=25) as r:
             runs = json.load(r).get("workflow_runs", [])
@@ -188,7 +188,7 @@ def examine():
         else:
             finds.append("گیت‌هاب: هیچ اجرای ناموفقی در ۶ ساعت اخیر")
         with urllib.request.urlopen(urllib.request.Request(
-                "https://api.github.com/repos/Auraliam18/.sognal",
+                "https://api.github.com/repos/Auraliam/Liam-Trader-9",
                 headers=hdr), timeout=20) as r:
             repo = json.load(r)
         if not repo.get("private"):
@@ -268,7 +268,7 @@ def examine():
 
 def _runs(workflow, tok, status):
     req = urllib.request.Request(
-        f"https://api.github.com/repos/Auraliam18/.sognal/actions/workflows/{workflow}"
+        f"https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/workflows/{workflow}"
         f"/runs?status={status}&per_page=5",
         headers={"Authorization": f"Bearer {tok}",
                  "Accept": "application/vnd.github+json", "User-Agent": "medic/1"})
@@ -293,7 +293,7 @@ def revive(workflow):
     except Exception:                                 # noqa: BLE001 - چک ناموفق مانع درمان نمی‌شود
         pass
     req = urllib.request.Request(
-        f"https://api.github.com/repos/Auraliam18/.sognal/actions/workflows/{workflow}/dispatches",
+        f"https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/workflows/{workflow}/dispatches",
         data=json.dumps({"ref": "main"}).encode(),
         headers={"Authorization": f"Bearer {tok}",
                  "Accept": "application/vnd.github+json",

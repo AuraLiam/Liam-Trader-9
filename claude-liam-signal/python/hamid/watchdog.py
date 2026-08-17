@@ -28,7 +28,7 @@ sys.path.insert(0, str(HERE.parent))
 ROOT = HERE.parent.parent.parent
 OUT = ROOT / "brain" / "watchdog.json"
 
-PAGES = "https://auraliam18.github.io/.sognal"
+PAGES = "https://auraliam.github.io/Liam-Trader-9"
 UA = {"User-Agent": "hamid-signal-watchdog"}
 TIMEOUT = 20
 

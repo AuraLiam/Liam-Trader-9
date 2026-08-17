@@ -59,7 +59,8 @@ the second pullback carried no advantage.
   generated from `index.html`; rerun `extract-engine.js` after engine changes.
 - `claude-liam-signal/n8n/` — importable orchestration workflows.
 
-Deploys go to both `claude/hamid-signal-agent-smc-dkot7v` and `gh-pages`.
+Deploys go to `main` (source) and `gh-pages` (served panel), in this repo
+(`Auraliam/Liam-Trader-9`).
 
 ## LIAM — ارکستراتور و زیرایجنت‌ها
 

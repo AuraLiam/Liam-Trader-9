@@ -11,7 +11,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.github.com/repos/Auraliam18/.sognal/contents/claude-liam-signal/cycles/latest.md?ref=claude/hamid-signal-agent-smc-dkot7v",
+        "url": "https://api.github.com/repos/Auraliam/Liam-Trader-9/contents/claude-liam-signal/cycles/latest.md?ref=main",
         "options": {"response": {"response": {"neverError": true}}}
       },
       "id": "cycle",
@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.github.com/repos/Auraliam18/.sognal/contents/claude-liam-signal/cycles/search-latest.md?ref=claude/hamid-signal-agent-smc-dkot7v",
+        "url": "https://api.github.com/repos/Auraliam/Liam-Trader-9/contents/claude-liam-signal/cycles/search-latest.md?ref=main",
         "options": {"response": {"response": {"neverError": true}}}
       },
       "id": "search",
@@ -45,7 +45,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const dec = c => c ? Buffer.from(c, 'base64').toString('utf8') : '';\nconst all = $input.all().map(i => dec(i.json.content));\nconst cycle = all.find(t => t.startsWith('# Paper trading cycle')) || '';\nconst search = all.find(t => t.startsWith('# Parameter search')) || '';\n\nconst verdictOf = md => {\n  const i = md.indexOf('## Verdict');\n  const j = md.indexOf('## Action');\n  const at = i >= 0 ? i : j;\n  return at >= 0 ? md.slice(at).split('\\n').slice(2).join('\\n').trim() : '';\n};\nconst head = (cycle.match(/\\*\\*Overall:.+/) || [''])[0].replace(/\\*\\*/g, '');\n\nreturn [{ json: {\n  subject: `Signal — ${new Date().toISOString().slice(0, 10)}`,\n  body: [\n    'Overnight, in two lines.', '',\n    head || 'No cycle report found.', '',\n    'Cycle verdict:', verdictOf(cycle) || '—', '',\n    'Parameter search:', verdictOf(search) || '—', '',\n    'Panel: https://auraliam18.github.io/.sognal',\n    'Reports: github.com/Auraliam18/.sognal → claude-liam-signal/cycles',\n    '',\n    'These figures come from simulated markets. The real one appears once the',\n    'panel has run on live candles and settled its own positions.'\n  ].join('\\n')\n}}];"
+        "jsCode": "const dec = c => c ? Buffer.from(c, 'base64').toString('utf8') : '';\nconst all = $input.all().map(i => dec(i.json.content));\nconst cycle = all.find(t => t.startsWith('# Paper trading cycle')) || '';\nconst search = all.find(t => t.startsWith('# Parameter search')) || '';\n\nconst verdictOf = md => {\n  const i = md.indexOf('## Verdict');\n  const j = md.indexOf('## Action');\n  const at = i >= 0 ? i : j;\n  return at >= 0 ? md.slice(at).split('\\n').slice(2).join('\\n').trim() : '';\n};\nconst head = (cycle.match(/\\*\\*Overall:.+/) || [''])[0].replace(/\\*\\*/g, '');\n\nreturn [{ json: {\n  subject: `Signal — ${new Date().toISOString().slice(0, 10)}`,\n  body: [\n    'Overnight, in two lines.', '',\n    head || 'No cycle report found.', '',\n    'Cycle verdict:', verdictOf(cycle) || '—', '',\n    'Parameter search:', verdictOf(search) || '—', '',\n    'Panel: https://auraliam.github.io/Liam-Trader-9',\n    'Reports: github.com/Auraliam/Liam-Trader-9 → claude-liam-signal/cycles',\n    '',\n    'These figures come from simulated markets. The real one appears once the',\n    'panel has run on live candles and settled its own positions.'\n  ].join('\\n')\n}}];"
       },
       "id": "compose",
       "name": "Compose the digest",

@@ -1,8 +1,8 @@
-# شناسنامهٔ ایجنت — حمید کلود مکس پنل
+# شناسنامهٔ ایجنت — لیام تریدر ۹
 
 سند معرفی برای هر داور بیرونی (هوش مصنوعی یا انسان). هر ادعا در کد مخزن
-`Auraliam18/.sognal` پیاده و با آزمون پوشش داده شده؛ پنل زنده:
-`auraliam18.github.io/.sognal` (آینه: `iydowzpblzaiogauoqff.supabase.co/functions/v1/panel/`).
+`Auraliam/Liam-Trader-9` پیاده و با آزمون پوشش داده شده؛ پنل زنده:
+`auraliam.github.io/Liam-Trader-9`.
 
 ## مأموریت
 

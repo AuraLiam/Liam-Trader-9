@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "url": "https://auraliam18.github.io/.sognal/signals/hamid-latest.json",
+        "url": "https://auraliam.github.io/Liam-Trader-9/signals/hamid-latest.json",
         "options": { "timeout": 20000 }
       },
       "id": "fetch-hamid",
@@ -105,7 +105,7 @@
     },
     {
       "parameters": {
-        "url": "https://auraliam18.github.io/.sognal/signals/hamid-latest.json",
+        "url": "https://auraliam.github.io/Liam-Trader-9/signals/hamid-latest.json",
         "options": { "timeout": 20000 }
       },
       "id": "fetch-daily",
@@ -116,7 +116,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const j = $input.first().json;\nconst p = j.paper || {};\nconst ex = p.experiments_first_pullback || {};\nconst w = j.world || {};\nconst fg = w.fear_greed || {};\nconst dom = w.dominance || {};\nconst s = j.setups || [];\nconst lines = [\n  '📊 *خلاصهٔ روز — ایورا لیام سیگنال*',\n  '',\n  `💰 دفتر کاغذی: *$${p.balance ?? '—'}* (${p.return_pct >= 0 ? '+' : ''}${p.return_pct ?? '—'}٪)`,\n  `📈 ${p.trades ?? 0} معامله · برد ${p.win_pct ?? '—'}٪ · ${p.open ?? 0} باز · افت ${p.max_drawdown_pct ?? 0}٪`,\n  ex.trades ? `🧪 آزمایش پولبک اول: ${ex.trades} معامله، برد ${ex.win_pct}٪` : null,\n  '',\n  `🎯 ستاپ‌ها الان: ${s.filter(x=>!x.waiting).length} سیگنال · ${s.filter(x=>x.waiting).length} منتظر`,\n  `🌍 ترس و طمع ${fg.value ?? '—'} · دامیننس تتر ${dom.usdt ?? '—'}٪`,\n  '',\n  `🕐 آخرین چرخه: ${j.generatedText}`,\n  '',\n  '_پنل:_ auraliam18.github.io/.sognal',\n].filter(Boolean);\nreturn [{ json: { text: lines.join('\\n') } }];"
+        "jsCode": "const j = $input.first().json;\nconst p = j.paper || {};\nconst ex = p.experiments_first_pullback || {};\nconst w = j.world || {};\nconst fg = w.fear_greed || {};\nconst dom = w.dominance || {};\nconst s = j.setups || [];\nconst lines = [\n  '📊 *خلاصهٔ روز — ایورا لیام سیگنال*',\n  '',\n  `💰 دفتر کاغذی: *$${p.balance ?? '—'}* (${p.return_pct >= 0 ? '+' : ''}${p.return_pct ?? '—'}٪)`,\n  `📈 ${p.trades ?? 0} معامله · برد ${p.win_pct ?? '—'}٪ · ${p.open ?? 0} باز · افت ${p.max_drawdown_pct ?? 0}٪`,\n  ex.trades ? `🧪 آزمایش پولبک اول: ${ex.trades} معامله، برد ${ex.win_pct}٪` : null,\n  '',\n  `🎯 ستاپ‌ها الان: ${s.filter(x=>!x.waiting).length} سیگنال · ${s.filter(x=>x.waiting).length} منتظر`,\n  `🌍 ترس و طمع ${fg.value ?? '—'} · دامیننس تتر ${dom.usdt ?? '—'}٪`,\n  '',\n  `🕐 آخرین چرخه: ${j.generatedText}`,\n  '',\n  '_پنل:_ auraliam.github.io/Liam-Trader-9',\n].filter(Boolean);\nreturn [{ json: { text: lines.join('\\n') } }];"
       },
       "id": "build-summary",
       "name": "ساخت خلاصه",

@@ -1,6 +1,8 @@
-# signal
+# لیام تریدر ۹
 
-Hamid Signal Agent — SMC panel (v4.8).
+Liam Trader 9 — Hamid's SMC signal panel (v4.8). Standalone home:
+`Auraliam/Liam-Trader-9`; the old `.sognal` repo belongs to the other
+panel and is never read or written from here.
 
 ## Regression test
 

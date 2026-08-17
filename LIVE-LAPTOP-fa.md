@@ -9,7 +9,7 @@
 1. برنامهٔ **Terminal** را باز کن (Spotlight → بنویس Terminal)
 2. این دو خط را یکی‌یکی کپی و Enter کن:
    ```
-   git clone https://github.com/Auraliam18/.sognal.git ~/hamid-live
+   git clone https://github.com/Auraliam/Liam-Trader-9.git ~/hamid-live
    open ~/hamid-live
    ```
    (اگر گفت `git` نیست، خودش پیشنهاد نصب می‌دهد — قبول کن و دوباره بزن)
@@ -21,7 +21,7 @@
 2. بعد **Git**: git-scm.com → Download → Install (همهٔ گزینه‌ها پیش‌فرض)
 3. در منوی Start بنویس `cmd`، بازش کن و این را بزن:
    ```
-   git clone https://github.com/Auraliam18/.sognal.git %USERPROFILE%\hamid-live
+   git clone https://github.com/Auraliam/Liam-Trader-9.git %USERPROFILE%\hamid-live
    ```
 4. پوشهٔ `hamid-live` را در home خودت باز کن، `live.env.example` را کپی و به `live.env` تغییر نام بده، توکن‌ها را داخلش بگذار.
 

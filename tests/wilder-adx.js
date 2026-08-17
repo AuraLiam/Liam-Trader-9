@@ -1,7 +1,7 @@
 /* Wilder held that below ADX 20 there is no trend and signals should be
    ignored. Does that hold for this engine, on this tape? */
-const {simulate}=require('/home/user/.sognal/tests/sim.js');
-const H=require('/home/user/.sognal/tests/harness.js');
+const {simulate}=require('./sim.js');
+const H=require('./harness.js');
 const from=+process.argv[2],to=+process.argv[3];
 const E=H.loadEngine();
 const out=[];

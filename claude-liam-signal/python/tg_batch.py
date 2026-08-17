@@ -238,7 +238,7 @@ def main():
                f"تارگت۱: {s['tp1']}" + (f"\nتارگت۲: {s['tp2']}" if s.get("tp2") else "") +
                (f"\nدامیننس تتر: {s['usdt']}٪" if s.get("usdt") else "") +
                f"\n🕐 تحلیل {tehran(s.get('analyzed_at'))} · ارسال {tehran()} — به وقت ایران" +
-               f"\n\nپنل: auraliam18.github.io/.sognal")
+               f"\n\nپنل: auraliam.github.io/Liam-Trader-9")
         try:
             # چارت ۵ دقیقه — خواستهٔ حمید؛ کندل‌های ضمیمه فقط جایگزین اضطراری
             cd = klines(s["sym"], "5m") or s.get("candles") or []
