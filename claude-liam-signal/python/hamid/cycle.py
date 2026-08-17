@@ -1685,6 +1685,12 @@ def main():
         (OUT / "hamid-latest.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=1, default=str))
         print(f"نوشته شد در signals/hamid-latest.json")
+        # ناظر کل (E26): بعد از ثبت گزارش، دستورهای تمرکز صادر می‌شود
+        try:
+            from hamid import overseer as _ov
+            _ov.run(report)
+        except Exception as e:                       # noqa: BLE001 - ناظر، چرخه را نمی‌کشد
+            print(f"ناظر کل: {type(e).__name__}")
 
     brain.event("cycle_done", mode=mode, seconds=round(time.time() - t0, 1),
                 signals_today=st["signals"])

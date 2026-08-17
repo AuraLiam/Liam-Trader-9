@@ -1,0 +1,46 @@
+# حلقهٔ مطالعه — هر ۳ ساعت یک کتاب برای یک انجین (دستور حمید، ۱۷ اوت).
+# دقیقهٔ فرد و غیرشلوغ، طبق درس اندازه‌گیری‌شدهٔ این ریپو: کرون‌های */N
+# پرترافیک‌اند و جاب اکانت رایگان همان‌جا می‌افتد.
+name: Reading loop (3h)
+
+on:
+  schedule:
+    - cron: "53 0,3,6,9,12,15,18,21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reading-loop
+  cancel-in-progress: false
+
+jobs:
+  recommend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: |
+          pip install -q pyyaml
+          python3 -m hamid.test_reading_loop
+      - name: Recommend next book
+        working-directory: claude-liam-signal/python
+        run: python3 -m research.reading_loop
+      - name: Commit
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add brain/research signals/reading.json
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "حلقهٔ مطالعه: توصیهٔ این نوبت"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git pull -q --no-rebase origin main || true
+            sleep $((attempt * 3))
+          done
+          exit 1

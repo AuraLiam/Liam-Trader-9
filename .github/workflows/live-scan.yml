@@ -25,7 +25,7 @@ name: Live scan
 # data arrives.
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "7,22,37,52 * * * *"
   # راه‌انداز «push» عمداً برداشته شد.
   #
   # هر کامیت، سه‌چهار ورک‌فلوی سنگین را با هم روشن می‌کرد. آن‌ها همدیگر را کنسل
@@ -104,7 +104,7 @@ jobs:
           TELEGRAM_CHAT_ID_2: ${{ secrets.TELEGRAM_CHAT_ID_2 }}
         run: |
           python3 claude-liam-signal/python/scan.py \
-            --symbols "${{ github.event.inputs.symbols || '100' }}" \
+            --symbols "${{ github.event.inputs.symbols || '200' }}" \
             --telegram \
             | tee scan-output.txt
 

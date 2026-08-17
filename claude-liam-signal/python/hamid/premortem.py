@@ -28,6 +28,40 @@ def _atr_pct(c15, n=20):
     return sum((k["h"] - k["l"]) / k["c"] for k in w) / len(w) * 100
 
 
+def fib_ratio(c15, d, lookback=60):
+    """عمق پولبک فعلی نسبت به آخرین موج جهت‌دار — نسبت فیبوناچی (۱۷ اوت).
+
+    سؤال حمید: «فیبوناچی بیندازند ببینند رابطه‌ای با IBS+پولبک دوم پیدا
+    می‌شود یا نه؟» این تابع فقط اندازه می‌گیرد و ثبت می‌کند؛ حکم با ماشین
+    بونفرونی شبانه است (قانون ۰۳ — هیچ آستانه‌ای وارد تصمیم نشده).
+
+    LONG: موج صعودی اخیر = کفِ پیش از سقفِ پنجره تا خود سقف؛
+    نسبت = (سقف − قیمت) / (سقف − کف). SHORT قرینه. موج نامعتبر → None."""
+    if not c15 or len(c15) < 30:
+        return None
+    win = c15[-lookback:]
+    px = win[-1]["c"]
+    try:
+        if d == "LONG":
+            hi_i = max(range(len(win)), key=lambda i: win[i]["h"])
+            if hi_i < 5:
+                return None                      # موجی دیده نمی‌شود
+            lo_i = min(range(hi_i + 1), key=lambda i: win[i]["l"])
+            hi, lo = win[hi_i]["h"], win[lo_i]["l"]
+        else:
+            lo_i = min(range(len(win)), key=lambda i: win[i]["l"])
+            if lo_i < 5:
+                return None
+            hi_i = max(range(lo_i + 1), key=lambda i: win[i]["h"])
+            hi, lo = win[hi_i]["h"], win[lo_i]["l"]
+        if hi <= lo:
+            return None
+        r = (hi - px) / (hi - lo) if d == "LONG" else (px - lo) / (hi - lo)
+    except Exception:                            # noqa: BLE001
+        return None
+    return round(r, 3) if -0.2 <= r <= 1.5 else None
+
+
 def review(s, c15):
     """s: سیگنال (sym/dir/entry/sl/tp1) · c15: کندل ۱۵ دقیقه (dict).
 
@@ -326,4 +360,5 @@ def review(s, c15):
         note += " · ⛔ استاپ داخل نویز — وتوی سخت"
     return {"pro": pro, "con": con, "pro_w": pro_w, "con_w": con_w,
             "issue": issue, "note": note, "price": px, "patterns": patterns_out,
-            "noise_stop": noise_stop, "ob_ctx": ob_ctx}
+            "noise_stop": noise_stop, "ob_ctx": ob_ctx,
+            "fib": fib_ratio(c15, d)}
