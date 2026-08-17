@@ -30,7 +30,8 @@ jobs:
       # محافظ (۱۷ اوت): اگر Pages در حالت «deploy از شاخه» است (build_type
       # legacy)، دیپلوی artifact این‌جا فقط با آن مسابقه می‌دهد و قرمز می‌شود.
       # در آن حالت، سبزِ بی‌کار درست است — پوش gh-pages خودش دیپلوی می‌کند.
-      - id: mode
+      - name: تشخیص حالت Pages
+        id: mode
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -41,18 +42,22 @@ jobs:
             || echo unknown)
           echo "build_type=$bt" >> "$GITHUB_OUTPUT"
           [ "$bt" = "legacy" ] && echo "Pages در حالت شاخه‌ای است — دیپلوی artifact لازم نیست" || true
-      - uses: actions/checkout@v4
+      - name: Checkout gh-pages
         if: steps.mode.outputs.build_type != 'legacy'
+        uses: actions/checkout@v4
         with:
           ref: gh-pages
-      - uses: actions/configure-pages@v5
+      - name: Configure Pages
         if: steps.mode.outputs.build_type != 'legacy'
+        uses: actions/configure-pages@v5
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact
         if: steps.mode.outputs.build_type != 'legacy'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - id: deployment
+      - name: Deploy
+        id: deployment
         if: steps.mode.outputs.build_type != 'legacy'
         uses: actions/deploy-pages@v4
