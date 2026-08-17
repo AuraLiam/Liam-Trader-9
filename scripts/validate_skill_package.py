@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-EXPECTED_IDS = [f"E{i:02d}" for i in range(26)]
+EXPECTED_IDS = [f"E{i:02d}" for i in range(27)]
 
 
 def frontmatter(path: Path) -> dict:
@@ -98,7 +98,7 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
     if not args.quiet:
-        print("LIAM package validation OK: 26 engines, 26 agents, immediate 30s/event-driven policy, live execution disabled.")
+        print("LIAM package validation OK: 27 engines, 27 agents, immediate 30s/event-driven policy, live execution disabled.")
     return 0
 
 

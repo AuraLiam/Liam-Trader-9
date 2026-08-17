@@ -74,7 +74,7 @@ sm.RESEARCH = TMP / "research"
 
 # ── ۱. رجیستری ─────────────────────────────────────────────────────────────
 reg = sm.load_registry()
-check("رجیستری ۲۶ انجین دارد", len(reg["engines"]) == 26)
+check("رجیستری ۲۷ انجین دارد", len(reg["engines"]) == 27)
 check("پایپ‌لاین ۹ پله است", len(reg["knowledge_pipeline"]) == 9)
 check("live_execution=false در رجیستری", reg["live_execution"] is False)
 check("نوشتن مستقیم در production خاموش است",

@@ -75,6 +75,19 @@ def run():
     check("دفتر روی دیسک نوشته شد", df.LEDGER.exists()
           and json.loads(df.LEDGER.read_text())["open"])
 
+    # ۵) مولتی‌تایم دامیننس واقعاً اجرا می‌شود (۱۷ اوت: AttributeError روی
+    # Trendline در تولید — تست باید کل مسیر ۴س/۱س را طی کند، نه فقط پیش‌بینی)
+    from hamid import dominance as dm
+    long_pts = [{"t": now - (3000 - i) * 5 * 60000,
+                 "u": round(8.0 + (i % 60) * 0.003, 3),
+                 "b": round(56.0 - (i % 40) * 0.004, 3)} for i in range(3000)]
+    m = dm.multi_tf(long_pts)
+    check("مولتی‌تایم بدون خطا و با ساختار ۴س/۱س",
+          "note" not in m and "4h" in m["usdt"] and "1h" in m["btc_d"], str(m)[:120])
+    u1 = m["usdt"]["1h"]
+    check("۱س USDT: روند و سطح دارد (یا INSUFFICIENT صادق)",
+          ("trend" in u1 and "px" in u1) or "note" in u1, str(u1)[:120])
+
     print(f"\n✓ همهٔ {OK} آزمون ناظر پیش‌بینی دامیننس گذشت")
 
 

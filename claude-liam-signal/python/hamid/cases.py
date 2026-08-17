@@ -24,10 +24,22 @@ _FIELDS = ("sym", "dir", "entry", "sl", "tp1", "tp2", "opened", "filled",
 
 
 def enrich_recent_losses():
-    """بعد از هر نوبت ثبت پرونده — باختِ بی‌علت باقی نماند (دستور ۱۷ اوت)."""
+    """بعد از هر نوبت ثبت پرونده — باختِ بی‌علت باقی نماند (دستور ۱۷ اوت).
+
+    مسیرهای loss_autopsy به همان ریشهٔ CASES این ماژول قفل می‌شوند؛ وقتی
+    تست CASES را به sandbox برده، کالبدشکافی هم همان‌جا می‌ماند و به دفتر
+    تولید یا حافظه دست نمی‌زند (نشت ۱۷ اوت — پروندهٔ DOGE)."""
     try:
         from hamid import loss_autopsy
-        loss_autopsy.run(window_h=6, write_memory=True)
+        real = CASES == ROOT / "brain" / "cases"
+        old_c, old_o = loss_autopsy.CASES, loss_autopsy.OUT
+        loss_autopsy.CASES = CASES
+        if not real:
+            loss_autopsy.OUT = CASES / "loss-analysis.json"
+        try:
+            loss_autopsy.run(window_h=6, write_memory=real)
+        finally:
+            loss_autopsy.CASES, loss_autopsy.OUT = old_c, old_o
     except Exception:                                # noqa: BLE001
         pass
 

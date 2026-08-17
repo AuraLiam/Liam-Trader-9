@@ -468,7 +468,8 @@ def send_signals(signals, render_chart, limit=8):
                                      {"veto_why": "premortem", "pm_con": pm["con"][:3],
                                       "pm_pro": pm["pro"][:3],
                                       "pattern_align": (pm.get("patterns") or {}).get("align"),
-                                      "patterns": (pm.get("patterns") or {}).get("by_tf")})
+                                      "patterns": (pm.get("patterns") or {}).get("by_tf"),
+                                      "fib_ratio": pm.get("fib")})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
                                   f"بازجویی ۱۵د جلوی {s['sym']} {s['dir']} را گرفت: "
@@ -519,6 +520,7 @@ def send_signals(signals, render_chart, limit=8):
                                   "patterns": ((s.get("premortem") or {}).get("patterns") or {}).get("by_tf"),
                                   "ob_align": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("align"),
                                   "ob_hunts": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("hunts"),
+                                  "fib_ratio": (s.get("premortem") or {}).get("fib"),
                                   # دستور حمید: تی‌پی‌های تجربه‌محور باید قابل شمارش باشند —
                                   # دلایل صدور روی پرونده می‌ماند تا «با تجربه» اثبات‌پذیر باشد
                                   "pm_pro": (s.get("premortem") or {}).get("pro", [])[:3],

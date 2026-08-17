@@ -103,7 +103,7 @@ def _tf_struct(bars, min_bars):
     if tl is not None:
         out["trendline"] = {
             "kind": tl.kind, "touches": tl.touches, "broken": tl.broken,
-            "value_now": round(tl.m * (len(bars) - 1) + tl.c, 3)}
+            "value_now": round(tl.slope * (len(bars) - 1) + tl.intercept, 3)}
     return out
 
 
