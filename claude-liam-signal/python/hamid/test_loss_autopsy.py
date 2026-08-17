@@ -30,6 +30,20 @@ def run():
     d = json.loads((tmp / "2026-08" / "b.json").read_text())
     assert d["autopsy_v1"].startswith("ربطی") and "gave_back" in d["autopsy_causes"]
     print("۲ ✅ غنی‌سازی: بی‌علت و کلیشه‌ای هر دو علت‌دار شدند (v1 حفظ شد)")
+
+    # ۱۷ اوت: فراخوانی enrich بعد از return مرده بود و علت‌یابی هرگز اجرا
+    # نمی‌شد — این محافظ ثابت می‌کند write_cases واقعاً کالبدشکافی را صدا می‌زند.
+    from hamid import cases as _cs
+    old_cases, old_enrich = _cs.CASES, _cs.enrich_recent_losses
+    called = []
+    _cs.CASES = tmp
+    _cs.enrich_recent_losses = lambda: called.append(1)
+    try:
+        _cs.write_cases([case(sym="GUARDUSDT")])
+    finally:
+        _cs.CASES, _cs.enrich_recent_losses = old_cases, old_enrich
+    assert called, "write_cases باید enrich_recent_losses را صدا بزند"
+    print("۳ ✅ محافظ: تسویهٔ پرونده‌ها کالبدشکافی ضرر را واقعاً اجرا می‌کند")
     print("\nهمهٔ آزمون‌های کالبدشکافی گذشت")
 
 

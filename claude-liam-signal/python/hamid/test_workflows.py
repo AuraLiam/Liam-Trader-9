@@ -110,6 +110,29 @@ check("همهٔ uses نسخهٔ پین‌شده دارند", not unpinned)
 if unpinned:
     print(f"      ↳ {unpinned}")
 
+# بلاک ساختاریِ خالی (مثل «env:» بی‌مقدار) = Invalid workflow file در گیت‌هاب؛
+# ۱۷ اوت سه ورک‌فلو را همین‌طور از کار انداخت — این محافظ برگشتش را می‌بندد.
+_STRUCT = {"env", "permissions", "jobs", "steps", "with", "defaults",
+           "concurrency", "strategy", "container", "services"}
+hollow = []
+def _walk(node, path, fname):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k in _STRUCT and v is None:
+                hollow.append(f"{fname}: {path}{k}")
+            _walk(v, f"{path}{k}.", fname)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _walk(v, f"{path}{i}.", fname)
+for f in files:
+    try:
+        _walk(yaml.safe_load(f.read_text()), "", f.name)
+    except yaml.YAMLError:
+        pass  # خطای پارس را چک‌های قبلی می‌گیرند
+check("هیچ بلاک ساختاری خالی نیست (env:/jobs:/steps: بی‌مقدار)", not hollow)
+if hollow:
+    print(f"      ↳ {hollow}")
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
