@@ -210,7 +210,8 @@ jobs:
           cp sw.js      /tmp/ghp/aura/sw.js
           cp manifest.webmanifest /tmp/ghp/aura/ 2>/dev/null || true
           for f in hamid-latest ob-radar classify improve dominance \
-                   pump-radar pump-analysis btc-patterns news telegram-log latest; do
+                   pump-radar pump-analysis btc-patterns news telegram-log latest \
+                   overseer rewards reading loss-analysis; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
             cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
           done
