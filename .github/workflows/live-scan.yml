@@ -49,10 +49,8 @@ concurrency:
   group: live-scan
   cancel-in-progress: true
 
-# نام منبعِ این خط تولید روی پیام‌های تلگرام (دستور حمید ۱۶ اوت).
-# پنل دیگر نام خودش را دارد؛ بدون این، دو منبع در کانال قاتی می‌شوند.
-env:
-
+# برند پیام‌ها از منبع مرکزی telegram.PANEL_NAME می‌آید («لیام تریدر ۹»)؛
+# override محیطی عمداً حذف شد تا برند فقط یک‌جا تعریف باشد.
 jobs:
   scan:
     runs-on: ubuntu-latest
