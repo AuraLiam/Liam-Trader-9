@@ -228,17 +228,10 @@ jobs:
           done
           exit 1
 
-      # پوش به شاخهٔ gh-pages به‌تنهایی سایت را عوض نمی‌کند — دیپلوی Pages از
-      # طریق pages.yml است و کرونش دیر است. بعد از هر انتشار واقعی، همان را
-      # صدا می‌زنیم تا پنل همان لحظه تازه شود.
-      - name: بازانتشار Pages
-        if: steps.ghp.outputs.deployed == '1'
-        run: |
-          curl -sf -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/pages.yml/dispatches" \
-            -d '{"ref":"main"}' || echo "dispatch نشد — کرون نیم‌ساعته جبران می‌کند"
+      # (۱۷ اوت، ریپوی جدید) دیسپچ pages.yml برداشته شد: این‌جا Pages در حالت
+      # «deploy از شاخهٔ gh-pages» است و هر پوش خودش همان لحظه دیپلوی می‌شود
+      # (اندازه‌گیری‌شده: اجراهای «pages build and deployment» همه سبز)؛
+      # دیپلوی artifact با آن مسیر تداخل داشت و هر بار قرمز می‌شد.
 
       # دیده‌بان، این بار بعد از انتشار — تنها جایی که مقایسهٔ پنل با آخرین
       # چرخه معنی دارد. همین‌جاست که اگر انتشار روی gh-pages بشکند، فوراً
