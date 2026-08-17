@@ -106,6 +106,12 @@ jobs:
               return s[:2] + "•" * max(1, len(s) - 4) + s[-2:]
 
           ok_u, ju = call("getUpdates")
+          if not ok_u:
+              line(False, f"getUpdates هم رد شد: {ju.get('description')} — "
+                          "اگر ۴۰۹ است یعنی وبهوک فعال است (مثلاً n8n)")
+          elif not (ju.get("result") or []):
+              line(False, "getUpdates خالی بود — یا Start قدیمی مصرف شده یا "
+                          "وبهوک آپدیت‌ها را می‌بلعد")
           cand = {}
           if ok_u:
               for up in ju.get("result") or []:
