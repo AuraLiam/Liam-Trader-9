@@ -70,5 +70,8 @@ def write_cases(trades, autopsies=None, regime=None):
             n += 1
     if n:
         print(f"دفتر پرونده‌ها: {n} case ثبت شد")
+        try:
+            enrich_recent_losses()   # باختِ بی‌علت باقی نماند (۱۷ اوت)
+        except Exception as e:       # noqa: BLE001 - کالبدشکافی، تسویه را نمی‌کشد
+            print(f"کالبدشکافی ضرر انجام نشد: {type(e).__name__}")
     return n
-    enrich_recent_losses()   # باختِ بی‌علت باقی نماند (۱۷ اوت)

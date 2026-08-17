@@ -681,6 +681,14 @@ def settle_books(report):
         _cases.write_cases(just, autopsies=locals().get("autopsies") or {})
     except Exception as e:                           # noqa: BLE001
         print(f"پرونده‌سازی: {type(e).__name__}")
+    # جایزهٔ انجین‌ها — TP از تجربه ۲× (دستور حمید ۱۷ اوت)
+    try:
+        from hamid import rewards as _rw
+        n_rw = _rw.award(just)
+        if n_rw:
+            act(f"🏅 {n_rw} جایزهٔ انجین ثبت شد (دفتر rewards)")
+    except Exception as e:                           # noqa: BLE001 - جایزه، تسویه را نمی‌کشد
+        print(f"جایزه: {type(e).__name__}")
     try:
         from hamid import memory as _mem2
         newly = [t for t in paper._read(paper.CLOSED)

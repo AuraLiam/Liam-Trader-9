@@ -85,6 +85,39 @@ MIN_BARS_1H = 60      # زیر این، حکم ساختاری صادر نمی‌
 MIN_BARS_4H = 60
 
 
+def _tf_struct(bars, min_bars):
+    """نقشهٔ یک تایم‌فریم برای دامیننس — روش حمید: اول سطح‌ها، بعد خط معتبر.
+
+    خط فقط با ≥۳ برخورد (کانن خطوط روند)؛ نبودِ خط معتبر صادقانه None است."""
+    from hamid import structure as st
+    if len(bars) < min_bars:
+        return {"note": f"INSUFFICIENT ({len(bars)}/{min_bars})"}
+    px = bars[-1]["c"]
+    lv = st.levels(bars)
+    above = sorted(l.price for l in lv if l.price > px)[:2]
+    below = sorted((l.price for l in lv if l.price < px), reverse=True)[:2]
+    out = {"trend": st.trend(bars), "px": round(px, 3),
+           "levels_above": [round(x, 3) for x in above],
+           "levels_below": [round(x, 3) for x in below]}
+    tl = st.trendline(bars)
+    if tl is not None:
+        out["trendline"] = {
+            "kind": tl.kind, "touches": tl.touches, "broken": tl.broken,
+            "value_now": round(tl.m * (len(bars) - 1) + tl.c, 3)}
+    return out
+
+
+def multi_tf(points):
+    """تحلیل مولتی‌تایم دامیننس‌ها — ترتیب دستوری حمید: ۴س سپس ۱س."""
+    out = {}
+    for name, key in (("usdt", "u"), ("btc_d", "b")):
+        b4 = _bars(points, key, 4 * 3_600_000)
+        b1 = _bars(points, key)
+        out[name] = {"4h": _tf_struct(b4, MIN_BARS_4H),
+                     "1h": _tf_struct(b1, MIN_BARS_1H)}
+    return out
+
+
 def structural(points, macro=None):
     """فاز ۲ معماری AuraLiam369 — تحلیل ساختاری مستقل USDT.D و BTC.D.
 
@@ -192,13 +225,28 @@ def run():
         struct = {"regime": "INSUFFICIENT", "note": f"خطای ساختار: {e}"}
     if struct.get("regime") not in (None, "INSUFFICIENT"):
         verdict += f"؛ رژیم ساختاری: {struct['regime']} ({struct.get('why', '')})"
+    try:
+        mtf = multi_tf(series)
+    except Exception as e:                       # noqa: BLE001
+        mtf = {"note": f"خطای مولتی‌تایم: {e}"}
+    # ناظر پیش‌بینی: نمرهٔ سررسیدها + پیش‌بینی مستدل این نوبت (دستور ۱۷ اوت)
+    try:
+        from hamid import dom_forecast
+        fc = dom_forecast.update(series, struct)
+        sb = fc.get("scoreboard") or {}
+        tot = sum(v["n"] for v in sb.values())
+        hit = sum(v["hit"] for v in sb.values())
+        if tot:
+            verdict += f"؛ کارنامهٔ پیش‌بینی: {hit}/{tot} ({round(100*hit/tot)}٪)"
+    except Exception as e:                       # noqa: BLE001 - ناظر، اتاق را نمی‌کشد
+        fc = {"note": f"خطای ناظر پیش‌بینی: {e}"}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({
         "generated": int(time.time() * 1000),
         "usdt_dominance": u, "btc_dominance": b,
         "chg_1h": {"usdt": u1, "btc": b1}, "chg_4h": {"usdt": u4, "btc": b4},
         "points": len(series), "verdict": verdict, "macro": mac,
-        "structure": struct,
+        "structure": struct, "multi_tf": mtf, "forecast": fc,
     }, ensure_ascii=False, indent=1))
     print(f"USDT.D {u} ({'+' if (u1 or 0) >= 0 else ''}{u1}/1h) · "
           f"BTC.D {b} · {verdict}")

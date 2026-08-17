@@ -97,6 +97,38 @@ jobs:
           d = (j.get("description") or "").lower()
           line(False, f"ارسال نشد: {j.get('description')}")
           print()
+
+          # بازیابی: اگر شناسهٔ چت غلط است (مثلاً شناسهٔ خود ربات)، چت واقعی
+          # را از getUpdates پیدا کن — کسی که Start زده آن‌جاست. پیام تست به
+          # همان می‌رود و شناسهٔ درست (پوشیده — ریپو عمومی است) چاپ می‌شود.
+          def masked(cid):
+              s = str(cid)
+              return s[:2] + "•" * max(1, len(s) - 4) + s[-2:]
+
+          ok_u, ju = call("getUpdates")
+          cand = {}
+          if ok_u:
+              for up in ju.get("result") or []:
+                  m = up.get("message") or up.get("edited_message") or {}
+                  c = m.get("chat") or {}
+                  if c.get("id") and c.get("type") == "private":
+                      cand[c["id"]] = c.get("first_name") or c.get("username") or "?"
+          if cand:
+              cid, name = list(cand.items())[-1]
+              ok2, j2 = call("sendMessage", {
+                  "chat_id": cid, "parse_mode": "HTML",
+                  "text": ("<b>تست اتصال — لیام تریدر ۹</b>\n\n"
+                           "توکن ✓ ولی TELEGRAM_CHAT_ID در Secrets غلط است "
+                           "(به جای چت تو، شناسهٔ دیگری گذاشته شده).\n"
+                           f"شناسهٔ درست این چت: <code>{cid}</code>\n\n"
+                           "همین عدد را در Settings → Secrets → Actions "
+                           "به‌جای TELEGRAM_CHAT_ID بگذار تا سیگنال‌ها برسند.")})
+              if ok2:
+                  line(True, f"پیام تست به چتِ «{name}» ({masked(cid)}) رفت — "
+                             "شناسهٔ درست داخل همان پیام تلگرام است")
+                  print("\nSecret را با شناسهٔ داخل پیام عوض کن و دوباره تست بزن.")
+                  sys.exit(1)
+
           if "chat not found" in d:
               print(f"شناسهٔ چت {chat} پیدا نشد، یا هنوز به @{bot['username']} "
                     "پیام نداده‌ای.")
