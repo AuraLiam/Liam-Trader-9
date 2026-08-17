@@ -215,6 +215,8 @@ from hamid import premortem as _pm2, paper as _paper2  # noqa: E402
 
 _tmp2 = Path(_tf.mkdtemp())
 tg.SENT, tg.TGLOG = _tmp2 / "sent.json", _tmp2 / "tglog.json"
+from hamid import execution_gate as _eg               # noqa: E402
+_eg.OUTBOX = _tmp2 / "exec-outbox.json"  # قصد اجرا هم به sandbox، نه دفتر تولید
 _orig_env = (tg.creds, tg._post, _sources.klines, _pm2.review, _paper2.open_from)
 tg.creds = lambda: ("tok", "chat")
 posts = []
