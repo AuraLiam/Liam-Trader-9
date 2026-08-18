@@ -128,7 +128,9 @@ def t_stables_rejected():
     import tempfile
     d = Path(tempfile.mkdtemp())
     old = paper.OPEN
+    old_gl = paper.GATELOG
     paper.OPEN = d / "o.jsonl"
+    paper.GATELOG = d / "viability-gate.json"   # لاگ دروازه هم به sandbox
     try:
         # استاپ ۲٪ — قرارداد ۱۷ اوت: دفتر سیگنال‌گرید ورودِ استاپ‌تنگ
         # (کارمزد ≥0.25R) نمی‌گیرد؛ فیکسچر قدیمی 0.1٪ بود و رد می‌شد.
@@ -151,7 +153,9 @@ def t_viability_gate():
     import tempfile
     d = Path(tempfile.mkdtemp())
     old = paper.OPEN
+    old_gl = paper.GATELOG
     paper.OPEN = d / "o.jsonl"
+    paper.GATELOG = d / "viability-gate.json"   # لاگ دروازه هم به sandbox
     try:
         tight = {"dir": "LONG", "entry": 1.0, "sl": 0.999, "tp1": 1.002,
                  "waiting": False, "symbol": "SOLUSDT"}
@@ -160,8 +164,10 @@ def t_viability_gate():
         exp = dict(tight, stage_tag="vetoed")
         n = paper.open_from([exp], {})
         check("دفتر آزمایش (vetoed) همان ورود را گرفت", n == 1, f"n={n}")
+        check("ردِ دروازه در sandbox ثبت شد، نه دفتر تولید",
+              paper.GATELOG.exists())
     finally:
-        paper.OPEN = old
+        paper.OPEN, paper.GATELOG = old, old_gl
 
 
 def t_no_candle_expiry():

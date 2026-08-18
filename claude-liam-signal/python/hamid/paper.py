@@ -116,10 +116,13 @@ def experience_index(min_n=12):
 
 
 
+GATELOG = ROOT / "signals" / "viability-gate.json"
+
+
 def _append_gatelog(sym, stage, why):
     """ردِ دروازهٔ دوام — برای قیف یادگیری پنل، نه فقط سکوت."""
     try:
-        p = ROOT / "signals" / "viability-gate.json"
+        p = GATELOG
         d = json.loads(p.read_text()) if p.exists() else []
         d.insert(0, {"at": int(time.time() * 1000), "sym": sym,
                      "stage": stage, "why": why})
