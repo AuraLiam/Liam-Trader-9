@@ -257,6 +257,18 @@ if real_brain_learning is not None:
     _b2.LEARNING = real_brain_learning
 stack.read, bt.simulate = orig_read, orig_sim
 
+# ۱۸ اوت: مُهر closed آینده (کندل+۲۴س روی ریپلی تازه) پنجرهٔ بازبینی را
+# مسموم کرد — محافظ: ردیف ریپلی هرگز در آینده بسته نمی‌شود.
+import time as _t3                                    # noqa: E402
+_row = fb.to_paper("XUSDT", {"t": int(_t3.time() * 1000) - 3600_000, "R": 1.5,
+                         "dir": "LONG", "entry": 1.0, "sl": 0.99, "tp1": 1.02,
+                         "trend_4h": "up", "stop_pct": 1.0, "returns": 1,
+                         "impulse": 5, "reactions": 3}, "first") \
+    if hasattr(fb, "to_paper") else None
+if _row is not None:
+    check("مُهر بستنِ ریپلی هرگز در آینده نیست",
+          _row["closed"] <= int(_t3.time() * 1000) + 1000)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
