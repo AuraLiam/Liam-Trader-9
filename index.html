@@ -244,6 +244,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <button class="tab" data-t="single">تحلیل تک‌نماد + الگو</button>
     <button class="tab" data-t="agent">فعالیت‌های ایجنت</button>
     <button class="tab" data-t="radar">رادار پامپ</button>
+    <button class="tab" data-t="scalp">اسکلپ ۱د</button>
     <button class="tab" data-t="graph">گرافی‌فای</button>
     <button class="tab" data-t="bub">حباب‌ها</button>
     <button class="tab" data-t="paper">ترید کاغذی<span class="b" id="cPaper">0</span></button>
@@ -261,7 +262,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     if(window.selectTab){try{window.selectTab(b.dataset.t);return;}catch(x){}}
     var t=b.dataset.t;
     document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("active",x.dataset.t===t);});
-    ["ops","signals","real","net","watch","single","agent","radar","graph","bub","paper","calib","playbook"]
+    ["ops","signals","real","net","watch","single","agent","radar","scalp","graph","bub","paper","calib","playbook"]
       .forEach(function(k){var el=document.getElementById("view-"+k);if(el)el.style.display=k===t?"":"none";});
     document.body.dataset.active=t;
   });
@@ -314,6 +315,14 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div id="agentOut"></div>
   </section>
 
+  <section id="view-scalp" style="display:none">
+    <div class="section-title"><span class="eyebrow">1m scalp · sessions · lev 45-90 (paper)</span><h2>میز اسکلپ ۱ دقیقه</h2></div>
+    <p class="muted" style="margin-top:-6px;max-width:760px;font-size:13.5px">
+      همان IBS+پولبک‌پلاس روی تایم ۱ دقیقه — پیپرمود حرفه‌ای با دفتر جدا، سشن‌ها،
+      بدنه/شدوی کندل‌های قبلی و اهرم ۴۵–۹۰ (فقط کاغذی). عدد پیپر سقف خوش‌بینانه است.
+      تایم ۳۰ ثانیه با سرویس محلی فعال می‌شود؛ عدد ۳۰ثانیه جعل نمی‌شود.</p>
+    <div id="scalpBox" class="muted">در حال خواندن signals/scalp.json …</div>
+  </section>
   <section id="view-radar" style="display:none">
     <div class="section-title"><span class="eyebrow">bitunix top gainers · cluster · 3 layers</span><h2>رادار پامپ خوشه‌ای</h2></div>
     <p class="muted" style="margin-top:-6px;max-width:760px;font-size:13.5px">
@@ -5201,16 +5210,37 @@ function selectTab(t){
   /* مقاوم‌سازی (شکایت حمید: «تب‌ها درست کار نمی‌کنند»): یک view غایب یا
      یک خطای رندر نباید کل سوییچ تب‌ها را بکشد — هر قدم جدا محافظت شده. */
   $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.t===t));
-  ["ops","signals","real","net","watch","single","agent","radar","graph","bub","paper","calib","playbook"]
+  ["ops","signals","real","net","watch","single","agent","radar","scalp","graph","bub","paper","calib","playbook"]
     .forEach(k=>{const el=$("#view-"+k);if(el)el.style.display=k===t?"":"none";});
   /* بلوک‌های خارج از section فقط در تب خودشان — حکم با CSS است (بالا)،
      اینجا فقط تب فعال روی body نوشته می‌شود تا هیچ رندری نتواند نقضش کند. */
   document.body.dataset.active=t;
   const R={ops:"renderOps",paper:"renderReview",real:"renderReal",net:"renderNet",
-           agent:"renderAgent",radar:"renderPumpCloud",graph:"renderGraph",bub:"renderBubbles"};
+           agent:"renderAgent",radar:"renderPumpCloud",graph:"renderGraph",bub:"renderBubbles",
+           scalp:"renderScalpTab"};
   if(R[t])try{window[R[t]]&&window[R[t]]();}catch(err){console.error("render",t,err);}
 }
 window.selectTab=selectTab;
+async function renderScalpTab(){
+  const el=$("#scalpBox"); if(!el)return;
+  try{
+    const j=await fetch("./signals/scalp.json?_="+Date.now()).then(r=>r.json());
+    const b=j.book||{}; const bs=b.by_session||{};
+    const age=Math.round((Date.now()-(j.generated||0))/60000);
+    let h=`<div style="margin:8px 0"><b>دفتر اسکلپ:</b> ${b.n||0} معامله · `+
+      `برد ${b.n?Math.round(100*(b.wins||0)/b.n):"—"}٪ · میانگین R خالص ${b.mean_r_net??"—"} · ${age} دقیقه پیش</div>`;
+    h+="<div style='margin:6px 0'><b>به تفکیک سشن:</b> "+
+      Object.entries(bs).map(([k,v])=>`${k}: ${v.n} (${v.n?Math.round(100*v.wins/v.n):0}٪, ΣR ${v.sum_r})`).join(" · ")+"</div>";
+    if((j.live_setups||[]).length){
+      h+="<div style='margin:10px 0'><b>ستاپ زنده:</b></div>"+j.live_setups.map(s=>
+        `<div class="muted">⚡ ${s.sym} ${s.dir} @ ${s.entry} · SL ${s.sl} · TP ${s.tp1} · اهرم ${s.lev} · ${s.session}</div>`).join("");
+    } else { h+="<div class='muted'>ستاپ زندهٔ اسکلپ الان نیست — NO TRADE معتبر است.</div>"; }
+    h+="<div style='margin:10px 0'><b>آخرین بسته‌ها:</b></div>"+ (j.recent||[]).slice(0,12).map(t=>
+      `<div class="muted">${(t.R_net||0)>0?"🟢":"🔴"} ${t.sym} ${t.dir} → ${t.outcome} (${t.R_net}R · اهرم ${t.lev} · ${t.session})</div>`).join("");
+    el.innerHTML=h;
+  }catch(e){el.textContent="scalp.json هنوز منتشر نشده — اولین اجرای میز اسکلپ در راه است";}
+}
+window.renderScalpTab=renderScalpTab;
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)selectTab(b.dataset.t);});
 /* خوددرمانی کش — شکایت حمید: «روی تب کلیک می‌کنم هیچ اتفاقی نمی‌افتد».
    در مرورگر تمیز، تب‌ها سالم تست شدند؛ پس گیر از نسخهٔ کش‌شدهٔ کهنه است.
