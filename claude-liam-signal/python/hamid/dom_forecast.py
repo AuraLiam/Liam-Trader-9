@@ -142,11 +142,13 @@ def update(points, struct, now_ms=None):
     """یک نوبت کامل: نمره‌دهی سررسیدها + صدور پیش‌بینی تازه. خروجی برای پنل."""
     st = _load()
     graded_now = grade_due(st, points, now_ms)
-    fresh = make_forecast(points, struct, now_ms)
-    # ضدتکرار: برای هر (متریک، افق) فقط یک پیش‌بینی باز نگه می‌داریم — تازه جایگزین
-    seen = {(f["metric"], f["horizon_min"]) for f in fresh}
-    st["open"] = [f for f in st["open"]
-                  if (f["metric"], f["horizon_min"]) not in seen] + fresh
+    # ضدتکرار درست (درس ۱۸ اوت): پیش‌بینی باز تا سررسیدش **دست‌نخورده می‌ماند**.
+    # نسخهٔ اول تازه را جایگزین می‌کرد و چون زنجیره هر ~۳ دقیقه می‌چرخد،
+    # هیچ پیش‌بینی‌ای به سررسید نمی‌رسید و کارنامه ابدی خالی می‌ماند.
+    open_slots = {(f["metric"], f["horizon_min"]) for f in st["open"]}
+    fresh = [f for f in make_forecast(points, struct, now_ms)
+             if (f["metric"], f["horizon_min"]) not in open_slots]
+    st["open"] += fresh
     _save(st)
     return {"made_now": [{k: f[k] for k in
                           ("metric", "horizon_min", "path", "reasons")}

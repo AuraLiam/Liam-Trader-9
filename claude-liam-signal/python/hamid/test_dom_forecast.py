@@ -74,6 +74,20 @@ def run():
           f"{out1['open']} vs {out2['open']}")
     check("دفتر روی دیسک نوشته شد", df.LEDGER.exists()
           and json.loads(df.LEDGER.read_text())["open"])
+    # درس ۱۸ اوت: پیش‌بینی باز نباید با هر نوبت تازه شود وگرنه هرگز به
+    # سررسید نمی‌رسد و کارنامه ابدی خالی می‌ماند — due باید ثابت بماند
+    dues1 = sorted(f["due"] for f in json.loads(df.LEDGER.read_text())["open"])
+    df.update(pts, struct, now + 120000)
+    dues2 = sorted(f["due"] for f in json.loads(df.LEDGER.read_text())["open"])
+    check("سررسید پیش‌بینی باز با نوبت‌های بعدی عوض نمی‌شود", dues1 == dues2,
+          f"{dues1[:2]} vs {dues2[:2]}")
+    # و بعد از عبور از سررسید، واقعاً نمره می‌خورد و جای خالی دوباره پر می‌شود
+    later = now + 35 * 60000
+    pts2 = pts + [{"t": later, "u": pts[-1]["u"], "b": pts[-1]["b"]}]
+    out3 = df.update(pts2, struct, later)
+    check("سررسیدها در چرخهٔ واقعی نمره خوردند", out3["graded_now"] >= 2,
+          str(out3))
+    check("کارنامه دیگر خالی نیست", out3["scoreboard"], str(out3["scoreboard"]))
 
     # ۵) مولتی‌تایم دامیننس واقعاً اجرا می‌شود (۱۷ اوت: AttributeError روی
     # Trendline در تولید — تست باید کل مسیر ۴س/۱س را طی کند، نه فقط پیش‌بینی)
