@@ -86,7 +86,11 @@ def to_paper(sym, tr, stage):
            "returns": tr.get("returns"),
            "impulse": tr.get("impulse"),
            "reactions": tr.get("reactions"),
-           "dir": tr.get("dir")}
+           "dir": tr.get("dir"),
+           # اندیکاتورهای سنجشی (۱۸ اوت) — شرط‌های CI از why می‌خوانند
+           "ema200_align": tr.get("ema200_align"),
+           "supertrend_align": tr.get("supertrend_align"),
+           "ict_align": tr.get("ict_align")}
     r = tr["R"]
     return {"sym": sym, "dir": tr["dir"],
             "entry": tr.get("entry"), "sl": tr.get("sl"), "tp1": tr.get("tp1"),
@@ -157,6 +161,13 @@ def walk_both(sym, c15, c1h, after_ms=0, cap=CAP_PER_SYMBOL, deadline=None):
             i += STEP
             continue
         s = r.setup
+        # اندیکاتورهای سنجشی روی گذشته هم مهر می‌خورند (دستور ۱۸ اوت):
+        # EMA200/سوپرترند/ICT در لحظهٔ تصمیم تاریخی — بدون نگاه به آینده.
+        try:
+            from hamid import tv_indicators as _tv
+            tv_snap = _tv.snapshot(c15[:i + 1], s["dir"])
+        except Exception:                             # noqa: BLE001
+            tv_snap = {}
         out.append(to_paper(sym, {
             "t": now, "dir": s["dir"], "R": R,
             "entry": s.get("entry"), "sl": s.get("sl"), "tp1": s.get("tp1"),
@@ -164,6 +175,7 @@ def walk_both(sym, c15, c1h, after_ms=0, cap=CAP_PER_SYMBOL, deadline=None):
             "returns": (s.get("block") or {}).get("returns"),
             "impulse": (s.get("block") or {}).get("impulse"),
             "reactions": (s.get("on_level") or {}).get("reactions"),
+            **tv_snap,
         }, "first" if s.get("waiting") else "second"))
         last_t = now
         busy_until = i + HOLD_WINDOW
