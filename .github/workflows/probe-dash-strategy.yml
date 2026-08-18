@@ -1,0 +1,50 @@
+# کاوشگر استراتژی داشبورد — «چرا پوزیشن باز نکرده؟» را با عدد جواب می‌دهد.
+# دستی اجرا می‌شود؛ روی ۳۰ ارز برتر همان liam9_strategy.py داشبورد را
+# می‌چرخاند و قیف NO_SIGNAL را گزارش می‌کند.
+name: Probe dashboard strategy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Run strategy over top symbols
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 - <<'PY'
+          import json, collections, sys
+          sys.path.insert(0, '.')
+          import liam9_strategy as st
+          from hamid.trainer import top_symbols
+          st.sync_params()
+          syms = top_symbols(30)
+          dist = collections.Counter()
+          sigs = []
+          for s in syms:
+              try:
+                  r = st.signal(s)
+              except Exception as e:
+                  dist[f"خطا: {type(e).__name__}"] += 1
+                  continue
+              if r["action"] == "NO_SIGNAL":
+                  why = str(r.get("why", "?"))
+                  key = why.split("—")[0].split("(")[0].strip()[:40]
+                  dist[key] += 1
+              else:
+                  dist["سیگنال ✅"] += 1
+                  sigs.append(r)
+          print("=== قیف استراتژی داشبورد روی", len(syms), "ارز ===")
+          for k, v in dist.most_common():
+              print(f"  {v:3d}  {k}")
+          for r in sigs:
+              print("SIGNAL:", json.dumps(r, ensure_ascii=False)[:300])
+          PY
