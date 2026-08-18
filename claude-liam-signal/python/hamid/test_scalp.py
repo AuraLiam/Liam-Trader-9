@@ -73,6 +73,32 @@ def run():
     check("تریل: برگشت بعد از ⅓ = trail با زیان تقریباً صفر",
           out == "trail" and r > -0.35, f"{out} {r}")
 
+    # ۴ب) محافظ مرز: کندل‌های نارس (بدون آیندهٔ کافی) نسوزند.
+    # کلاس خطای ۱۸ اوت: frontier تا cd[-1] جلو می‌رفت و دفتر یخ می‌زد.
+    cd_f = mk([100.0] * 200)
+    _, fr = scalp.replay_symbol("X", cd_f, 0)
+    limit_t = cd_f[len(cd_f) - scalp.HOLD_BARS - 3]["t"]
+    check("مرز از آخرین کندل ارزیابی‌شدنی جلوتر نمی‌رود",
+          fr <= limit_t < cd_f[-1]["t"], f"fr={fr} limit={limit_t}")
+    # کندلی که امروز نارس بود، بعد از رسیدن آیندهٔ کافی باید ارزیابی شود
+    fire2 = cd_f[190]["t"]                       # دیروز نارس (> limit)
+    old_d2 = scalp.decide
+    scalp.decide = lambda win, now_ms=None: (
+        {"dir": "LONG", "entry": win[-1]["c"], "sl": win[-1]["c"] * 0.993,
+         "tp1": win[-1]["c"] * 1.0105, "stop_pct": 0.7, "fee_r": 0.214,
+         "ibs": 0.1, "session": "overlap", "lev": 45,
+         "decisive_prev": True, "shadow_sweep": False}
+        if win[-1]["t"] == fire2 else None)
+    try:
+        rows0, fr0 = scalp.replay_symbol("X", cd_f, 0)
+        cd_g = cd_f + mk([100.0] * 100, t0=cd_f[-1]["t"] + 60000)
+        rows1, _ = scalp.replay_symbol("X", cd_g, fr0)
+        check("کندل نارسِ دیروز، امروز ارزیابی شد",
+              len(rows0) == 0 and len(rows1) == 1,
+              f"{len(rows0)} {len(rows1)}")
+    finally:
+        scalp.decide = old_d2
+
     # ۵) run() فقط در sandbox: دفتر و state منحرف؛ لوله‌کشی با انجین تزریقی
     # (الگوی test_fill_books — منطق decide بالا جدا سنجیده شد)
     tmp = Path(tempfile.mkdtemp())

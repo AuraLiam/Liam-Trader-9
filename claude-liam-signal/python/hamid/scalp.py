@@ -150,8 +150,12 @@ def simulate(cd, i, s):
 
 
 def replay_symbol(sym, cd, after_ms=0, cap=CAP_PER_SYMBOL):
-    rows, i, last_t = [], 80, after_ms
-    while i < len(cd) - HOLD_BARS - 2 and len(rows) < cap:
+    # کندل‌های انتهایی (HOLD_BARS+2 آخر) آیندهٔ کافی برای شبیه‌سازی ندارند؛
+    # مرز فقط تا آخرین کندلِ واقعاً ارزیابی‌شده جلو می‌رود، نه cd[-1] —
+    # وگرنه هر اجرا کندل‌های تازه را بدون ارزیابی می‌سوزاند و دفتر یخ می‌زند.
+    rows, i = [], 80
+    limit = len(cd) - HOLD_BARS - 2
+    while i < limit and len(rows) < cap:
         now = cd[i]["t"]
         if now <= after_ms:
             i += 2
@@ -178,10 +182,12 @@ def replay_symbol(sym, cd, after_ms=0, cap=CAP_PER_SYMBOL):
                              "shadow_sweep": s["shadow_sweep"],
                              "pnl_pct_lev": round((r - fee) * s["stop_pct"]
                                                   * s["lev"], 2)}})
-        last_t = now
         i += HOLD_BARS
-    return rows, (cd[-1]["t"] if rows or i >= len(cd) - HOLD_BARS - 2
-                  else last_t)
+    if len(rows) >= cap and i < limit:
+        frontier = cd[i - 1]["t"] if i > 0 else after_ms
+    else:
+        frontier = cd[limit - 1]["t"] if limit > 0 else after_ms
+    return rows, max(frontier, after_ms)
 
 
 def run(symbols=None, quiet=False):
