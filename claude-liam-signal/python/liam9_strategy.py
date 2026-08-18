@@ -278,3 +278,60 @@ if __name__ == "__main__":
         v = sync_params()
         print(f"پارامترها: {v or 'پیش‌فرض (اتصال نشد)'}")
         print(json.dumps(signal(sym), ensure_ascii=False, indent=1))
+
+
+# ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
+#
+# بارگذار داشبورد کلاس می‌خواهد. اگر BaseStrategy خود داشبورد در مسیر باشد
+# از همان ارث می‌بریم؛ نبود = یک پایهٔ خنثی، که فایل همه‌جا بارگذاری شود.
+try:
+    from strategy_base import BaseStrategy            # قالب رایج داشبوردها
+except Exception:                                     # noqa: BLE001
+    try:
+        from base_strategy import BaseStrategy
+    except Exception:                                 # noqa: BLE001
+        class BaseStrategy:                           # پایهٔ خنثی
+            pass
+
+
+class Liam9Strategy(BaseStrategy):
+    """استراتژی رسمی پنل لیام تریدر ۹ — پوستهٔ کلاسی روی همان هسته."""
+
+    meta = {
+        "name": "لیام تریدر ۹ — IBS + پولبک",
+        "id": "liam9-ibs-pullback",
+        "version": PARAMS["version"],
+        "author": "لیام تریدر ۹",
+        "timeframes": ["4h", "1h", "15m"],
+        "market": "crypto-futures",
+        "description": ("سلسله‌مراتب روند ۴س/۱س → پولبک ۱۵د در جهت روند → "
+                        "تأیید IBS → استاپ بیرون نویز → دروازهٔ کارمزد؛ "
+                        "NO_SIGNAL تصمیم معتبر است"),
+    }
+
+    def __init__(self, *a, **kw):
+        try:
+            super().__init__(*a, **kw)
+        except Exception:                             # noqa: BLE001
+            pass
+        sync_params()
+        self.meta["version"] = PARAMS["version"]
+
+    # هر سه نام رایجِ نقطهٔ ورود، به یک هسته می‌رسند —
+    # داشبورد هر کدام را صدا بزند جواب می‌گیرد.
+    def generate_signal(self, symbol, c4h=None, c1h=None, c15=None, **kw):
+        if c4h and c1h and c15:
+            return analyze(symbol, c4h, c1h, c15)
+        return signal(symbol)
+
+    def on_bar(self, symbol, candles=None, **kw):
+        """داشبوردهایی که کندل ۱۵د می‌دهند؛ تایم‌های بالا را خودش می‌گیرد."""
+        if candles and len(candles) >= 60:
+            c1h = fetch_klines(symbol, "1h", 260)
+            c4h = fetch_klines(symbol, "4h", 260)
+            if c1h and c4h:
+                return analyze(symbol, c4h, c1h, candles)
+        return self.generate_signal(symbol, **kw)
+
+    def run(self, symbol, **kw):
+        return self.generate_signal(symbol, **kw)
