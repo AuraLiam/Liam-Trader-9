@@ -97,7 +97,9 @@ def to_paper(sym, tr, stage):
                         "trail" if r > 0 else
                         "stop" if r <= -0.9 else "timeout"),
             "R": round(r, 3), "tf": "15m",
-            "closed": tr["t"] + 96 * 900_000}
+            # ۱۸ اوت: «کندل + ۲۴س» روی ریپلیِ نزدیک به حال، مُهرِ آینده می‌ساخت
+            # و پنجرهٔ بازبینی ۲ساعته را مسموم می‌کرد — سقف: همین لحظه.
+            "closed": min(tr["t"] + 96 * 900_000, int(time.time() * 1000))}
 
 
 def walk_both(sym, c15, c1h, after_ms=0, cap=CAP_PER_SYMBOL, deadline=None):
