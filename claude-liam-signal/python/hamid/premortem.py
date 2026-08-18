@@ -358,7 +358,13 @@ def review(s, c15):
     if noise_stop:
         issue = False                     # وتوی سخت — دستور حمید ۱۲ اوت
         note += " · ⛔ استاپ داخل نویز — وتوی سخت"
+    # اندیکاتورهای سنجشی (۱۸ اوت): EMA200/سوپرترند/ICT — فقط ثبت، حکم با CI
+    try:
+        from hamid import tv_indicators as _tv
+        tv_snap = _tv.snapshot(c15, d)
+    except Exception:                                # noqa: BLE001
+        tv_snap = {}
     return {"pro": pro, "con": con, "pro_w": pro_w, "con_w": con_w,
             "issue": issue, "note": note, "price": px, "patterns": patterns_out,
             "noise_stop": noise_stop, "ob_ctx": ob_ctx,
-            "fib": fib_ratio(c15, d)}
+            "fib": fib_ratio(c15, d), "tv": tv_snap}
