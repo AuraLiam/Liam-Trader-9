@@ -1,0 +1,65 @@
+# میز اسکلپ ۱ دقیقه — دستور حمید ۱۸ اوت. دقایق فرد (درس اندازه‌گیری‌شده:
+# کرون‌های */N شلوغ‌اند و جاب می‌افتد). هر نوبت: ریپلی ۱m + ستاپ زنده + پنل.
+name: Scalp desk (1m)
+
+on:
+  schedule:
+    - cron: "3,18,33,48 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scalp-desk
+  cancel-in-progress: false
+
+jobs:
+  scalp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_scalp
+      - name: Run scalp desk
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.scalp
+      - name: Publish
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add brain/paper signals/scalp.json
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "میز اسکلپ $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && break
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+      - name: Publish to panel (gh-pages)
+        run: |
+          git fetch origin gh-pages
+          rm -rf /tmp/ghp && git worktree add /tmp/ghp origin/gh-pages --detach
+          mkdir -p /tmp/ghp/signals
+          cp signals/scalp.json /tmp/ghp/signals/ 2>/dev/null || exit 0
+          cd /tmp/ghp
+          git add signals
+          git diff --cached --quiet && { echo "unchanged"; exit 0; }
+          git commit -q -m "اسکلپ $(date -u '+%H:%M') UTC"
+          for a in 1 2 3 4 5; do
+            git push origin HEAD:gh-pages && exit 0
+            git fetch origin gh-pages || true
+            git rebase origin/gh-pages || { git rebase --abort; exit 1; }
+            sleep $((a * 3))
+          done
+          exit 1

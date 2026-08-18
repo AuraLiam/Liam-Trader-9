@@ -100,7 +100,8 @@ def experience_index(min_n=12):
         # دروازه‌شل و آزمایش‌ها (پولبک اول/ایندوسمنت) و وتوشده‌ها معیار
         # منصفانه‌ای برای رد سیگنال واقعی همان ارز نیستند.
         if (t.get("why") or {}).get("stage") in ("practice", "first",
-                                                 "inducement", "vetoed", "v2"):
+                                                 "inducement", "vetoed", "v2",
+                                                 "scalp"):
             continue
         idx.setdefault((t["sym"], t["dir"]), []).append(t["R"])
     out = {}
@@ -161,7 +162,7 @@ def open_from(setups, context):
         # دفترهای آزمایش/کنترل (first/vetoed/inducement/practice/v2) عمداً
         # مستثنا هستند — کارشان اندازه‌گیری است، نه سود.
         _stage = key[2]
-        if _stage not in ("first", "vetoed", "inducement", "practice", "v2"):
+        if _stage not in ("first", "vetoed", "inducement", "practice", "v2", "scalp"):
             try:
                 from hamid import fees as _fees
                 _fr = _fees.cost_in_r(float(s["entry"]), float(s["sl"]),
@@ -399,7 +400,7 @@ def _equity():
     # چهار دفتر جدا: سیگنال‌شده (رکورد اصلی)، دو آزمایش، میز تمرین (دروازهٔ
     # شل برای چندبرابر کردن نمونهٔ یادگیری) و سیگنال‌های آلارم. قاطی کردنشان
     # رکورد استراتژی سیگنال‌شده را ناخوانا می‌کند.
-    _aside = ("first", "inducement", "practice", "alarm", "vetoed")
+    _aside = ("first", "inducement", "practice", "alarm", "vetoed", "scalp")
 
     def _stage(t):
         return (t.get("why") or {}).get("stage") or ""
@@ -410,6 +411,7 @@ def _equity():
     inducements = [t for t in closed if (t.get("why") or {}).get("stage") == "inducement"]
     practices = [t for t in closed if (t.get("why") or {}).get("stage") == "practice"]
     alarm_trades = [t for t in closed if (t.get("why") or {}).get("stage") == "alarm"]
+    scalps = [t for t in closed if (t.get("why") or {}).get("stage") == "scalp"]
     # سیگنال‌های ارسالی اسکن (IBS/SMC) — بعد از استاپ زاما اضافه شد: هر چه به
     # تلگرام می‌رود باید تا نتیجه دنبال شود وگرنه ضررِ واقعی درس نمی‌شود.
     sent_scan = [t for t in closed if _stage(t).startswith("sig-")]
@@ -439,6 +441,7 @@ def _equity():
          "experiments_inducement": run_book(inducements),
          "practice_desk": run_book(practices),
          "alarm_signals": run_book(alarm_trades),
+         "scalp_desk": run_book(scalps),
          "sent_scan_signals": run_book(sent_scan),
          # نگرانی حمید (۱۴ اوت): «اطلاعات پنل مجدد صفر شده بود». صفر نشده
          # بود — سرتیتر فقط دفتر سیگنال‌شده را می‌گفت و ۴ دفتر دیگر پنهان
@@ -469,6 +472,7 @@ def _equity():
                               and t.get("outcome") != "expired")}
              for k, v in (("signalled", signalled), ("first_pullback", experiments),
                           ("inducement", inducements), ("practice", practices),
+                          ("scalp", scalps),
                           ("alarm", alarm_trades), ("sent_scan", sent_scan))},
          "recent": [public(t) for t in recent],
          "updated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
@@ -591,7 +595,7 @@ def reasons(verbose=True):
     Both numbers are printed, because the uncorrected one is what a naive
     version of this would have believed, and seeing the gap is the point.
     """
-    _siggrade = lambda st: (st not in ("practice", "first", "inducement", "vetoed", "v2"))  # noqa: E731
+    _siggrade = lambda st: (st not in ("practice", "first", "inducement", "vetoed", "v2", "scalp"))  # noqa: E731
     trades = [t for t in _read(CLOSED)
               if t.get("R") is not None
               and _siggrade((t.get("why") or {}).get("stage") or "")]
