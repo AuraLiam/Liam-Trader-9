@@ -1,6 +1,6 @@
 {
- "generated": 1787051249362,
- "generatedText": "2026-08-18 11:07 UTC",
+ "generated": 1787051423292,
+ "generatedText": "2026-08-18 11:10 UTC",
  "source": "کندل واقعی بایننس، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -9,22 +9,22 @@
   "15m"
  ],
  "counts": {
-  "SIGNAL": 39,
-  "ARMED": 82,
-  "PULLBACK_1": 4,
-  "WATCH": 92
+  "SIGNAL": 40,
+  "ARMED": 81,
+  "PULLBACK_1": 5,
+  "WATCH": 91
  },
  "per_strategy": {
   "smc": {
    "name": "کانال + اردر بلاک",
    "signals": 4,
    "armed": 5,
-   "watching": 92
+   "watching": 91
   },
   "ibs": {
    "name": "IBS + پولبک",
-   "signals": 35,
-   "armed": 77,
+   "signals": 36,
+   "armed": 76,
    "watching": 0
   }
  },
@@ -133,6 +133,18 @@
    "strategyName": "کانال + اردر بلاک",
    "price": 0.2896,
    "now": 0.2896,
+   "distancePct": 0.0,
+   "why": "پولبک اول تمام شد ولی هم‌سویی کم بود — منتظر پولبک دوم",
+   "stage": "PULLBACK_1"
+  },
+  {
+   "sym": "WLFIUSDT",
+   "tf": "5m",
+   "dir": "LONG",
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
+   "price": 0.06,
+   "now": 0.06,
    "distancePct": 0.0,
    "why": "پولبک اول تمام شد ولی هم‌سویی کم بود — منتظر پولبک دوم",
    "stage": "PULLBACK_1"
@@ -266,18 +278,6 @@
    "price": 0.3236,
    "now": 0.3256,
    "distancePct": 0.6180469715698398,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "TAOUSDT",
-   "tf": "5m",
-   "dir": "LONG",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 192.2,
-   "now": 193.4,
-   "distancePct": 0.6243496357960547,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -511,12 +511,12 @@
   }
  ],
  "learning": {
-  "experiences": 101174,
+  "experiences": 101201,
   "heldBack": 13,
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": 0.971
+  "btcChange": 1.028
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -978,12 +978,12 @@
    "tf": "5m",
    "stage": "SIGNAL",
    "dir": "SHORT",
-   "entry": 6.32,
+   "entry": 6.322,
    "sl": 6.361025999999999,
-   "tp1": 6.258461000000002,
-   "tp2": 6.217435000000004,
+   "tp1": 6.263461000000001,
+   "tp2": 6.224435000000003,
    "rr": 1.5,
-   "price": 6.32,
+   "price": 6.322,
    "conf": null,
    "ev": null,
    "quality": 94,
@@ -1001,13 +1001,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": null,
-   "lastClose": 1787050800000,
+   "lastClose": 1787051100000,
    "ob": {
     "low": 6.318,
     "high": 6.342
    },
    "choch": 1,
-   "barsAgo": 38,
+   "barsAgo": 39,
    "inOB": 1,
    "nearOB": 0,
    "elite": false,
@@ -1251,6 +1251,53 @@
     "n": 360,
     "hit": 35.6,
     "ev": 0.111
+   }
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "TAOUSDT",
+   "tf": "5m",
+   "stage": "SIGNAL",
+   "dir": "LONG",
+   "entry": 192.2,
+   "sl": 191.424,
+   "tp1": 193.36399999999998,
+   "tp2": 194.13999999999993,
+   "rr": 1.5,
+   "price": 193.3,
+   "conf": null,
+   "ev": null,
+   "quality": 60,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": null,
+   "lastClose": 1787051100000,
+   "ob": {
+    "low": 192,
+    "high": 192.4
+   },
+   "choch": 0,
+   "barsAgo": 21,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 360,
+    "hit": 43.1,
+    "ev": 0.24
    }
   },
   {
@@ -1500,7 +1547,7 @@
    "tp1": 0.0598041,
    "tp2": 0.0595735,
    "rr": 1.5,
-   "price": 0.0598,
+   "price": 0.06,
    "conf": null,
    "ev": null,
    "quality": 82,
@@ -1518,13 +1565,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": null,
-   "lastClose": 1787050800000,
+   "lastClose": 1787051100000,
    "ob": {
     "low": 0.0601,
     "high": 0.0602
    },
    "choch": 1,
-   "barsAgo": 29,
+   "barsAgo": 30,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -2714,13 +2761,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 360 مورد مشابه، برد 18.6٪، انتظار -0.37R",
-   "lastClose": 1787050800000,
+   "lastClose": 1787051100000,
    "ob": {
     "low": 44.52,
     "high": 44.57
    },
    "choch": 0,
-   "barsAgo": 1,
+   "barsAgo": 2,
    "inOB": 1,
    "nearOB": 0,
    "elite": false,
@@ -3445,7 +3492,7 @@
    "tp1": 16.822470000000003,
    "tp2": 16.907450000000004,
    "rr": 1.5,
-   "price": 17.24,
+   "price": 17.28,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -3463,13 +3510,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1787050800000,
+   "lastClose": 1787051100000,
    "ob": {
     "low": 16.66,
     "high": 16.73
    },
    "choch": 0,
-   "barsAgo": 3,
+   "barsAgo": 4,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3760,53 +3807,6 @@
     "n": 0,
     "hit": null,
     "ev": null
-   }
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "TAOUSDT",
-   "tf": "5m",
-   "stage": "ARMED",
-   "dir": "LONG",
-   "entry": 192.2,
-   "sl": 191.424,
-   "tp1": 193.36399999999998,
-   "tp2": 194.13999999999993,
-   "rr": 1.5,
-   "price": 193.4,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1787050800000,
-   "ob": {
-    "low": 192,
-    "high": 192.4
-   },
-   "choch": 0,
-   "barsAgo": 20,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 360,
-    "hit": 43.1,
-    "ev": 0.24
    }
   },
   {
@@ -4479,7 +4479,7 @@
    "tp1": 0.053895845,
    "tp2": 0.054553075000000006,
    "rr": 1.5,
-   "price": 0.05806,
+   "price": 0.05769,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4497,13 +4497,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1787050800000,
+   "lastClose": 1787051100000,
    "ob": {
     "low": 0.05241,
     "high": 0.05341
    },
    "choch": 0,
-   "barsAgo": 8,
+   "barsAgo": 9,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -5264,6 +5264,53 @@
     "n": 60,
     "hit": 35.0,
     "ev": 0.092
+   }
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "NEARUSDT",
+   "tf": "15m",
+   "stage": "ARMED",
+   "dir": "SHORT",
+   "entry": 1.649,
+   "sl": 1.6549499999999997,
+   "tp1": 1.6400750000000004,
+   "tp2": 1.634125000000001,
+   "rr": 1.5,
+   "price": 1.616,
+   "conf": null,
+   "ev": null,
+   "quality": 78,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": null,
+   "lastClose": 1787049900000,
+   "ob": {
+    "low": 1.648,
+    "high": 1.65
+   },
+   "choch": 1,
+   "barsAgo": 14,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 360,
+    "hit": 35.6,
+    "ev": 0.111
    }
   }
  ],
