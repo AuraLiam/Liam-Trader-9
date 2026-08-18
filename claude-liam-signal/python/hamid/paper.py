@@ -116,10 +116,13 @@ def experience_index(min_n=12):
 
 
 
+GATELOG = ROOT / "signals" / "viability-gate.json"
+
+
 def _append_gatelog(sym, stage, why):
     """ردِ دروازهٔ دوام — برای قیف یادگیری پنل، نه فقط سکوت."""
     try:
-        p = ROOT / "signals" / "viability-gate.json"
+        p = GATELOG
         d = json.loads(p.read_text()) if p.exists() else []
         d.insert(0, {"at": int(time.time() * 1000), "sym": sym,
                      "stage": stage, "why": why})
@@ -559,6 +562,12 @@ CONDITIONS = [
      lambda w: w.get("fib_ratio") is not None and 0.5 <= w["fib_ratio"] <= 0.705),
     ("پولبک کم‌عمق فیبو (<۰.۳۸)",
      lambda w: w.get("fib_ratio") is not None and w["fib_ratio"] < 0.382),
+    # سؤال حمید (۱۸ اوت): «وقتی تجربه این‌قدر خوب بوده چرا بیشتر استفاده
+    # نشده؟» — عدد خام (برد ۸۷.۹٪ با تجربه) سوگیری انتخاب دارد: ستاپی که
+    # حافظه برایش شاهد دارد، از اول ستاپ قوی‌تری است. حکم واقعی را همین
+    # شرط با بوت‌استرپ روزانه‌بلوکی و تصحیح بونفرونی می‌دهد؛ اگر CI از صفر
+    # رد شد، شل کردن کف تجربه (۱۲→۸) به‌عنوان آزمایش نسخه‌دار مطرح می‌شود.
+    ("با تجربهٔ حافظه صادر شد", lambda w: bool(w.get("exp_used"))),
 ]
 
 
