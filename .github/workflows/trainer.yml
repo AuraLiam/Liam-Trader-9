@@ -8,7 +8,7 @@ name: Practice trainer (hourly)
 
 on:
   schedule:
-    - cron: "41 * * * *"          # دقیقهٔ ۴۱ — دور از ازدحام چرخه‌های دیگر
+    - cron: "11,41 * * * *"       # ۱۸ اوت، دستور حمید: توان میز تمرین ×۲ — دو دقیقهٔ فرد
   workflow_dispatch:
 
 permissions:
@@ -54,7 +54,7 @@ jobs:
       # فقط یک دقیقه‌اش را می‌گیرد، پس این وقت بی‌استفاده می‌ماند.
       - name: پرکردن دفتر پولبک اول/دوم از تاریخ
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.fill_books --symbols 40 --bars 1200 --budget 1500 || true
+        run: python3 -m hamid.fill_books --symbols 80 --bars 1200 --budget 1500 || true
 
       # دسته‌بندی بلافاصله بعد از تمرین: «کدام استراتژی در کدام تایم‌فریم،
       # کدام اردر بلاک روی کدام ارز» — روی همان معامله‌هایی که همین الان
