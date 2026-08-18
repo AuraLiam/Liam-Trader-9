@@ -166,6 +166,60 @@ def _post(token, method, fields, files=None, mirror=True):
     return resp
 
 
+# ── خوددرمانی chat_id (دستور حمید، ۱۸ اوت) ─────────────────────────────────
+#
+# سه اجرای مستقل نشان داد TELEGRAM_CHAT_ID اشتباهاً شناسهٔ خود ربات است و
+# تلگرام «bot can't send messages to the bot» می‌دهد. به‌جای سکوت تا اصلاح
+# دستی Secret: اگر ارسال با همین کلاس خطا رد شد، چت واقعی از getUpdates
+# کشف می‌شود (کسی که به ربات پیام داده)، ارسال همان‌جا تکرار می‌شود و یک
+# پیام یک‌بارمصرف با شناسهٔ درست به همان چت می‌رود تا Secret اصلاح شود.
+# شناسهٔ کشف‌شده فقط در حافظهٔ همین اجرا می‌ماند — ریپو عمومی است و
+# chat_id روی دیسک/لاگ کامل نمی‌نشیند (در لاگ فقط پوشیده).
+_HEALED_CHAT = None
+_HEAL_NOTICED = False
+_BAD_CHAT_ERRS = ("can't send messages to the bot", "chat not found",
+                  "can't initiate conversation")
+
+
+def _discover_chat(token):
+    global _HEALED_CHAT
+    if _HEALED_CHAT:
+        return _HEALED_CHAT
+    try:
+        req = urllib.request.Request(f"{API}/bot{token}/getUpdates")
+        with urllib.request.urlopen(req, timeout=20) as r:
+            ups = json.load(r).get("result") or []
+    except Exception:                                # noqa: BLE001
+        return None
+    for up in reversed(ups):
+        m = up.get("message") or up.get("edited_message") or {}
+        c = m.get("chat") or {}
+        if c.get("id") and c.get("type") == "private":
+            _HEALED_CHAT = str(c["id"])
+            print("تلگرام: chat_id تنظیم‌شده غلط بود؛ چت واقعی از getUpdates "
+                  f"پیدا شد ({_HEALED_CHAT[:2]}…{_HEALED_CHAT[-2:]})", flush=True)
+            return _HEALED_CHAT
+    return None
+
+
+def _heal_notice(token, chat):
+    """یک بار در هر اجرا: شناسهٔ درست به چت خود حمید — نه به لاگ عمومی."""
+    global _HEAL_NOTICED
+    if _HEAL_NOTICED:
+        return
+    _HEAL_NOTICED = True
+    try:
+        _post_once(token, "sendMessage", {
+            "chat_id": chat, "parse_mode": "HTML",
+            "text": (f"{BRAND}\n⚠️ مقدار TELEGRAM_CHAT_ID در Secrets غلط است "
+                     "(شناسهٔ خود ربات). مقدار درست این چت:\n"
+                     f"<code>{chat}</code>\n"
+                     "Settings → Secrets → Actions → TELEGRAM_CHAT_ID را با "
+                     "همین عدد به‌روز کن. تا آن موقع ارسال‌ها خوددرمان می‌شوند.")})
+    except Exception:                                # noqa: BLE001
+        pass
+
+
 def _post_once(token, method, fields, files=None):
     """multipart/form-data by hand — sendPhoto needs it and stdlib has no helper."""
     boundary = uuid.uuid4().hex
@@ -181,8 +235,26 @@ def _post_once(token, method, fields, files=None):
     req = urllib.request.Request(
         f"{API}/bot{token}/{method}", data=bytes(body),
         headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
-    with urllib.request.urlopen(req, timeout=45) as r:
-        return json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=45) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        try:
+            err = json.loads(e.read())
+        except Exception:                            # noqa: BLE001
+            raise e from None
+        desc = (err.get("description") or "").lower()
+        bad_chat = str(fields.get("chat_id") or "")
+        if bad_chat and any(x in desc for x in _BAD_CHAT_ERRS):
+            healed = _discover_chat(token)
+            if healed and healed != bad_chat:
+                f2 = dict(fields)
+                f2["chat_id"] = healed
+                resp = _post_once(token, method, f2, files)
+                if resp.get("ok"):
+                    _heal_notice(token, healed)
+                return resp
+        raise e from None
 
 
 # نام منبع، بالای هر پیام — و عمداً از **محیط** خوانده می‌شود، نه ثابت.
