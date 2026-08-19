@@ -248,7 +248,9 @@ def run(symbols=60, bars=1000, quiet=False):
     except Exception:                                    # noqa: BLE001
         from hamid.trainer import top_symbols
         syms = top_symbols(symbols)
-    books, done = {v["key"]: [] for v in VARIANTS}, 0
+    books = {v["key"]: [] for v in VARIANTS}
+    books.update({"entry:" + f["key"]: [] for f in ENTRY_FILTERS})
+    done = 0
     # ردشدن در سکوت ممنوع: ۱۹ اوت یک بک‌تست ۱۲۰ نمادی با ۸ نماد اجرا شد
     # چون «4h» در هیچ نگاشت صرافی نبود و ۱۱۲ استثنا بی‌صدا بلعیده شد.
     drops = {}
