@@ -176,5 +176,27 @@ for name, ok in checks:
     if not ok:
         failed += 1
 
+# ── تایم‌فریم‌های اعلام‌شده: هیچ صرافی نباید روی تایم پشتیبانی‌شده KeyError
+# بدهد. کلاس خطای ۱۹ اوت: «4h» در هیچ نگاشتی نبود، پس فقط Binance جواب
+# می‌داد و بقیه در سکوت رد می‌شدند — بک‌تست ۱۲۰ نمادی با ۸ نماد اجرا شد و
+# کسی خبردار نشد. این پاسبان همان را برای همیشه می‌بندد.
+print("\nنگاشت تایم‌فریم هر صرافی:")
+for tf in ("5m", "15m", "1h", "4h", "1d"):
+    bad = []
+    for v in sources.VENUES:
+        try:
+            u = v["url"]("BTCUSDT", tf, 300)
+            if not isinstance(u, str) or not u.startswith("http"):
+                bad.append(v["id"])
+        except KeyError:
+            bad.append(v["id"])
+        except Exception:                                # noqa: BLE001
+            bad.append(v["id"])
+    ok = not bad
+    print(f"  {'✓' if ok else '✗'} {tf} — همهٔ {len(sources.VENUES)} صرافی"
+          + ("" if ok else f" (بدون نگاشت: {'، '.join(bad)})"))
+    if not ok:
+        failed += 1
+
 print(f"\n{f'{failed} ایراد' if failed else 'همهٔ پارسرهای پایتون درست‌اند'}")
 sys.exit(1 if failed else 0)

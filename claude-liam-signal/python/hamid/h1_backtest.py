@@ -195,16 +195,19 @@ def run(symbols=60, bars=1000, quiet=False):
     except Exception:                                    # noqa: BLE001
         from hamid.trainer import top_symbols
         syms = top_symbols(symbols)
-    books, done, skipped = {v["key"]: [] for v in VARIANTS}, 0, 0
+    books, done = {v["key"]: [] for v in VARIANTS}, 0
+    # ردشدن در سکوت ممنوع: ۱۹ اوت یک بک‌تست ۱۲۰ نمادی با ۸ نماد اجرا شد
+    # چون «4h» در هیچ نگاشت صرافی نبود و ۱۱۲ استثنا بی‌صدا بلعیده شد.
+    drops = {}
     for s in syms:
         try:
             k1 = sources.klines(s, "1h", bars)
             k4 = sources.klines(s, "4h", 400)
-        except Exception:                                # noqa: BLE001
-            skipped += 1
+        except Exception as e:                           # noqa: BLE001
+            drops[type(e).__name__] = drops.get(type(e).__name__, 0) + 1
             continue
         if not k1 or not k4 or len(k1) < 400 or len(k4) < 260:
-            skipped += 1
+            drops["سری کوتاه"] = drops.get("سری کوتاه", 0) + 1
             continue
         c1 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k1]
         c4 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k4]
@@ -214,12 +217,13 @@ def run(symbols=60, bars=1000, quiet=False):
         done += 1
         if not quiet and done % 10 == 0:
             print(f"  {done}/{len(syms)} نماد — {len(books['base'])} معامله")
+    skipped = sum(drops.values())
     if not quiet and skipped:
-        print(f"  {skipped} نماد بدون دادهٔ کافی رد شد (گزارش می‌شود، پنهان نه)")
+        print(f"  {skipped} نماد رد شد: {drops}")
 
     all_tr = books["base"]
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
-           "engine": H1.P["version"], "symbols": done, "skipped": skipped,
+           "engine": H1.P["version"], "symbols": done, "skipped": skipped, "drop_reasons": drops,
            "bars": bars,
            "source": "کندل واقعی ۱ ساعته (نه شبیه‌ساز)",
            "variants": [dict(describe(v["label"], books[v["key"]]),
