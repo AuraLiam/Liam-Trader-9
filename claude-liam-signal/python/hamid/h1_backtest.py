@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""بک‌تست موتور یک‌ساعته روی کندل واقعی — با قوانین ریسک داشبورد حمید.
+
+هیچ ادعای عملکردی بدون این فایل گفته نمی‌شود. شبیه‌ساز نیست: کندل واقعی
+از همان منبع تولید، بدون نگاه به آینده (تصمیم فقط با کندل‌های تا لحظهٔ
+همان کندل)، با نردبان تریل و بدترین‌حالتِ درون‌کندلی (اگر یک کندل هم استاپ
+و هم تارگت را لمس کرد، استاپ فرض می‌شود).
+
+    python3 -m hamid.h1_backtest --symbols 60 --bars 1500
+
+خروجی: تعداد، برد٪، میانگین R خالص، بازهٔ اطمینان ۹۵٪ بوت‌استرپ، تفکیک
+به‌ازای جهت/کیفیت/تجربه، و شبیه‌سازی منحنی سرمایه با ریسک ۲٪ و ۱٪ در
+برابر سقف روزانهٔ ۵٪ — همان سوالی که تنظیمات داشبورد ایجاد می‌کند.
+"""
+import argparse
+import json
+import random
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+
+import liam9_h1_strategy as H1                                # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[3]
+OUT = ROOT / "signals" / "h1-backtest.json"
+FEE_PCT = 0.15
+
+
+def boot_ci(vals, n=2000, seed=7):
+    """بازهٔ ۹۵٪ حول میانگین با بازنمونه‌گیری — قانون: عمل فقط با CI بالای صفر."""
+    if len(vals) < 8:
+        return (None, None)
+    rnd = random.Random(seed)
+    means = []
+    for _ in range(n):
+        s = [vals[rnd.randrange(len(vals))] for _ in range(len(vals))]
+        means.append(sum(s) / len(s))
+    means.sort()
+    return (round(means[int(0.025 * n)], 3), round(means[int(0.975 * n)], 3))
+
+
+def replay_symbol(sym, c1h, c4h, step=1):
+    """هر کندل ۱س را جلو می‌برد؛ ستاپ که ساخته شد تا نتیجه دنبالش می‌کند."""
+    trades = []
+    i = 260                                   # به‌اندازهٔ EMA200 تاریخ لازم است
+    while i < len(c1h) - 2:
+        # میدان ۴س فقط تا همان لحظه (بدون نگاه به آینده)
+        t_now = c1h[i]["t"]
+        c4 = [k for k in c4h if k["t"] <= t_now]
+        if len(c4) < 220:
+            i += step
+            continue
+        sig = H1.analyze(sym, c4, c1h[:i + 1])
+        if sig["action"] == "NO_SIGNAL":
+            i += step
+            continue
+        pos = dict(sig)
+        sl, res, bars = pos["sl"], None, 0
+        for k in c1h[i + 1: i + 1 + H1.P["max_hold_bars"]]:
+            bars += 1
+            pos["sl"] = sl
+            ev = H1.manage(pos, k)
+            if ev["event"] == "STOP":
+                res = ("stop" if abs(sl - pos["entry"]) > 1e-12
+                       and ((pos["action"] == "LONG" and sl < pos["entry"])
+                            or (pos["action"] == "SHORT" and sl > pos["entry"]))
+                       else "trail")
+                exit_px = sl
+                break
+            if ev["event"] == "TARGET":
+                res, exit_px = "target", pos["tp1"]
+                break
+            if ev["event"] == "TRAIL":
+                sl = ev["sl"]
+        if res is None:
+            res, exit_px = "timeout", c1h[min(i + H1.P["max_hold_bars"],
+                                              len(c1h) - 1)]["c"]
+        risk = abs(pos["entry"] - sig["sl"])
+        r = ((exit_px - pos["entry"]) if pos["action"] == "LONG"
+             else (pos["entry"] - exit_px)) / risk
+        fee_r = (FEE_PCT / 100) * pos["entry"] / risk
+        trades.append({"sym": sym, "dir": pos["action"], "outcome": res,
+                       "R": round(r, 3), "R_net": round(r - fee_r, 3),
+                       "quality": sig["quality"], "stop_pct": sig["stop_pct"],
+                       "exp_used": sig["exp_used"], "bars": bars,
+                       "opened": c1h[i]["t"]})
+        i += bars + 1                          # ضدهم‌پوشانی: یک معامله در لحظه
+    return trades
+
+
+def equity_curve(trades, risk_pct, daily_cap_pct=5.0, start=1000.0):
+    """منحنی سرمایه با قوانین داشبورد — سقف روزانه واقعاً اعمال می‌شود."""
+    eq, day, day_loss, blocked = start, None, 0.0, 0
+    peak, max_dd = start, 0.0
+    for t in sorted(trades, key=lambda x: x["opened"]):
+        d = time.strftime("%Y-%m-%d", time.gmtime(t["opened"] / 1000))
+        if d != day:
+            day, day_loss = d, 0.0
+        if day_loss >= daily_cap_pct:
+            blocked += 1
+            continue
+        pnl_pct = t["R_net"] * risk_pct
+        eq *= (1 + pnl_pct / 100)
+        if pnl_pct < 0:
+            day_loss += abs(pnl_pct)
+        peak = max(peak, eq)
+        max_dd = max(max_dd, (peak - eq) / peak * 100)
+    return {"risk_pct": risk_pct, "final": round(eq, 2),
+            "return_pct": round((eq / start - 1) * 100, 2),
+            "max_drawdown_pct": round(max_dd, 2), "blocked_by_daily_cap": blocked}
+
+
+def describe(name, trades):
+    if not trades:
+        return {"name": name, "n": 0}
+    rs = [t["R_net"] for t in trades]
+    w = sum(1 for t in trades if t["R"] > 0)
+    lo, hi = boot_ci(rs)
+    return {"name": name, "n": len(trades),
+            "win_pct": round(100 * w / len(trades), 1),
+            "mean_r_net": round(sum(rs) / len(rs), 3),
+            "ci95": [lo, hi], "positive": bool(lo is not None and lo > 0)}
+
+
+def run(symbols=60, bars=1500, quiet=False):
+    import sources
+    try:
+        syms = sources.top_symbols(symbols)
+    except Exception:                                    # noqa: BLE001
+        from hamid.trainer import top_symbols
+        syms = top_symbols(symbols)
+    all_tr, done = [], 0
+    for s in syms:
+        try:
+            k1 = sources.klines(s, "1h", bars)
+            k4 = sources.klines(s, "4h", max(400, bars // 4))
+        except Exception:                                # noqa: BLE001
+            continue
+        if not k1 or not k4 or len(k1) < 400:
+            continue
+        c1 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k1]
+        c4 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k4]
+        all_tr += replay_symbol(s, c1, c4)
+        done += 1
+        if not quiet and done % 10 == 0:
+            print(f"  {done}/{len(syms)} نماد — {len(all_tr)} معامله")
+
+    res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
+           "engine": H1.P["version"], "symbols": done, "bars": bars,
+           "source": "کندل واقعی ۱ ساعته (نه شبیه‌ساز)",
+           "overall": describe("کل", all_tr),
+           "by_dir": [describe(d, [t for t in all_tr if t["dir"] == d])
+                      for d in ("LONG", "SHORT")],
+           "by_quality": [
+               describe("کیفیت ≥۷۵", [t for t in all_tr if t["quality"] >= 75]),
+               describe("کیفیت ۶۰–۷۴", [t for t in all_tr
+                                        if 60 <= t["quality"] < 75]),
+               describe("کیفیت <۶۰", [t for t in all_tr if t["quality"] < 60])],
+           "by_experience": [
+               describe("با تجربه", [t for t in all_tr if t["exp_used"]]),
+               describe("بدون تجربه", [t for t in all_tr if not t["exp_used"]])],
+           "outcomes": {o: sum(1 for t in all_tr if t["outcome"] == o)
+                        for o in ("target", "trail", "stop", "timeout")},
+           "equity": [equity_curve(all_tr, 2.0), equity_curve(all_tr, 1.0)]}
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1))
+    if not quiet:
+        o = res["overall"]
+        print(f"\n== موتور ۱ ساعته روی کندل واقعی ==")
+        print(f"معامله {o['n']} · برد {o.get('win_pct')}٪ · "
+              f"میانگین {o.get('mean_r_net')}R خالص · CI95 {o.get('ci95')}")
+        print("نتایج:", res["outcomes"])
+        for e in res["equity"]:
+            print(f"ریسک {e['risk_pct']}٪ → بازده {e['return_pct']}٪ · "
+                  f"افت حداکثر {e['max_drawdown_pct']}٪ · "
+                  f"{e['blocked_by_daily_cap']} معامله قربانی سقف روزانه")
+    return res
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--symbols", type=int, default=60)
+    ap.add_argument("--bars", type=int, default=1500)
+    a = ap.parse_args()
+    run(symbols=a.symbols, bars=a.bars)
