@@ -106,7 +106,7 @@ def run(symbols=None, quiet=False, link=None):
 
     if symbols is None:
         from hamid.trainer import top_symbols
-        symbols = top_symbols(30)
+        symbols = top_symbols(60)
 
     def fetch(sym, tf, n):
         try:
