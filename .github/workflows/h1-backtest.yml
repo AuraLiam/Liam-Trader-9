@@ -1,0 +1,65 @@
+# بک‌تست موتور ۱ ساعته روی کندل واقعی — محاسبهٔ سنگین روی Actions، نه لپ‌تاپ.
+# ادعای عملکرد فقط از این‌جا بیرون می‌آید (قانون: عدد بی‌بازتولید گزارش نمی‌شود).
+name: H1 backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "چند نماد"
+        default: "120"
+      bars:
+        description: "چند کندل ۱ ساعته (سقف امن صرافی‌ها ۱۰۰۰)"
+        default: "1000"
+  schedule:
+    - cron: "41 5 * * *"        # روزی یک بار، دقیقهٔ فرد (کرون‌های */N شلوغ‌اند)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: h1-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_h1
+      - name: Backtest on real candles
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.h1_backtest \
+            --symbols "${{ github.event.inputs.symbols || '120' }}" \
+            --bars "${{ github.event.inputs.bars || '1000' }}" | tee h1.txt
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -30 h1.txt 2>/dev/null || echo "no output"; echo '```'; } \
+            >> $GITHUB_STEP_SUMMARY
+      - name: Publish
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add signals/h1-backtest.json
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "بک‌تست ۱ساعته $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
