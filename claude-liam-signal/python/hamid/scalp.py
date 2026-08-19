@@ -196,7 +196,7 @@ def run(symbols=None, quiet=False):
 
     if symbols is None:
         from hamid.trainer import top_symbols
-        symbols = top_symbols(20)
+        symbols = top_symbols(40)
     try:
         st = json.loads(STATE.read_text())
     except Exception:                                # noqa: BLE001

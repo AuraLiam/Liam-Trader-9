@@ -29,11 +29,19 @@ jobs:
       - name: Run scalp desk
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.scalp
+      # پل اسکلپ→داشبورد (دستور حمید ۱۹ اوت): ستاپِ مناسبِ اسکلپ فوری
+      # به سفارش فیوچرز امضاشده تبدیل می‌شود. mode=demo؛ پول واقعی فقط با
+      # LIAM9_ALLOW_LIVE=1 روی ماشین خود حمید.
+      - name: پل اجرا به داشبورد
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_LINK_SECRET: ${{ secrets.LIAM9_LINK_SECRET }}
+        run: python3 -m hamid.scalp_exec --mode demo || true
       - name: Publish
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
-          git add brain/paper signals/scalp.json
+          git add brain/paper signals/scalp.json signals/link-commands.json signals/scalp-exec.json
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "میز اسکلپ $(date -u '+%Y-%m-%d %H:%M') UTC"
           for attempt in 1 2 3 4 5; do
@@ -51,7 +59,9 @@ jobs:
           git fetch origin gh-pages
           rm -rf /tmp/ghp && git worktree add /tmp/ghp origin/gh-pages --detach
           mkdir -p /tmp/ghp/signals
-          cp signals/scalp.json /tmp/ghp/signals/ 2>/dev/null || exit 0
+          for f in scalp link-commands scalp-exec live-link; do
+            cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
+          done
           cd /tmp/ghp
           git add signals
           git diff --cached --quiet && { echo "unchanged"; exit 0; }
