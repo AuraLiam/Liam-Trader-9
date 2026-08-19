@@ -127,6 +127,7 @@ jobs:
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
           CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
         run: |
+          set -o pipefail
           python3 -m hamid.cycle \
             --mode "${{ github.event.inputs.mode || 'auto' }}" \
             --symbols "${{ github.event.inputs.symbols || '200' }}" \

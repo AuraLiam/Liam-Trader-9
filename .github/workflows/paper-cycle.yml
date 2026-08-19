@@ -32,7 +32,9 @@ jobs:
       - name: Run cycle
         env:
           MARKETS: "600"
-        run: node tests/cycle.js | tee cycle-output.txt
+        run: |
+          set -o pipefail
+          node tests/cycle.js | tee cycle-output.txt
       - name: Commit report
         run: |
           git config user.name "Claude"

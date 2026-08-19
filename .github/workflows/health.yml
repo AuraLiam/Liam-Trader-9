@@ -43,7 +43,9 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
           CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
-        run: python3 -m hamid.health | tee health.txt
+        run: |
+          set -o pipefail
+          python3 -m hamid.health | tee health.txt
 
       - name: Summary
         if: always()
