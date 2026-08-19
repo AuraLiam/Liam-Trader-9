@@ -138,6 +138,13 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.ob_intel --symbols 40 || true
 
+      # کارنامهٔ تجربه برای مصرف بیرونی (داشبورد حمید). سنجیده روی ۴۴۴
+      # معاملهٔ سیگنال‌گرید: با تجربه ۸۶.۹٪ برد / +۰.۳۱۹R، بدون تجربه
+      # ۶۷.۷٪ / +۰.۰۰۸R — قوی‌ترین عامل، پس باید بیرون هم در دسترس باشد.
+      - name: انتشار کارنامهٔ تجربه
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.publish_experience || true
+
       - name: Summary
         if: always()
         working-directory: claude-liam-signal/python
@@ -211,7 +218,8 @@ jobs:
           cp manifest.webmanifest /tmp/ghp/aura/ 2>/dev/null || true
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
-                   overseer rewards reading loss-analysis; do
+                   overseer rewards reading loss-analysis experience scalp \
+                   strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
             cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
           done

@@ -1,49 +1,53 @@
 #!/usr/bin/env python3
-"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد (دستور حمید، ۱۸ اوت).
+"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۰ (دستور حمید، ۱۹ اوت).
 
-این فایل را در قسمت «استراتژی» داشبوردت کپی کن. تک و مستقل است (فقط
-کتابخانهٔ استاندارد پایتون) و سه راه استفاده دارد:
+این فایل را کامل در قسمت «استراتژی» داشبورد بگذار (جای نسخهٔ قبل). تک و
+مستقل است — فقط کتابخانهٔ استاندارد پایتون.
 
+چه چیزی نسبت به ۱.۰ عوض شد و چرا (همه از اندازه‌گیری، نه سلیقه):
+
+  · **لایهٔ تجربه** — روی ۴۴۴ معاملهٔ سیگنال‌گرید دفتر ما (۱۹ اوت):
+    با تجربهٔ همان (ارز، جهت): n=۱۳۷ · برد ۸۶.۹٪ · میانگین +۰.۳۱۹R
+    بدون تجربه:               n=۲۵۷ · برد ۶۷.۷٪ · میانگین +۰.۰۰۸R
+    قوی‌ترین عاملِ با نمونهٔ کافی. حالا از `signals/experience.json`
+    خوانده می‌شود و در امتیاز و سایز اثر دارد (وتو نمی‌کند مگر کارنامه
+    قوی و منفی باشد).
+  · **الگوی کندلی هم‌جهت** — pattern_align=with: n=۷۵ · ۷۴.۷٪ · +۰.۱۴۹R
+    در برابر کل ۶۹.۱٪ · +۰.۰۷۶R → بونوس امتیاز، نه دروازه.
+  · **حالت اسکلپ ۱ دقیقه** (`ScalpMode`) با سشن، بدنه/شدوی کندل قبلی،
+    دام کارمزد و محافظ فاصلهٔ لیکویید.
+  · **قرارداد ریسک + ممیزی تداخل** — `RISK_CONTRACT` و `audit_environment()`
+    تا موتور ریسک داشبورد در سکوت استراتژی را خنثی نکند.
+
+هرچه گفته می‌شود پشتش عدد است؛ عددی که راه بازتولید ندارد گزارش نمی‌شود.
+
+استفاده:
     import liam9_strategy as st
-    st.sync_params()                       # اتصال: پارامترها از ریپو تازه شود
-    sig = st.signal("BTCUSDT")             # خودش کندل می‌گیرد و تصمیم می‌دهد
-    # یا اگر داشبورد خودش کندل دارد:
-    sig = st.analyze("BTCUSDT", c4h, c1h, c15)
+    st.sync_all()                          # پارامتر + کارنامهٔ تجربه
+    sig = st.signal("BTCUSDT")             # خودش کندل می‌گیرد
+    sig = st.analyze("BTCUSDT", c4h, c1h, c15)     # اگر داشبورد کندل دارد
+    sc  = st.scalp_signal("BTCUSDT")       # میز اسکلپ ۱ دقیقه
 
-    python3 liam9_strategy.py BTCUSDT      # تست از خط فرمان
+    python3 liam9_strategy.py BTCUSDT
+    python3 liam9_strategy.py --scalp BTCUSDT
+    python3 liam9_strategy.py --audit      # گزارش تداخل با موتورهای داشبورد
     python3 liam9_strategy.py --selftest   # خودآزمایی بدون شبکه
 
 خروجی: dict با action=LONG/SHORT/NO_SIGNAL + ورود/استاپ/تارگت/RR خالص +
-دلایل فارسی. NO_SIGNAL تصمیم معتبر است (قانون: سیگنال اجباری ممنوع).
-
-قوانین هسته (از منشور لیام — این‌جا فشرده و وفادار):
-  · سلسله‌مراتب: ۴س و ۱س بر ۱۵د حاکم‌اند. هر دو تایم بالا خلاف = وتوی مطلق.
-  · ستاپ = پولبک در جهت روند (روش حمید: صبر برای پولبک، نه شکار شکست).
-  · IBS تأیید است نه سیگنال: لانگ ≤۰.۳۰، شورت ≥۰.۷۰.
-  · استاپ بیرون نویز (≥۱.۲×ATR پانزده‌دقیقه) و پشت کف/سقف پولبک.
-  · RR خالص از کارمزد (~۰.۱۵٪ رفت‌وبرگشت) باید از کف بگذرد.
-  · دادهٔ ناکافی = NO_SIGNAL، هرگز حدس.
-
-اتصال آپدیت («بعدش یه اتصال برقرار می‌کنیم»): sync_params() فایل
-signals/strategy-params.json را از ریپوی لیام تریدر ۹ می‌کشد — هر وقت
-قانونی با CI اثبات و در ریپو منتشر شود، داشبوردت با همان یک خط
-به‌روز می‌شود، بدون تغییر این فایل.
-
-نسخهٔ تمام‌عیار (همهٔ اتاق‌ها: OB/FVG/نقدینگی/دامیننس/حافظه) همان موتور
-مرکزی است که قصدهایش را hamid_bridge_demo.py به داشبورد می‌رساند —
-این فایل هستهٔ همان روش برای اجرای درجا در خود داشبورد است.
+امتیاز کیفیت + دلایل فارسی. NO_SIGNAL تصمیم معتبر است.
 """
 import json
 import time
 import urllib.request
 
-REPO_RAW = "https://raw.githubusercontent.com/Auraliam/Liam-Trader-9/main"
-PAGES = "https://auraliam.github.io/Liam-Trader-9"
+REPO_RAW = "https://raw.githubusercontent.com/Auraliam/liam-trader-9/main"
+PAGES = "https://auraliam.github.io/liam-trader-9"
 PARAMS_PATH = "/signals/strategy-params.json"
+EXPERIENCE_PATH = "/signals/experience.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-1.0",
+    "version": "liam9-dash-2.0",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -53,14 +57,63 @@ PARAMS = {
     "max_stop_pct": 2.0,
     "pullback_min_ratio": 0.25,     # پولبک واقعی، نه لرزش
     "pullback_max_ratio": 0.90,     # پولبکِ بلعنده = ساختار مشکوک
+    "exp_min_n": 12,                # زیر این تعداد، کارنامه «نازک» است
+    "exp_veto_mean_r": -0.25,       # کارنامهٔ قوی و منفی = وتو
+    "min_quality": 55,              # کف امتیاز برای صدور
 }
 
-VENUES_15M = [
-    ("https://api.mexc.com/api/v3/klines?symbol={s}&interval=15m&limit={n}", "mexc"),
-    ("https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={g}&interval=15m&limit={n}", "gate"),
-    ("https://fapi.binance.com/fapi/v1/klines?symbol={s}&interval=15m&limit={n}", "binance"),
+# پارامترهای اسکلپ ۱ دقیقه — از میز اسکلپ همین پنل، با محافظ‌های آن.
+SCALP = {
+    "ibs_long_max": 0.30,
+    "ibs_short_min": 0.70,
+    "pullback_min_ratio": 0.20,
+    "fee_round_trip_pct": 0.15,
+    "max_fee_r": 0.30,              # استاپ تنگ = دام کارمزد → رد
+    "rr_target": 1.5,
+    "lev_base": 45, "lev_step": 15, "lev_max": 90,
+    "liq_guard": 50.0,              # اهرم ≤ ۵۰/استاپ٪ (فاصلهٔ لیکویید)
+    "hold_bars": 45,
+}
+
+# کارنامهٔ تجربه — با sync_experience() پر می‌شود. کلید: "SYMBOL|LONG".
+EXPERIENCE = {}
+
+VENUES = [
+    ("https://api.mexc.com/api/v3/klines?symbol={s}&interval={i}&limit={n}", "mexc"),
+    ("https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={g}&interval={i}&limit={n}", "gate"),
+    ("https://fapi.binance.com/fapi/v1/klines?symbol={s}&interval={i}&limit={n}", "binance"),
 ]
-IV = {"4h": "4h", "1h": "1h", "15m": "15m"}
+
+# ── قرارداد ریسک: استراتژی چه می‌خواهد و چه چیزی برایش تداخل است ───────────
+#
+# حمید (۱۹ اوت): «موتور ریسکش شاید اجازهٔ اهرم بالای ۲۰ را ندهد و این باعث
+# تداخل در ترید تایم ۱ دقیقه‌ای می‌شود.»
+#
+# تفکیک لازم — سقف اهرم **لبهٔ استراتژی را نمی‌کشد**: اهرم فقط اندازهٔ
+# پوزیشن و فاصلهٔ لیکویید را عوض می‌کند؛ R، نسبت کارمزد به R و نرخ برد
+# دست‌نخورده می‌مانند. سقف ۲۰ یعنی سود و زیان کوچک‌تر و لیکویید دورتر —
+# محافظه‌کارانه، نه خراب. آنچه واقعاً استراتژی را خفه می‌کند این‌هاست:
+#   ۱. کف فاصلهٔ استاپ (مثلاً «استاپ حداقل ۲٪») → همهٔ ستاپ‌های ۱د رد
+#      می‌شوند و داشبورد در سکوت صفر معامله می‌گیرد.
+#   ۲. نبود فید ۱ دقیقه/۴ ساعته → NO_SIGNAL دائمی به‌جای تحلیل.
+#   ۳. سقف پوزیشن هم‌زمان/کول‌داون کوتاه‌تر از عمر ستاپ.
+#   ۴. مدل کارمزد صفر یا خیلی پایین → RRِ خوش‌بین و ورود به دام کارمزد.
+#   ۵. حداقل نوشنال بزرگ‌تر از سایز محاسبه‌شده → سفارش رد می‌شود.
+RISK_CONTRACT = {
+    "needs_timeframes": {"swing": ["4h", "1h", "15m"], "scalp": ["1m"]},
+    "leverage": {"preferred_swing": 10, "preferred_scalp_min": 45,
+                 "preferred_scalp_max": 90, "hard_floor": 3,
+                 "note": "سقف پایین‌تر = فقط سایز کوچک‌تر؛ لبه عوض نمی‌شود"},
+    "stop_pct": {"swing_min": 0.30, "swing_max": 2.0,
+                 "scalp_min": 0.50, "scalp_max": 1.6,
+                 "note": "کفِ استاپِ داشبورد بالای این بازه = وتوی خاموش"},
+    "fees": {"round_trip_pct": 0.15,
+             "note": "کارمزد کمتر از این در داشبورد = RR خوش‌بین"},
+    "concurrency": {"min_slots": 3, "min_cooldown_s": 0,
+                    "max_hold_min_scalp": 45, "max_hold_h_swing": 24},
+    "sizing": {"risk_per_trade_pct": [1.0, 5.0],
+               "note": "سایز معکوس نوسان؛ سقف اکسپوژر کل با داشبورد"},
+}
 
 
 def _get(url, timeout=15):
@@ -82,12 +135,35 @@ def sync_params():
     return None
 
 
+def sync_experience():
+    """کارنامهٔ (ارز، جهت) از پنل — همان چیزی که ۸۶.۹٪ برد را ساخت."""
+    for base in (REPO_RAW, PAGES):
+        try:
+            d = _get(base + EXPERIENCE_PATH)
+            if isinstance(d, dict) and isinstance(d.get("index"), dict):
+                EXPERIENCE.clear()
+                EXPERIENCE.update(d["index"])
+                return len(EXPERIENCE)
+        except Exception:                            # noqa: BLE001
+            continue
+    return 0
+
+
+def sync_all():
+    """یک خط برای داشبورد: پارامتر + تجربه. هر چرخه یک بار کافی است."""
+    return {"params": sync_params(), "experience_pairs": sync_experience()}
+
+
+def experience_of(symbol, direction):
+    """کارنامهٔ همان ارز و جهت، یا None. thin=True یعنی نمونه کم است."""
+    return EXPERIENCE.get(f"{symbol}|{direction}")
+
+
 def fetch_klines(symbol, interval="15m", n=300):
     """کندل از چند صرافی عمومی؛ همه رد شدند = None (نه حدس)."""
-    for tmpl, venue in VENUES_15M:
-        url = tmpl.replace("15m", IV.get(interval, interval))
-        url = url.format(s=symbol, n=n,
-                         g=symbol.replace("USDT", "_USDT"))
+    for tmpl, venue in VENUES:
+        url = tmpl.format(s=symbol, n=n, i=interval,
+                          g=symbol.replace("USDT", "_USDT"))
         try:
             rows = _get(url)
             out = []
@@ -152,13 +228,46 @@ def ibs(k):
     return (k["c"] - k["l"]) / rng if rng > 0 else 0.5
 
 
-def _pullback(c15, direction):
-    """موج و پولبک اخیر ۱۵د؛ خروجی (نسبت پولبک، اکسترمم پولبک) یا None."""
-    win = c15[-60:]
+def candle_pattern(cd, direction):
+    """الگوی کندلی هم‌جهت — سنجیده: with → ۷۴.۷٪ برد در برابر ۶۹.۱٪ کل.
+
+    قطعی و ساده به‌عمد: پین‌بار (شدوی بلند در جهت رد)، بلعنده، و بدنهٔ
+    قاطع (≥۶۰٪ دامنه). هیچ‌کدام به‌تنهایی مجوز نیست — امتیاز می‌دهند."""
+    if len(cd) < 3:
+        return None, []
+    k, p = cd[-1], cd[-2]
+    rng = k["h"] - k["l"]
+    if rng <= 0:
+        return None, []
+    body = abs(k["c"] - k["o"])
+    up_w, dn_w = k["h"] - max(k["c"], k["o"]), min(k["c"], k["o"]) - k["l"]
+    names = []
+    bull = k["c"] > k["o"]
+    if body / rng >= 0.60:
+        names.append("بدنهٔ قاطع" + (" صعودی" if bull else " نزولی"))
+    if dn_w >= 2 * body and dn_w > up_w:
+        names.append("پین‌بار کف (رد فروش)")
+    if up_w >= 2 * body and up_w > dn_w:
+        names.append("پین‌بار سقف (رد خرید)")
+    p_body = abs(p["c"] - p["o"])
+    if body > p_body and ((bull and p["c"] < p["o"] and k["c"] >= p["o"])
+                          or (not bull and p["c"] > p["o"] and k["c"] <= p["o"])):
+        names.append("بلعنده")
+    if not names:
+        return None, []
+    bullish = bull or "پین‌بار کف (رد فروش)" in names
+    align = ("with" if (bullish and direction == "LONG")
+             or (not bullish and direction == "SHORT") else "against")
+    return align, names
+
+
+def _pullback(c15, direction, win_n=60, min_leg=8):
+    """موج و پولبک اخیر؛ خروجی (نسبت پولبک، اکسترمم پولبک) یا None."""
+    win = c15[-win_n:]
     px = win[-1]["c"]
     if direction == "LONG":
         hi_i = max(range(len(win)), key=lambda i: win[i]["h"])
-        if hi_i < 8 or hi_i > len(win) - 2:
+        if hi_i < min_leg or hi_i > len(win) - 2:
             return None
         lo_i = min(range(hi_i + 1), key=lambda i: win[i]["l"])
         hi, lo = win[hi_i]["h"], win[lo_i]["l"]
@@ -167,7 +276,7 @@ def _pullback(c15, direction):
             return None
         return (hi - px) / (hi - lo), pull_lo
     lo_i = min(range(len(win)), key=lambda i: win[i]["l"])
-    if lo_i < 8 or lo_i > len(win) - 2:
+    if lo_i < min_leg or lo_i > len(win) - 2:
         return None
     hi_i = max(range(lo_i + 1), key=lambda i: win[i]["h"])
     hi, lo = win[hi_i]["h"], win[lo_i]["l"]
@@ -177,11 +286,14 @@ def _pullback(c15, direction):
     return (px - lo) / (hi - lo), pull_hi
 
 
+# ── تحلیل اصلی (۴س/۱س/۱۵د) ─────────────────────────────────────────────────
 def analyze(symbol, c4h, c1h, c15):
     """تصمیم روش لیام تریدر ۹ روی کندل‌های داده‌شده."""
     P = PARAMS
-    no = lambda why: {"action": "NO_SIGNAL", "symbol": symbol, "why": why,  # noqa: E731
-                      "version": P["version"]}
+    def no(why):
+        return {"action": "NO_SIGNAL", "symbol": symbol, "why": why,
+                "version": P["version"], "panel": "لیام تریدر ۹"}
+
     if not c4h or not c1h or not c15 or len(c15) < 60:
         return no("دادهٔ ناکافی — قانون ۱: حدس ممنوع")
     t4, t1 = trend(c4h), trend(c1h)
@@ -205,6 +317,7 @@ def analyze(symbol, c4h, c1h, c15):
         return no(f"IBS={i:.2f} — تأیید لانگ نیست (کف {P['ibs_long_max']})")
     if direction == "SHORT" and i < P["ibs_short_min"]:
         return no(f"IBS={i:.2f} — تأیید شورت نیست (سقف {P['ibs_short_min']})")
+
     entry = k_last["c"]
     a15 = atr(c15[-80:]) or 0
     if direction == "LONG":
@@ -224,18 +337,163 @@ def analyze(symbol, c4h, c1h, c15):
     net_rr = P["rr_target"] - fee_r
     if net_rr < P["min_net_rr"]:
         return no(f"RR خالص {net_rr:.2f} زیر کف {P['min_net_rr']} — دام کارمزد")
+
+    # ── لایهٔ تجربه: قوی‌ترین عامل اندازه‌گیری‌شده ───────────────────────
+    exp = experience_of(symbol, direction)
+    exp_used = bool(exp and not exp.get("thin"))
+    if exp_used and exp["mean_r"] <= P["exp_veto_mean_r"]:
+        return no(f"کارنامهٔ همین ارز/جهت: {exp['n']} معامله، "
+                  f"میانگین {exp['mean_r']:+.2f}R — تجربه می‌گوید نرو")
+
+    align, pat_names = candle_pattern(c15, direction)
+
+    # پایه ۶۰: کندل مخالف به‌تنهایی وتو نمی‌کند (سنجیده: against n=۵۰،
+    # ۷۰.۰٪ برد، +۰.۰۴۲R — تفاوت معناداری با کل ندارد)
+    quality = 60
+    why = [f"روند ۴س {t4} · ۱س {t1} هم‌جهت",
+           f"پولبک {ratio:.2f} در جهت روند",
+           f"IBS {i:.2f} تأیید ورود",
+           f"استاپ بیرون نویز ({P['atr_noise_mult']}×ATR)",
+           f"RR خالص از کارمزد {net_rr:.2f}"]
+    if exp_used:
+        quality += 20 if exp["mean_r"] > 0 else 5
+        why.append(f"تجربه: {exp['n']} معاملهٔ بسته، برد {exp['win_pct']}٪، "
+                   f"میانگین {exp['mean_r']:+.2f}R "
+                   f"(عامل ۸۶.۹٪-برد دفتر ما)")
+    elif exp:
+        why.append(f"تاریخچهٔ نازک ({exp['n']} معامله) — گزارش، بدون وزن")
+    if align == "with":
+        quality += 10
+        why.append("کندل هم‌جهت: " + "، ".join(pat_names))
+    elif align == "against":
+        quality -= 5
+        why.append("کندل مخالف: " + "، ".join(pat_names))
+    if 0.38 <= ratio <= 0.705:
+        quality += 5
+        why.append("عمق پولبک در ناحیهٔ طلایی فیبوناچی (آزمایشی)")
+    quality = max(0, min(100, quality))
+    if quality < P["min_quality"]:
+        return no(f"امتیاز کیفیت {quality} زیر کف {P['min_quality']}")
+
     return {"action": direction, "symbol": symbol,
             "entry": round(entry, 8), "sl": round(sl, 8),
             "tp1": round(tp1, 8), "rr_net": round(net_rr, 2),
             "stop_pct": round(stop_pct, 3), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "trend_4h": t4, "trend_1h": t1,
+            "quality": quality, "exp_used": exp_used,
+            "experience": exp, "pattern_align": align, "patterns": pat_names,
+            "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
+            "mode": "swing", "tf": "15m",
             "panel": "لیام تریدر ۹", "version": P["version"],
+            "t": int(time.time() * 1000), "why": why}
+
+
+# ── حالت اسکلپ ۱ دقیقه ─────────────────────────────────────────────────────
+def session_of(ms):
+    """سشن معاملاتی از ساعت UTC — روی کارنامهٔ اسکلپ جدا سنجیده می‌شود."""
+    h = time.gmtime(ms / 1000).tm_hour
+    if 12 <= h < 16:
+        return "overlap"
+    if 7 <= h < 16:
+        return "london"
+    if 16 <= h < 21:
+        return "ny"
+    return "asia"
+
+
+def suggest_leverage(stop_pct, quality, mode="swing"):
+    """اهرم پیشنهادی — همیشه با محافظ فاصلهٔ لیکویید.
+
+    قاعده: اهرم ≤ ۵۰/استاپ٪ یعنی استاپ حداکثر نصف راه تا لیکویید است.
+    داشبورد حق دارد این عدد را پایین بیاورد؛ پایین‌آوردنش لبه را نمی‌کشد
+    (فقط سایز و فاصلهٔ لیکویید عوض می‌شود) — بالا بردنش ممنوع."""
+    if stop_pct <= 0:
+        return None
+    guard = int(SCALP["liq_guard"] / stop_pct)
+    if mode == "scalp":
+        bump = SCALP["lev_step"] * (1 if quality >= 70 else 0) \
+            + SCALP["lev_step"] * (1 if quality >= 85 else 0)
+        lev = min(SCALP["lev_base"] + bump, SCALP["lev_max"], guard)
+        return lev if lev >= SCALP["lev_base"] else None
+    return max(3, min(10, guard))
+
+
+def scalp_decide(c1m, symbol="?"):
+    """میز اسکلپ ۱ دقیقه: روند EMA21/55 → پولبک → IBS → کندل قبلی → کارمزد."""
+    S = SCALP
+    def no(why):
+        return {"action": "NO_SIGNAL", "symbol": symbol, "mode": "scalp",
+                "tf": "1m", "why": why, "panel": "لیام تریدر ۹"}
+
+    if not c1m or len(c1m) < 90:
+        return no("کندل ۱ دقیقه کافی نیست — قانون ۱")
+    closes = [k["c"] for k in c1m]
+    e21, e55 = ema(closes[-90:], 21), ema(closes[-90:], 55)
+    if e21 is None or e55 is None:
+        return no("EMA کوتاه قابل‌محاسبه نیست")
+    px = closes[-1]
+    if e21 > e55 and px > e55:
+        direction = "LONG"
+    elif e21 < e55 and px < e55:
+        direction = "SHORT"
+    else:
+        return no("روند ۱ دقیقه خنثی — اسکلپ در رنجِ بی‌جهت ممنوع")
+
+    pb = _pullback(c1m, direction, win_n=45, min_leg=6)
+    if pb is None:
+        return no("پولبک معتبری در ۱د نیست")
+    ratio, pull_ext = pb
+    if ratio < S["pullback_min_ratio"]:
+        return no(f"پولبک {ratio:.2f} کم‌عمق — لرزش، نه پولبک")
+    k_last = c1m[-1]
+    i = ibs(k_last)
+    if direction == "LONG" and i > S["ibs_long_max"]:
+        return no(f"IBS={i:.2f} تأیید لانگ نیست")
+    if direction == "SHORT" and i < S["ibs_short_min"]:
+        return no(f"IBS={i:.2f} تأیید شورت نیست")
+
+    entry = px
+    sl = pull_ext
+    risk = entry - sl if direction == "LONG" else sl - entry
+    if risk <= 0:
+        return no("هندسهٔ استاپ نامعتبر")
+    stop_pct = risk / entry * 100
+    fee_r = (S["fee_round_trip_pct"] / 100) * entry / risk
+    if fee_r >= S["max_fee_r"]:
+        return no(f"دام کارمزد: کارمزد {fee_r:.2f}R از استاپ {stop_pct:.2f}٪ "
+                  f"— استاپ باید بالای ~۰.۵٪ باشد")
+    tp1 = (entry + S["rr_target"] * risk if direction == "LONG"
+           else entry - S["rr_target"] * risk)
+
+    align, pat_names = candle_pattern(c1m, direction)
+    sess = session_of(k_last["t"])
+    quality = 55 + (10 if align == "with" else -10 if align == "against" else 0)
+    quality += 10 if sess in ("london", "ny", "overlap") else 0
+    exp = experience_of(symbol, direction)
+    if exp and not exp.get("thin"):
+        quality += 15 if exp["mean_r"] > 0 else -10
+    quality = max(0, min(100, quality))
+    lev = suggest_leverage(stop_pct, quality, mode="scalp")
+    if lev is None:
+        return no(f"استاپ {stop_pct:.2f}٪ برای اهرم اسکلپ زیادی گشاد است "
+                  f"(محافظ فاصلهٔ لیکویید)")
+    return {"action": direction, "symbol": symbol, "mode": "scalp", "tf": "1m",
+            "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
+            "stop_pct": round(stop_pct, 3), "fee_r": round(fee_r, 3),
+            "rr_net": round(S["rr_target"] - fee_r, 2), "ibs": round(i, 2),
+            "pullback": round(ratio, 3), "session": sess, "leverage": lev,
+            "quality": quality, "pattern_align": align, "patterns": pat_names,
+            "trail_at": round(entry + (tp1 - entry) / 3, 8),
+            "panel": "لیام تریدر ۹", "version": PARAMS["version"],
             "t": int(time.time() * 1000),
-            "why": [f"روند ۴س {t4} · ۱س {t1} هم‌جهت",
+            "why": [f"روند ۱د {'صعودی' if direction == 'LONG' else 'نزولی'} "
+                    f"(EMA21/55)",
                     f"پولبک {ratio:.2f} در جهت روند",
-                    f"IBS {i:.2f} تأیید ورود",
-                    f"استاپ بیرون نویز ({P['atr_noise_mult']}×ATR)",
-                    f"RR خالص از کارمزد {net_rr:.2f}"]}
+                    f"IBS {i:.2f} تأیید",
+                    f"سشن {sess}",
+                    f"کارمزد {fee_r:.2f}R زیر سقف {S['max_fee_r']}",
+                    f"اهرم {lev}× با محافظ لیکویید (استاپ ≤ نصف راه)",
+                    "🪜 تریل: در ⅓ مسیر، استاپ به سربه‌سرِ کارمزددار"]}
 
 
 def signal(symbol):
@@ -249,41 +507,198 @@ def signal(symbol):
     return analyze(symbol, c4h, c1h, c15)
 
 
+def scalp_signal(symbol):
+    c1m = fetch_klines(symbol, "1m", 300)
+    if not c1m:
+        return {"action": "NO_SIGNAL", "symbol": symbol, "mode": "scalp",
+                "why": "کندل ۱ دقیقه نرسید — قانون ۱"}
+    return scalp_decide(c1m, symbol)
+
+
+# ── ممیزی تداخل با موتورهای داشبورد ────────────────────────────────────────
+_RISK_KEYS = {
+    "max_leverage": ("leverage_cap", "max_leverage", "maxLeverage",
+                     "leverage_max", "max_lev"),
+    "min_stop_pct": ("min_stop_pct", "min_stop_distance_pct", "minStopPct",
+                     "min_sl_pct"),
+    "max_positions": ("max_positions", "max_open_positions", "maxPositions",
+                      "max_concurrent"),
+    "fee_pct": ("fee_pct", "taker_fee", "commission", "fee_round_trip_pct"),
+    "cooldown_s": ("cooldown_s", "cooldown_seconds", "trade_cooldown"),
+    "min_notional": ("min_notional", "min_order_usd", "minNotional"),
+    "timeframes": ("timeframes", "intervals", "supported_timeframes"),
+}
+
+
+def _dig(obj, names):
+    """مقدار اولین کلید/صفت موجود — dict و آبجکت هر دو."""
+    for n in names:
+        if isinstance(obj, dict) and n in obj:
+            return obj[n]
+        if hasattr(obj, n):
+            v = getattr(obj, n)
+            if not callable(v):
+                return v
+    return None
+
+
+def audit_environment(risk=None, dashboard=None):
+    """گزارش تداخل بین قرارداد استراتژی و موتورهای داشبورد.
+
+    `risk` می‌تواند dict تنظیمات یا خود آبجکت موتور ریسک باشد؛ `dashboard`
+    هر آبجکتی که تایم‌فریم‌ها/کارمزد را نگه می‌دارد. هرچه پیدا نشود
+    «نامعلوم» گزارش می‌شود — حدس زده نمی‌شود (قانون ۱)."""
+    src = [x for x in (risk, dashboard) if x is not None]
+    found = {}
+    for key, names in _RISK_KEYS.items():
+        for s in src:
+            v = _dig(s, names)
+            if v is not None:
+                found[key] = v
+                break
+    issues, notes = [], []
+    RC = RISK_CONTRACT
+
+    lev = found.get("max_leverage")
+    if lev is None:
+        notes.append("سقف اهرم داشبورد نامعلوم — بررسی دستی لازم است")
+    elif lev < RC["leverage"]["preferred_scalp_min"]:
+        notes.append(
+            f"سقف اهرم {lev}× زیر بازهٔ اسکلپ "
+            f"({RC['leverage']['preferred_scalp_min']}–"
+            f"{RC['leverage']['preferred_scalp_max']}×) — "
+            "تداخلِ سیگنالی نیست: فقط سایز کوچک‌تر و لیکویید دورتر. "
+            "استراتژی خودش را با همین سقف تنظیم می‌کند.")
+        if lev < RC["leverage"]["hard_floor"]:
+            issues.append(f"سقف اهرم {lev}× زیر کف عملی "
+                          f"{RC['leverage']['hard_floor']}× — سایز به صفر "
+                          "میل می‌کند")
+
+    ms = found.get("min_stop_pct")
+    if ms is None:
+        notes.append("کف فاصلهٔ استاپ داشبورد نامعلوم — مهم‌ترین عامل تداخل")
+    elif ms > RC["stop_pct"]["scalp_max"]:
+        issues.append(
+            f"کف استاپ داشبورد {ms}٪ بالاتر از سقف استاپ اسکلپ "
+            f"{RC['stop_pct']['scalp_max']}٪ — همهٔ ستاپ‌های ۱ دقیقه در "
+            "سکوت رد می‌شوند (وتوی خاموش)")
+    elif ms > RC["stop_pct"]["swing_max"]:
+        issues.append(f"کف استاپ {ms}٪ بالاتر از سقف استاپ سوینگ "
+                      f"{RC['stop_pct']['swing_max']}٪ — صفر معامله")
+
+    fee = found.get("fee_pct")
+    if fee is None:
+        notes.append("مدل کارمزد داشبورد نامعلوم — RR ممکن است خوش‌بین باشد")
+    elif float(fee) < RC["fees"]["round_trip_pct"] / 3:
+        issues.append(f"کارمزد داشبورد {fee}٪ خیلی پایین‌تر از واقعیت "
+                      f"({RC['fees']['round_trip_pct']}٪ رفت‌وبرگشت) — "
+                      "نتیجهٔ پیپر خوش‌بین می‌شود")
+
+    mp = found.get("max_positions")
+    if mp is not None and mp < RC["concurrency"]["min_slots"]:
+        issues.append(f"سقف پوزیشن هم‌زمان {mp} — اسکلپ چند نماد را "
+                      "هم‌زمان می‌بیند و صف می‌ماند")
+
+    tfs = found.get("timeframes")
+    if tfs:
+        have = {str(x).lower() for x in tfs}
+        for mode, need in RC["needs_timeframes"].items():
+            missing = [t for t in need if t not in have]
+            if missing:
+                issues.append(f"تایم‌فریم‌های لازم برای {mode} موجود نیست: "
+                              f"{'، '.join(missing)} → NO_SIGNAL دائمی")
+    else:
+        notes.append("فهرست تایم‌فریم‌های داشبورد نامعلوم — ۴س/۱س/۱۵د و ۱د لازم است")
+
+    mn = found.get("min_notional")
+    if mn is not None and mn > 50:
+        notes.append(f"حداقل نوشنال {mn} — سایزهای کوچک اسکلپ رد می‌شوند")
+
+    return {"contract": RC, "detected": found,
+            "conflicts": issues, "notes": notes,
+            "verdict": "تداخل جدی" if issues else
+                       ("بدون تداخل قطعی؛ موارد نامعلوم را دستی چک کن"
+                        if notes else "سازگار")}
+
+
+def print_audit(risk=None, dashboard=None):
+    a = audit_environment(risk, dashboard)
+    print("── ممیزی تداخل استراتژی ↔ داشبورد ──")
+    print("یافته‌ها:", json.dumps(a["detected"], ensure_ascii=False) or "—")
+    for x in a["conflicts"]:
+        print("  ⛔", x)
+    for x in a["notes"]:
+        print("  ⚠️", x)
+    print("حکم:", a["verdict"])
+    return a
+
+
+# ── خودآزمایی ───────────────────────────────────────────────────────────────
 def _selftest():
-    def mk(path):
-        return [{"t": i * 900000, "o": p, "h": p * 1.004, "l": p * 0.996,
+    def mk(path, tf_ms=900000, t0=0):
+        return [{"t": t0 + i * tf_ms, "o": p, "h": p * 1.004, "l": p * 0.996,
                  "c": p} for i, p in enumerate(path)]
     up = [100 + i * 0.4 for i in range(230)]
-    c4 = mk(up)
-    c1 = mk(up)
+    c4 = c1 = mk(up)
     pull = up + [up[-1] - i * 0.5 for i in range(1, 16)]
     c15 = mk(pull)
     c15[-1]["l"], c15[-1]["c"] = c15[-1]["c"] * 0.99, c15[-1]["c"] * 0.9905
+    EXPERIENCE.clear()
     r = analyze("TESTUSDT", c4, c1, c15)
     assert r["action"] == "LONG", r
     assert r["sl"] < r["entry"] < r["tp1"]
-    dn = mk([100.0] * 40)
-    assert analyze("TESTUSDT", c4, c1, dn[:10])["action"] == "NO_SIGNAL"
+    assert r["exp_used"] is False and 0 <= r["quality"] <= 100
+
+    # تجربهٔ مثبت امتیاز را بالا می‌برد
+    EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 80.0, "mean_r": 0.4,
+                                   "thin": False}
+    r2 = analyze("TESTUSDT", c4, c1, c15)
+    assert r2["exp_used"] and r2["quality"] > r["quality"], (r2, r)
+    # تجربهٔ قوی و منفی وتو می‌کند
+    EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 20.0, "mean_r": -0.6,
+                                   "thin": False}
+    r3 = analyze("TESTUSDT", c4, c1, c15)
+    assert r3["action"] == "NO_SIGNAL" and "تجربه" in r3["why"], r3
+    # تاریخچهٔ نازک حق وتو ندارد
+    EXPERIENCE["TESTUSDT|LONG"] = {"n": 3, "win_pct": 0.0, "mean_r": -0.9,
+                                   "thin": True}
+    assert analyze("TESTUSDT", c4, c1, c15)["action"] == "LONG"
+    EXPERIENCE.clear()
+
+    assert analyze("TESTUSDT", c4, c1, mk([100.0] * 10))["action"] == "NO_SIGNAL"
     mixed = analyze("TESTUSDT", mk([200 - i * 0.4 for i in range(230)]), c1, c15)
     assert mixed["action"] == "NO_SIGNAL" and "وتو" in mixed["why"]
-    print("✓ خودآزمایی استراتژی گذشت —", r["why"])
 
+    # اسکلپ ۱ دقیقه: ستاپ لانگ با استاپ ~۰.۷٪
+    up1 = [100 + i * 0.05 for i in range(120)]
+    p1 = up1 + [up1[-1] - i * 0.03 for i in range(1, 7)]
+    c1m = mk(p1, tf_ms=60000, t0=int(time.time() * 1000) - 126 * 60000)
+    c1m[-1]["l"], c1m[-1]["c"] = c1m[-1]["c"] * 0.998, c1m[-1]["c"] * 0.9982
+    c1m[-4]["l"] = c1m[-1]["c"] * 0.993
+    s = scalp_decide(c1m, "TESTUSDT")
+    assert s["action"] == "LONG", s
+    assert 45 <= s["leverage"] <= 90, s
+    assert s["leverage"] <= int(50.0 / s["stop_pct"]), s
+    assert s["fee_r"] < SCALP["max_fee_r"], s
 
-if __name__ == "__main__":
-    import sys
-    if "--selftest" in sys.argv:
-        _selftest()
-    else:
-        sym = sys.argv[1] if len(sys.argv) > 1 else "BTCUSDT"
-        v = sync_params()
-        print(f"پارامترها: {v or 'پیش‌فرض (اتصال نشد)'}")
-        print(json.dumps(signal(sym), ensure_ascii=False, indent=1))
+    # اهرم هرگز از محافظ لیکویید رد نمی‌شود
+    assert suggest_leverage(3.0, 100, mode="scalp") is None
+    assert suggest_leverage(0.7, 90, mode="scalp") <= int(50 / 0.7)
+
+    # ممیزی: کف استاپ ۲.۵٪ باید تداخل جدی اعلام شود
+    a = audit_environment({"max_leverage": 20, "min_stop_pct": 2.5,
+                           "timeframes": ["15m", "1h", "4h"]})
+    assert a["conflicts"], a
+    assert any("۱ دقیقه" in x or "1m" in x for x in a["conflicts"]), a
+    # سقف اهرم ۲۰ به‌تنهایی «تداخل جدی» نیست
+    a2 = audit_environment({"max_leverage": 20, "min_stop_pct": 0.3,
+                            "timeframes": ["1m", "15m", "1h", "4h"],
+                            "fee_pct": 0.15})
+    assert not a2["conflicts"], a2
+    print("✓ خودآزمایی استراتژی ۲.۰ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
-#
-# بارگذار داشبورد کلاس می‌خواهد. اگر BaseStrategy خود داشبورد در مسیر باشد
-# از همان ارث می‌بریم؛ نبود = یک پایهٔ خنثی، که فایل همه‌جا بارگذاری شود.
 try:
     from strategy_base import BaseStrategy            # قالب رایج داشبوردها
 except Exception:                                     # noqa: BLE001
@@ -295,18 +710,19 @@ except Exception:                                     # noqa: BLE001
 
 
 class Liam9Strategy(BaseStrategy):
-    """استراتژی رسمی پنل لیام تریدر ۹ — پوستهٔ کلاسی روی همان هسته."""
+    """استراتژی رسمی پنل لیام تریدر ۹ — سوینگ ۴س/۱س/۱۵د با لایهٔ تجربه."""
 
     meta = {
-        "name": "لیام تریدر ۹ — IBS + پولبک",
+        "name": "لیام تریدر ۹ — IBS + پولبک + تجربه",
         "id": "liam9-ibs-pullback",
         "version": PARAMS["version"],
         "author": "لیام تریدر ۹",
         "timeframes": ["4h", "1h", "15m"],
         "market": "crypto-futures",
-        "description": ("سلسله‌مراتب روند ۴س/۱س → پولبک ۱۵د در جهت روند → "
-                        "تأیید IBS → استاپ بیرون نویز → دروازهٔ کارمزد؛ "
-                        "NO_SIGNAL تصمیم معتبر است"),
+        "risk_contract": RISK_CONTRACT,
+        "description": ("سلسله‌مراتب روند ۴س/۱س → پولبک ۱۵د → تأیید IBS → "
+                        "استاپ بیرون نویز → دروازهٔ کارمزد → لایهٔ تجربه "
+                        "(۸۶.۹٪ برد در دفتر ما)؛ NO_SIGNAL تصمیم معتبر است"),
     }
 
     def __init__(self, *a, **kw):
@@ -314,18 +730,15 @@ class Liam9Strategy(BaseStrategy):
             super().__init__(*a, **kw)
         except Exception:                             # noqa: BLE001
             pass
-        sync_params()
+        sync_all()
         self.meta["version"] = PARAMS["version"]
 
-    # هر سه نام رایجِ نقطهٔ ورود، به یک هسته می‌رسند —
-    # داشبورد هر کدام را صدا بزند جواب می‌گیرد.
     def generate_signal(self, symbol, c4h=None, c1h=None, c15=None, **kw):
         if c4h and c1h and c15:
             return analyze(symbol, c4h, c1h, c15)
         return signal(symbol)
 
     def on_bar(self, symbol, candles=None, **kw):
-        """داشبوردهایی که کندل ۱۵د می‌دهند؛ تایم‌های بالا را خودش می‌گیرد."""
         if candles and len(candles) >= 60:
             c1h = fetch_klines(symbol, "1h", 260)
             c4h = fetch_klines(symbol, "4h", 260)
@@ -335,3 +748,64 @@ class Liam9Strategy(BaseStrategy):
 
     def run(self, symbol, **kw):
         return self.generate_signal(symbol, **kw)
+
+    # داشبورد اگر موتور ریسکش را بدهد، تداخل را همان‌جا گزارش می‌کنیم.
+    def audit(self, risk=None, dashboard=None):
+        return audit_environment(risk, dashboard)
+
+
+class Liam9ScalpStrategy(BaseStrategy):
+    """میز اسکلپ ۱ دقیقه — همان ستاپ، با سشن، کندل قبلی و محافظ لیکویید."""
+
+    meta = {
+        "name": "لیام تریدر ۹ — اسکلپ ۱ دقیقه",
+        "id": "liam9-scalp-1m",
+        "version": PARAMS["version"],
+        "author": "لیام تریدر ۹",
+        "timeframes": ["1m"],
+        "market": "crypto-futures",
+        "risk_contract": RISK_CONTRACT,
+        "description": ("IBS + پولبک روی ۱د با سشن و کندل قبلی؛ اهرم "
+                        "۴۵–۹۰ فقط با محافظ فاصلهٔ لیکویید و دروازهٔ "
+                        "کارمزد — پیپر"),
+    }
+
+    def __init__(self, *a, **kw):
+        try:
+            super().__init__(*a, **kw)
+        except Exception:                             # noqa: BLE001
+            pass
+        sync_all()
+
+    def generate_signal(self, symbol, candles=None, **kw):
+        if candles and len(candles) >= 90:
+            return scalp_decide(candles, symbol)
+        return scalp_signal(symbol)
+
+    def on_bar(self, symbol, candles=None, **kw):
+        return self.generate_signal(symbol, candles=candles, **kw)
+
+    def run(self, symbol, **kw):
+        return self.generate_signal(symbol, **kw)
+
+    def audit(self, risk=None, dashboard=None):
+        return audit_environment(risk, dashboard)
+
+
+if __name__ == "__main__":
+    import sys
+    if "--selftest" in sys.argv:
+        _selftest()
+    elif "--audit" in sys.argv:
+        print_audit()
+        print("\nبرای ممیزی واقعی، آبجکت ریسک داشبورد را بده:")
+        print("  liam9_strategy.print_audit(risk=dashboard.risk_engine)")
+    else:
+        scalp_mode = "--scalp" in sys.argv
+        args = [a for a in sys.argv[1:] if not a.startswith("--")]
+        sym = args[0] if args else "BTCUSDT"
+        v = sync_all()
+        print(f"پارامترها: {v['params'] or 'پیش‌فرض (اتصال نشد)'} · "
+              f"کارنامهٔ تجربه: {v['experience_pairs']} جفت")
+        out = scalp_signal(sym) if scalp_mode else signal(sym)
+        print(json.dumps(out, ensure_ascii=False, indent=1))
