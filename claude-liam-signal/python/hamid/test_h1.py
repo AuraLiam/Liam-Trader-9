@@ -89,10 +89,26 @@ def run():
     check("معامله‌ها هم‌پوشانی ندارند", len(opens) == len(set(opens)))
 
     # ۵ب) واریانت‌ها: ورودها باید یکی باشند تا مقایسه منصفانه بماند
-    check("همهٔ واریانت‌ها روی همان ورودها سنجیده می‌شوند",
-          all(len(v) == len(trs) for v in books.values())
-          and all([t["opened"] for t in v] == opens for v in books.values()),
-          str({k: len(v) for k, v in books.items()}))
+    mgmt = {v["key"]: books[v["key"]] for v in BT.VARIANTS}
+    check("همهٔ واریانت‌های خروج روی همان ورودها سنجیده می‌شوند",
+          all(len(v) == len(trs) for v in mgmt.values())
+          and all([t["opened"] for t in v] == opens for v in mgmt.values()),
+          str({k: len(v) for k, v in mgmt.items()}))
+    # فیلترهای ورود زیرمجموعهٔ پایه‌اند — نه بیشتر، نه معاملهٔ ساختگی
+    ent = {f["key"]: books["entry:" + f["key"]] for f in BT.ENTRY_FILTERS}
+    check("فیلترهای ورود زیرمجموعهٔ معاملات پایه‌اند",
+          len(ent["all"]) == len(trs)
+          and all(len(v) <= len(trs) for v in ent.values())
+          and all(set(t["opened"] for t in v) <= set(opens)
+                  for v in ent.values()),
+          str({k: len(v) for k, v in ent.items()}))
+    check("فیلتر «فقط شورت» هیچ لانگی ندارد",
+          all(t["dir"] == "SHORT" for t in ent["short_only"]))
+    check("فیلتر ریکلیم واقعاً کندل تریگر را می‌خواهد",
+          BT._has_reclaim("LONG", [{"h": 10, "l": 9, "c": 9.5},
+                                   {"h": 11, "l": 10, "c": 10.5}]) is True
+          and BT._has_reclaim("LONG", [{"h": 10, "l": 9, "c": 9.5},
+                                       {"h": 10, "l": 9, "c": 9.8}]) is False)
     nt = books["no_trail"]
     check("واریانت بدون تریل هیچ خروج trail ندارد",
           all(t["outcome"] != "trail" for t in nt), str(nt[:1]))

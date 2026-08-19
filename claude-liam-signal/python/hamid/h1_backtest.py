@@ -65,6 +65,52 @@ VARIANTS = [
 ]
 
 
+# ── فیلترهای ورود ──────────────────────────────────────────────────────────
+#
+# اندازه‌گیری ۱۹ اوت (۸۰۴ معامله، ۶۳ نماد، کندل واقعی): پایه ‎−۰.۱۰۶R با
+# CI کاملاً زیر صفر، و هر پنج واریانت مدیریت خروج هم منفی. یعنی مشکل خروج
+# نیست، *ورود* است. فرق ساختاری با موتور پنل (که sig-ibs با ۶۷٪ برد و
+# ‎+۰.۰۸۴R دارد) این است: پنل بعد از پولبک منتظر تریگر می‌ماند
+# (ریکلیم/میکرو-BOS) و چند دروازهٔ دیگر هم دارد؛ این نسخه همان‌جا وارد
+# می‌شود. پس فیلترها را روی همان ورودها می‌سنجیم، نه با حدس.
+ENTRY_FILTERS = [
+    {"key": "all", "label": "بدون فیلتر (پایه)"},
+    {"key": "confirm", "label": "فقط با کندل تأیید هم‌جهت"},
+    {"key": "q70", "label": "فقط کیفیت ≥۷۰"},
+    {"key": "reclaim", "label": "فقط با ریکلیم: کلوز بالای سقف کندل قبل"},
+    {"key": "confirm_reclaim", "label": "کندل تأیید + ریکلیم"},
+    {"key": "short_only", "label": "فقط شورت (جهتِ کم‌ضررتر در نمونه)"},
+]
+
+
+def _entry_passes(key, sig, c1h_upto):
+    if key == "all":
+        return True
+    if key == "confirm":
+        return sig.get("pattern_align") == "with"
+    if key == "q70":
+        return sig.get("quality", 0) >= 70
+    if key == "short_only":
+        return sig["action"] == "SHORT"
+    reclaim = _has_reclaim(sig["action"], c1h_upto)
+    if key == "reclaim":
+        return reclaim
+    if key == "confirm_reclaim":
+        return reclaim and sig.get("pattern_align") == "with"
+    return True
+
+
+def _has_reclaim(direction, cd):
+    """تریگر ورود: کندل آخر سقف/کف کندل قبلی را پس گرفته است.
+
+    همان چیزی که موتور پنل روی ۵د می‌خواهد (reclaim/micro-BOS) — این‌جا
+    روی ۱س، چون تایم اجرا همان است."""
+    if len(cd) < 2:
+        return False
+    k, p = cd[-1], cd[-2]
+    return k["c"] > p["h"] if direction == "LONG" else k["c"] < p["l"]
+
+
 def _shape(sig, variant):
     """سیگنال واحد را به هندسهٔ یک واریانت درمی‌آورد (ورود و استاپ ثابت)."""
     pos = dict(sig)
@@ -126,6 +172,7 @@ def replay_symbol(sym, c1h, c4h, step=1, variants=None):
     ضدهم‌پوشانی با طول معاملهٔ واریانت پایه انجام می‌شود."""
     vs = variants or VARIANTS
     out = {v["key"]: [] for v in vs}
+    out.update({"entry:" + f["key"]: [] for f in ENTRY_FILTERS})
     i = 260                                   # به‌اندازهٔ EMA200 تاریخ لازم است
     while i < len(c1h) - 2:
         t_now = c1h[i]["t"]                   # میدان ۴س فقط تا همان لحظه
@@ -133,20 +180,26 @@ def replay_symbol(sym, c1h, c4h, step=1, variants=None):
         if len(c4) < 220:
             i += step
             continue
-        sig = H1.analyze(sym, c4, c1h[:i + 1])
+        window = c1h[:i + 1]
+        sig = H1.analyze(sym, c4, window)
         if sig["action"] == "NO_SIGNAL":
             i += step
             continue
-        base_bars = 1
+        base_bars, base_row = 1, None
         for v in vs:
             res, r, r_net, bars = _run_one(_shape(sig, v), c1h, i, sig)
+            row = {"sym": sym, "dir": sig["action"], "outcome": res,
+                   "R": r, "R_net": r_net, "quality": sig["quality"],
+                   "stop_pct": sig["stop_pct"], "exp_used": sig["exp_used"],
+                   "bars": bars, "opened": c1h[i]["t"]}
             if v["key"] == "base":
-                base_bars = bars
-            out[v["key"]].append(
-                {"sym": sym, "dir": sig["action"], "outcome": res,
-                 "R": r, "R_net": r_net, "quality": sig["quality"],
-                 "stop_pct": sig["stop_pct"], "exp_used": sig["exp_used"],
-                 "bars": bars, "opened": c1h[i]["t"]})
+                base_bars, base_row = bars, row
+            out[v["key"]].append(row)
+        # فیلترهای ورود روی همان معاملهٔ پایه سنجیده می‌شوند — تفاوت فقط
+        # «وارد می‌شدیم یا نه»، نه نحوهٔ خروج.
+        for f in ENTRY_FILTERS:
+            if _entry_passes(f["key"], sig, window):
+                out["entry:" + f["key"]].append(base_row)
         i += base_bars + 1                     # ضدهم‌پوشانی
     return out
 
@@ -235,6 +288,14 @@ def run(symbols=60, bars=1000, quiet=False):
                                        for o in ("target", "trail", "stop",
                                                  "timeout")})
                         for v in VARIANTS],
+           "entry_filters": [dict(describe(f["label"], books["entry:" + f["key"]]),
+                                  key=f["key"],
+                                  equity1=equity_curve(books["entry:" + f["key"]], 1.0),
+                                  outcomes={o: sum(1 for t in books["entry:" + f["key"]]
+                                                   if t["outcome"] == o)
+                                            for o in ("target", "trail", "stop",
+                                                      "timeout")})
+                             for f in ENTRY_FILTERS],
            "overall": describe("کل", all_tr),
            "by_dir": [describe(d, [t for t in all_tr if t["dir"] == d])
                       for d in ("LONG", "SHORT")],
@@ -261,6 +322,11 @@ def run(symbols=60, bars=1000, quiet=False):
             print(f"ریسک {e['risk_pct']}٪ → بازده {e['return_pct']}٪ · "
                   f"افت حداکثر {e['max_drawdown_pct']}٪ · "
                   f"{e['blocked_by_daily_cap']} معامله قربانی سقف روزانه")
+        print("\n== فیلترهای ورود (خروج یکی، ورود فرق دارد) ==")
+        for f in res["entry_filters"]:
+            flag = "✅ CI بالای صفر" if f.get("positive") else ""
+            print(f"  {f['name']}: n={f['n']} برد={f.get('win_pct')}٪ "
+                  f"R={f.get('mean_r_net')} CI={f.get('ci95')} {flag}")
         print("\n== واریانت‌های مدیریت معامله (ورودها یکی، خروج فرق دارد) ==")
         for v in res["variants"]:
             flag = "✅ CI بالای صفر" if v.get("positive") else ""
