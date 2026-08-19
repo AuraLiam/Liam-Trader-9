@@ -1,0 +1,73 @@
+# میز شوک — قانون حمید ۱۹ اوت: شوک بیت‌کوین روی هر تایم → اردر بلاک با
+# اهرم ۵–۶، و شکار پامپ با اهرم ۱۵ فقط با تأیید حجمی ۱۰۰٪.
+# دقایق فرد (درس اندازه‌گیری‌شده: کرون‌های */N شلوغ‌اند و جاب می‌افتد).
+name: Shock desk
+
+on:
+  schedule:
+    - cron: "9,24,39,54 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shock-desk
+  cancel-in-progress: false
+
+jobs:
+  shock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_shock
+      - name: Run shock desk
+        working-directory: claude-liam-signal/python
+        env:
+          # کلید امضای خط زنده — فقط از سکرت، هرگز در کد یا لاگ.
+          LIAM9_LINK_SECRET: ${{ secrets.LIAM9_LINK_SECRET }}
+        run: python3 -m hamid.shock_desk
+      - name: Publish
+        run: |
+          set -o pipefail
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add brain/paper signals/shock.json signals/live-link.json
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "میز شوک $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && break
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+      - name: Publish to panel (gh-pages)
+        run: |
+          set -o pipefail
+          git fetch origin gh-pages
+          rm -rf /tmp/ghp && git worktree add /tmp/ghp origin/gh-pages --detach
+          mkdir -p /tmp/ghp/signals
+          for f in shock live-link; do
+            cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
+          done
+          cd /tmp/ghp
+          git add signals
+          git diff --cached --quiet && { echo "unchanged"; exit 0; }
+          git commit -q -m "شوک $(date -u '+%H:%M') UTC"
+          for a in 1 2 3 4 5; do
+            git push origin HEAD:gh-pages && exit 0
+            git fetch origin gh-pages || true
+            git rebase origin/gh-pages || { git rebase --abort; exit 1; }
+            sleep $((a * 3))
+          done
+          exit 1
