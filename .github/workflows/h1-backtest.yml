@@ -7,10 +7,10 @@ on:
     inputs:
       symbols:
         description: "چند نماد"
-        default: "60"
+        default: "120"
       bars:
-        description: "چند کندل ۱ ساعته"
-        default: "1500"
+        description: "چند کندل ۱ ساعته (سقف امن صرافی‌ها ۱۰۰۰)"
+        default: "1000"
   schedule:
     - cron: "41 5 * * *"        # روزی یک بار، دقیقهٔ فرد (کرون‌های */N شلوغ‌اند)
 
@@ -37,8 +37,8 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           python3 -m hamid.h1_backtest \
-            --symbols "${{ github.event.inputs.symbols || '60' }}" \
-            --bars "${{ github.event.inputs.bars || '1500' }}" | tee h1.txt
+            --symbols "${{ github.event.inputs.symbols || '120' }}" \
+            --bars "${{ github.event.inputs.bars || '1000' }}" | tee h1.txt
       - name: Summary
         if: always()
         working-directory: claude-liam-signal/python

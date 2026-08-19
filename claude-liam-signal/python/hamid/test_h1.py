@@ -80,12 +80,27 @@ def run():
     sig_i = len(pull) - 1                   # کندل تأیید: بسته نزدیک کف
     c1[sig_i]["l"] = c1[sig_i]["c"] * 0.988
     c1[sig_i]["c"] = c1[sig_i]["c"] * 0.9895
-    trs = BT.replay_symbol("TESTUSDT", c1, c4)
+    books = BT.replay_symbol("TESTUSDT", c1, c4)
+    trs = books["base"]
     check("بک‌تست معاملهٔ واقعی ساخت (نه لیست خالی)", len(trs) >= 1, str(len(trs)))
     check("هر معامله R خالص دارد و از R ناخالص بیشتر نیست",
           all("R_net" in t and t["R_net"] <= t["R"] for t in trs), str(trs[:1]))
     opens = [t["opened"] for t in trs]
     check("معامله‌ها هم‌پوشانی ندارند", len(opens) == len(set(opens)))
+
+    # ۵ب) واریانت‌ها: ورودها باید یکی باشند تا مقایسه منصفانه بماند
+    check("همهٔ واریانت‌ها روی همان ورودها سنجیده می‌شوند",
+          all(len(v) == len(trs) for v in books.values())
+          and all([t["opened"] for t in v] == opens for v in books.values()),
+          str({k: len(v) for k, v in books.items()}))
+    nt = books["no_trail"]
+    check("واریانت بدون تریل هیچ خروج trail ندارد",
+          all(t["outcome"] != "trail" for t in nt), str(nt[:1]))
+    check("واریانت تارگت نزدیک‌تر زودتر یا هم‌زمان بسته می‌شود",
+          all(a["bars"] <= b["bars"] for a, b in
+              zip(books["tp15_no_trail"], nt)),
+          str([(a['bars'], b['bars']) for a, b in
+               zip(books['tp15_no_trail'], nt)][:3]))
 
     # ۶) بدون نگاه به آینده: تصمیم فقط با کندل تا همان لحظه
     seen = {}

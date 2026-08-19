@@ -42,13 +42,93 @@ def boot_ci(vals, n=2000, seed=7):
     return (round(means[int(0.025 * n)], 3), round(means[int(0.975 * n)], 3))
 
 
-def replay_symbol(sym, c1h, c4h, step=1):
-    """هر کندل ۱س را جلو می‌برد؛ ستاپ که ساخته شد تا نتیجه دنبالش می‌کند."""
-    trades = []
+# ── واریانت‌های مدیریت معامله ──────────────────────────────────────────────
+#
+# چرا واریانت: اندازه‌گیری ۱۹ اوت روی همین موتور نشان داد نرخ برد ۵۸.۴٪ ولی
+# میانگین ‎−۰.۲۱۱R — چون ۳۶ معامله با تریل نزدیک صفر بسته شد و فقط ۸ تا به
+# تارگت رسید، در حالی که بازنده‌ها R کامل دادند. همان الگو در دفتر اسکلپ ۱د
+# هم دیده شد. پس نردبان تریل باید *سنجیده* شود، نه حدس زده.
+#
+# قانون تریل دستور صریح حمید است و تا نتیجهٔ CI-دار عوض نمی‌شود؛ این‌جا فقط
+# اندازه می‌گیریم و گزارش می‌دهیم — تولید دست‌نخورده می‌ماند.
+VARIANTS = [
+    {"key": "base", "rr": None, "trail": (1 / 3, 2 / 3),
+     "label": "تولید فعلی: تریل ⅓→سربه‌سر، ⅔→⅓"},
+    {"key": "trail_half", "rr": None, "trail": (0.5, 0.75),
+     "label": "تریل دیرتر: ½→سربه‌سر، ¾→½"},
+    {"key": "no_trail", "rr": None, "trail": None,
+     "label": "بدون تریل: فقط استاپ و تارگت"},
+    {"key": "tp15", "rr": 1.5, "trail": (1 / 3, 2 / 3),
+     "label": "تارگت نزدیک‌تر ۱.۵R با تریل فعلی"},
+    {"key": "tp15_no_trail", "rr": 1.5, "trail": None,
+     "label": "تارگت ۱.۵R بدون تریل"},
+]
+
+
+def _shape(sig, variant):
+    """سیگنال واحد را به هندسهٔ یک واریانت درمی‌آورد (ورود و استاپ ثابت)."""
+    pos = dict(sig)
+    entry, sl0 = sig["entry"], sig["sl"]
+    risk = abs(entry - sl0)
+    rr = variant["rr"] or H1.P["rr_target"]
+    pos["tp1"] = entry + rr * risk if sig["action"] == "LONG" \
+        else entry - rr * risk
+    if variant["trail"] is None:
+        far = 10.0                            # پله‌ای که هرگز لمس نمی‌شود
+        pos["trail"] = {"step1_at": entry + far * risk * (1 if sig["action"] == "LONG" else -1),
+                        "step1_sl": sl0,
+                        "step2_at": entry + far * risk * (1 if sig["action"] == "LONG" else -1),
+                        "step2_sl": sl0, "rule": "بدون تریل"}
+        return pos
+    f1, f2 = variant["trail"]
+    span = pos["tp1"] - entry
+    pad = H1.P["breakeven_pad_pct"] / 100
+    pos["trail"] = {
+        "step1_at": entry + span * f1,
+        "step1_sl": entry * (1 + pad) if sig["action"] == "LONG"
+        else entry * (1 - pad),
+        "step2_at": entry + span * f2,
+        "step2_sl": entry + span * f1,
+        "rule": variant["label"]}
+    return pos
+
+
+def _run_one(pos, c1h, i, sig):
+    """یک پوزیشن را تا نتیجه جلو می‌برد. بدترین حالت درون‌کندلی: استاپ اول."""
+    sl, res, bars, exit_px = pos["sl"], None, 0, None
+    for k in c1h[i + 1: i + 1 + H1.P["max_hold_bars"]]:
+        bars += 1
+        pos["sl"] = sl
+        ev = H1.manage(pos, k)
+        if ev["event"] == "STOP":
+            moved = abs(sl - sig["sl"]) > 1e-12
+            res, exit_px = ("trail" if moved else "stop"), sl
+            break
+        if ev["event"] == "TARGET":
+            res, exit_px = "target", pos["tp1"]
+            break
+        if ev["event"] == "TRAIL":
+            sl = ev["sl"]
+    if res is None:
+        res = "timeout"
+        exit_px = c1h[min(i + H1.P["max_hold_bars"], len(c1h) - 1)]["c"]
+    risk = abs(sig["entry"] - sig["sl"])
+    r = ((exit_px - sig["entry"]) if sig["action"] == "LONG"
+         else (sig["entry"] - exit_px)) / risk
+    fee_r = (FEE_PCT / 100) * sig["entry"] / risk
+    return res, round(r, 3), round(r - fee_r, 3), bars
+
+
+def replay_symbol(sym, c1h, c4h, step=1, variants=None):
+    """هر کندل ۱س را جلو می‌برد؛ هر ستاپ با همهٔ واریانت‌ها سنجیده می‌شود.
+
+    ورودها برای همهٔ واریانت‌ها یکی است، پس مقایسه منصفانه است. جلو رفتن
+    ضدهم‌پوشانی با طول معاملهٔ واریانت پایه انجام می‌شود."""
+    vs = variants or VARIANTS
+    out = {v["key"]: [] for v in vs}
     i = 260                                   # به‌اندازهٔ EMA200 تاریخ لازم است
     while i < len(c1h) - 2:
-        # میدان ۴س فقط تا همان لحظه (بدون نگاه به آینده)
-        t_now = c1h[i]["t"]
+        t_now = c1h[i]["t"]                   # میدان ۴س فقط تا همان لحظه
         c4 = [k for k in c4h if k["t"] <= t_now]
         if len(c4) < 220:
             i += step
@@ -57,38 +137,18 @@ def replay_symbol(sym, c1h, c4h, step=1):
         if sig["action"] == "NO_SIGNAL":
             i += step
             continue
-        pos = dict(sig)
-        sl, res, bars = pos["sl"], None, 0
-        for k in c1h[i + 1: i + 1 + H1.P["max_hold_bars"]]:
-            bars += 1
-            pos["sl"] = sl
-            ev = H1.manage(pos, k)
-            if ev["event"] == "STOP":
-                res = ("stop" if abs(sl - pos["entry"]) > 1e-12
-                       and ((pos["action"] == "LONG" and sl < pos["entry"])
-                            or (pos["action"] == "SHORT" and sl > pos["entry"]))
-                       else "trail")
-                exit_px = sl
-                break
-            if ev["event"] == "TARGET":
-                res, exit_px = "target", pos["tp1"]
-                break
-            if ev["event"] == "TRAIL":
-                sl = ev["sl"]
-        if res is None:
-            res, exit_px = "timeout", c1h[min(i + H1.P["max_hold_bars"],
-                                              len(c1h) - 1)]["c"]
-        risk = abs(pos["entry"] - sig["sl"])
-        r = ((exit_px - pos["entry"]) if pos["action"] == "LONG"
-             else (pos["entry"] - exit_px)) / risk
-        fee_r = (FEE_PCT / 100) * pos["entry"] / risk
-        trades.append({"sym": sym, "dir": pos["action"], "outcome": res,
-                       "R": round(r, 3), "R_net": round(r - fee_r, 3),
-                       "quality": sig["quality"], "stop_pct": sig["stop_pct"],
-                       "exp_used": sig["exp_used"], "bars": bars,
-                       "opened": c1h[i]["t"]})
-        i += bars + 1                          # ضدهم‌پوشانی: یک معامله در لحظه
-    return trades
+        base_bars = 1
+        for v in vs:
+            res, r, r_net, bars = _run_one(_shape(sig, v), c1h, i, sig)
+            if v["key"] == "base":
+                base_bars = bars
+            out[v["key"]].append(
+                {"sym": sym, "dir": sig["action"], "outcome": res,
+                 "R": r, "R_net": r_net, "quality": sig["quality"],
+                 "stop_pct": sig["stop_pct"], "exp_used": sig["exp_used"],
+                 "bars": bars, "opened": c1h[i]["t"]})
+        i += base_bars + 1                     # ضدهم‌پوشانی
+    return out
 
 
 def equity_curve(trades, risk_pct, daily_cap_pct=5.0, start=1000.0):
@@ -125,32 +185,52 @@ def describe(name, trades):
             "ci95": [lo, hi], "positive": bool(lo is not None and lo > 0)}
 
 
-def run(symbols=60, bars=1500, quiet=False):
+def run(symbols=60, bars=1000, quiet=False):
+    """bars پیش‌فرض ۱۰۰۰ است، نه ۱۵۰۰: sources.sane هر سری کوتاه‌تر از ۹۰٪
+    درخواست را رد می‌کند و بیشتر صرافی‌ها سقف ۱۰۰۰ کندل دارند — با ۱۵۰۰،
+    ۵۲ نماد از ۶۰ در سکوت افتادند و نمونه به ۷۷ معامله رسید (۱۹ اوت)."""
     import sources
     try:
         syms = sources.top_symbols(symbols)
     except Exception:                                    # noqa: BLE001
         from hamid.trainer import top_symbols
         syms = top_symbols(symbols)
-    all_tr, done = [], 0
+    books, done, skipped = {v["key"]: [] for v in VARIANTS}, 0, 0
     for s in syms:
         try:
             k1 = sources.klines(s, "1h", bars)
-            k4 = sources.klines(s, "4h", max(400, bars // 4))
+            k4 = sources.klines(s, "4h", 400)
         except Exception:                                # noqa: BLE001
+            skipped += 1
             continue
-        if not k1 or not k4 or len(k1) < 400:
+        if not k1 or not k4 or len(k1) < 400 or len(k4) < 260:
+            skipped += 1
             continue
         c1 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k1]
         c4 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k4]
-        all_tr += replay_symbol(s, c1, c4)
+        part = replay_symbol(s, c1, c4)
+        for k, v in part.items():
+            books[k] += v
         done += 1
         if not quiet and done % 10 == 0:
-            print(f"  {done}/{len(syms)} نماد — {len(all_tr)} معامله")
+            print(f"  {done}/{len(syms)} نماد — {len(books['base'])} معامله")
+    if not quiet and skipped:
+        print(f"  {skipped} نماد بدون دادهٔ کافی رد شد (گزارش می‌شود، پنهان نه)")
 
+    all_tr = books["base"]
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
-           "engine": H1.P["version"], "symbols": done, "bars": bars,
+           "engine": H1.P["version"], "symbols": done, "skipped": skipped,
+           "bars": bars,
            "source": "کندل واقعی ۱ ساعته (نه شبیه‌ساز)",
+           "variants": [dict(describe(v["label"], books[v["key"]]),
+                             key=v["key"],
+                             equity2=equity_curve(books[v["key"]], 2.0),
+                             equity1=equity_curve(books[v["key"]], 1.0),
+                             outcomes={o: sum(1 for t in books[v["key"]]
+                                              if t["outcome"] == o)
+                                       for o in ("target", "trail", "stop",
+                                                 "timeout")})
+                        for v in VARIANTS],
            "overall": describe("کل", all_tr),
            "by_dir": [describe(d, [t for t in all_tr if t["dir"] == d])
                       for d in ("LONG", "SHORT")],
@@ -177,12 +257,19 @@ def run(symbols=60, bars=1500, quiet=False):
             print(f"ریسک {e['risk_pct']}٪ → بازده {e['return_pct']}٪ · "
                   f"افت حداکثر {e['max_drawdown_pct']}٪ · "
                   f"{e['blocked_by_daily_cap']} معامله قربانی سقف روزانه")
+        print("\n== واریانت‌های مدیریت معامله (ورودها یکی، خروج فرق دارد) ==")
+        for v in res["variants"]:
+            flag = "✅ CI بالای صفر" if v.get("positive") else ""
+            print(f"  {v['name']}: n={v['n']} برد={v.get('win_pct')}٪ "
+                  f"میانگین={v.get('mean_r_net')}R CI={v.get('ci95')} {flag}")
+            print(f"     نتایج {v['outcomes']} · ریسک۱٪ بازده "
+                  f"{v['equity1']['return_pct']}٪ افت {v['equity1']['max_drawdown_pct']}٪")
     return res
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", type=int, default=60)
-    ap.add_argument("--bars", type=int, default=1500)
+    ap.add_argument("--bars", type=int, default=1000)
     a = ap.parse_args()
     run(symbols=a.symbols, bars=a.bars)
