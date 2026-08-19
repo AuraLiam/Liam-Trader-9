@@ -14,6 +14,7 @@ run با صفر job، وضعیت failure، و در API به‌جای «Live scan
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -132,6 +133,35 @@ for f in files:
 check("هیچ بلاک ساختاری خالی نیست (env:/jobs:/steps: بی‌مقدار)", not hollow)
 if hollow:
     print(f"      ↳ {hollow}")
+
+# لولهٔ بی‌محافظ: در بش، کد خروجِ یک لوله همان کد خروج *آخرین* دستور است.
+# پس `python3 -m X | tee log` وقتی پایتون کرش می‌کند هم صفر برمی‌گرداند و
+# مرحله سبز می‌شود. ۱۹ اوت همین اتفاق افتاد: بک‌تست ۱ساعته با KeyError مرد،
+# ورک‌فلو «موفق» شد، و هیچ خروجی‌ای تولید نشد بدون آن‌که کسی خبردار شود —
+# در ده ورک‌فلو همین الگو بود. هر لوله باید `set -o pipefail` داشته باشد.
+leaky = []
+for f in files:
+    try:
+        doc = yaml.safe_load(f.read_text())
+    except yaml.YAMLError:
+        continue
+    for job in (doc.get("jobs") or {}).values():
+        if not isinstance(job, dict):
+            continue
+        for st in (job.get("steps") or []):
+            if not isinstance(st, dict):
+                continue
+            body = st.get("run") or ""
+            if "|" not in body:
+                continue
+            piped = [ln for ln in body.splitlines()
+                     if re.search(r"\|\s*(tee|grep|head|tail|jq|python)", ln)
+                     and "||" not in ln]
+            if piped and "pipefail" not in body:
+                leaky.append(f"{f.name}: {st.get('name') or 'بی‌نام'}")
+check("هیچ لولهٔ بی‌محافظی نیست (هر `| tee` با set -o pipefail)", not leaky)
+if leaky:
+    print(f"      ↳ {leaky}")
 
 print()
 if fail:

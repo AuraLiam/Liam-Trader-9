@@ -59,6 +59,7 @@ jobs:
 
       - name: Mine
         run: |
+          set -o pipefail
           python3 claude-liam-signal/python/mine.py \
             --symbols "${{ github.event.inputs.symbols || '70' }}" \
             --days "${{ github.event.inputs.days || '30' }}" \

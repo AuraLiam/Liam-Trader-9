@@ -1,4 +1,5 @@
 """آزمون موتور ۱ ساعته و بک‌تستش — قرارداد داشبورد، ریسک، بدون نگاه به آینده."""
+import json
 import sys
 import time
 from pathlib import Path
@@ -142,6 +143,45 @@ def run():
     check("سقف روزانه با ریسک ۲٪ زودتر جلوی معامله را می‌گیرد",
           e2["blocked_by_daily_cap"] > e1["blocked_by_daily_cap"],
           f"{e2} {e1}")
+
+    # ۷ب) خودِ run() هم باید اجرا شود، نه فقط replay_symbol.
+    #
+    # درس ۱۹ اوت: تست کامل سبز بود ولی run() روی رانر با
+    # KeyError: 'entry:all' مرد، چون کلیدهای فیلتر ورود در books ساخته
+    # نشده بودند. هیچ تستی run() را صدا نمی‌زد، پس عیب دو بار به تولید رفت.
+    import sources
+    old_k, old_top = sources.klines, getattr(sources, "top_symbols", None)
+    tmp = Path(BT.OUT.parent) / "h1-backtest-test.json"
+    old_out = BT.OUT
+    c4x = mk([100 + i * 1.4 for i in range(400)], tf_ms=H4)
+    # ≥۴۰۰ کندل لازم است: run() سری کوتاه‌تر را (درست) رد می‌کند
+    up2 = [c4x[-100]["c"] + i * 0.35 for i in range(320)]
+    pull2 = up2 + [up2[-1] - i * 1.2 for i in range(1, 9)]
+    c1x = mk(pull2 + [pull2[-1] * (1 + 0.004 * i) for i in range(1, 80)],
+             t0=c4x[-100]["t"])
+    c1x[len(pull2) - 1]["l"] = c1x[len(pull2) - 1]["c"] * 0.988
+    c1x[len(pull2) - 1]["c"] = c1x[len(pull2) - 1]["c"] * 0.9895
+
+    def fake_klines(sym, tf, n, **kw):
+        cd = c4x if tf == "4h" else c1x
+        return [[k["t"], k["o"], k["h"], k["l"], k["c"], 1.0] for k in cd]
+    sources.klines = fake_klines
+    sources.top_symbols = lambda n: ["TESTUSDT"]
+    BT.OUT = tmp
+    try:
+        res = BT.run(symbols=1, bars=400, quiet=True)
+        check("run() تا آخر می‌رود و گزارش کامل می‌سازد",
+              res["overall"]["n"] >= 1 and len(res["variants"]) == len(BT.VARIANTS)
+              and len(res["entry_filters"]) == len(BT.ENTRY_FILTERS),
+              str(res.get("overall")))
+        check("گزارش روی دیسک نوشته و JSON معتبر است",
+              json.loads(tmp.read_text())["engine"] == H1.P["version"])
+    finally:
+        sources.klines = old_k
+        if old_top is not None:
+            sources.top_symbols = old_top
+        BT.OUT = old_out
+        tmp.unlink(missing_ok=True)
 
     # ۸) CI: زیر نمونهٔ کافی حکم نمی‌دهد
     check("CI با نمونهٔ کم None است", BT.boot_ci([0.1, 0.2]) == (None, None))

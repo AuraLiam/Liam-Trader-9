@@ -36,6 +36,7 @@ jobs:
       - name: Backtest on real candles
         working-directory: claude-liam-signal/python
         run: |
+          set -o pipefail
           python3 -m hamid.h1_backtest \
             --symbols "${{ github.event.inputs.symbols || '120' }}" \
             --bars "${{ github.event.inputs.bars || '1000' }}" | tee h1.txt
