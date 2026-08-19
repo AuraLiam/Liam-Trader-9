@@ -19,7 +19,9 @@ jobs:
         with: { python-version: "3.11" }
       - name: تحلیل
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.analyze_btc | tail -5
+        run: |
+          set -o pipefail
+          python3 -m hamid.analyze_btc | tail -5
       - name: Git identity
         run: |
           git config user.name "Claude"

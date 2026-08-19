@@ -59,6 +59,7 @@ jobs:
 
       - name: Run the backtest
         run: |
+          set -o pipefail
           python3 claude-liam-signal/python/backtest.py \
             --symbols "${{ github.event.inputs.symbols || '60' }}" \
             --bars "${{ github.event.inputs.bars || '5000' }}" \
