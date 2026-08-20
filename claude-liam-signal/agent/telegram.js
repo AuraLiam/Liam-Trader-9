@@ -2,7 +2,12 @@
    retried, so a signal issued during an outage still arrives. */
 const {db}=require("./store");
 const QK="tg_queue";
-function cfg(){return Object.assign({token:process.env.TG_TOKEN||"",chat:process.env.TG_CHAT||""},db.get("tg")||{});}
+/* تک‌مقصدی، بدون استثنا (دستور حمید، ۲۰ اوت): سیگنال فقط به
+   @LiamTrader9_Bot می‌رود. متغیرهای محیطی قدیمی و هر مقصدی که
+   در db ذخیره شده بود حذف شدند — همان‌ها بودند که پیام را به بات دوم/سوم
+   می‌بردند. توکن فقط از همان دو متغیر مرکزی خوانده می‌شود، هیچ‌جای دیگر. */
+function cfg(){return {token:process.env.TELEGRAM_BOT_TOKEN||"",
+                       chat:process.env.TELEGRAM_CHAT_ID||""};}
 function on(){const c=cfg();return !!(c.token&&c.chat);}
 async function raw(text){
   const c=cfg();if(!c.token||!c.chat)return false;

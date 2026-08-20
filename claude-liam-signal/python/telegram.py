@@ -64,19 +64,6 @@ def creds():
     return (tok, chat) if tok and chat else (None, None)
 
 
-def creds2():
-    """مقصد دوم — دستور حمید (۱۴ اوت): «همزمان هم به قبلی و هم به این».
-
-    از محیط خوانده می‌شود، نه از کد. توکن هرگز داخل مخزن نمی‌نشیند
-    (قانون ۰۵: «Secretها فقط در Backend secret store یا environment امن؛
-    نه Git، Prompt، HTML، localStorage یا Log»). اگر تنظیم نشده باشد،
-    هیچ اتفاقی نمی‌افتد و مسیر اصلی دست‌نخورده کار می‌کند.
-    """
-    tok = os.environ.get("TELEGRAM_BOT_TOKEN_2", "").strip()
-    chat = os.environ.get("TELEGRAM_CHAT_ID_2", "").strip()
-    return (tok, chat) if tok and chat else (None, None)
-
-
 def scrub(text):
     """Remove the bot token from anything about to be printed.
 
@@ -89,9 +76,7 @@ def scrub(text):
     already hold is not a safety property, it is luck.
     """
     out = str(text)
-    # هر دو مقصد پاک می‌شوند — بات دوم هم همان‌قدر راز است که اولی
-    for tok in (os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),
-                os.environ.get("TELEGRAM_BOT_TOKEN_2", "").strip()):
+    for tok in (os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),):
         if not tok:
             continue
         out = out.replace(tok, "***")
@@ -120,50 +105,20 @@ def _key(s):
     return f"{s.get('strategy','?')}|{s['sym']}|{s['tf']}|{s['dir']}"
 
 
-# متدهایی که آینه می‌شوند. getMe/getUpdates و هر چیز خواندنی آینه نمی‌شود —
-# فقط چیزی که واقعاً پیام است.
-MIRROR_METHODS = {"sendMessage", "sendPhoto", "sendDocument", "sendMediaGroup"}
-
-# فیلدهای ریپلای به شناسهٔ پیام در چتِ *اول* اشاره می‌کنند و در چت دوم
-# بی‌معنا (و خطاساز) اند. در آینه حذف می‌شوند و به‌جایش پیام دوم مستقل
-# می‌رود — نتیجه‌ها در چت دوم ریپلای نمی‌شوند ولی می‌رسند.
-_REPLY_FIELDS = ("reply_to_message_id", "reply_parameters",
-                 "allow_sending_without_reply")
+# ── تک‌مقصدی، بدون استثنا (دستور حمید، ۲۰ اوت) ────────────────────────────
+#
+# «سیگنال‌ها فقط روی یک بات: @LiamTrader9_Bot». آینهٔ مقصد دوم (که ۱۴ اوت
+# اضافه شده بود) کامل برداشته شد و متغیرهای TELEGRAM_*_2 از همهٔ ورک‌فلوها
+# پاک شدند. پاسبان test_single_bot برگشتشان را ناممکن می‌کند.
 
 
-def _mirror(method, fields, files=None):
-    """همان پیام را به مقصد دوم هم بفرست — بهترین‌تلاش، بی‌صدا در خطا.
+def _post(token, method, fields, files=None):
+    """ارسال — فقط و فقط به یک مقصد: @LiamTrader9_Bot.
 
-    آینه هرگز نباید مسیر اصلی را بشکند: اگر بات دوم توکن غلط داشته باشد،
-    بلاک شده باشد یا شبکه‌اش قطع باشد، سیگنالِ مقصد اول باید رفته باشد.
-    برای همین خروجی‌اش دور ریخته می‌شود و استثنا بالا نمی‌رود.
+    هیچ آینه، هیچ مقصد دوم، هیچ کپی. اگر روزی کسی خواست مقصد دیگری اضافه
+    کند، باید این تابع را عوض کند و آزمون test_single_bot سرخ می‌شود.
     """
-    tok2, chat2 = creds2()
-    if not tok2:
-        return None
-    f2 = {k: v for k, v in (fields or {}).items() if k not in _REPLY_FIELDS}
-    f2["chat_id"] = chat2
-    try:
-        r = _post_once(tok2, method, f2, files)
-        if not (r or {}).get("ok"):
-            print(f"  ⚠ آینهٔ تلگرام نپذیرفت: {scrub(str(r))[:160]}", flush=True)
-        return r
-    except Exception as e:                            # noqa: BLE001 - آینه هرگز مسیر اصلی را نمی‌کشد
-        print(f"  ⚠ آینهٔ تلگرام نرفت: {scrub(f'{type(e).__name__}: {e}')[:160]}",
-              flush=True)
-        return None
-
-
-def _post(token, method, fields, files=None, mirror=True):
-    """ارسال به مقصد اول، و اگر مقصد دومی تنظیم شده باشد، آینه به آن.
-
-    خروجی همیشه پاسخ مقصد *اول* است — چون message_id ذخیره‌شده، دفتر
-    ضدتکرار و ریپلای نتیجه همه به همان چت وابسته‌اند و نباید عوض شوند.
-    """
-    resp = _post_once(token, method, fields, files)
-    if mirror and method in MIRROR_METHODS:
-        _mirror(method, fields, files)
-    return resp
+    return _post_once(token, method, fields, files)
 
 
 # ── خوددرمانی chat_id (دستور حمید، ۱۸ اوت) ─────────────────────────────────

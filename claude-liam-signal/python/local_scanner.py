@@ -15,8 +15,8 @@
 مدت واقعی هر دور در هر خط لاگ چاپ می‌شود — ادعا نکن، بخوان.
 
 اجرا روی لپ‌تاپ (به پایتون ۳ و Node نیاز دارد — هر دو رایگان):
-    export LOCAL_TG_TOKEN="توکن ربات جدا"     # اختیاری؛ بدون آن فقط لاگ
-    export LOCAL_TG_CHAT="شناسهٔ چت"
+    export TELEGRAM_BOT_TOKEN="توکن @LiamTrader9_Bot"   # همان بات واحد
+    export TELEGRAM_CHAT_ID="شناسهٔ چت"                  # بدون آن‌ها فقط لاگ
     python3 local_scanner.py --symbols 200 --interval 45
 """
 import argparse
@@ -41,8 +41,10 @@ def _load_seen():
 
 
 def _tg(text):
-    tok = os.environ.get("LOCAL_TG_TOKEN", "").strip()
-    chat = os.environ.get("LOCAL_TG_CHAT", "").strip()
+    # تک‌مقصدی (دستور حمید ۲۰ اوت): این اسکنر بات جدا داشت — همان بات
+    # اضافه‌ای بود که پیام موازی می‌فرستاد. حالا فقط @LiamTrader9_Bot.
+    tok = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not tok or not chat:
         return False
     import urllib.request
