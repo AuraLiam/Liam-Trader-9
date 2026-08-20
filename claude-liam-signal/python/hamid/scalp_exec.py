@@ -23,6 +23,7 @@ futures) در دفتر پایین-رو می‌نشیند → داشبورد آن
 داشبورد `LIAM9_ALLOW_LIVE=1` بگذارد — این فایل هرگز آن را روشن نمی‌کند.
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -101,6 +102,15 @@ def collect_setups():
 
 def run(equity=None, mode="demo", quiet=False, link=None, now_ms=None):
     lk = link or LINK.Link(role="scalp-exec", remote=True)
+    # سکوت ممنوع: نبودِ کلید یعنی هیچ سفارشی نمی‌رود. این باید فریاد بزند،
+    # نه این‌که بی‌صدا صفر برگرداند — درس ۱۹ اوت (شش ساعت هیچ‌کس نفهمید).
+    if not os.environ.get("LIAM9_LINK_SECRET"):
+        lk.event("EXEC_BLOCKED", {"why": "کلید LIAM9_LINK_SECRET تنظیم نیست — "
+                                         "هیچ سفارشی به داشبورد نمی‌رود",
+                                  "action": "سکرت را در گیت‌هاب و روی ماشین "
+                                            "داشبورد بگذار"})
+        if not quiet:
+            print("⛔ کلید LIAM9_LINK_SECRET نیست — سفارشی فرستاده نمی‌شود")
     st = _load(STATE, {"last": {}, "open": []})
     now = now_ms or int(time.time() * 1000)
     eq = equity or GATES["equity_default"]
