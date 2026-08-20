@@ -255,13 +255,34 @@ def market_first(btc, usdt_d, btc_d):
             "reentry": bool(reentry(cd, ch)) if ch else False,
         }
 
-    verdict = "نامشخص"
+    # «نامشخص» دو معنی داشت و همین ابهام یک عیب را ماه‌ها پنهان کرد: بستر
+    # USDT.D/BTC.D اصلاً پاس داده نمی‌شد، جواب «نامشخص» می‌آمد و از «بازار
+    # جهت ندارد» قابل تشخیص نبود (پروندهٔ ۲۰ اوت). حالا دو حالت جدا:
+    # دادهٔ ناموجود → INSUFFICIENT_CONTEXT؛ دادهٔ سالمِ بی‌جهت → خنثی.
     u, b = out.get("USDT.D", {}), out.get("BTC", {})
+    known = all(x.get("trend") not in (None, "unknown")
+                for x in (u, b, out.get("BTC.D", {})))
+    out["context_known"] = known
+    if not known:
+        missing = [k for k in ("BTC", "USDT.D", "BTC.D")
+                   if out.get(k, {}).get("trend") in (None, "unknown")]
+        out["verdict"] = ("بسترِ اجباری ناقص است (" + "، ".join(missing) +
+                          ") — قانون ۱: تصمیم روی دادهٔ نداشته گرفته نمی‌شود")
+        out["verdict_code"] = "INSUFFICIENT_CONTEXT"
+        return out
     if u.get("trend") == "up":
-        verdict = "دامیننس تتر صعودی — پول از بازار بیرون می‌رود، لانگ آلت محتاطانه"
+        verdict, code = ("دامیننس تتر صعودی — پول از بازار بیرون می‌رود، "
+                         "لانگ آلت محتاطانه"), "TETHER_UP"
     elif u.get("trend") == "down" and b.get("trend") == "up":
-        verdict = "دامیننس تتر نزولی و بیت صعودی — شرایط برای لانگ مساعد است"
+        verdict, code = ("دامیننس تتر نزولی و بیت صعودی — شرایط برای لانگ "
+                         "مساعد است"), "RISK_ON"
     elif b.get("trend") == "down":
-        verdict = "بیت‌کوین نزولی — پرچم بازار پایین است، شورت اولویت دارد"
+        verdict, code = ("بیت‌کوین نزولی — پرچم بازار پایین است، شورت اولویت "
+                         "دارد"), "RISK_OFF"
+    else:
+        verdict, code = (f"بستر خنثی — USDT.D {u.get('trend')} "
+                         f"(شیب {u.get('slope')}) و بیت {b.get('trend')}؛ "
+                         "دادهٔ سالم است، بازار ترجیح جهتی نمی‌دهد"), "NEUTRAL"
     out["verdict"] = verdict
+    out["verdict_code"] = code
     return out

@@ -42,23 +42,30 @@ jobs:
             | python3 -c "import json,sys; print(json.load(sys.stdin).get('build_type',''))" \
             || echo unknown)
           echo "build_type=$bt" >> "$GITHUB_OUTPUT"
-          [ "$bt" = "legacy" ] && echo "Pages در حالت شاخه‌ای است — دیپلوی artifact لازم نیست" || true
+          # (۲۰ اوت) شرط برعکس شد: فقط build_type=workflow اجازهٔ دیپلوی
+          # artifact می‌دهد. قبلاً فقط «legacy» رد می‌شد، پس یک جواب نگرفتن
+          # از API («unknown») کافی بود تا دیپلوی با مسیر شاخه‌ای مسابقه
+          # بدهد و اجرای دستی سرخ شود — همان چیزی که امروز رخ داد.
+          if [ "$bt" != "workflow" ]; then
+            echo "Pages در حالت «$bt» است — دیپلوی از شاخهٔ gh-pages خودکار "\
+                 "انجام می‌شود؛ این اجرا بی‌کار و سبز تمام می‌شود."
+          fi
       - name: Checkout gh-pages
-        if: steps.mode.outputs.build_type != 'legacy'
+        if: steps.mode.outputs.build_type == 'workflow'
         uses: actions/checkout@v4
         with:
           ref: gh-pages
       - name: Configure Pages
-        if: steps.mode.outputs.build_type != 'legacy'
+        if: steps.mode.outputs.build_type == 'workflow'
         uses: actions/configure-pages@v5
         with:
           enablement: true
       - name: Upload artifact
-        if: steps.mode.outputs.build_type != 'legacy'
+        if: steps.mode.outputs.build_type == 'workflow'
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
       - name: Deploy
         id: deployment
-        if: steps.mode.outputs.build_type != 'legacy'
+        if: steps.mode.outputs.build_type == 'workflow'
         uses: actions/deploy-pages@v4
