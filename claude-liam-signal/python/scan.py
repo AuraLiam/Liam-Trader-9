@@ -202,6 +202,43 @@ def apply_learned_rules(setups, jobs, rules):
     return n
 
 
+def funnel_report(setups, sent, demoted, held, series, failed):
+    """قیف سلامت سیگنال — قانون ۰۷ (E23). سکوت باید با شواهد توضیح داده شود.
+
+    تا امروز دلیل رد فقط در لاگ Actions چاپ می‌شد و بعد گم می‌شد؛ هر بار
+    «چرا سیگنال کم است؟» یعنی کاوش دستی لاگ. حالا هر اسکن قیف را در
+    signals/funnel.json می‌نویسد: ورودی هر دروازه، تعداد رد، دلایل اصلی و
+    یک طبقه‌بندی صریح. هیچ آستانه‌ای این‌جا عوض نمی‌شود — فقط ثبت."""
+    from collections import Counter
+    stages = Counter(s.get("stage") for s in setups)
+    reasons = Counter()
+    for s in setups:
+        why = s.get("skip") or s.get("waitReason")
+        if why and s.get("stage") != "SIGNAL":
+            reasons[str(why).split("—")[0].strip()[:60]] += 1
+    n_sig = stages.get("SIGNAL", 0)
+    if not series or (failed and not setups):
+        cls = "PIPELINE_DEGRADED"
+    elif sent:
+        cls = "SIGNAL_READY"
+    elif n_sig:
+        cls = "SIGNAL_SUPPRESSED_BY_RISK"   # ساخته شد ولی دروازهٔ ارسال نگذاشت
+    else:
+        cls = "NO_VALID_SETUP_HEALTHY"      # سکوتِ سالم — عیب نیست
+    return {
+        "generated": int(time.time() * 1000),
+        "panel": "لیام تریدر ۹",
+        "classification": cls,
+        "series_fetched": series, "series_failed": failed,
+        "setups": len(setups), "stages": dict(stages),
+        "learning_held": held, "trend_gate_demoted": demoted,
+        "telegram_sent": sent,
+        "top_reasons": dict(reasons.most_common(10)),
+        "note": ("سکوت طولانی لزوماً خرابی نیست؛ این فایل تفاوت «ستاپ نبود» "
+                 "با «زنجیره خراب بود» را با عدد نشان می‌دهد (قانون ۰۷)"),
+    }
+
+
 def gate_stages(setups, kget=None):
     """دروازهٔ روند روی مراحل منتشرشونده — دستور حمید، ۲۰ اوت.
 
@@ -423,7 +460,16 @@ def main():
             from chart import render
             return render(s["candles"], s, path)
 
-        send_signals(signals, draw)
+        _sent_n = send_signals(signals, draw) or 0
+    else:
+        _sent_n = 0
+
+    # قیف سلامت (قانون ۰۷) — پاسخ «چرا سیگنال نیامد» با شواهد، نه حدس
+    _fn = funnel_report(setups, sent=_sent_n, demoted=demoted, held=held,
+                        series=len(jobs), failed=failed)
+    (OUT / "funnel.json").write_text(json.dumps(_fn, ensure_ascii=False, indent=1))
+    print(f"funnel: {_fn['classification']} · {_fn['setups']} setups · "
+          f"{_fn['telegram_sent']} sent", flush=True)
 
     def strip(s):
         return {k: v for k, v in s.items() if k != "candles"}
