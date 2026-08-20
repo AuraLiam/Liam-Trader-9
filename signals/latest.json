@@ -1,6 +1,6 @@
 {
- "generated": 1787247103437,
- "generatedText": "2026-08-20 17:31 UTC",
+ "generated": 1787247267054,
+ "generatedText": "2026-08-20 17:34 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -9,10 +9,10 @@
   "15m"
  ],
  "counts": {
-  "SIGNAL": 14,
-  "ARMED": 66,
+  "SIGNAL": 13,
+  "ARMED": 69,
   "PULLBACK_1": 2,
-  "WATCH": 147
+  "WATCH": 145
  },
  "per_strategy": {
   "smc": {
@@ -23,12 +23,24 @@
   },
   "ibs": {
    "name": "IBS + پولبک",
-   "signals": 10,
-   "armed": 65,
-   "watching": 42
+   "signals": 9,
+   "armed": 68,
+   "watching": 40
   }
  },
  "alarms": [
+  {
+   "sym": "GPSUSDT",
+   "tf": "15m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.01195,
+   "now": 0.01195,
+   "distancePct": 0.0,
+   "why": "اتاق یادگیری مخالف است — 60 مورد مشابه، برد 16.7٪، انتظار -0.42R",
+   "stage": "ARMED"
+  },
   {
    "sym": "SNDKBUSDT",
    "tf": "5m",
@@ -75,6 +87,18 @@
    "now": 4495.39,
    "distancePct": 0.3414036122275618,
    "why": "اتاق یادگیری مخالف است — 375 مورد مشابه، برد 28.0٪، انتظار -0.06R",
+   "stage": "ARMED"
+  },
+  {
+   "sym": "GPSUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.012,
+   "now": 0.01195,
+   "distancePct": 0.41666666666666413,
+   "why": "اتاق یادگیری مخالف است — 60 مورد مشابه، برد 16.7٪، انتظار -0.42R",
    "stage": "ARMED"
   },
   {
@@ -484,30 +508,6 @@
    "distancePct": 2.4905660377358427,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
-  },
-  {
-   "sym": "AVAXUSDT",
-   "tf": "5m",
-   "dir": "LONG",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 7.088,
-   "now": 7.272,
-   "distancePct": 2.595936794582395,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "WLDUSDT",
-   "tf": "5m",
-   "dir": "LONG",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.3648,
-   "now": 0.3744,
-   "distancePct": 2.6315789473684204,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
   }
  ],
  "learning": {
@@ -516,7 +516,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": 7.374
+  "btcChange": 7.11
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -640,43 +640,7 @@
    },
    "trend4": "range",
    "trend1": "range",
-   "trend_mode": "with-trend",
-   "sync": {
-    "price": 0.3745,
-    "dist_pct": 0.03
-   },
-   "premortem": {
-    "pro": [
-     "استاپ 2.31٪ بیرون نویز ۱۵د (ATR 1.02٪)"
-    ],
-    "con": [
-     "الگوی کلاسیک خلاف جهت: سقف دوقلو در 4h",
-     "RSI ۱۵د اشباع خرید (76) — ورود دیر"
-    ],
-    "pro_w": 1,
-    "con_w": 2,
-    "issue": false,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 1 امتیاز تارگت / 2 امتیاز استاپ — صادر نشد",
-    "price": 0.3742,
-    "patterns": {
-     "by_tf": {
-      "4h": [
-       "سقف دوقلو"
-      ]
-     },
-     "align": "against",
-     "note": "سقف دوقلو در 4h",
-     "best": null
-    },
-    "noise_stop": false,
-    "ob_ctx": null,
-    "fib": 0.094,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "with",
-     "ict_align": "with"
-    }
-   }
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -726,39 +690,7 @@
    },
    "trend4": "up",
    "trend1": "up",
-   "trend_mode": "with-trend",
-   "sync": {
-    "price": 652.85,
-    "dist_pct": 0.2
-   },
-   "premortem": {
-    "pro": [
-     "روند ۱۵د هم‌جهت (up)",
-     "خوشهٔ لیکویید هم‌جهت — سوخت حرکت"
-    ],
-    "con": [
-     "استاپ 0.45٪ داخل نویز ۱۵د است (ATR 0.47٪) — ویک می‌خورد"
-    ],
-    "pro_w": 3,
-    "con_w": 2,
-    "issue": false,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 3 امتیاز تارگت / 2 امتیاز استاپ — صادر شد · ⛔ استاپ داخل نویز — وتوی سخت",
-    "price": 652.86,
-    "patterns": {
-     "by_tf": {},
-     "align": null,
-     "note": null,
-     "best": null
-    },
-    "noise_stop": true,
-    "ob_ctx": null,
-    "fib": 0.042,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "with",
-     "ict_align": "with"
-    }
-   }
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -807,7 +739,7 @@
     "ev": 0.351
    },
    "trend4": "range",
-   "trend1": "up",
+   "trend1": "range",
    "trend_mode": "with-trend"
   },
   {
@@ -858,89 +790,6 @@
    },
    "trend4": "range",
    "trend1": "up",
-   "trend_mode": "with-trend",
-   "sync": {
-    "price": 48.22,
-    "dist_pct": 0.41
-   },
-   "premortem": {
-    "pro": [
-     "روند ۱۵د هم‌جهت (up)",
-     "خوشهٔ لیکویید هم‌جهت — سوخت حرکت"
-    ],
-    "con": [
-     "استاپ 0.39٪ داخل نویز ۱۵د است (ATR 0.54٪) — ویک می‌خورد",
-     "آهن‌ربای نقدینگی خلاف جهت — استخر استاپ آن‌طرف است"
-    ],
-    "pro_w": 3,
-    "con_w": 3,
-    "issue": false,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 3 امتیاز تارگت / 3 امتیاز استاپ — صادر نشد · ⛔ استاپ داخل نویز — وتوی سخت",
-    "price": 48.23,
-    "patterns": {
-     "by_tf": {},
-     "align": null,
-     "note": null,
-     "best": null
-    },
-    "noise_stop": true,
-    "ob_ctx": null,
-    "fib": 0.163,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "with",
-     "ict_align": "with"
-    }
-   }
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "PAXGUSDT",
-   "tf": "5m",
-   "stage": "SIGNAL",
-   "dir": "SHORT",
-   "entry": 4519.764999999999,
-   "sl": 4537.19086,
-   "tp1": 4493.6262099999985,
-   "tp2": 4476.200349999999,
-   "rr": 1.5,
-   "price": 4502.03,
-   "conf": null,
-   "ev": null,
-   "quality": 86,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": null,
-   "lastClose": 1787246700000,
-   "ob": {
-    "low": 4515.91,
-    "high": 4523.62
-   },
-   "choch": 1,
-   "barsAgo": 10,
-   "inOB": 0,
-   "nearOB": 1,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 330,
-    "hit": 33.9,
-    "ev": 0.052
-   },
-   "trend4": "range",
-   "trend1": "range",
    "trend_mode": "with-trend"
   },
   {
@@ -1001,7 +850,7 @@
     "ev": 0.092
    },
    "trend4": "range",
-   "trend1": "up",
+   "trend1": "range",
    "trend_mode": "with-trend"
   },
   {
@@ -1112,7 +961,7 @@
     "ev": 0.351
    },
    "trend4": "range",
-   "trend1": "up",
+   "trend1": "range",
    "trend_mode": "with-trend"
   },
   {
@@ -1163,53 +1012,7 @@
    },
    "trend4": "range",
    "trend1": "range",
-   "trend_mode": "with-trend",
-   "sync": {
-    "price": 1.686,
-    "dist_pct": 0.18
-   },
-   "premortem": {
-    "pro": [
-     "استاپ 1.72٪ بیرون نویز ۱۵د (ATR 1.17٪)",
-     "روند ۱۵د هم‌جهت (up)",
-     "الگوی کلاسیک هم‌جهت: سر و شانهٔ معکوس در 15m (تأییدشده)، پرچم صعودی در 4h — دو تایم‌فریم موافق",
-     "RSI ۱۵د سالم (60)",
-     "خوشهٔ لیکویید هم‌جهت — سوخت حرکت"
-    ],
-    "con": [],
-    "pro_w": 7,
-    "con_w": 0,
-    "issue": true,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 7 امتیاز تارگت / 0 امتیاز استاپ — صادر شد",
-    "price": 1.686,
-    "patterns": {
-     "by_tf": {
-      "15m": [
-       "سر و شانهٔ معکوس"
-      ],
-      "4h": [
-       "پرچم صعودی"
-      ]
-     },
-     "align": "with",
-     "note": "سر و شانهٔ معکوس در 15m (تأییدشده)، پرچم صعودی در 4h",
-     "best": {
-      "key": 1.675,
-      "name": "inv_head_shoulders",
-      "fa": "سر و شانهٔ معکوس",
-      "tf": "15m"
-     }
-    },
-    "noise_stop": false,
-    "ob_ctx": null,
-    "fib": null,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "with",
-     "ict_align": "with"
-    }
-   },
-   "tg_msg_id": 371
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -1309,47 +1112,7 @@
    },
    "trend4": "up",
    "trend1": "up",
-   "trend_mode": "with-trend",
-   "sync": {
-    "price": 87.72,
-    "dist_pct": 0.67
-   },
-   "premortem": {
-    "pro": [],
-    "con": [
-     "استاپ 0.49٪ داخل نویز ۱۵د است (ATR 0.57٪) — ویک می‌خورد",
-     "آهن‌ربای نقدینگی خلاف جهت — استخر استاپ آن‌طرف است",
-     "اردر بلاک 1h (نزدیک، تازه (هنوز لمس‌نشده)) — خلاف جهت، دیوار جلوی راه"
-    ],
-    "pro_w": 0,
-    "con_w": 4,
-    "issue": false,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 0 امتیاز تارگت / 4 امتیاز استاپ — صادر نشد · ⛔ استاپ داخل نویز — وتوی سخت",
-    "price": 87.72,
-    "patterns": {
-     "by_tf": {},
-     "align": null,
-     "note": null,
-     "best": null
-    },
-    "noise_stop": true,
-    "ob_ctx": {
-     "align": "against",
-     "tf": "1h",
-     "reactions": 0,
-     "hunts": 0,
-     "fresh": true,
-     "note": "اردر بلاک 1h (نزدیک، تازه (هنوز لمس‌نشده))",
-     "low": 83.72,
-     "high": 87.21
-    },
-    "fib": 0.093,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "with",
-     "ict_align": "with"
-    }
-   }
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -1448,11 +1211,61 @@
     "ev": 0.003
    },
    "trend4": "range",
-   "trend1": "range",
+   "trend1": "up",
    "trend_mode": "with-trend"
   }
  ],
  "watch": [
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "SPCXBUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "LONG",
+   "entry": 131.145,
+   "sl": 130.62694000000002,
+   "tp1": 131.92209,
+   "tp2": 132.44015,
+   "rr": 1.5,
+   "price": 131.53,
+   "conf": null,
+   "ev": null,
+   "quality": 64,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
+   "lastClose": 1787246700000,
+   "ob": {
+    "low": 131.02,
+    "high": 131.27
+   },
+   "choch": 0,
+   "barsAgo": 0,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "flat",
+    "n": 360,
+    "hit": 30.6,
+    "ev": -0.047
+   },
+   "trend4": "down",
+   "trend1": "down",
+   "trend_mode": "hard-veto"
+  },
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
@@ -1558,7 +1371,7 @@
    "strategyName": "IBS + پولبک",
    "sym": "GPSUSDT",
    "tf": "5m",
-   "stage": "WATCH",
+   "stage": "ARMED",
    "dir": "SHORT",
    "entry": 0.012,
    "sl": 0.01206609,
@@ -1582,7 +1395,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": null,
-   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "skip": "اتاق یادگیری مخالف است — 60 مورد مشابه، برد 16.7٪، انتظار -0.42R",
    "lastClose": 1787246700000,
    "ob": {
     "low": 0.01197,
@@ -1599,59 +1412,9 @@
     "hit": 16.7,
     "ev": -0.417
    },
-   "trend4": "up",
+   "trend4": "range",
    "trend1": "down",
-   "trend_mode": "counter-blocked"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "SPCXBUSDT",
-   "tf": "5m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 131.145,
-   "sl": 130.62694000000002,
-   "tp1": 131.92209,
-   "tp2": 132.44015,
-   "rr": 1.5,
-   "price": 131.53,
-   "conf": null,
-   "ev": null,
-   "quality": 64,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
-   "lastClose": 1787246700000,
-   "ob": {
-    "low": 131.02,
-    "high": 131.27
-   },
-   "choch": 0,
-   "barsAgo": 0,
-   "inOB": 0,
-   "nearOB": 1,
-   "elite": false,
-   "learning": {
-    "verdict": "flat",
-    "n": 360,
-    "hit": 30.6,
-    "ev": -0.047
-   },
-   "trend4": "down",
-   "trend1": "range",
-   "trend_mode": "counter-blocked"
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -1802,6 +1565,56 @@
    "trend4": "range",
    "trend1": "range",
    "trend_mode": "with-trend"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "PAXGUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "SHORT",
+   "entry": 4519.764999999999,
+   "sl": 4537.19086,
+   "tp1": 4493.6262099999985,
+   "tp2": 4476.200349999999,
+   "rr": 1.5,
+   "price": 4502.03,
+   "conf": null,
+   "ev": null,
+   "quality": 86,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "lastClose": 1787246700000,
+   "ob": {
+    "low": 4515.91,
+    "high": 4523.62
+   },
+   "choch": 1,
+   "barsAgo": 10,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 330,
+    "hit": 33.9,
+    "ev": 0.052
+   },
+   "trend4": "range",
+   "trend1": "up",
+   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "ibs",
@@ -1969,7 +1782,7 @@
    "strategyName": "IBS + پولبک",
    "sym": "GPSUSDT",
    "tf": "15m",
-   "stage": "WATCH",
+   "stage": "ARMED",
    "dir": "SHORT",
    "entry": 0.01195,
    "sl": 0.01207612,
@@ -1993,7 +1806,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": null,
-   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "skip": "اتاق یادگیری مخالف است — 60 مورد مشابه، برد 16.7٪، انتظار -0.42R",
    "lastClose": 1787246100000,
    "ob": {
     "low": 0.01192,
@@ -2010,9 +1823,9 @@
     "hit": 16.7,
     "ev": -0.417
    },
-   "trend4": "up",
+   "trend4": "range",
    "trend1": "down",
-   "trend_mode": "counter-blocked"
+   "trend_mode": "with-trend"
   },
   {
    "strategy": "ibs",
@@ -2471,7 +2284,7 @@
     "hit": 34.9,
     "ev": 0.056
    },
-   "trend4": "down",
+   "trend4": "range",
    "trend1": "range",
    "trend_mode": "with-trend"
   },
@@ -2524,56 +2337,6 @@
    "trend4": "up",
    "trend1": "up",
    "trend_mode": "hard-veto"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "BCHUSDT",
-   "tf": "5m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 221.25,
-   "sl": 219.8385,
-   "tp1": 223.36724999999998,
-   "tp2": 224.77874999999997,
-   "rr": 1.5,
-   "price": 224.4,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
-   "lastClose": 1787246700000,
-   "ob": {
-    "low": 220.5,
-    "high": 222
-   },
-   "choch": 0,
-   "barsAgo": 10,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 167,
-    "hit": 61.1,
-    "ev": 0.982
-   },
-   "trend4": "down",
-   "trend1": "up",
-   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "ibs",
@@ -2871,7 +2634,7 @@
     "hit": 27.6,
     "ev": -0.071
    },
-   "trend4": "up",
+   "trend4": "range",
    "trend1": "up",
    "trend_mode": "with-trend"
   },
@@ -3024,6 +2787,56 @@
    "trend4": "range",
    "trend1": "range",
    "trend_mode": "with-trend"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "BCHUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "LONG",
+   "entry": 221.25,
+   "sl": 219.8385,
+   "tp1": 223.36724999999998,
+   "tp2": 224.77874999999997,
+   "rr": 1.5,
+   "price": 224.4,
+   "conf": null,
+   "ev": null,
+   "quality": 56,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "lastClose": 1787246700000,
+   "ob": {
+    "low": 220.5,
+    "high": 222
+   },
+   "choch": 0,
+   "barsAgo": 10,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 167,
+    "hit": 61.1,
+    "ev": 0.982
+   },
+   "trend4": "down",
+   "trend1": "up",
+   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "ibs",
@@ -4423,56 +4236,6 @@
    },
    "trend4": "range",
    "trend1": "range",
-   "trend_mode": "with-trend"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "PENGUUSDT",
-   "tf": "5m",
-   "stage": "ARMED",
-   "dir": "LONG",
-   "entry": 0.0071255,
-   "sl": 0.007079696999999999,
-   "tp1": 0.007194204500000001,
-   "tp2": 0.007240007500000001,
-   "rr": 1.5,
-   "price": 0.007288,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1787246700000,
-   "ob": {
-    "low": 0.007101,
-    "high": 0.00715
-   },
-   "choch": 0,
-   "barsAgo": 12,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "flat",
-    "n": 210,
-    "hit": 31.4,
-    "ev": -0.005
-   },
-   "trend4": "up",
-   "trend1": "up",
    "trend_mode": "with-trend"
   }
  ],
