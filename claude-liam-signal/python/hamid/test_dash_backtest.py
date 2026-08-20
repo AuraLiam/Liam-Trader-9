@@ -106,16 +106,23 @@ def fake_klines(sym, tf, n, **kw):
     return [[k["t"], k["o"], k["h"], k["l"], k["c"], 1.0] for k in cd]
 
 
+# عمداً sources.top_symbols تزریق نمی‌شود: رانر ۲۰ اوت دقیقاً چون این تابع
+# در sources نبود مرد و تستِ قبلی با تزریقش عیب را پوشانده بود. حالا run()
+# باید از مسیر جایگزین (hamid.trainer.top_symbols) رد شود — همان مسیر واقعی.
+from hamid import trainer               # noqa: E402
+old_trainer_top = trainer.top_symbols
 sources.klines = fake_klines
-sources.top_symbols = lambda n: ["TESTUSDT"]
+trainer.top_symbols = lambda n: ["TESTUSDT"]
 BT.OUT = tmp
 try:
     res = BT.run(symbols=1, bars=400, quiet=True)
-    check("run() تا آخر می‌رود و گزارش کامل می‌سازد",
-          res["overall"].get("n", 0) >= 1 and "rejection_funnel" in res
+    check("run() بدون sources.top_symbols هم تا آخر می‌رود (مسیر جایگزین)",
+          not hasattr(sources, "top_symbols")
+          and res["overall"].get("n", 0) >= 1 and "rejection_funnel" in res
           and res["market_gate"] == "on", str(res.get("overall")))
 finally:
     sources.klines = old_k
+    trainer.top_symbols = old_trainer_top
     if old_top is not None:
         sources.top_symbols = old_top
     BT.OUT = old_out

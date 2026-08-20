@@ -137,7 +137,14 @@ def run(symbols=60, bars=1000, quiet=False):
     import sources
     ST.EXPERIENCE.clear()                              # ضد نگاه به آینده
     ST.ENV["margin_mode"] = None
-    syms = sources.top_symbols(symbols)
+    # sources.top_symbols همه‌جا نیست (رانر ۲۰ اوت با AttributeError مرد؛
+    # تست محلی چون خودش این تابع را شبیه‌سازی می‌کرد عیب را نمی‌دید).
+    # همان مسیر جایگزین اثبات‌شدهٔ h1_backtest:
+    try:
+        syms = sources.top_symbols(symbols)
+    except Exception:                                  # noqa: BLE001
+        from hamid.trainer import top_symbols
+        syms = top_symbols(symbols)
     try:
         btc1 = _cd(sources.klines("BTCUSDT", "1h", 400))
         btc4 = _cd(sources.klines("BTCUSDT", "4h", 400))
