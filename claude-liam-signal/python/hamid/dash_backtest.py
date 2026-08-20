@@ -154,7 +154,7 @@ def run(symbols=60, bars=1000, quiet=False):
         print("⚠️ بستر BTC نرسید — دروازهٔ بازار همهٔ آلت‌ها را رد می‌کند")
     all_trades, all_reasons, drops = [], {}, {}
     done = 0
-    for s in syms:
+    for rank, s in enumerate(syms, 1):
         try:
             c15 = _cd(sources.klines(s, "15m", bars))
             c1 = _cd(sources.klines(s, "1h", 400))
@@ -167,6 +167,8 @@ def run(symbols=60, bars=1000, quiet=False):
             drops["سری کوتاه"] = drops.get("سری کوتاه", 0) + 1
             continue
         tr, rs = replay_symbol(s, c15, c1, c4, btc1h=btc1, btc4h=btc4)
+        for t in tr:
+            t["rank"] = rank            # ردهٔ حجم ۴۸س — برای تفکیک نقدشوندگی
         all_trades += tr
         for k, v in rs.items():
             all_reasons[k] = all_reasons.get(k, 0) + v
@@ -176,12 +178,18 @@ def run(symbols=60, bars=1000, quiet=False):
                   flush=True)
     per_dir = {d: _agg([t for t in all_trades if t["dir"] == d])
                for d in ("LONG", "SHORT")}
+    # تفکیک نقدشوندگی (پروتکل بک‌تست): مقایسهٔ ۶۰نمادی و ۱۲۰نمادیِ ۲۰ اوت
+    # نشان داد گسترش دامنه میانگین را رقیق کرد — این تفکیک همان فرضیه را
+    # با CI جدا می‌سنجد؛ محدود کردن دامنهٔ زنده فقط بعد از CI روشن.
+    per_tier = {"top60": _agg([t for t in all_trades if t.get("rank", 999) <= 60]),
+                "rank61plus": _agg([t for t in all_trades if t.get("rank", 0) > 60])}
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "engine": ST.PARAMS["version"], "tf": "15m",
            "market_gate": "on", "experience_layer": "off (ضد نگاه به آینده)",
            "symbols": done, "skipped": sum(drops.values()),
            "drop_reasons": drops, "bars_15m": bars,
            "overall": _agg(all_trades), "per_direction": per_dir,
+           "per_liquidity_tier": per_tier,
            "rejection_funnel": dict(sorted(all_reasons.items(),
                                            key=lambda x: -x[1])[:12]),
            "note": ("کندل واقعی، بدون نگاه به آینده، R خالص از کارمزد "
