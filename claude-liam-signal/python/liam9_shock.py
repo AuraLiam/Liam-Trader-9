@@ -386,6 +386,9 @@ def _build(symbol, tf, mode, direction, entry, sl, stop_pct, lev, shock, ob,
                        "دام کارمزد", "version": P["version"],
                 "panel": "لیام تریدر ۹"}
     out = {"action": direction, "mode": mode, "symbol": symbol, "tf": tf,
+           # قرارداد اجرا (دستور حمید، ۲۰ اوت): ایزوله + استاپ/تارگت اجباری
+           "product": "futures", "margin_mode": "isolated",
+           "sl_tp_mandatory": True,
            "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
            "stop_pct": round(stop_pct, 3), "rr_net": round(net_rr, 2),
            "fee_r": round(fee_r, 3), "leverage": lev,
@@ -397,6 +400,7 @@ def _build(symbol, tf, mode, direction, entry, sl, stop_pct, lev, shock, ob,
            "max_hold_bars": P["max_hold_bars"],
            "panel": "لیام تریدر ۹", "version": P["version"],
            "t": int(time.time() * 1000), "why": why}
+    out["stop_loss"], out["take_profit"] = out["sl"], out["tp1"]
     if equity:
         s = size_for(equity, stop_pct, lev)
         if s:

@@ -1,0 +1,65 @@
+# اولویت سیگنال و بودجهٔ پامپ — نصب اصلاح‌شدهٔ بستهٔ دانش ۱۹ اوت
+# (دستور حمید ۲۰ اوت: ریپو Auraliam/liam-trader-9، تایم تهران، پامپ ۵ نوبت/روز)
+version: 1.0.1
+timezone: Asia/Tehran   # ایران DST ندارد؛ آفست ثابت +03:30
+live_execution: false
+
+resource_priority:
+  data_integrity: CRITICAL
+  validated_signal_pipeline: HIGH
+  order_flow_level2_confirmation: HIGH
+  risk_and_cost_gate: HIGH
+  delivery_and_outcome_capture: HIGH
+  pump_batch: LOW
+
+resource_guardrails:
+  pump_rolling_compute_cap_pct: 10
+  pump_rolling_api_cap_pct: 10
+  validated_signal_min_compute_share_pct: 70
+  max_pump_queue_delay_seconds_before_skip: 300
+  skip_pump_batch_if_signal_backlog_gt: 0
+  note: >
+    آستانه‌های اولیهٔ بسته — تا کالیبراسیون با اندازه‌گیری واقعی، فقط
+    راهنما هستند؛ اصل ثابت این است که کار پامپ کار سیگنال را قحطی‌زده نکند.
+
+pump_reports:
+  reports_per_local_day: 5
+  workflow: pump-review.yml
+  cron_utc: "13 2,7,12,17,21 * * *"
+  tehran_times: ["05:43", "10:43", "15:43", "20:43", "00:43"]
+  dst_aware: true          # Asia/Tehran از ۲۰۲۲ DST ندارد؛ کرون UTC ثابت درست است
+  idempotent_window: true  # concurrency group=pump-review، یک اجرا در هر نوبت
+  max_backfills_per_day: 1
+  telegram_burst_backfill: false
+
+pre_move_anomaly:
+  enabled: false           # تا راه‌افتادن جمع‌آوری دادهٔ عمق (Level 2) غیرفعال —
+                           # با کندلِ تنها نمی‌شود «نقدینگی غیرعادی پایدار» را اثبات کرد
+  require_bitunix_active_symbol: true
+  require_data_healthy: true
+  require_independent_evidence_families: 2
+  require_persistence: true
+  static_wall_only_rejected: true
+  price_already_expanded_rejected: true
+  duplicate_cooldown_minutes: 90
+  thresholds_are_calibrated_per_symbol_regime: true
+  provisional_defaults:
+    anomaly_percentile: 0.99
+    max_prealert_move_atr: 1.5
+    min_persistence_seconds: 10
+
+signal_health:
+  internal_heartbeat_seconds: 30
+  telegram_routine_heartbeat: false
+  classifications:
+    - NO_VALID_SETUP_HEALTHY
+    - PIPELINE_DEGRADED
+    - SIGNAL_SUPPRESSED_BY_RISK
+    - SIGNAL_READY
+    - DELIVERY_FAILED
+
+pump_outcomes:
+  horizons_minutes: [15, 30, 60, 240, 720, 1440]
+  r_thresholds: [3, 5, 7]
+  require_net_of_costs: true
+  distinguish_descriptive_from_tradeable: true

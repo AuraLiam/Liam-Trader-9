@@ -81,7 +81,7 @@ def run():
     sig_i = len(pull) - 1                   # کندل تأیید: بسته نزدیک کف
     c1[sig_i]["l"] = c1[sig_i]["c"] * 0.988
     c1[sig_i]["c"] = c1[sig_i]["c"] * 0.9895
-    books = BT.replay_symbol("TESTUSDT", c1, c4)
+    books = BT.replay_symbol("TESTUSDT", c1, c4, btc1h=c1, btc4h=c4)
     trs = books["base"]
     check("بک‌تست معاملهٔ واقعی ساخت (نه لیست خالی)", len(trs) >= 1, str(len(trs)))
     check("هر معامله R خالص دارد و از R ناخالص بیشتر نیست",
@@ -129,7 +129,7 @@ def run():
         return old(sym, c4h, c1h, **kw)
     H1.analyze = spy
     try:
-        BT.replay_symbol("TESTUSDT", c1, c4)
+        BT.replay_symbol("TESTUSDT", c1, c4, btc1h=c1, btc4h=c4)
     finally:
         H1.analyze = old
     check("تصمیم فقط با کندل‌های گذشته گرفته می‌شود",

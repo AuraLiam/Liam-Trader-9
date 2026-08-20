@@ -1,0 +1,98 @@
+# مرور پامپ — دقیقاً پنج نوبت در روزِ تهران (قانون ۰۷، دستور حمید ۲۰ اوت).
+#
+# چرا پنج نوبت: دفتر آلارم پامپ با n=۳۰۹۶ معامله میانگین −۰.۱۸۰R داشت
+# (CI کامل زیر صفر) — پامپ‌گردی پیوسته ارزش منفی بود. رادار حالا نوبتی
+# اجرا می‌شود و انرژی آزادشده صرف استراتژی و لایهٔ تجربه است.
+#
+# تهران DST ندارد (آفست ثابت +03:30)؛ کرون UTC زیر معادل
+# ۰۵:۴۳ / ۱۰:۴۳ / ۱۵:۴۳ / ۲۰:۴۳ / ۰۰:۴۳ تهران است. دقیقهٔ ۱۳ عمداً
+# غیرگرد است (قانون خانگی: کرون */N ممنوع — گیت‌هاب دقایق گرد را می‌اندازد).
+name: Pump review (5x/day)
+
+on:
+  schedule:
+    - cron: "13 2,7,12,17,21 * * *"
+  workflow_dispatch:
+    inputs:
+      min_pct:
+        description: "حداقل رشد ۲۴س برای گینر"
+        default: "5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pump-review
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: matplotlib برای چارت پیک
+        run: pip -q install matplotlib pyyaml
+
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_pump_radar
+          python3 -m hamid.test_single_bot
+          python3 -m hamid.test_pump_budget
+
+      - name: یک نوبت مرور پامپ
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MIN=$(jq -r '.inputs.min_pct // empty' "$GITHUB_EVENT_PATH")
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          (cd claude-liam-signal/python && python3 -m hamid.pump_radar --min-pct "${MIN:-5}") || true
+
+          # ثبت روی main (ضدتصادم — همان الگوی زنجیره)
+          BK=/tmp/pump-review-backup; mkdir -p "$BK"
+          cp signals/pump-radar.json "$BK/" 2>/dev/null || true
+          cp signals/bubbles.json "$BK/" 2>/dev/null || true
+          cp signals/telegram-log.json "$BK/" 2>/dev/null || true
+          cp brain/pump-radar-sent.json "$BK/" 2>/dev/null || true
+          cp brain/pump-history.json "$BK/" 2>/dev/null || true
+          cp brain/memory/lessons.json "$BK/" 2>/dev/null || true
+          cp brain/pump-watchlist.json "$BK/" 2>/dev/null || true
+          cp brain/pump-weakness-seen.json "$BK/" 2>/dev/null || true
+          for i in 1 2 3 4; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            (cd claude-liam-signal/python && python3 -m hamid.pump_radar --reapply "$BK")
+            git add signals brain 2>/dev/null || true
+            git diff --cached --quiet && { echo "چیزی برای ثبت نیست"; break; }
+            git commit -q -m "مرور پامپ $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i*2))
+          done
+
+          # انتشار روی پنل (gh-pages)
+          if git fetch origin gh-pages -q; then
+            git worktree remove --force /tmp/ghp 2>/dev/null || true
+            if git worktree add /tmp/ghp origin/gh-pages --detach -q; then
+              mkdir -p /tmp/ghp/signals
+              cp signals/pump-radar.json /tmp/ghp/signals/ 2>/dev/null || true
+              cp signals/bubbles.json /tmp/ghp/signals/ 2>/dev/null || true
+              cp signals/telegram-log.json /tmp/ghp/signals/ 2>/dev/null || true
+              ( cd /tmp/ghp
+                git add signals
+                if ! git diff --cached --quiet; then
+                  git commit -q -m "مرور پامپ $(date -u '+%H:%M') UTC"
+                  for i in 1 2 3; do
+                    git push origin HEAD:gh-pages -q && break
+                    git fetch origin gh-pages -q || true
+                    git rebase origin/gh-pages -q || { git rebase --abort; break; }
+                  done
+                fi )
+              git worktree remove --force /tmp/ghp 2>/dev/null || true
+            fi
+          fi

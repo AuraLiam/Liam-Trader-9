@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liam9/pump_outcome.schema.json",
+  "type": "object",
+  "required": [
+    "case_id",
+    "symbol",
+    "detection_utc",
+    "reference_price",
+    "detection_class",
+    "horizons",
+    "cost_model_version",
+    "strategy_entry_existed"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string"
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "detection_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reference_price": {
+      "type": "number"
+    },
+    "detection_class": {
+      "enum": [
+        "SCHEDULED_ALREADY_MOVED",
+        "SCHEDULED_PRE_MOVE_CANDIDATE",
+        "REALTIME_PRE_MOVE_ANOMALY"
+      ]
+    },
+    "horizons": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "mfe_pct": {
+            "type": "number"
+          },
+          "mae_pct": {
+            "type": "number"
+          },
+          "net_r": {
+            "type": "number"
+          },
+          "hit_3r_before_minus1r": {
+            "type": "boolean"
+          },
+          "hit_5r_before_minus1r": {
+            "type": "boolean"
+          },
+          "hit_7r_before_minus1r": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "lead_time_seconds": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "time_to_peak_seconds": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "cost_model_version": {
+      "type": "string"
+    },
+    "strategy_entry_existed": {
+      "type": "boolean"
+    },
+    "strategy_setup_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "false_positive_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

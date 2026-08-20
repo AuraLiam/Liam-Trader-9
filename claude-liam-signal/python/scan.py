@@ -202,6 +202,49 @@ def apply_learned_rules(setups, jobs, rules):
     return n
 
 
+def gate_stages(setups, kget=None):
+    """دروازهٔ روند روی مراحل منتشرشونده — دستور حمید، ۲۰ اوت.
+
+    ریشه: داشبورد latest.json را می‌خواند و روی ARMED هم عمل می‌کند؛ یک
+    شورت ARMEDِ ARB در بازار صعودی همین‌طور اجرا شد. از این پس هر ستاپ
+    SIGNAL/ARMED/PULLBACK_1 قبل از انتشار از همان دروازهٔ روند گلوگاه
+    ارسال رد می‌شود: هر دو تایم بالا خلاف یا تأیید ناقص خلاف روند یا
+    دادهٔ روند ناموجود → تنزل به WATCH با دلیل (قانون ۱ و ۲).
+    خروجی: تعداد تنزل‌یافته‌ها."""
+    from hamid import trend_gate
+    if kget is None:
+        import sources as _src
+
+        def kget(sym, tf, n):
+            return [{"t": k[0], "o": float(k[1]), "h": float(k[2]),
+                     "l": float(k[3]), "c": float(k[4]), "v": float(k[5])}
+                    for k in _src.klines(sym, tf, n)]
+    cache = {}
+
+    def cached(sym, tf, n):
+        if (sym, tf) not in cache:
+            cache[(sym, tf)] = kget(sym, tf, n)
+        return cache[(sym, tf)]
+
+    demoted = 0
+    for s in setups:
+        if s.get("stage") not in ("SIGNAL", "ARMED", "PULLBACK_1"):
+            continue
+        try:
+            a = trend_gate.assess(s["sym"], s["dir"], cached, evidence=s)
+        except Exception as e:                       # noqa: BLE001
+            a = {"ok": False, "t4": None, "t1": None, "mode": "no-data",
+                 "reason": f"دروازهٔ روند اجرا نشد ({type(e).__name__}) — "
+                           "دادهٔ ناقص = انتشار ممنوع (قانون ۱)"}
+        s["trend4"], s["trend1"] = a.get("t4"), a.get("t1")
+        s["trend_mode"] = a.get("mode")
+        if not a["ok"]:
+            s["stage"] = "WATCH"
+            s["skip"] = a["reason"]
+            demoted += 1
+    return demoted
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", type=int, default=100)
@@ -289,6 +332,10 @@ def main():
                          f"برد {best['hit']}٪، انتظار {best['ev']:+.2f}R")
             held += 1
     print(f"learning room consulted on {consulted} setups, held back {held}", flush=True)
+
+    # دروازهٔ روند روی هرچه منتشر می‌شود، نه فقط سیگنال (دستور ۲۰ اوت)
+    demoted = gate_stages(setups)
+    print(f"trend gate demoted {demoted} published-stage setups", flush=True)
 
     counts = {k: sum(1 for s in setups if s["stage"] == k) for k in STAGE_RANK}
     signals = [s for s in setups if s["stage"] == "SIGNAL"]
