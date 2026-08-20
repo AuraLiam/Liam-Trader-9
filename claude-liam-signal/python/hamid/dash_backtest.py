@@ -137,6 +137,7 @@ def run(symbols=60, bars=1000, quiet=False):
     import sources
     ST.EXPERIENCE.clear()                              # ضد نگاه به آینده
     ST.ENV["margin_mode"] = None
+    getattr(ST, "_LAST", {}).clear()                   # ضدتکرار از صفر (قطعیت)
     # sources.top_symbols همه‌جا نیست (رانر ۲۰ اوت با AttributeError مرد؛
     # تست محلی چون خودش این تابع را شبیه‌سازی می‌کرد عیب را نمی‌دید).
     # همان مسیر جایگزین اثبات‌شدهٔ h1_backtest:

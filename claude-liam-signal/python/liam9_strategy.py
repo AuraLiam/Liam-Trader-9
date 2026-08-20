@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۱ (۲۰ اوت).
+"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۲ (۲۰ اوت).
 
 این فایل را کامل در قسمت «استراتژی» داشبورد بگذار (جای نسخهٔ قبل). تک و
 مستقل است — فقط کتابخانهٔ استاندارد پایتون.
@@ -24,6 +24,9 @@
     تایم BTC خلاف جهت = وتوی مطلق؛ یک تایم خلاف = فقط با تمام تأییدیه‌ها.
     استثنا فقط اسکلپ ۱ دقیقه (دستور صریح). ریشهٔ این قانون: شورت ARB در
     بازار مثبت — دروازهٔ بستر فقط در گلوگاه تلگرام بود، نه داخل داشبورد.
+  · **ضدتکرار داخل فایل (v2.2)** — پروندهٔ ADA/HEMI: هر (ارز، جهت) بعد از
+    سیگنال تا ۳ ساعت (اسکلپ: ۳۰ دقیقه) دوباره سیگنال نمی‌گیرد؛ داشبوردِ
+    بی‌کول‌داون دیگر نمی‌تواند مسلسلی روی یک ارز ورود کند.
 
 هرچه گفته می‌شود پشتش عدد است؛ عددی که راه بازتولید ندارد گزارش نمی‌شود.
 
@@ -53,7 +56,7 @@ EXPERIENCE_PATH = "/signals/experience.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.1",
+    "version": "liam9-dash-2.2",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -134,6 +137,30 @@ RISK_CONTRACT = {
 # بار دوم: «الان باز کراس مولتی باز کرده»). حالت مارجین تنظیم خود داشبورد
 # است؛ فایل استراتژی نمی‌تواند عوضش کند، ولی می‌تواند در برابرش سیگنال ندهد.
 ENV = {"margin_mode": None}
+
+# ── ضدتکرار داخل خود فایل (v2.2 — پروندهٔ ADA/HEMI، ۲۰ اوت) ────────────────
+# داشبورد کول‌داون ندارد و فایل بی‌حافظه بود: تا وقتی شرایط ستاپ برقرار
+# می‌ماند، هر فراخوانی دوباره سیگنال می‌داد و داشبورد چند بار پشت‌سرهم
+# روی همان ارز ورود می‌کرد. حالا هر (ارز، جهت) بعد از صدور سیگنال تا پایان
+# پنجره دوباره سیگنال نمی‌گیرد — همان پنجرهٔ ضدتکرار گلوگاه تلگرام.
+# بازتحلیلِ همان کندل (bar_t برابر) آزاد است تا فراخوانی تکراری روی یک
+# کندل جواب را عوض نکند. حافظه درون-پروسه است؛ اگر داشبورد ماژول را برای
+# هر فراخوانی از نو لود کند، اثرش فقط داخل همان پروسه می‌ماند.
+ANTI_REPEAT_S = {"swing": 3 * 3600, "scalp": 1800}
+_LAST = {}
+
+
+def _repeat_gate(symbol, direction, bar_ms, mode="swing"):
+    """None = آزاد (و ثبت می‌شود)؛ رشته = دلیل بلاک."""
+    key = f"{symbol}|{direction}|{mode}"
+    win = ANTI_REPEAT_S.get(mode, ANTI_REPEAT_S["swing"]) * 1000
+    last = _LAST.get(key)
+    if last is not None and last != bar_ms and 0 < bar_ms - last < win:
+        left = int((win - (bar_ms - last)) / 60000)
+        return (f"ضدتکرار: همین ارز/جهت {int((bar_ms - last) / 60000)} دقیقه "
+                f"پیش سیگنال گرفته — {left} دقیقه تا آزاد شدن")
+    _LAST[key] = bar_ms
+    return None
 
 
 def _finalize(sig):
@@ -458,6 +485,10 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     else:
         why.append(mkt_why)
 
+    rep = _repeat_gate(symbol, direction, k_last["t"], "swing")
+    if rep:
+        return no(rep)
+
     return _finalize({"action": direction, "symbol": symbol,
             "entry": round(entry, 8), "sl": round(sl, 8),
             "tp1": round(tp1, 8), "rr_net": round(net_rr, 2),
@@ -560,6 +591,9 @@ def scalp_decide(c1m, symbol="?"):
     if lev is None:
         return no(f"استاپ {stop_pct:.2f}٪ برای اهرم اسکلپ زیادی گشاد است "
                   f"(محافظ فاصلهٔ لیکویید)")
+    rep = _repeat_gate(symbol, direction, k_last["t"], "scalp")
+    if rep:
+        return no(rep)
     return _finalize({"action": direction, "symbol": symbol, "mode": "scalp", "tf": "1m",
             "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
             "stop_pct": round(stop_pct, 3), "fee_r": round(fee_r, 3),
@@ -802,6 +836,15 @@ def _selftest():
     assert s["leverage"] <= int(50.0 / s["stop_pct"]), s
     assert s["fee_r"] < SCALP["max_fee_r"], s
 
+    # ضدتکرار (v2.2): همان کندل آزاد، کندل بعدی در پنجره بلاک، جهت دیگر آزاد
+    _LAST.clear()
+    assert _repeat_gate("XUSDT", "LONG", 1000000, "swing") is None
+    assert _repeat_gate("XUSDT", "LONG", 1000000, "swing") is None      # بازتحلیل همان کندل
+    assert _repeat_gate("XUSDT", "LONG", 1000000 + 900000, "swing")     # کندل بعد → بلاک
+    assert _repeat_gate("XUSDT", "SHORT", 1000000 + 900000, "swing") is None  # جهت دیگر
+    assert _repeat_gate("XUSDT", "LONG", 1000000 + 4 * 3600000, "swing") is None  # بعد از پنجره
+    _LAST.clear()
+
     # اهرم هرگز از محافظ لیکویید رد نمی‌شود
     assert suggest_leverage(3.0, 100, mode="scalp") is None
     assert suggest_leverage(0.7, 90, mode="scalp") <= int(50 / 0.7)
@@ -816,7 +859,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۱ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۲ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
