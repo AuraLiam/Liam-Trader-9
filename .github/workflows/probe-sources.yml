@@ -63,7 +63,7 @@ jobs:
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          git add brain/sources-probe.json
+          for _f in brain/sources-probe.json; do [ -f "$_f" ] && git add "$_f"; done
           git diff --cached --quiet && { echo "unchanged"; exit 0; }
           git commit -q -m "Source probe $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push origin HEAD:main || true

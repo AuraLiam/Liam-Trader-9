@@ -88,7 +88,8 @@ jobs:
         env:
           BRANCH: main
         run: |
-          git add claude-liam-signal/backtests brain/history-stats.json
+          git add claude-liam-signal/backtests
+          for _f in brain/history-stats.json; do [ -f "$_f" ] && git add "$_f"; done
           if git diff --cached --quiet; then
             echo "nothing new"
             exit 0

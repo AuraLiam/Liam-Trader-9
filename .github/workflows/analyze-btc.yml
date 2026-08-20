@@ -28,7 +28,8 @@ jobs:
           git config user.email "noreply@anthropic.com"
       - name: انتشار
         run: |
-          git add brain/analysis-btc.json brain
+          git add brain
+          for _f in brain/analysis-btc.json; do [ -f "$_f" ] && git add "$_f"; done
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "تحلیل بیت‌کوین $(date -u '+%Y-%m-%d %H:%M') UTC"
           for a in 1 2 3; do

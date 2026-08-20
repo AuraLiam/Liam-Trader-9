@@ -41,7 +41,7 @@ jobs:
         run: |
           git config user.name "Conformance"
           git config user.email "conformance@liam9.ai"
-          git add signals/conformance.json
+          for _f in signals/conformance.json; do [ -f "$_f" ] && git add "$_f"; done
           git diff --cached --quiet && exit 0
           git commit -m "پاسبان نتیجه‌گیری‌ها $(date -u +'%H:%M UTC')"
           for i in 1 2 3 4 5; do

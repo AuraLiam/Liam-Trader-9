@@ -50,7 +50,7 @@ jobs:
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
-          git add signals/h1-backtest.json
+          git add -A signals
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "بک‌تست ۱ساعته $(date -u '+%Y-%m-%d %H:%M') UTC"
           for attempt in 1 2 3 4 5; do

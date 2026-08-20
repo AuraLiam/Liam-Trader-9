@@ -117,7 +117,7 @@ jobs:
         run: |
           git config user.name "TradingView Bridge"
           git config user.email "tv-bridge@signal.ai"
-          git add signals/tradingview-in.json
+          for _f in signals/tradingview-in.json; do [ -f "$_f" ] && git add "$_f"; done
           git diff --cached --quiet && exit 0
           git commit -m "آلارم TradingView $(date -u +'%H:%M UTC')"
           for i in 1 2 3 4 5; do

@@ -163,6 +163,37 @@ check("هیچ لولهٔ بی‌محافظی نیست (هر `| tee` با set -o 
 if leaky:
     print(f"      ↳ {leaky}")
 
+# `git add <فایل مشخص>` وقتی آن فایل هنوز ساخته نشده، exit 128 می‌دهد و کل
+# مرحلهٔ انتشار می‌خوابد. ۱۹ اوت همین اتفاق افتاد: فایل فرمان‌ها هنوز وجود
+# نداشت، `git add signals/link-commands.json` شکست، و میز اسکلپ و میز شوک
+# شش ساعت هیچ داده‌ای منتشر نکردند. افزودن **پوشه** هرگز این‌طور نمی‌شکند.
+addfile = []
+for f in files:
+    try:
+        doc = yaml.safe_load(f.read_text())
+    except yaml.YAMLError:
+        continue
+    for job in (doc.get("jobs") or {}).values():
+        if not isinstance(job, dict):
+            continue
+        for st in (job.get("steps") or []):
+            if not isinstance(st, dict):
+                continue
+            for ln in (st.get("run") or "").splitlines():
+                m = re.search(r"git add\s+(.+)", ln.strip())
+                if not m or "-f " in ln:
+                    continue
+                for tok in m.group(1).split():
+                    if tok.startswith("-"):
+                        continue
+                    if re.search(r"\.(json|jsonl|txt|html|js)$", tok) \
+                            and "[ -f" not in ln and "$(" not in ln:
+                        addfile.append(f"{f.name}: git add {tok}")
+check("هیچ `git add` روی فایل تکیِ ممکن‌الغیاب نیست (پوشه اضافه شود)",
+      not addfile)
+if addfile:
+    print(f"      ↳ {addfile}")
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

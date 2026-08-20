@@ -63,7 +63,7 @@ jobs:
       - name: Publish
         if: github.ref == 'refs/heads/main'
         run: |
-          git add brain/health.json
+          for _f in brain/health.json; do [ -f "$_f" ] && git add "$_f"; done
           git diff --cached --quiet && { echo "unchanged"; exit 0; }
           git commit -q -m "Source health $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push origin HEAD:main || true
