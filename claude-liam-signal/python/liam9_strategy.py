@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۲ (۲۰ اوت).
+"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۳ (۲۰ اوت).
 
 این فایل را کامل در قسمت «استراتژی» داشبورد بگذار (جای نسخهٔ قبل). تک و
 مستقل است — فقط کتابخانهٔ استاندارد پایتون.
@@ -56,7 +56,7 @@ EXPERIENCE_PATH = "/signals/experience.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.2",
+    "version": "liam9-dash-2.3",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -358,6 +358,92 @@ def candle_pattern(cd, direction):
     return align, names
 
 
+# ── E09: هندسهٔ کندل قطعی (v2.3 — قانون ۰۹: نسبت، نه اسم الگو) ──────────────
+CANDLE_GEOM_VERSION = "e09-geom-1.0"
+
+
+def candle_geometry(cd, n_atr=14):
+    """بدنه/دامنه، شدو/دامنه، IBS، دامنهٔ نرمال‌شده با ATR — فرمول نسخه‌دار.
+
+    بونوس امتیاز است، هرگز دروازه یا سیگنال مستقل (قانون ۰۹). خروجی برای
+    ثبت/بازتولید، نه فقط تصمیم لحظه‌ای."""
+    if len(cd) < n_atr + 2:
+        return None
+    k = cd[-1]
+    rng = k["h"] - k["l"]
+    if rng <= 0:
+        return None
+    a = atr(cd[-(n_atr + 1):], n_atr) or 0
+    body = abs(k["c"] - k["o"])
+    up_w = k["h"] - max(k["c"], k["o"])
+    dn_w = min(k["c"], k["o"]) - k["l"]
+    return {
+        "formula_version": CANDLE_GEOM_VERSION,
+        "body_range": round(body / rng, 3),
+        "upper_wick_range": round(up_w / rng, 3),
+        "lower_wick_range": round(dn_w / rng, 3),
+        "ibs": round(ibs(k), 3),
+        "atr_norm_range": round(rng / a, 3) if a > 0 else None,
+        "displacement": bool(a > 0 and rng >= 1.8 * a),
+    }
+
+
+# ── E08: اردر بلاک خودکفا (v2.3 — دستور حمید، ۲۰ اوت) ──────────────────────
+#
+# این فایل عمداً مستقل و فقط کتابخانهٔ استاندارد است (کپی مستقیم در باکس
+# «استراتژی» داشبورد) — نمی‌تواند hamid.orderblocks را import کند. پس همان
+# منطق (آخرین کندل مخالف پیش از دیسپلیسمنت، با شمارش واکنش و تازگی) این‌جا
+# خودکفا پیاده شده — سبک‌تر از موتور کامل سرور، ولی همان اصل قانون ۰۰:
+# «آخرین کندل مخالف» به‌تنهایی کافی نیست؛ دیسپلیسمنت و تازگی لازم است.
+def order_block_zone(cd, direction, lookback=120, disp_atr_mult=1.8):
+    """نزدیک‌ترین اردر بلاکِ هم‌جهت/مخالف به قیمت فعلی، یا None.
+
+    خروجی: {"lo","hi","role","reactions","fresh","mitigated","dist_pct"}.
+    `fresh`=False یعنی قیمت قبلاً تمام‌عیار از زون رد شده (مصرف‌شده) —
+    دیگر معتبر نشان داده نمی‌شود (دستور صریح: OB مصرف‌شده Fresh نیست)."""
+    if len(cd) < lookback + 20:
+        return None
+    win = cd[-lookback:]
+    a = atr(win) or 0
+    if a <= 0:
+        return None
+    px = win[-1]["c"]
+    want_role = "demand" if direction == "LONG" else "supply"
+    best = None
+    for i in range(3, len(win) - 1):
+        body = win[i]["c"] - win[i]["o"]
+        # دیسپلیسمنت: کندل جهش‌دار در جهت مورد نظر
+        if want_role == "demand" and body <= disp_atr_mult * a:
+            continue
+        if want_role == "supply" and -body <= disp_atr_mult * a:
+            continue
+        # کندل OB = آخرین کندل مخالف بلافاصله قبل از جهش
+        j = i - 1
+        if want_role == "demand" and win[j]["c"] >= win[j]["o"]:
+            continue
+        if want_role == "supply" and win[j]["c"] <= win[j]["o"]:
+            continue
+        lo, hi = min(win[j]["o"], win[j]["c"]), max(win[j]["o"], win[j]["c"])
+        if hi <= lo:
+            continue
+        # تازگی/مصرف: بعد از تولد، آیا قیمت تمام‌عیار از زون رد شده؟
+        mitigated, reactions = False, 0
+        for k in win[i + 1:]:
+            if want_role == "demand" and k["c"] < lo:
+                mitigated = True
+            elif want_role == "supply" and k["c"] > hi:
+                mitigated = True
+            elif lo <= k["h"] and k["l"] <= hi:
+                reactions += 1
+        dist_pct = abs(px - (lo if want_role == "demand" else hi)) / px * 100
+        cand = {"lo": lo, "hi": hi, "role": want_role, "reactions": reactions,
+               "fresh": not mitigated, "mitigated": mitigated,
+               "dist_pct": round(dist_pct, 3)}
+        if best is None or dist_pct < best["dist_pct"]:
+            best = cand
+    return best
+
+
 def _pullback(c15, direction, win_n=60, min_leg=8):
     """موج و پولبک اخیر؛ خروجی (نسبت پولبک، اکسترمم پولبک) یا None."""
     win = c15[-win_n:]
@@ -586,10 +672,25 @@ def scalp_decide(c1m, symbol="?"):
     tp1 = (entry + S["rr_target"] * risk if direction == "LONG"
            else entry - S["rr_target"] * risk)
 
+    # E08 اردر بلاک (v2.3): وتوی واقعی فقط وقتی مسیر تا تارگت باید از
+    # داخل یک اردر بلاکِ مخالف و تازه رد شود — «دیوار» واقعی، نه تزئینی.
+    opp_dir = "SHORT" if direction == "LONG" else "LONG"
+    opp_ob = order_block_zone(c1m, opp_dir)
+    if opp_ob and opp_ob["fresh"]:
+        blocks_path = ((direction == "LONG" and entry < opp_ob["lo"] <= tp1) or
+                       (direction == "SHORT" and entry > opp_ob["hi"] >= tp1))
+        if blocks_path:
+            return no(f"اردر بلاک مخالفِ تازه بین ورود و تارگت است "
+                      f"({opp_ob['dist_pct']:.2f}٪ فاصله) — مسیر مسدود")
+    own_ob = order_block_zone(c1m, direction)
+    ob_bonus = bool(own_ob and own_ob["fresh"] and own_ob["dist_pct"] <= 0.6)
+
     align, pat_names = candle_pattern(c1m, direction)
+    geom = candle_geometry(c1m)
     sess = session_of(k_last["t"])
     quality = 55 + (10 if align == "with" else -10 if align == "against" else 0)
     quality += 10 if sess in ("london", "ny", "overlap") else 0
+    quality += 8 if ob_bonus else 0
     exp = experience_of(symbol, direction)
     if exp and not exp.get("thin"):
         quality += 15 if exp["mean_r"] > 0 else -10
@@ -607,6 +708,7 @@ def scalp_decide(c1m, symbol="?"):
             "rr_net": round(S["rr_target"] - fee_r, 2), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "session": sess, "leverage": lev,
             "quality": quality, "pattern_align": align, "patterns": pat_names,
+            "candle_evidence": geom, "order_block": own_ob,
             "trail_at": round(entry + (tp1 - entry) / 3, 8),
             "panel": "لیام تریدر ۹", "version": PARAMS["version"],
             "t": int(time.time() * 1000),
@@ -614,7 +716,9 @@ def scalp_decide(c1m, symbol="?"):
                     f"(EMA21/55)",
                     f"پولبک {ratio:.2f} در جهت روند",
                     f"IBS {i:.2f} تأیید",
-                    f"سشن {sess}",
+                    f"سشن {sess}"] + (
+                   [f"در باکس اردر بلاک تازه ({own_ob['dist_pct']:.2f}٪ فاصله)"]
+                   if ob_bonus else []) + [
                     f"کارمزد {fee_r:.2f}R زیر سقف {S['max_fee_r']}",
                     f"اهرم {lev}× با محافظ لیکویید (استاپ ≤ نصف راه)",
                     "🪜 تریل: در ⅓ مسیر، استاپ به سربه‌سرِ کارمزددار"]})
@@ -842,6 +946,63 @@ def _selftest():
     assert 45 <= s["leverage"] <= 90, s
     assert s["leverage"] <= int(50.0 / s["stop_pct"]), s
     assert s["fee_r"] < SCALP["max_fee_r"], s
+    assert "candle_evidence" in s and s["candle_evidence"]["formula_version"] == CANDLE_GEOM_VERSION, s
+    assert "order_block" in s, s
+
+    # اردر بلاک مخالفِ تازه سرِ راه تارگت → وتوی واقعی (تزریق قطعی برای
+    # آزمون مستقل از الگوی تصادفیِ کندل — منطق دروازه را می‌سنجد، نه شانس
+    # ساختن دو زون هم‌زمان در یک فیکسچر)
+    global order_block_zone
+    _real_ob = order_block_zone
+
+    def _fake_ob(cd, direction, **kw):
+        if direction == "SHORT":                    # opp_dir برای لانگ
+            return {"lo": s["entry"] * 1.001, "hi": s["entry"] * 1.003,
+                   "role": "supply", "reactions": 2, "fresh": True,
+                   "mitigated": False, "dist_pct": 0.1}
+        return None
+    order_block_zone = _fake_ob
+    try:
+        blocked = scalp_decide(c1m, "TESTUSDT")
+        assert blocked["action"] == "NO_SIGNAL" and "مسدود" in blocked["why"], blocked
+    finally:
+        order_block_zone = _real_ob
+
+    # E08 اردر بلاک خودکفا (v2.3): کندل مخالف قبل از دیسپلیسمنت → زون Demand
+    def _flat(n, px=100.0, t0=0, tf=60000):
+        return [{"t": t0 + i * tf, "o": px, "h": px * 1.001, "l": px * 0.999,
+                 "c": px} for i in range(n)]
+    ob_cd = _flat(40)
+    ob_o, ob_c = 100.0, 99.5                    # کندل مخالف (نزولی) — کندل OB
+    ob_cd.append({"t": 40 * 60000, "o": ob_o, "h": ob_o * 1.0005,
+                  "l": ob_c * 0.999, "c": ob_c})
+    disp_c = ob_c * 1.02                        # جهش +۲٪ — دیسپلیسمنت واضح
+    ob_cd.append({"t": 41 * 60000, "o": ob_c, "h": disp_c * 1.001,
+                  "l": ob_c * 0.999, "c": disp_c})
+    px = disp_c
+    for k in range(42, 50):
+        px *= 1.001
+        ob_cd.append({"t": k * 60000, "o": px * 0.999, "h": px * 1.002,
+                      "l": px * 0.998, "c": px})
+    ob = order_block_zone(ob_cd, "LONG", lookback=30)
+    assert ob and ob["role"] == "demand" and ob["fresh"], ob
+    lo, hi = min(ob_o, ob_c), max(ob_o, ob_c)
+    assert abs(ob["lo"] - lo) < 1e-9 and abs(ob["hi"] - hi) < 1e-9, ob
+    # قیمت بعداً تمام‌عیار از زیر زون رد می‌شود → دیگر «تازه» نیست
+    # (دامنهٔ کندل کوچک عمداً — کندل پرت، ATR پنجره را منحرف و آزمون را
+    # کور می‌کند؛ همان دامنهٔ کندل‌های آرام کافی است تا لغزش زیر lo برسد)
+    mitigated_cd = ob_cd + [{"t": 51 * 60000, "o": lo * 0.9995, "h": lo * 0.9996,
+                             "l": lo * 0.997, "c": lo * 0.997}]
+    ob2 = order_block_zone(mitigated_cd, "LONG", lookback=30)
+    assert ob2 and not ob2["fresh"] and ob2["mitigated"], ob2
+
+    # E09 هندسهٔ کندل: نسبت‌ها در بازهٔ درست و بازتولیدپذیرند
+    geo_cd = _flat(15) + [{"t": 15 * 60000, "o": 100, "h": 106, "l": 99, "c": 104}]
+    geo = candle_geometry(geo_cd)
+    assert geo["formula_version"] == CANDLE_GEOM_VERSION, geo
+    assert abs(geo["body_range"] - 4 / 7) < 0.01, geo
+    assert abs(geo["ibs"] - 5 / 7) < 0.01, geo
+    assert 0 <= geo["upper_wick_range"] <= 1 and 0 <= geo["lower_wick_range"] <= 1, geo
 
     # ضدتکرار (v2.2): همان کندل آزاد، کندل بعدی در پنجره بلاک، جهت دیگر آزاد
     _LAST.clear()
@@ -866,7 +1027,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۲ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۳ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
