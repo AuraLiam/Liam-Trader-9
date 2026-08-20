@@ -91,6 +91,17 @@ if len(pts) > 200:
           json.dumps(mf["USDT.D"], ensure_ascii=False))
     check("با سری واقعی، BTC.D هم خوانده می‌شود",
           mf["BTC.D"].get("trend") not in (None, "unknown"))
+    # «نامشخص» دیگر دو معنی ندارد: بی‌داده ≠ بی‌جهت
+    bars = DOM._bars(pts, "u")
+    full = market_first(bars, bars, bars)            # هر سه معلوم
+    check("بستر کامل = context_known و کد جهت‌دار",
+          full.get("context_known") is True
+          and full.get("verdict_code") in ("TETHER_UP", "RISK_ON", "RISK_OFF",
+                                           "NEUTRAL"), str(full.get("verdict_code")))
+    empty = market_first(None, None, None)
+    check("بستر ناقص = INSUFFICIENT_CONTEXT (نه «نامشخص» مبهم)",
+          empty.get("verdict_code") == "INSUFFICIENT_CONTEXT"
+          and empty.get("context_known") is False, str(empty.get("verdict_code")))
 else:
     print("  … سری دامیننس در این محیط خالی است — دو بررسی رد شد (نه شکست)")
 
