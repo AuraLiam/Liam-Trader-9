@@ -91,6 +91,7 @@ jobs:
           python3 -m hamid.test_exec_contract
           python3 -m hamid.test_dash_backtest
           python3 -m hamid.test_pump_budget
+          python3 -m hamid.test_sentinel
           python3 -m hamid.test_signal_flow
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
@@ -147,6 +148,17 @@ jobs:
       - name: انتشار کارنامهٔ تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.publish_experience || true
+
+      # نگهبان یکپارچگی (دستور حمید، ۲۰ اوت): «هیچ‌کس جز خودمان چیزی
+      # این‌جا نگذارد». هر ورک‌فلوی تازه، نویسندهٔ ناشناس یا سکرت لو‌رفته
+      # همین‌جا آلارم می‌شود؛ signals/sentinel.json با بقیهٔ خروجی چرخه
+      # روی main می‌نشیند.
+      - name: نگهبان یکپارچگی
+        working-directory: claude-liam-signal/python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 -m hamid.sentinel --alert || true
 
       - name: Summary
         if: always()

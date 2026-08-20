@@ -1,0 +1,208 @@
+"""نگهبان یکپارچگی ریپو — «هیچ‌کس جز خودمان چیزی این‌جا نگذارد»
+(دستور حمید، ۲۰ اوت).
+
+چیزی که حمید خواست: «هیچ هوش مصنوعی دیگر یا حتی یک چت جدید نتواند فایلی
+در گیت‌هاب بارگذاری و اجرا کند.»
+
+صادقانه: **رمزنگاری فایل‌ها این را نمی‌دهد** — کسی که اجازهٔ push دارد،
+چه فایل رمز باشد چه نباشد، می‌تواند بنویسد؛ و کد رمزشده را نه Actions
+اجرا می‌کند نه مرورگر می‌خواند. آنچه واقعاً جلوی نوشتن را می‌گیرد فقط
+دسترسی گیت‌هاب است (تنظیمات حساب حمید). کاری که کد می‌تواند بکند این
+است: **هر ورودِ ناشناس را همان لحظه ببیند و داد بزند.**
+
+این نگهبان سه چیز را می‌پاید:
+
+۱. **نویسندهٔ هر کامیت** — هر کامیت روی main باید از فهرست سفید باشد.
+   کامیت با نویسندهٔ ناشناس = نفوذ یا حساب لو رفته → آلارم.
+۲. **ورک‌فلوها** — مسیر کلاسیک حمله: یک ورک‌فلوی تازه که سکرت‌ها را
+   بیرون می‌فرستد. اثر انگشت همهٔ ورک‌فلوها ثبت می‌شود؛ فایل تازه یا
+   عوض‌شدهٔ ثبت‌نشده → آلارم.
+۳. **نشت سکرت** — الگوی توکن تلگرام/کلید در فایل‌های سورس‌کنترل‌شده.
+
+خروجی: `signals/sentinel.json` + آلارم تلگرام روی تغییر مشکوک.
+مرجع مورد انتظار: `brain/sentinel-baseline.json` (خودش بار اول ساخته
+می‌شود؛ تغییر عمدی با `--accept` تأیید می‌شود).
+
+    python3 -m hamid.sentinel            # بررسی
+    python3 -m hamid.sentinel --accept   # تغییرات فعلی را مرجع کن
+"""
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PY = HERE.parent
+ROOT = PY.parents[1]
+WF = ROOT / ".github" / "workflows"
+BASELINE = ROOT / "brain" / "sentinel-baseline.json"
+OUT = ROOT / "signals" / "sentinel.json"
+
+# فهرست سفید نویسنده‌ها — فقط این‌ها حق نوشتن روی main دارند.
+# فهرست سفید از خودِ ورک‌فلوهای ریپو استخراج شده — هر نامی که این‌جا
+# نیست یعنی از بیرونِ سیستم نوشته شده (تأییدشده ۲۰ اوت: Conformance
+# نویسندهٔ ورک‌فلوی conformance.yml خودمان است، نه غریبه).
+ALLOWED_AUTHORS = {
+    "claude", "hamid signal agent", "auraliam", "github-actions[bot]",
+    "github-actions", "hamid", "conformance",
+}
+ALLOWED_EMAILS_SUFFIX = (
+    "@users.noreply.github.com", "@anthropic.com", "@privaterelay.appleid.com",
+    "@liam9.ai",          # ورک‌فلوهای خودِ ریپو (conformance و هم‌خانواده)
+)
+
+SECRET_PAT = [
+    (re.compile(r"\b\d{8,12}:[A-Za-z0-9_-]{30,}\b"), "توکن ربات تلگرام"),
+    (re.compile(r"(?i)(api[_-]?key|secret|token)\s*[=:]\s*['\"][A-Za-z0-9_\-]{24,}"),
+     "کلید/توکن هاردکدشده"),
+]
+SKIP_DIRS = (".git", "node_modules", "backup", "cycles", "__pycache__")
+SCAN_EXT = (".py", ".js", ".mjs", ".html", ".yml", ".yaml", ".json", ".md")
+
+
+def _git(*args):
+    try:
+        return subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
+                              text=True, timeout=60).stdout.strip()
+    except Exception:                                # noqa: BLE001
+        return ""
+
+
+def workflow_prints():
+    """اثر انگشت هر ورک‌فلو — نام → sha256 محتوا."""
+    out = {}
+    if WF.exists():
+        for p in sorted(WF.glob("*.yml")):
+            out[p.name] = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
+    return out
+
+
+def recent_authors(n=80):
+    """نویسنده و کامیت‌کنندهٔ n کامیت آخر main."""
+    raw = _git("log", f"-{n}", "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%s")
+    rows = []
+    for line in raw.splitlines():
+        parts = line.split("\x1f")
+        if len(parts) == 6:
+            rows.append({"sha": parts[0][:8], "an": parts[1], "ae": parts[2],
+                         "cn": parts[3], "ce": parts[4], "subject": parts[5][:60]})
+    return rows
+
+
+def _known(name, email):
+    if (name or "").strip().lower() in ALLOWED_AUTHORS:
+        return True
+    return any((email or "").lower().endswith(s) for s in ALLOWED_EMAILS_SUFFIX)
+
+
+def scan_secrets():
+    hits = []
+    for p in ROOT.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in SCAN_EXT:
+            continue
+        if any(d in p.parts for d in SKIP_DIRS) or p.name == Path(__file__).name:
+            continue
+        try:
+            t = p.read_text(encoding="utf-8", errors="ignore")
+        except Exception:                            # noqa: BLE001
+            continue
+        for pat, label in SECRET_PAT:
+            if pat.search(t):
+                hits.append(f"{p.relative_to(ROOT)}: {label}")
+                break
+    return hits
+
+
+def check(accept=False):
+    base = {}
+    if BASELINE.exists():
+        try:
+            base = json.loads(BASELINE.read_text())
+        except Exception:                            # noqa: BLE001
+            base = {}
+    now_wf = workflow_prints()
+    old_wf = base.get("workflows") or {}
+    findings = []
+
+    # ۱) ورک‌فلوها
+    added = sorted(set(now_wf) - set(old_wf))
+    removed = sorted(set(old_wf) - set(now_wf))
+    changed = sorted(k for k in now_wf if k in old_wf and now_wf[k] != old_wf[k])
+    if old_wf:
+        for a in added:
+            findings.append({"level": "high", "kind": "workflow_added",
+                             "what": a,
+                             "why": "ورک‌فلوی تازهٔ ثبت‌نشده — مسیر کلاسیک نشت سکرت"})
+        for r in removed:
+            findings.append({"level": "medium", "kind": "workflow_removed", "what": r,
+                             "why": "ورک‌فلوی ثبت‌شده حذف شده"})
+        for c in changed:
+            findings.append({"level": "medium", "kind": "workflow_changed", "what": c,
+                             "why": "محتوای ورک‌فلو عوض شده"})
+
+    # ۲) نویسندهٔ کامیت‌ها
+    strangers = [r for r in recent_authors()
+                 if not (_known(r["an"], r["ae"]) and _known(r["cn"], r["ce"]))]
+    for s in strangers[:10]:
+        findings.append({"level": "high", "kind": "unknown_author",
+                         "what": f"{s['sha']} · {s['an']} <{s['ae']}>",
+                         "why": "کامیت از نویسندهٔ خارج از فهرست سفید"})
+
+    # ۳) نشت سکرت
+    for h in scan_secrets():
+        findings.append({"level": "high", "kind": "secret_leak", "what": h,
+                         "why": "سکرت باید فقط در محیط باشد، نه در ریپو"})
+
+    res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
+           "workflows_tracked": len(now_wf),
+           "commits_checked": len(recent_authors()),
+           "findings": findings,
+           "verdict": "پاک" if not findings else
+                      f"{len(findings)} مورد مشکوک — بررسی لازم است",
+           "note": ("این نگهبان جلوی نوشتن را نمی‌گیرد (آن کار تنظیمات "
+                    "دسترسی گیت‌هاب است) — ورودِ ناشناس را می‌بیند و "
+                    "همان لحظه اعلام می‌کند.")}
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1))
+
+    if accept or not old_wf:
+        BASELINE.parent.mkdir(parents=True, exist_ok=True)
+        BASELINE.write_text(json.dumps(
+            {"accepted_at": int(time.time() * 1000), "workflows": now_wf},
+            ensure_ascii=False, indent=1))
+    return res
+
+
+def alert(res):
+    """فقط تخلف high به تلگرام می‌رود — سروصدای بی‌مورد ممنوع (قانون ۰۷)."""
+    high = [f for f in res["findings"] if f["level"] == "high"]
+    if not high:
+        return False
+    try:
+        from telegram import creds, _post
+    except Exception:                                # noqa: BLE001
+        return False
+    token, chat = creds()
+    if not token:
+        return False
+    lines = ["🛡 <b>نگهبان یکپارچگی — لیام تریدر ۹</b>", ""]
+    for f in high[:8]:
+        lines.append(f"• <b>{f['kind']}</b>: {f['what']}\n  {f['why']}")
+    lines.append("\nاگر کار خودت نبوده، همین حالا دسترسی‌های گیت‌هاب را بررسی کن.")
+    _post(token, "sendMessage",
+          {"chat_id": chat, "text": "\n".join(lines), "parse_mode": "HTML"})
+    return True
+
+
+if __name__ == "__main__":
+    r = check(accept="--accept" in sys.argv)
+    print(f"نگهبان: {r['verdict']} · {r['workflows_tracked']} ورک‌فلو · "
+          f"{r['commits_checked']} کامیت بررسی شد")
+    for f in r["findings"][:12]:
+        print(f"  [{f['level']}] {f['kind']}: {f['what']}")
+    if "--alert" in sys.argv and alert(r):
+        print("آلارم تلگرام فرستاده شد")
+    sys.exit(1 if any(f["level"] == "high" for f in r["findings"]) else 0)
