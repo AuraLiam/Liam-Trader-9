@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liam9/candlestick_evidence_packet.schema.json",
+  "title": "E09 Candlestick Evidence Packet",
+  "type": "object",
+  "required": [
+    "symbol",
+    "timeframe",
+    "asof_utc",
+    "formula_version",
+    "decision",
+    "features",
+    "context",
+    "incremental_evidence_score",
+    "reasons"
+  ],
+  "properties": {
+    "symbol": {
+      "type": "string"
+    },
+    "timeframe": {
+      "type": "string"
+    },
+    "asof_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "formula_version": {
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "ALLOW",
+        "NEUTRAL",
+        "REJECT"
+      ]
+    },
+    "incremental_evidence_score": {
+      "type": "number",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "features": {
+      "type": "object",
+      "required": [
+        "body_range",
+        "upper_wick_range",
+        "lower_wick_range",
+        "ibs",
+        "atr_range",
+        "relative_volume"
+      ],
+      "additionalProperties": {
+        "type": [
+          "number",
+          "string",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "context": {
+      "type": "object"
+    },
+    "e10_status": {
+      "enum": [
+        "ALLOW",
+        "WAIT",
+        "REJECT",
+        "UNAVAILABLE"
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -385,6 +385,9 @@ def _build(symbol, tf, mode, direction, entry, sl, stop_pct, lev, shock, ob,
                        "دام کارمزد", "version": P["version"],
                 "panel": "لیام تریدر ۹"}
     out = {"action": direction, "mode": mode, "symbol": symbol, "tf": tf,
+           # قرارداد اجرا (دستور حمید، ۲۰ اوت): ایزوله + استاپ/تارگت اجباری
+           "product": "futures", "margin_mode": "isolated",
+           "sl_tp_mandatory": True,
            "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
            "stop_pct": round(stop_pct, 3), "rr_net": round(net_rr, 2),
            "fee_r": round(fee_r, 3), "leverage": lev,
@@ -396,6 +399,7 @@ def _build(symbol, tf, mode, direction, entry, sl, stop_pct, lev, shock, ob,
            "max_hold_bars": P["max_hold_bars"],
            "panel": "لیام تریدر ۹", "version": P["version"],
            "t": int(time.time() * 1000), "why": why}
+    out["stop_loss"], out["take_profit"] = out["sl"], out["tp1"]
     if equity:
         s = size_for(equity, stop_pct, lev)
         if s:
@@ -522,6 +526,17 @@ ALLOWED = {
     "resume":     "دوباره فعال شو",
     "hint":       "دیتای تازه از حمید (متن + برچسب نماد)",
     "watch":      "این نمادها را ویژه زیر نظر بگیر",
+    # دستور حمید ۱۹ اوت: «اگر سیگنالی دیدی برای اسکلپ مناسب است، سریع
+    # دستور بده به داشبورد که آن پوزیشن فیوچرز را اجرا کند.»
+    #
+    # این تنها فرمانی است که به سفارش می‌رسد، و عمداً سخت‌گیرترین است:
+    #   · فقط فیوچرز (product همیشه "futures"؛ اسپات پذیرفته نمی‌شود)
+    #   · اهرم ≤ سقف داشبورد و ≤ محافظ لیکویید
+    #   · نوشنال ≤ سقف سخت
+    #   · mode پیش‌فرض "demo"؛ «live» فقط وقتی اجرا می‌شود که خودِ حمید
+    #     روی ماشین داشبورد LIAM9_ALLOW_LIVE=1 گذاشته باشد. کانال به‌
+    #     تنهایی هرگز پول واقعی را روشن نمی‌کند.
+    "open_position": "اجرای پوزیشن فیوچرز روی داشبورد (اسکلپ سریع)",
 }
 # فرمان‌هایی که حتی با امضای درست هم رد می‌شوند (مرز ایمنی، نه سلیقه).
 FORBIDDEN = {"enable_live", "live_execution", "set_secret", "exec", "eval",
@@ -541,6 +556,67 @@ PARAM_BOUNDS = {
     "risk_per_trade_pct": (0.25, 5.0),
     "min_quality": (0, 100),
 }
+
+
+# ── مرزهای سخت سفارش (تغییرشان از راه دور ممکن نیست) ──────────────────────
+EXEC_MAX_NOTIONAL_USD = 200.0     # سقف سخت هر سفارش، حتی در دمو
+EXEC_MAX_LEVERAGE = 20            # سقف داشبورد حمید
+EXEC_LIQ_GUARD = 50.0             # اهرم ≤ ۵۰÷استاپ٪ (استاپ ≤ نصف لیکویید)
+EXEC_TTL_S = 300                  # سفارش کهنه اجرا نمی‌شود؛ ۵ دقیقه
+
+
+def validate_exec(order):
+    """اعتبارسنجی سفارش فیوچرز. خروجی: لیست ایرادها (خالی = سالم).
+
+    هرچه این‌جا رد شود، هیچ‌جای دیگری قابل دور زدن نیست — نه با امضا،
+    نه با فرمان، نه با پارامتر."""
+    errs = []
+    if order.get("product") != "futures":
+        errs.append("فقط فیوچرز؛ product باید futures باشد")
+    sym = str(order.get("symbol") or "")
+    if not sym.endswith("USDT") or len(sym) < 5:
+        errs.append("نماد فیوچرز USDT نیست")
+    if order.get("side") not in ("LONG", "SHORT"):
+        errs.append("جهت نامعتبر")
+    # دستور حمید (۲۰ اوت): پوزیشن بی‌استاپ/بی‌تارگت ممنوع؛ tp1 هم اجباری شد.
+    for k in ("entry", "sl", "tp1", "stop_pct", "leverage", "notional_usd"):
+        v = order.get(k)
+        if not isinstance(v, (int, float)) or v <= 0:
+            errs.append(f"«{k}» عددی مثبت نیست — استاپ و تارگت اجباری‌اند")
+    if order.get("margin_mode") != "isolated":
+        errs.append("مارجین باید isolated باشد — کراس ممنوع (دستور ۲۰ اوت)")
+    if errs:
+        return errs
+    if order["leverage"] > EXEC_MAX_LEVERAGE:
+        errs.append(f"اهرم {order['leverage']} بالاتر از سقف {EXEC_MAX_LEVERAGE}")
+    if order["leverage"] > int(EXEC_LIQ_GUARD / order["stop_pct"]):
+        errs.append("اهرم از محافظ فاصلهٔ لیکویید رد می‌کند")
+    if order["notional_usd"] > EXEC_MAX_NOTIONAL_USD:
+        errs.append(f"نوشنال {order['notional_usd']} بالاتر از سقف "
+                    f"{EXEC_MAX_NOTIONAL_USD}")
+    if order.get("mode") not in ("demo", "live"):
+        errs.append("mode باید demo یا live باشد")
+    d = order["side"]
+    if (d == "LONG" and order["sl"] >= order["entry"]) or \
+       (d == "SHORT" and order["sl"] <= order["entry"]):
+        errs.append("استاپ سمت اشتباه ورود است")
+    return errs
+
+
+def make_exec_command(seq, symbol, side, entry, sl, tp1, stop_pct, leverage,
+                      notional_usd, mode="demo", ttl_s=EXEC_TTL_S, **extra):
+    """سفارش فیوچرز امضاشده. mode پیش‌فرض demo — «live» فقط با تأیید
+    جداگانهٔ حمید روی ماشین داشبورد اجرا می‌شود."""
+    order = {"product": "futures", "symbol": symbol, "side": side,
+             "entry": float(entry), "sl": float(sl),
+             "tp1": (float(tp1) if tp1 else None),
+             "stop_pct": float(stop_pct), "leverage": int(leverage),
+             "notional_usd": round(float(notional_usd), 2),
+             "margin_mode": "isolated", "mode": mode, **extra}
+    errs = validate_exec(order)
+    if errs:
+        raise ValueError("سفارش رد شد: " + "؛ ".join(errs))
+    return make_command("open_position", seq, ttl_s=ttl_s, order=order)
 
 
 def _secret():
@@ -598,6 +674,7 @@ class Link:
         self.paused = False
         self.last_seq = 0
         self.applied = []
+        self.orders = []          # سفارش‌های تحویل‌شده به داشبورد
 
     # ── بالا-رو ───────────────────────────────────────────────────────
     def _append(self, kind, data):
@@ -678,6 +755,24 @@ class Link:
                 else:
                     params[k] = v
                     res["ok"] = True
+            elif t == "open_position":
+                # کانال فقط سفارش را **تحویل** می‌دهد؛ اجرا کار داشبورد است.
+                # مرز پول واقعی این‌جاست: mode="live" فقط وقتی عبور می‌کند
+                # که خودِ حمید روی ماشین داشبورد LIAM9_ALLOW_LIVE=1 گذاشته
+                # باشد. نبودش = تبدیل به دمو، نه رد کامل (تا اسکلپ نخوابد).
+                order = c.get("order") or {}
+                errs = validate_exec(order)
+                if errs:
+                    res["why"] = "؛ ".join(errs)
+                elif self.paused:
+                    res["why"] = "موتور متوقف است"
+                else:
+                    if order.get("mode") == "live" and \
+                            os.environ.get("LIAM9_ALLOW_LIVE") != "1":
+                        order = dict(order, mode="demo",
+                                     downgraded="LIAM9_ALLOW_LIVE تنظیم نیست")
+                    res["ok"], res["order"] = True, order
+                    self.orders.append(order)
             elif t == "set_risk":
                 k, v = c.get("key"), c.get("value")
                 if risk is None:

@@ -18,6 +18,12 @@
     دام کارمزد و محافظ فاصلهٔ لیکویید.
   · **قرارداد ریسک + ممیزی تداخل** — `RISK_CONTRACT` و `audit_environment()`
     تا موتور ریسک داشبورد در سکوت استراتژی را خنثی نکند.
+  · **قرارداد اجرا (دستور حمید، ۲۰ اوت)** — هر پوزیشن: مارجین **ایزوله**
+    (کراس ممنوع)، استاپ و تارگت **اجباری** روی خود صرافی، و **دروازهٔ
+    جهت بازار**: نماد آلت بدون بستر BTC سیگنال نمی‌گیرد (قانون ۳)؛ هر دو
+    تایم BTC خلاف جهت = وتوی مطلق؛ یک تایم خلاف = فقط با تمام تأییدیه‌ها.
+    استثنا فقط اسکلپ ۱ دقیقه (دستور صریح). ریشهٔ این قانون: شورت ARB در
+    بازار مثبت — دروازهٔ بستر فقط در گلوگاه تلگرام بود، نه داخل داشبورد.
 
 هرچه گفته می‌شود پشتش عدد است؛ عددی که راه بازتولید ندارد گزارش نمی‌شود.
 
@@ -113,7 +119,51 @@ RISK_CONTRACT = {
                     "max_hold_min_scalp": 45, "max_hold_h_swing": 24},
     "sizing": {"risk_per_trade_pct": [1.0, 5.0],
                "note": "سایز معکوس نوسان؛ سقف اکسپوژر کل با داشبورد"},
+    # دستور حمید (۲۰ اوت): پوزیشن بی‌استاپ/بی‌تارگت و مارجین کراس ممنوع.
+    "execution": {"product": "futures_only",
+                  "margin_mode": "isolated",
+                  "cross_margin_forbidden": True,
+                  "sl_tp_mandatory": True,
+                  "note": ("داشبورد باید SL و TP را همان لحظهٔ باز شدن روی "
+                           "صرافی بگذارد؛ پوزیشن بدون هر دو = نقض قرارداد")},
 }
+
+
+def _finalize(sig):
+    """مهر قرارداد اجرا روی هر خروجی قابل‌معامله (دستور حمید، ۲۰ اوت).
+
+    استاپ و تارگت باید در خود دیکشنری باشند وگرنه سیگنال باطل می‌شود؛
+    مارجین همیشه ایزوله اعلام می‌شود تا داشبورد کراس باز نکند."""
+    if sig.get("action") in ("LONG", "SHORT"):
+        if not (sig.get("sl") and sig.get("tp1")):
+            return {"action": "NO_SIGNAL", "symbol": sig.get("symbol", "?"),
+                    "why": "سیگنال بدون استاپ/تارگت باطل است — قرارداد اجرا",
+                    "panel": "لیام تریدر ۹"}
+        sig["product"] = "futures"
+        sig["margin_mode"] = "isolated"     # کراس ممنوع — دستور صریح
+        sig["sl_tp_mandatory"] = True
+        sig["stop_loss"] = sig["sl"]        # نام‌های رایج داشبوردها
+        sig["take_profit"] = sig["tp1"]
+    return sig
+
+
+def market_gate(direction, btc4h, btc1h):
+    """دروازهٔ جهت بازار — بستر BTC برای هر آلت اجباری است (قانون ۳).
+
+    خروجی: (حکم، توضیح). حکم: "ok" / "counter" (یک تایم خلاف — فقط با
+    تمام تأییدیه‌ها) / "veto" (هر دو خلاف یا داده ناقص)."""
+    if not btc4h or not btc1h:
+        return "veto", "بستر BTC نرسیده — قانون ۱: بدون داده سیگنال نیست"
+    b4, b1 = trend(btc4h), trend(btc1h)
+    if b4 is None or b1 is None:
+        return "veto", "روند BTC قابل‌سنجش نیست"
+    opp = "down" if direction == "LONG" else "up"
+    against = (b4 == opp) + (b1 == opp)
+    if against == 2:
+        return "veto", f"هر دو تایم BTC ({b4}/{b1}) خلاف جهت — وتوی مطلق"
+    if against == 1:
+        return "counter", f"یک تایم BTC خلاف جهت (۴س {b4} · ۱س {b1})"
+    return "ok", f"بستر BTC هم‌قصه (۴س {b4} · ۱س {b1})"
 
 
 def _get(url, timeout=15):
@@ -287,8 +337,12 @@ def _pullback(c15, direction, win_n=60, min_leg=8):
 
 
 # ── تحلیل اصلی (۴س/۱س/۱۵د) ─────────────────────────────────────────────────
-def analyze(symbol, c4h, c1h, c15):
-    """تصمیم روش لیام تریدر ۹ روی کندل‌های داده‌شده."""
+def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
+    """تصمیم روش لیام تریدر ۹ روی کندل‌های داده‌شده.
+
+    برای هر نماد غیر BTC، کندل‌های BTC (۴س و ۱س) اجباری‌اند — قانون ۳:
+    بستر BTC جایگزین ساختار خود نماد نیست ولی بدون آن سیگنال آلت نمی‌رود.
+    ریشه: شورت ARB در بازار مثبت (۲۰ اوت) — این دروازه داخل داشبورد نبود."""
     P = PARAMS
     def no(why):
         return {"action": "NO_SIGNAL", "symbol": symbol, "why": why,
@@ -305,6 +359,12 @@ def analyze(symbol, c4h, c1h, c15):
         direction = "SHORT"
     else:
         return no(f"روند ۴س ({t4}) و ۱س ({t1}) هم‌قصه نیستند — وتوی روند")
+
+    is_btc = symbol.upper().replace("USDT", "").replace("USD", "") == "BTC"
+    mkt, mkt_why = ("ok", "خود بازار است") if is_btc else \
+        market_gate(direction, btc4h, btc1h)
+    if mkt == "veto":
+        return no(f"دروازهٔ بازار: {mkt_why}")
     pb = _pullback(c15, direction)
     if pb is None:
         return no("موج/پولبک معتبری در ۱۵د نیست")
@@ -375,7 +435,17 @@ def analyze(symbol, c4h, c1h, c15):
     if quality < P["min_quality"]:
         return no(f"امتیاز کیفیت {quality} زیر کف {P['min_quality']}")
 
-    return {"action": direction, "symbol": symbol,
+    # یک تایم BTC خلاف جهت → «خلاف بازار»: فقط با تمام تأییدیه‌ها
+    # (کندل هم‌جهت + کیفیت ≥۷۰)؛ یک غایب = NO_SIGNAL (قانون ترند-گیت).
+    if mkt == "counter":
+        if align != "with" or quality < 70:
+            return no(f"خلاف بازار ({mkt_why}) بدون تأیید کامل — "
+                      f"کندل {align}، کیفیت {quality}")
+        why.append(f"⚠️ خلاف بازار — {mkt_why}؛ با تأیید کامل عبور کرد")
+    else:
+        why.append(mkt_why)
+
+    return _finalize({"action": direction, "symbol": symbol,
             "entry": round(entry, 8), "sl": round(sl, 8),
             "tp1": round(tp1, 8), "rr_net": round(net_rr, 2),
             "stop_pct": round(stop_pct, 3), "ibs": round(i, 2),
@@ -385,7 +455,7 @@ def analyze(symbol, c4h, c1h, c15):
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
             "mode": "swing", "tf": "15m",
             "panel": "لیام تریدر ۹", "version": P["version"],
-            "t": int(time.time() * 1000), "why": why}
+            "t": int(time.time() * 1000), "why": why})
 
 
 # ── حالت اسکلپ ۱ دقیقه ─────────────────────────────────────────────────────
@@ -477,7 +547,7 @@ def scalp_decide(c1m, symbol="?"):
     if lev is None:
         return no(f"استاپ {stop_pct:.2f}٪ برای اهرم اسکلپ زیادی گشاد است "
                   f"(محافظ فاصلهٔ لیکویید)")
-    return {"action": direction, "symbol": symbol, "mode": "scalp", "tf": "1m",
+    return _finalize({"action": direction, "symbol": symbol, "mode": "scalp", "tf": "1m",
             "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
             "stop_pct": round(stop_pct, 3), "fee_r": round(fee_r, 3),
             "rr_net": round(S["rr_target"] - fee_r, 2), "ibs": round(i, 2),
@@ -493,7 +563,7 @@ def scalp_decide(c1m, symbol="?"):
                     f"سشن {sess}",
                     f"کارمزد {fee_r:.2f}R زیر سقف {S['max_fee_r']}",
                     f"اهرم {lev}× با محافظ لیکویید (استاپ ≤ نصف راه)",
-                    "🪜 تریل: در ⅓ مسیر، استاپ به سربه‌سرِ کارمزددار"]}
+                    "🪜 تریل: در ⅓ مسیر، استاپ به سربه‌سرِ کارمزددار"]})
 
 
 def signal(symbol):
@@ -504,7 +574,11 @@ def signal(symbol):
     if not (c15 and c1h and c4h):
         return {"action": "NO_SIGNAL", "symbol": symbol,
                 "why": "کندل از هیچ منبعی نرسید — قانون ۱"}
-    return analyze(symbol, c4h, c1h, c15)
+    btc4h = btc1h = None
+    if symbol.upper().replace("USDT", "").replace("USD", "") != "BTC":
+        btc4h = fetch_klines("BTCUSDT", "4h", 260)
+        btc1h = fetch_klines("BTCUSDT", "1h", 260)
+    return analyze(symbol, c4h, c1h, c15, btc4h=btc4h, btc1h=btc1h)
 
 
 def scalp_signal(symbol):
@@ -527,6 +601,7 @@ _RISK_KEYS = {
     "cooldown_s": ("cooldown_s", "cooldown_seconds", "trade_cooldown"),
     "min_notional": ("min_notional", "min_order_usd", "minNotional"),
     "timeframes": ("timeframes", "intervals", "supported_timeframes"),
+    "margin_mode": ("margin_mode", "marginMode", "margin_type", "marginType"),
 }
 
 
@@ -558,6 +633,13 @@ def audit_environment(risk=None, dashboard=None):
                 break
     issues, notes = [], []
     RC = RISK_CONTRACT
+
+    mm = found.get("margin_mode")
+    if mm is not None and "cross" in str(mm).lower():
+        issues.append("مارجین داشبورد CROSS است — دستور صریح: فقط ایزوله؛ "
+                      "تا اصلاح، هیچ پوزیشنی باز نشود")
+    elif mm is None:
+        notes.append("حالت مارجین داشبورد نامعلوم — باید ایزوله باشد (کراس ممنوع)")
 
     lev = found.get("max_leverage")
     if lev is None:
@@ -639,34 +721,49 @@ def _selftest():
         return [{"t": t0 + i * tf_ms, "o": p, "h": p * 1.004, "l": p * 0.996,
                  "c": p} for i, p in enumerate(path)]
     up = [100 + i * 0.4 for i in range(230)]
+    dn = [200 - i * 0.4 for i in range(230)]
     c4 = c1 = mk(up)
+    b4, b1 = mk(up), mk(up)          # بستر BTC هم‌جهت (قانون ۳)
     pull = up + [up[-1] - i * 0.5 for i in range(1, 16)]
     c15 = mk(pull)
     c15[-1]["l"], c15[-1]["c"] = c15[-1]["c"] * 0.99, c15[-1]["c"] * 0.9905
     EXPERIENCE.clear()
-    r = analyze("TESTUSDT", c4, c1, c15)
+    r = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
     assert r["action"] == "LONG", r
     assert r["sl"] < r["entry"] < r["tp1"]
     assert r["exp_used"] is False and 0 <= r["quality"] <= 100
+    # قرارداد اجرا (۲۰ اوت): ایزوله + استاپ/تارگت اجباری روی خود خروجی
+    assert r["margin_mode"] == "isolated" and r["product"] == "futures", r
+    assert r["sl_tp_mandatory"] and r["stop_loss"] == r["sl"] \
+        and r["take_profit"] == r["tp1"], r
+
+    # آلت بدون بستر BTC = NO_SIGNAL (ریشهٔ شورت ARB در بازار مثبت)
+    g0 = analyze("TESTUSDT", c4, c1, c15)
+    assert g0["action"] == "NO_SIGNAL" and "بازار" in g0["why"], g0
+    # هر دو تایم BTC خلاف جهت = وتوی مطلق
+    g2 = analyze("TESTUSDT", c4, c1, c15, btc4h=mk(dn), btc1h=mk(dn))
+    assert g2["action"] == "NO_SIGNAL" and "وتوی مطلق" in g2["why"], g2
+    # خود BTC از دروازهٔ بستر معاف است (خودش بازار است)
+    assert analyze("BTCUSDT", c4, c1, c15)["action"] == "LONG"
 
     # تجربهٔ مثبت امتیاز را بالا می‌برد
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 80.0, "mean_r": 0.4,
                                    "thin": False}
-    r2 = analyze("TESTUSDT", c4, c1, c15)
+    r2 = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
     assert r2["exp_used"] and r2["quality"] > r["quality"], (r2, r)
     # تجربهٔ قوی و منفی وتو می‌کند
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 20.0, "mean_r": -0.6,
                                    "thin": False}
-    r3 = analyze("TESTUSDT", c4, c1, c15)
+    r3 = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
     assert r3["action"] == "NO_SIGNAL" and "تجربه" in r3["why"], r3
     # تاریخچهٔ نازک حق وتو ندارد
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 3, "win_pct": 0.0, "mean_r": -0.9,
                                    "thin": True}
-    assert analyze("TESTUSDT", c4, c1, c15)["action"] == "LONG"
+    assert analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)["action"] == "LONG"
     EXPERIENCE.clear()
 
-    assert analyze("TESTUSDT", c4, c1, mk([100.0] * 10))["action"] == "NO_SIGNAL"
-    mixed = analyze("TESTUSDT", mk([200 - i * 0.4 for i in range(230)]), c1, c15)
+    assert analyze("TESTUSDT", c4, c1, mk([100.0] * 10), btc4h=b4, btc1h=b1)["action"] == "NO_SIGNAL"
+    mixed = analyze("TESTUSDT", mk(dn), c1, c15, btc4h=b4, btc1h=b1)
     assert mixed["action"] == "NO_SIGNAL" and "وتو" in mixed["why"]
 
     # اسکلپ ۱ دقیقه: ستاپ لانگ با استاپ ~۰.۷٪
@@ -735,7 +832,8 @@ class Liam9Strategy(BaseStrategy):
 
     def generate_signal(self, symbol, c4h=None, c1h=None, c15=None, **kw):
         if c4h and c1h and c15:
-            return analyze(symbol, c4h, c1h, c15)
+            return analyze(symbol, c4h, c1h, c15,
+                           btc4h=kw.get("btc4h"), btc1h=kw.get("btc1h"))
         return signal(symbol)
 
     def on_bar(self, symbol, candles=None, **kw):
@@ -743,7 +841,12 @@ class Liam9Strategy(BaseStrategy):
             c1h = fetch_klines(symbol, "1h", 260)
             c4h = fetch_klines(symbol, "4h", 260)
             if c1h and c4h:
-                return analyze(symbol, c4h, c1h, candles)
+                btc4h = btc1h = None
+                if symbol.upper().replace("USDT", "").replace("USD", "") != "BTC":
+                    btc4h = fetch_klines("BTCUSDT", "4h", 260)
+                    btc1h = fetch_klines("BTCUSDT", "1h", 260)
+                return analyze(symbol, c4h, c1h, candles,
+                               btc4h=btc4h, btc1h=btc1h)
         return self.generate_signal(symbol, **kw)
 
     def run(self, symbol, **kw):

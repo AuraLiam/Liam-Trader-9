@@ -1,15 +1,20 @@
-# رادار پامپ خوشه‌ای — بیتیونیکس + توبیت، واقعاً هر ۵ دقیقه.
+# زنجیرهٔ پیوستهٔ سیگنال — اسکن استراتژی + اتاق دامیننس + الگوهای BTC.
+#
+# (۲۰ اوت، دستور حمید — قانون ۰۷): رادار پامپ از این زنجیره خارج شد و به
+# پنج نوبت روزانهٔ pump-review.yml رفت؛ اندازه‌گیری دفتر آلارم (n=۳۰۹۶،
+# −۰.۱۸۰R، CI زیر صفر) نشان داد پامپ‌گردی پیوسته ارزش منفی داشت. نام فایل
+# عمداً عوض نشد تا زنجیرهٔ self-dispatch و مدیک نشکنند.
 #
 # اندازه‌گیری ۱۰ اوت: کرون */5 گیت‌هاب در ساعت شلوغی اصلاً شلیک نشد (یک
-# شکاف ۷۳ دقیقه‌ای ثبت شد). پس «هر ۵ دقیقه» را نمی‌شود به کرون سپرد: خود
-# job یک حلقهٔ ~۲۵ دقیقه‌ای است که ۵ بار رادار را می‌چرخاند و در پایان،
-# خودش را دوباره dispatch می‌کند — زنجیرهٔ پیوسته، مستقل از کرون. کرون و
+# شکاف ۷۳ دقیقه‌ای ثبت شد). پس کادنس واقعی را نمی‌شود به کرون سپرد: خود
+# job یک حلقهٔ ~۲۵ دقیقه‌ای است که ۸ دور می‌چرخد و در پایان، خودش را
+# دوباره dispatch می‌کند — زنجیرهٔ پیوسته، مستقل از کرون. کرون و
 # مدیک فقط تور ایمنی برای وقتی‌اند که زنجیره پاره شود.
 #
 # پوش ضدتصادم: قبل از هر تلاش، درخت به origin/main برمی‌گردد و خروجی‌های
 # خودمان با --reapply دوباره می‌نشینند (آلارم‌ها merge، لاگ تلگرام اجتماع دو
 # نسخه، دفتر تاریخچه اجتماع کامل).
-name: Pump radar
+name: Signal chain
 
 on:
   schedule:
@@ -23,9 +28,6 @@ on:
       chat_id:
         description: "شناسهٔ چت (اگر Secret خالی است)"
         required: false
-      min_pct:
-        description: "حداقل رشد ۲۴س برای گینر"
-        default: "5"
 
 permissions:
   contents: write
@@ -86,6 +88,7 @@ jobs:
           python3 -m hamid.test_learning
           python3 -m hamid.test_pump_study
           python3 -m hamid.test_workflows
+          python3 -m hamid.test_pump_budget
           python3 -m hamid.test_fixit
 
       - name: حلقهٔ ۵ دقیقه‌ای (۵ دور در یک job)
@@ -97,13 +100,14 @@ jobs:
         run: |
           export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-$(jq -r '.inputs.token // empty' "$GITHUB_EVENT_PATH")}"
           export TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-$(jq -r '.inputs.chat_id // empty' "$GITHUB_EVENT_PATH")}"
-          MIN=$(jq -r '.inputs.min_pct // empty' "$GITHUB_EVENT_PATH")
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
           for k in 1 2 3 4 5 6 7 8; do
             t0=$(date +%s)
             echo "── دور $k از ۸ · $(date -u '+%H:%M:%S UTC') ──"
-            (cd claude-liam-signal/python && python3 -m hamid.pump_radar --min-pct "${MIN:-5}") || true
+            # رادار پامپ این‌جا اجرا نمی‌شود (قانون ۰۷ — پنج نوبت روزانه در
+            # pump-review.yml). reapply پایین می‌ماند چون دفترهای مشترک
+            # (telegram-log، حافظه) را در پوش ضدتصادم اجتماع می‌کند.
 
             # ثبت روی main (ضدتصادم)
             BK=/tmp/pump-radar-backup; mkdir -p "$BK"
@@ -151,7 +155,7 @@ jobs:
               fi
               git add signals brain 2>/dev/null || true
               git diff --cached --quiet && { echo "چیزی برای ثبت نیست"; break; }
-              git commit -q -m "پامپ رادار $(date -u '+%Y-%m-%d %H:%M UTC')"
+              git commit -q -m "زنجیرهٔ سیگنال $(date -u '+%Y-%m-%d %H:%M UTC')"
               git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
               sleep $((i*2))
             done
@@ -170,7 +174,7 @@ jobs:
                 ( cd /tmp/ghp
                   git add signals
                   if ! git diff --cached --quiet; then
-                    git commit -q -m "پامپ رادار $(date -u '+%H:%M') UTC"
+                    git commit -q -m "زنجیرهٔ سیگنال $(date -u '+%H:%M') UTC"
                     for i in 1 2 3; do
                       git push origin HEAD:gh-pages -q \
                         && { echo "deployed=1" >> "$GITHUB_OUTPUT"; break; }

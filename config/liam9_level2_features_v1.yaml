@@ -1,0 +1,53 @@
+version: 1.0.0
+owner_engine: E10
+consumer_engines: [E08, E17, E15]
+
+book_integrity:
+  require_bootstrap_snapshot: true
+  require_delta_ordering_when_available: true
+  rebuild_after_reconnect: true
+  reject_crossed_book: true
+  reject_negative_size: true
+  clock_skew_check: true
+  stale_threshold_calibrated_by_channel: true
+
+feature_groups:
+  executed_flow:
+    - trade_imbalance
+    - cumulative_volume_delta
+    - execution_rate
+    - large_trade_percentile
+    - price_impact_per_signed_flow
+  order_book_flow:
+    - ofi_l1
+    - mlofi
+    - queue_imbalance_l1
+    - queue_imbalance_multilevel
+    - add_rate
+    - cancel_rate
+    - execute_rate
+    - replenishment_rate
+  liquidity_state:
+    - spread_percentile
+    - effective_depth
+    - book_slope
+    - book_convexity
+    - microprice_divergence
+  anti_trap:
+    - wall_persistence
+    - distance_to_touch
+    - cancellation_before_touch
+    - execution_to_displayed_ratio
+    - replenishment_iceberg_like_score
+    - sweep_levels
+    - sweep_recovery_time
+    - cyclic_depth_cancellation_score
+    - cross_venue_confirmation
+
+labels:
+  manipulation_label: SPOOF_LIKE_RISK
+  never_claim_intent_from_level2: true
+
+decisions: [ALLOW, WAIT, REJECT]
+packet_expiry_required: true
+normalization_required_by_symbol_tick_volatility_regime: true

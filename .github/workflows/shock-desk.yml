@@ -26,7 +26,9 @@ jobs:
         with: { python-version: "3.11" }
       - name: Self-test
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.test_shock
+        run: |
+          python3 -m hamid.test_shock
+          python3 -m hamid.test_exec_contract
       - name: Run shock desk
         working-directory: claude-liam-signal/python
         env:

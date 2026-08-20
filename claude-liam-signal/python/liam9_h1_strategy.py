@@ -324,8 +324,11 @@ class RiskBook:
 
 
 # ── تصمیم ───────────────────────────────────────────────────────────────────
-def analyze(symbol, c4h, c1h, equity=None, risk=None):
-    """تصمیم یک‌ساعته. c4h میدان، c1h ستاپ و ورود."""
+def analyze(symbol, c4h, c1h, equity=None, risk=None, btc4h=None, btc1h=None):
+    """تصمیم یک‌ساعته. c4h میدان، c1h ستاپ و ورود.
+
+    دستور حمید (۲۰ اوت): آلت بدون بستر BTC سیگنال نمی‌گیرد (قانون ۳)؛
+    هر دو تایم BTC خلاف جهت = وتوی مطلق. ریشه: شورت ARB در بازار مثبت."""
     def no(why):
         return {"action": "NO_SIGNAL", "symbol": symbol, "tf": "1h",
                 "why": why, "version": P["version"], "panel": "لیام تریدر ۹"}
@@ -342,6 +345,22 @@ def analyze(symbol, c4h, c1h, equity=None, risk=None):
         direction = "SHORT"
     else:
         return no(f"میدان ۴س ({t4}) و ساختار ۱س ({t1}) هم‌قصه نیستند — وتوی روند")
+
+    is_btc = symbol.upper().replace("USDT", "").replace("USD", "") == "BTC"
+    if not is_btc:
+        if not btc4h or not btc1h:
+            return no("بستر BTC نرسیده — قانون ۳: سیگنال آلت بدون بستر ممنوع")
+        b4 = trend(btc4h)
+        b1 = trend(btc1h, fast=21, slow=55, win=12)
+        if b4 is None or b1 is None:
+            return no("روند BTC قابل‌سنجش نیست — قانون ۱")
+        opp = "down" if direction == "LONG" else "up"
+        if b4 == opp and b1 == opp:
+            return no(f"هر دو تایم BTC ({b4}/{b1}) خلاف جهت — وتوی مطلق بازار")
+        mkt_counter = (b4 == opp) or (b1 == opp)
+        mkt_note = f"بستر BTC: ۴س {b4} · ۱س {b1}"
+    else:
+        mkt_counter, mkt_note = False, "خود بازار (BTC)"
 
     pb = leg_and_pullback(c1h, direction)
     if pb is None:
@@ -413,7 +432,18 @@ def analyze(symbol, c4h, c1h, equity=None, risk=None):
     if quality < P["min_quality"]:
         return no(f"امتیاز کیفیت {quality} زیر کف {P['min_quality']}")
 
+    # یک تایم BTC خلاف جهت → فقط با تأیید کامل (کندل هم‌جهت + کیفیت ≥۷۰)
+    if mkt_counter:
+        if align != "with" or quality < 70:
+            return no(f"خلاف بازار ({mkt_note}) بدون تأیید کامل — "
+                      f"کندل {align}، کیفیت {quality}")
+        why.append(f"⚠️ خلاف بازار — {mkt_note}؛ با تأیید کامل عبور کرد")
+    else:
+        why.append(mkt_note)
+
     out = {"action": direction, "symbol": symbol, "tf": "1h",
+           "product": "futures", "margin_mode": "isolated",
+           "sl_tp_mandatory": True,
            "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
            "tp2": round(entry + (tp1 - entry) * 1.8, 8),
            "stop_pct": round(stop_pct, 3), "rr_net": round(net_rr, 2),
@@ -432,6 +462,7 @@ def analyze(symbol, c4h, c1h, equity=None, risk=None):
                "rule": "🪜 ⅓ مسیر → استاپ سربه‌سرِ کارمزددار؛ ⅔ → استاپ روی ⅓"},
            "panel": "لیام تریدر ۹", "version": P["version"],
            "t": int(time.time() * 1000), "why": why}
+    out["stop_loss"], out["take_profit"] = out["sl"], out["tp1"]
 
     book = risk if isinstance(risk, RiskBook) else (
         RiskBook(equity) if equity else None)
@@ -457,7 +488,12 @@ def signal(symbol, equity=None, risk=None):
     if not (c1h and c4h):
         return {"action": "NO_SIGNAL", "symbol": symbol, "tf": "1h",
                 "why": "کندل از هیچ منبعی نرسید — قانون ۱"}
-    return analyze(symbol, c4h, c1h, equity=equity, risk=risk)
+    btc4h = btc1h = None
+    if symbol.upper().replace("USDT", "").replace("USD", "") != "BTC":
+        btc4h = fetch_klines("BTCUSDT", "4h", 300)
+        btc1h = fetch_klines("BTCUSDT", "1h", 400)
+    return analyze(symbol, c4h, c1h, equity=equity, risk=risk,
+                   btc4h=btc4h, btc1h=btc1h)
 
 
 # ── مدیریت معامله (همان قانون تریل حمید) ───────────────────────────────────
@@ -501,8 +537,19 @@ def _selftest():
     pull = up + [up[-1] - i * 1.2 for i in range(1, 9)]
     c1 = mk(pull)
     c1[-1]["l"], c1[-1]["c"] = c1[-1]["c"] * 0.988, c1[-1]["c"] * 0.9895
-    r = analyze("TESTUSDT", c4, c1)
+    b4, b1h = c4, mk(up)                      # بستر BTC هم‌جهت (قانون ۳)
+    r = analyze("TESTUSDT", c4, c1, btc4h=b4, btc1h=b1h)
     assert r["action"] == "LONG", r
+    # قرارداد اجرا (۲۰ اوت): ایزوله + استاپ/تارگت روی خود خروجی
+    assert r["margin_mode"] == "isolated" and r["sl_tp_mandatory"], r
+    assert r["stop_loss"] == r["sl"] and r["take_profit"] == r["tp1"], r
+    # آلت بدون بستر BTC ممنوع؛ هر دو تایم BTC خلاف = وتوی مطلق
+    assert analyze("TESTUSDT", c4, c1)["action"] == "NO_SIGNAL"
+    dn4 = mk([200 - i * 0.35 for i in range(260)], tf_ms=14400000)
+    g2 = analyze("TESTUSDT", c4, c1, btc4h=dn4, btc1h=mk([200 - i * 0.35 for i in range(260)]))
+    assert g2["action"] == "NO_SIGNAL" and "وتوی مطلق" in g2["why"], g2
+    # خود BTC معاف است
+    assert analyze("BTCUSDT", c4, c1)["action"] == "LONG"
     assert r["sl"] < r["entry"] < r["tp1"], r
     assert P["min_stop_pct"] <= r["stop_pct"] <= P["max_stop_pct"], r
     assert r["leverage"] <= RISK["max_leverage"], r
@@ -537,25 +584,25 @@ def _selftest():
     assert b2.approve(1.0)[0]
 
     # سیگنال با دفتر ریسک: سایز و مارجین می‌آید
-    r2 = analyze("TESTUSDT", c4, c1, equity=5000)
+    r2 = analyze("TESTUSDT", c4, c1, equity=5000, btc4h=b4, btc1h=b1h)
     assert r2["action"] == "LONG" and r2["size_usd"] > 0 and r2["margin_usd"] > 0
 
     # وتوی تجربهٔ منفی و بی‌اثری تاریخچهٔ نازک
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 20.0, "mean_r": -0.7,
                                    "thin": False}
-    assert analyze("TESTUSDT", c4, c1)["action"] == "NO_SIGNAL"
+    assert analyze("TESTUSDT", c4, c1, btc4h=b4, btc1h=b1h)["action"] == "NO_SIGNAL"
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 4, "win_pct": 0.0, "mean_r": -0.9,
                                    "thin": True}
-    assert analyze("TESTUSDT", c4, c1)["action"] == "LONG"
+    assert analyze("TESTUSDT", c4, c1, btc4h=b4, btc1h=b1h)["action"] == "LONG"
     EXPERIENCE.clear()
 
     # وتوی روند و دادهٔ کم
     down4 = mk([200 - i * 0.35 for i in range(260)], tf_ms=14400000)
-    assert analyze("TESTUSDT", down4, c1)["action"] == "NO_SIGNAL"
-    assert analyze("TESTUSDT", c4, mk([100.0] * 10))["action"] == "NO_SIGNAL"
+    assert analyze("TESTUSDT", down4, c1, btc4h=b4, btc1h=b1h)["action"] == "NO_SIGNAL"
+    assert analyze("TESTUSDT", c4, mk([100.0] * 10), btc4h=b4, btc1h=b1h)["action"] == "NO_SIGNAL"
 
     # مدیریت: تریل قبل از تارگت، استاپ در بدترین حالت اول
-    pos = analyze("TESTUSDT", c4, c1)
+    pos = analyze("TESTUSDT", c4, c1, btc4h=b4, btc1h=b1h)
     mid1 = pos["trail"]["step1_at"]
     ev = manage(pos, {"h": mid1 * 1.0001, "l": pos["entry"]})
     assert ev["event"] == "TRAIL" and ev["step"] == 1, ev
@@ -606,19 +653,31 @@ class Liam9H1Strategy(BaseStrategy):
         sync_all()
         self.meta["version"] = P["version"]
 
+    @staticmethod
+    def _btc_ctx(symbol, kw):
+        """بستر BTC — اگر داشبورد نداد، خودمان می‌گیریم (قانون ۳)."""
+        if symbol.upper().replace("USDT", "").replace("USD", "") == "BTC":
+            return None, None
+        b4 = kw.get("btc4h") or fetch_klines("BTCUSDT", "4h", 300)
+        b1 = kw.get("btc1h") or fetch_klines("BTCUSDT", "1h", 400)
+        return b4, b1
+
     def generate_signal(self, symbol, c4h=None, c1h=None, equity=None, **kw):
         eq = equity or self.equity
         if c4h and c1h:
-            return analyze(symbol, c4h, c1h, equity=eq, risk=self.book)
+            b4, b1 = self._btc_ctx(symbol, kw)
+            return analyze(symbol, c4h, c1h, equity=eq, risk=self.book,
+                           btc4h=b4, btc1h=b1)
         return signal(symbol, equity=eq, risk=self.book)
 
     def on_bar(self, symbol, candles=None, **kw):
         if candles and len(candles) >= 60:
             c4h = fetch_klines(symbol, "4h", 300)
             if c4h:
+                b4, b1 = self._btc_ctx(symbol, kw)
                 return analyze(symbol, c4h, candles,
                                equity=kw.get("equity") or self.equity,
-                               risk=self.book)
+                               risk=self.book, btc4h=b4, btc1h=b1)
         return self.generate_signal(symbol, **kw)
 
     def run(self, symbol, **kw):
