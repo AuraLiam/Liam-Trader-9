@@ -120,10 +120,13 @@ def validate_exec(order):
         errs.append("نماد فیوچرز USDT نیست")
     if order.get("side") not in ("LONG", "SHORT"):
         errs.append("جهت نامعتبر")
-    for k in ("entry", "sl", "stop_pct", "leverage", "notional_usd"):
+    # دستور حمید (۲۰ اوت): پوزیشن بی‌استاپ/بی‌تارگت ممنوع؛ tp1 هم اجباری شد.
+    for k in ("entry", "sl", "tp1", "stop_pct", "leverage", "notional_usd"):
         v = order.get(k)
         if not isinstance(v, (int, float)) or v <= 0:
-            errs.append(f"«{k}» عددی مثبت نیست")
+            errs.append(f"«{k}» عددی مثبت نیست — استاپ و تارگت اجباری‌اند")
+    if order.get("margin_mode") != "isolated":
+        errs.append("مارجین باید isolated باشد — کراس ممنوع (دستور ۲۰ اوت)")
     if errs:
         return errs
     if order["leverage"] > EXEC_MAX_LEVERAGE:

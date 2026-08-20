@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liam9/order_flow_level2_packet.schema.json",
+  "title": "E10 Order Flow Level 2 Packet",
+  "type": "object",
+  "required": [
+    "symbol",
+    "asof_utc",
+    "expires_utc",
+    "data_health",
+    "decision",
+    "direction_score",
+    "confidence",
+    "spoof_like_risk",
+    "features",
+    "reasons"
+  ],
+  "properties": {
+    "symbol": {
+      "type": "string"
+    },
+    "asof_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_timestamps": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "data_health": {
+      "enum": [
+        "HEALTHY",
+        "DEGRADED",
+        "INVALID"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "ALLOW",
+        "WAIT",
+        "REJECT"
+      ]
+    },
+    "direction_score": {
+      "type": "number",
+      "minimum": -100,
+      "maximum": 100
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "spoof_like_risk": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "normalization_baseline": {
+      "type": "object"
+    },
+    "features": {
+      "type": "object",
+      "required": [
+        "trade_imbalance",
+        "ofi_l1",
+        "mlofi",
+        "queue_imbalance",
+        "microprice_divergence",
+        "spread_percentile",
+        "wall_persistence",
+        "cancel_before_touch",
+        "replenishment_score"
+      ],
+      "additionalProperties": {
+        "type": [
+          "number",
+          "integer",
+          "string",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "derivatives_context": {
+      "type": "object"
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "string"
+      }
+    },
+    "invalidation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

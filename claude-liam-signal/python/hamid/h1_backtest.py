@@ -165,7 +165,8 @@ def _run_one(pos, c1h, i, sig):
     return res, round(r, 3), round(r - fee_r, 3), bars
 
 
-def replay_symbol(sym, c1h, c4h, step=1, variants=None):
+def replay_symbol(sym, c1h, c4h, step=1, variants=None,
+                  btc1h=None, btc4h=None):
     """هر کندل ۱س را جلو می‌برد؛ هر ستاپ با همهٔ واریانت‌ها سنجیده می‌شود.
 
     ورودها برای همهٔ واریانت‌ها یکی است، پس مقایسه منصفانه است. جلو رفتن
@@ -181,7 +182,10 @@ def replay_symbol(sym, c1h, c4h, step=1, variants=None):
             i += step
             continue
         window = c1h[:i + 1]
-        sig = H1.analyze(sym, c4, window)
+        # دروازهٔ بازار (۲۰ اوت): بستر BTC تا همان لحظه — بدون نگاه به آینده
+        b4 = [k for k in btc4h if k["t"] <= t_now] if btc4h else None
+        b1 = [k for k in btc1h if k["t"] <= t_now] if btc1h else None
+        sig = H1.analyze(sym, c4, window, btc4h=b4, btc1h=b1)
         if sig["action"] == "NO_SIGNAL":
             i += step
             continue
@@ -251,6 +255,16 @@ def run(symbols=60, bars=1000, quiet=False):
     books = {v["key"]: [] for v in VARIANTS}
     books.update({"entry:" + f["key"]: [] for f in ENTRY_FILTERS})
     done = 0
+    # بستر BTC یک بار برای همهٔ آلت‌ها (دروازهٔ بازار — ۲۰ اوت)
+    try:
+        bk1 = sources.klines("BTCUSDT", "1h", bars)
+        bk4 = sources.klines("BTCUSDT", "4h", 400)
+        btc1 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in bk1]
+        btc4 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in bk4]
+    except Exception:                                    # noqa: BLE001
+        btc1 = btc4 = None
+    if not btc1 or not btc4:
+        print("  ⚠️ بستر BTC نرسید — دروازهٔ بازار همهٔ آلت‌ها را NO_SIGNAL می‌کند")
     # ردشدن در سکوت ممنوع: ۱۹ اوت یک بک‌تست ۱۲۰ نمادی با ۸ نماد اجرا شد
     # چون «4h» در هیچ نگاشت صرافی نبود و ۱۱۲ استثنا بی‌صدا بلعیده شد.
     drops = {}
@@ -266,7 +280,7 @@ def run(symbols=60, bars=1000, quiet=False):
             continue
         c1 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k1]
         c4 = [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]} for k in k4]
-        part = replay_symbol(s, c1, c4)
+        part = replay_symbol(s, c1, c4, btc1h=btc1, btc4h=btc4)
         for k, v in part.items():
             books[k] += v
         done += 1

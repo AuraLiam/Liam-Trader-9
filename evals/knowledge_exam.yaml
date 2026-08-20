@@ -1,0 +1,95 @@
+version: 1.0.0
+pass_score_pct: 85
+critical_questions_must_all_pass: true
+modules:
+  E10_ORDER_FLOW:
+    critical:
+      - id: OF-Q01
+        question: Explain why an Order Block is not Order Flow and name the engine ownership boundary.
+        expected_points:
+          - E08 owns historical SMC zone discovery.
+          - E10 owns executed flow and Level 2 confirmation.
+          - E17 consumes both; candles cannot fabricate Order Flow.
+      - id: OF-Q02
+        question: Define OFI and explain why raw traded volume is not equivalent.
+        expected_points:
+          - OFI includes bid/ask price and size changes and order-book events.
+          - Raw volume ignores side, additions/cancellations and contemporaneous depth.
+      - id: OF-Q03
+        question: What makes an Order Block ALLOW, WAIT or REJECT from an Order Flow perspective?
+        expected_points:
+          - ALLOW requires healthy fresh evidence such as decelerating opposing aggression, absorption/replenishment and directional microprice/OFI shift.
+          - WAIT is mixed/incomplete/early/expired evidence.
+          - REJECT includes accelerating aggression through zone, cancellation-before-touch, consumption, abnormal spread or invalid data.
+      - id: OF-Q04
+        question: Why must CVD have a documented reset/window policy?
+        expected_points:
+          - CVD depends on start point and window; undocumented resets make values incomparable and leak interpretation.
+    standard:
+      - id: OF-Q05
+        question: Distinguish absorption from exhaustion with observable features.
+      - id: OF-Q06
+        question: Describe a leakage-safe baseline before using Deep Order Flow models.
+      - id: OF-Q07
+        question: Why normalize price impact by depth/spread/tick/volatility?
+      - id: OF-Q08
+        question: What is the expiry requirement for an E10 packet and why?
+  E09_CANDLESTICK:
+    critical:
+      - id: CD-Q01
+        question: Write deterministic formulas for body, upper wick, lower wick and IBS, including zero-range handling.
+      - id: CD-Q02
+        question: Why can a named candle pattern not generate a production signal alone?
+        expected_points:
+          - Academic evidence is mixed.
+          - Context, structure, location, volume, Order Flow, costs and risk are required.
+      - id: CD-Q03
+        question: Explain why gap-dependent patterns are downweighted in 24/7 crypto.
+      - id: CD-Q04
+        question: Describe the four-arm ablation test for candle value.
+        expected_points:
+          - strategy without candle
+          - candle-only
+          - strategy plus candle
+          - strategy plus candle plus E10
+    standard:
+      - id: CD-Q05
+        question: Define quantitative rejection and failed break without relying on visual names.
+      - id: CD-Q06
+        question: How do transaction costs and data snooping change candle conclusions?
+      - id: CD-Q07
+        question: What evidence would justify retaining a candle feature?
+      - id: CD-Q08
+        question: How is IBS used without making it a standalone signal?
+  E10_LEVEL2:
+    critical:
+      - id: L2-Q01
+        question: Why does Level 2 belong to E10 rather than E09?
+      - id: L2-Q02
+        question: Explain why a static wall can be a liquidity trap and list four stronger credibility tests.
+        expected_points:
+          - persistence as price approaches
+          - actual executions
+          - replenishment after executions
+          - alignment with OFI/microprice or cross-venue evidence
+      - id: L2-Q03
+        question: Why use SPOOF_LIKE_RISK rather than claiming spoofing?
+        expected_points:
+          - L2 is aggregated and usually lacks identity/intent/order IDs.
+          - Detection is probabilistic and cannot establish legal intent.
+      - id: L2-Q04
+        question: Describe required snapshot/delta recovery after reconnect.
+    standard:
+      - id: L2-Q05
+        question: Define cancellation-before-touch and wall persistence.
+      - id: L2-Q06
+        question: Explain execution-to-displayed ratio and replenishment score.
+      - id: L2-Q07
+        question: Why is cross-venue normalization necessary in crypto?
+      - id: L2-Q08
+        question: Why is event-driven replay required for Level 2 backtesting?
+scoring:
+  evidence_required: true
+  answer_must_reference_pack_source_ids: true
+  hallucinated_fulltext_claim_is_automatic_fail: true
+  production_promotion_before_backtest_is_automatic_fail: true

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "liam9/pre_move_liquidity_anomaly.schema.json",
+  "title": "Pre-Move Liquidity Anomaly Alert",
+  "type": "object",
+  "required": [
+    "alert_id",
+    "symbol",
+    "detected_at_utc",
+    "reference_price",
+    "pre_move_confirmed",
+    "data_health",
+    "evidence_families",
+    "confidence",
+    "expiry_utc",
+    "reasons"
+  ],
+  "properties": {
+    "alert_id": {
+      "type": "string"
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "detected_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reference_price": {
+      "type": "number"
+    },
+    "pre_move_confirmed": {
+      "const": true
+    },
+    "data_health": {
+      "const": "HEALTHY"
+    },
+    "evidence_families": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "EXECUTED_FLOW",
+          "BOOK_PERSISTENCE",
+          "DERIVATIVES",
+          "VOLUME_VOLATILITY",
+          "CROSS_VENUE"
+        ]
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "expiry_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "strategy_setup_status": {
+      "enum": [
+        "NONE",
+        "WATCH",
+        "VALID"
+      ]
+    },
+    "spoof_like_risk": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string"
+      }
+    },
+    "invalidation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}
