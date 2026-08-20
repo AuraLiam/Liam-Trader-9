@@ -8,7 +8,7 @@ on:
     inputs:
       symbols:
         description: "چند نماد"
-        default: "60"
+        default: "120"
       bars:
         description: "چند کندل ۱۵ دقیقه (سقف امن صرافی‌ها ۱۰۰۰)"
         default: "1000"
@@ -41,7 +41,7 @@ jobs:
         run: |
           set -o pipefail
           python3 -m hamid.dash_backtest \
-            --symbols "${{ github.event.inputs.symbols || '60' }}" \
+            --symbols "${{ github.event.inputs.symbols || '120' }}" \
             --bars "${{ github.event.inputs.bars || '1000' }}" | tee dash.txt
       - name: Summary
         if: always()
