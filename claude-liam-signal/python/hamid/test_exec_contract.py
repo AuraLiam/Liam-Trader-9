@@ -103,6 +103,45 @@ no_mm.pop("margin_mode")
 check("خط اجرا: سفارش بدون حالت مارجین رد می‌شود",
       LK.validate_exec(no_mm) != [])
 
+# اسکن: ستاپ ARMED خلاف هر دو تایم بالا نباید منتشر شود (پروندهٔ ARB)
+import scan as SC                      # noqa: E402
+
+def _mk_tg(path, tf_ms):
+    base = int(time.time() * 1000) - len(path) * tf_ms
+    return [{"t": base + i * tf_ms, "o": p, "h": p * 1.004, "l": p * 0.996,
+             "c": p, "v": 1.0} for i, p in enumerate(path)]
+
+# روند صعودی با سوینگ واقعی — پلهٔ صاف سوینگ نمی‌سازد و structure.trend
+# (درست) «رنج» می‌گوید؛ زیگزاگ بالارونده لازم است تا HH/HL ثبت شود.
+import math
+_up240 = [100 + i * 0.5 + 6 * math.sin(i / 3.0) for i in range(240)]
+
+def _kget_up(sym, tf, n):
+    return _mk_tg(_up240, 14400000 if tf == "4h" else 3600000)
+
+setups = [
+    {"sym": "ARBUSDT", "dir": "SHORT", "tf": "5m", "stage": "ARMED",
+     "quality": 56},
+    {"sym": "ARBUSDT", "dir": "LONG", "tf": "5m", "stage": "SIGNAL",
+     "quality": 80},
+    {"sym": "XUSDT", "dir": "SHORT", "tf": "5m", "stage": "WATCH"},
+]
+n_dem = SC.gate_stages(setups, kget=_kget_up)
+check("اسکن: ARMED خلاف هر دو تایم بالا به WATCH تنزل می‌کند",
+      setups[0]["stage"] == "WATCH" and "وتوی مطلق" in setups[0].get("skip", ""),
+      str(setups[0].get("skip")))
+check("اسکن: ستاپ هم‌جهت دست‌نخورده می‌ماند و روندش ثبت می‌شود",
+      setups[1]["stage"] == "SIGNAL" and setups[1].get("trend4") == "up")
+check("اسکن: مراحل WATCH بی‌جهت شبکه نمی‌خورند", "trend4" not in setups[2])
+
+def _kget_boom(sym, tf, n):
+    raise RuntimeError("network down")
+
+s2 = [{"sym": "YUSDT", "dir": "LONG", "tf": "5m", "stage": "ARMED"}]
+SC.gate_stages(s2, kget=_kget_boom)
+check("اسکن: دادهٔ روند ناموجود = انتشار ممنوع (قانون ۱)",
+      s2[0]["stage"] == "WATCH", str(s2[0]))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
