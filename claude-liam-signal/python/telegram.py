@@ -26,6 +26,8 @@ API = "https://api.telegram.org"
 SENT = Path(__file__).resolve().parent.parent.parent / "signals" / "sent.json"
 TGLOG = Path(__file__).resolve().parent.parent.parent / "signals" / "telegram-log.json"
 TTL_MS = 12 * 3600 * 1000
+# ردِ موقت ≠ ممنوعیت نیم‌روزه (عیب ۲۰ اوت — توضیح در _load_sent)
+SKIP_TTL_MS = 30 * 60 * 1000
 
 
 def _counter_note(s):
@@ -88,10 +90,20 @@ def scrub(text):
 
 
 def _load_sent():
+    """ارسال‌شده ۱۲ ساعت یادش می‌ماند؛ ردشدهٔ موقت فقط ۳۰ دقیقه.
+
+    عیب سنجیده‌شدهٔ ۲۰ اوت (شکایت حمید «سیگنال کم می‌آید»): هر ردِ لحظه‌ای
+    — قیمت ۲.۶٪ دور بود، روند همان دقیقه مخالف بود، بازجویی همان لحظه
+    con>pro داد — کلید `skip|` می‌نوشت و آن کلید هم ۱۲ ساعت زنده می‌ماند.
+    یعنی یک شرطِ گذرا به ممنوعیت نیم‌روزه تبدیل می‌شد: ۱۳۹ skip در برابر
+    ۳۶ ارسال در ۲۴ ساعت. حالا ردِ موقت بعد از ۳۰ دقیقه (≈ دو کندل ۱۵د)
+    دوباره بررسی می‌شود و باید **همهٔ** دروازه‌ها را از نو پاس کند —
+    هیچ دروازه‌ای شل نشده، فقط حکمِ لحظه‌ای دیگر ابدی نیست."""
     try:
         d = json.loads(SENT.read_text())
         now = time.time() * 1000
-        return {k: v for k, v in d.items() if now - v < TTL_MS}
+        return {k: v for k, v in d.items()
+                if now - v < (SKIP_TTL_MS if k.startswith("skip|") else TTL_MS)}
     except Exception:                                # noqa: BLE001 - a missing or torn file is an empty memory
         return {}
 

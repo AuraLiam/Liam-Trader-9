@@ -165,17 +165,33 @@ def run_active(symbols, limit_4h=200, limit_1h=300, limit_15m=300, on_ready=None
 
     btc4 = candles("BTCUSDT", "1h", limit_4h)        # 1h stands in for 4h below
 
-    # USDT.D and BTC.D are index series, not pairs — CoinGecko has the level but
-    # not the history, so the channel work Hamid does on them needs a series we
-    # do not yet store. Reported honestly rather than faked from a proxy.
+    # USDT.D and BTC.D are index series, not pairs — no venue serves their
+    # history. The comment that used to sit here said we do not store one; that
+    # stopped being true when the dominance room started writing
+    # brain/dominance-series.json every few minutes. The cycle kept passing None
+    # anyway, so every read came back «کندل کافی نیست» and the market verdict was
+    # permanently «نامشخص» — the mandatory USDT.D/BTC.D context of rule 3 was
+    # missing from every decision. Measured 20 Aug: 232 hourly candles present,
+    # market_first needs 40. Wiring bug, not a data gap. (پروندهٔ «چرا سیگنال کم
+    # است» — حمید، ۲۰ اوت)
     try:
         g = research.global_market()
         dom = {"btc_dominance": g["btc_dominance"], "usdt_dominance": g["usdt_dominance"],
-               "note": "سطح لحظه‌ای — سری زمانی برای کشیدن کانال هنوز ذخیره نمی‌شود"}
+               "note": "سطح لحظه‌ای؛ ساختار از سری خودمان (اتاق دامیننس)"}
     except Exception as e:                           # noqa: BLE001 - carry on without it
         dom = {"note": f"دامیننس در دسترس نبود: {type(e).__name__}"}
 
-    first = market_first(btc4, None, None)
+    usdt_d4 = btc_d4 = None
+    try:
+        from hamid import dominance as _dom
+        _pts = json.loads(_dom.SERIES.read_text()).get("points") or []
+        usdt_d4 = _dom._bars(_pts, "u") or None      # کندل ۱ساعته از سری خودمان
+        btc_d4 = _dom._bars(_pts, "b") or None
+    except Exception as e:                           # noqa: BLE001
+        print(f"  سری دامیننس خوانده نشد ({type(e).__name__}) — "
+              f"بستر USDT.D/BTC.D نامعلوم می‌ماند (قانون ۳)", flush=True)
+
+    first = market_first(btc4, usdt_d4, btc_d4)
     first["dominance"] = dom
     brain.room_log("market", f"خوانش بازار: {first.get('verdict')}", "read")
 
