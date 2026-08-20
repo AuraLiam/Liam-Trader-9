@@ -136,7 +136,7 @@ for vid, c in seen:
 print("\nهر منبع باید همهٔ تایم‌فریم‌ها را بشناسد:")
 for v in sources.VENUES:
     bad = []
-    for tf in ("5m", "15m", "1h", "1d"):
+    for tf in ("1m", "5m", "15m", "1h", "4h", "1d"):
         try:
             u = v["url"]("BTCUSDT", tf, 420)
             if not u.startswith("https://"):
@@ -181,7 +181,7 @@ for name, ok in checks:
 # می‌داد و بقیه در سکوت رد می‌شدند — بک‌تست ۱۲۰ نمادی با ۸ نماد اجرا شد و
 # کسی خبردار نشد. این پاسبان همان را برای همیشه می‌بندد.
 print("\nنگاشت تایم‌فریم هر صرافی:")
-for tf in ("5m", "15m", "1h", "4h", "1d"):
+for tf in ("1m", "5m", "15m", "1h", "4h", "1d"):
     bad = []
     for v in sources.VENUES:
         try:
