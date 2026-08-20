@@ -6,7 +6,7 @@ outlive a single session.
 ## reference/
 
 `codex-final-v4.html` — the last Codex panel, copied byte-for-byte from
-`Auraliam18/Liam-Vercel` (commit "Refactor snapshot version and state
+«ریپوی قدیمی (خارج از این پنل)» (commit "Refactor snapshot version and state
 management", 2026-07-02). Its version string is `cycle v4 · اسکلپ+رادار`.
 `codex-final-v4.engine.js` is the same file's main script, extracted for
 reading. Nothing in it was modified.
@@ -15,7 +15,7 @@ Where the other copies live, all identical to one of these two hashes:
 `Liam-Vercel/README.md` = `.github/workflows/deno.yml` (146,138 B, the newest),
 `Liam-Vercel/Api/State.js` = `Liam-Vercel/1` (133,679 B),
 `.sognal/Cluade signal.index.html.txt` (107,439 B, `cycle v3`).
-`Auraliam18/.codex` is an empty repository.
+«ریپوی قدیمی (خارج از این پنل)» is an empty repository.
 
 ## What the Codex version had that this panel did not
 

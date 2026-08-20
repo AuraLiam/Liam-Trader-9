@@ -105,7 +105,6 @@ def probe(label, token, chat, send=True, text=None):
 def main():
     send = "--check" not in sys.argv
     t1, c1 = tg.creds()
-    t2, c2 = tg.creds2()
 
     text = (f"{tg.BRAND}\n\n"
             "🧪 <b>پیام تست دو‌مقصدی</b>\n\n"
@@ -118,21 +117,12 @@ def main():
     print("═" * 52)
 
     r1 = probe("مقصد ۱ — کانال اصلی", t1, c1, send, text)
-    r2 = probe("مقصد ۲ — بات جدید", t2, c2, send, text)
 
     print("\n" + "═" * 52)
-    if r1.get("ok") and r2.get("ok"):
-        print("✅ هر دو مقصد سالم‌اند — ارسال هم‌زمان فعال است")
+    if r1.get("ok"):
+        print("✅ تنها مقصد مجاز سالم است — @LiamTrader9_Bot")
         return 0
-    if r1.get("ok") and not r2.get("configured"):
-        print("⚠️  مقصد ۱ سالم است؛ مقصد ۲ هنوز تنظیم نشده.")
-        print("   دو سکرت را اضافه کن: TELEGRAM_BOT_TOKEN_2 و TELEGRAM_CHAT_ID_2")
-        return 2
-    if r1.get("ok") and not r2.get("ok"):
-        print("⚠️  مقصد ۱ سالم است ولی مقصد ۲ ایراد دارد (بالا نوشته چرا).")
-        print("   سیگنال‌ها همچنان به مقصد ۱ می‌روند — آینه هرگز مسیر اصلی را نمی‌کشد.")
-        return 3
-    print("❌ مقصد اصلی سالم نیست — این جدی است.")
+    print("❌ مقصد سالم نیست — این جدی است.")
     return 1
 
 

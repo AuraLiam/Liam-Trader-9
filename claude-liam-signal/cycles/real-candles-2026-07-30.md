@@ -1,7 +1,7 @@
 # The first backtest on candles that really traded
 
 **30 July 2026 · real Binance klines · 60 pairs · 120 series · 3,931 trades**
-Run: [Historical backtest #1](https://github.com/Auraliam18/.sognal/actions/runs/30587472612) ·
+Run: [Historical backtest #1](https://github.com/Auraliam/liam-trader-9) ·
 reproduce with `python3 claude-liam-signal/python/backtest.py`
 
 Every number reported until now came from the simulator. It is a hard model —

@@ -232,7 +232,7 @@ async function report(){
 /* ---------- boot ---------- */
 (async()=>{
   console.log(`claude-liam-signal agent — ${CFG.cores} cores, ${CFG.universe} symbols, scan every ${CFG.scanMin}m`);
-  if(!TG.on())console.log("Telegram is not configured: set TG_TOKEN and TG_CHAT to receive signals.");
+  if(!TG.on())console.log("Telegram is not configured: set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID (@LiamTrader9_Bot only).");
   await scan();
   setInterval(supervise,15000);
   setInterval(report,CFG.reportMin*60000);
