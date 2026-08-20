@@ -52,8 +52,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 UP = ROOT / "signals" / "live-link.json"          # استراتژی → ما
 DOWN = ROOT / "signals" / "link-commands.json"    # ما → استراتژی
-REPO_RAW = "https://raw.githubusercontent.com/Auraliam/liam-trader-9/main"
-PAGES = "https://auraliam.github.io/liam-trader-9"
+REPO_RAW = "https://raw.githubusercontent.com/Auraliam/Liam-Trader-9/main"
+PAGES = "https://auraliam.github.io/Liam-Trader-9"
 
 MAX_EVENTS = 200            # حلقهٔ رویداد؛ فایل بی‌انتها نمی‌شود
 MAX_CMDS = 50

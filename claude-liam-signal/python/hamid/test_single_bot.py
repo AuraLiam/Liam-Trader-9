@@ -101,6 +101,30 @@ def run():
     check("هیچ ارجاعی به گیت‌هاب غیر Auraliam در کد زنده نیست",
           not repo_hits, "؛ ".join(sorted(set(repo_hits))[:8]))
 
+    # ── بزرگی حروف آدرس پنل (پروندهٔ «پنل بالا نمی‌آید»، ۲۰ اوت) ────────
+    #
+    # ریپو `AuraLiam/Liam-Trader-9` است و GitHub Pages به بزرگی حروف حساس:
+    # auraliam.github.io/liam-trader-9 یعنی ۴۰۴. چهار فایل داشبوردی همان
+    # املای غلط را داشتند، پس sync پارامتر/تجربه بی‌صدا شکست می‌خورد و
+    # لینک قدیمی پنل بالا نمی‌آمد. این بررسی برگشتش را ناممکن می‌کند.
+    bad_urls = ("auraliam.github.io/liam-trader-9",
+                "githubusercontent.com/Auraliam/liam-trader-9")
+    wrong = []
+    for p in ROOT.rglob("*"):
+        if not p.is_file() or p.suffix.lower() not in LIVE_EXT:
+            continue
+        if any(d in p.parts for d in SKIP_DIRS) or p.name == Path(__file__).name:
+            continue
+        try:
+            t = p.read_text(encoding="utf-8", errors="ignore")
+        except Exception:                            # noqa: BLE001
+            continue
+        for bad in bad_urls:
+            if bad in t:
+                wrong.append(f"{p.relative_to(ROOT)}: {bad}")
+    check("آدرس پنل/raw با املای درست ریپو است (Pages حساس به حروف)",
+          not wrong, "؛ ".join(wrong[:5]))
+
     print()
     if FAIL:
         print(f"✗ {len(FAIL)} آزمون شکست: {FAIL}")

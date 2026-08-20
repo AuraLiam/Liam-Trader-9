@@ -49,8 +49,8 @@ import json
 import time
 import urllib.request
 
-REPO_RAW = "https://raw.githubusercontent.com/Auraliam/liam-trader-9/main"
-PAGES = "https://auraliam.github.io/liam-trader-9"
+REPO_RAW = "https://raw.githubusercontent.com/Auraliam/Liam-Trader-9/main"
+PAGES = "https://auraliam.github.io/Liam-Trader-9"
 PARAMS_PATH = "/signals/strategy-params.json"
 EXPERIENCE_PATH = "/signals/experience.json"
 
@@ -213,14 +213,21 @@ def _get(url, timeout=15):
 
 
 def sync_params():
-    """اتصال به ریپو: پارامترهای اثبات‌شده را می‌کشد؛ خطا = پیش‌فرض امن."""
+    """اتصال به ریپو: پارامترهای اثبات‌شده را می‌کشد؛ خطا = پیش‌فرض امن.
+
+    شکست دیگر بی‌صدا نیست (درس ثابت پروژه، تأییدشده در ۲۰ اوت): آدرس با
+    حروف کوچک `liam-trader-9` بود در حالی که ریپو `Liam-Trader-9` است و
+    Pages به بزرگی حروف حساس — هر بار ۴۰۴ می‌گرفت، بی‌صدا به پیش‌فرض
+    می‌افتاد و کسی نمی‌فهمید. fallback ساکت، عیب را از چشم پنهان می‌کند."""
     for base in (REPO_RAW, PAGES):
         try:
             d = _get(base + PARAMS_PATH)
             if isinstance(d, dict) and d.get("version"):
                 PARAMS.update({k: v for k, v in d.items()})
                 return PARAMS["version"]
-        except Exception:                            # noqa: BLE001
+        except Exception as e:                       # noqa: BLE001
+            print(f"⚠️ پارامترها از {base} نیامد ({type(e).__name__}) — "
+                  f"پیش‌فرض داخلی استفاده می‌شود", flush=True)
             continue
     return None
 
