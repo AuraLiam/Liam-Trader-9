@@ -103,6 +103,19 @@ no_mm.pop("margin_mode")
 check("خط اجرا: سفارش بدون حالت مارجین رد می‌شود",
       LK.validate_exec(no_mm) != [])
 
+# قفل کراس (۲۰ اوت، بار دوم): محیط کراس دیده شود → هیچ سیگنالی
+ST.set_environment({"margin_mode": "Cross"})
+locked = ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(up), btc1h=mk(up))
+check("محیط کراس = قفل کامل استراتژی",
+      locked["action"] == "NO_SIGNAL" and "CROSS" in locked["why"],
+      str(locked.get("why")))
+locked_sc = ST.scalp_decide(c1m, "TESTUSDT")
+check("قفل کراس اسکلپ را هم می‌گیرد", locked_sc["action"] == "NO_SIGNAL")
+ST.set_environment({"margin_mode": "isolated"})
+check("محیط ایزوله = قفل باز می‌شود",
+      ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(up), btc1h=mk(up))["action"] == "LONG")
+ST.ENV["margin_mode"] = None
+
 # اسکن: ستاپ ARMED خلاف هر دو تایم بالا نباید منتشر شود (پروندهٔ ARB)
 import scan as SC                      # noqa: E402
 

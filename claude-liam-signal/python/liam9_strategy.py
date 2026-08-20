@@ -129,12 +129,25 @@ RISK_CONTRACT = {
 }
 
 
+# محیط داشبورد — با set_environment() پر می‌شود. اگر حالت مارجین داشبورد
+# کراس دیده شود، کل استراتژی قفل می‌شود تا حمید ایزوله‌اش کند (۲۰ اوت،
+# بار دوم: «الان باز کراس مولتی باز کرده»). حالت مارجین تنظیم خود داشبورد
+# است؛ فایل استراتژی نمی‌تواند عوضش کند، ولی می‌تواند در برابرش سیگنال ندهد.
+ENV = {"margin_mode": None}
+
+
 def _finalize(sig):
     """مهر قرارداد اجرا روی هر خروجی قابل‌معامله (دستور حمید، ۲۰ اوت).
 
     استاپ و تارگت باید در خود دیکشنری باشند وگرنه سیگنال باطل می‌شود؛
     مارجین همیشه ایزوله اعلام می‌شود تا داشبورد کراس باز نکند."""
     if sig.get("action") in ("LONG", "SHORT"):
+        if ENV.get("margin_mode") and "cross" in str(ENV["margin_mode"]).lower():
+            return {"action": "NO_SIGNAL", "symbol": sig.get("symbol", "?"),
+                    "why": ("مارجین داشبورد CROSS است — تا وقتی در تنظیمات "
+                            "پوزیشن Isolated نشود هیچ سیگنالی صادر نمی‌شود "
+                            "(دستور صریح ۲۰ اوت)"),
+                    "panel": "لیام تریدر ۹"}
         if not (sig.get("sl") and sig.get("tp1")):
             return {"action": "NO_SIGNAL", "symbol": sig.get("symbol", "?"),
                     "why": "سیگنال بدون استاپ/تارگت باطل است — قرارداد اجرا",
@@ -703,6 +716,17 @@ def audit_environment(risk=None, dashboard=None):
                         if notes else "سازگار")}
 
 
+def set_environment(risk=None, dashboard=None):
+    """محیط داشبورد را ممیزی و ثبت می‌کند — کراس دیده شود، استراتژی قفل می‌شود.
+
+    داشبورد اگر تنظیمات ریسکش را به کلاس بدهد (یا این تابع را صدا بزند)،
+    حالت مارجینش این‌جا می‌نشیند و _finalize در برابر کراس سیگنال نمی‌دهد."""
+    a = audit_environment(risk, dashboard)
+    mm = a["detected"].get("margin_mode")
+    ENV["margin_mode"] = str(mm).lower() if mm is not None else None
+    return a
+
+
 def print_audit(risk=None, dashboard=None):
     a = audit_environment(risk, dashboard)
     print("── ممیزی تداخل استراتژی ↔ داشبورد ──")
@@ -828,6 +852,9 @@ class Liam9Strategy(BaseStrategy):
         except Exception:                             # noqa: BLE001
             pass
         sync_all()
+        # اگر داشبورد تنظیمات ریسکش را داد، همان لحظه ممیزی — کراس = قفل
+        if kw.get("risk") is not None or kw.get("dashboard") is not None:
+            set_environment(kw.get("risk"), kw.get("dashboard"))
         self.meta["version"] = PARAMS["version"]
 
     def generate_signal(self, symbol, c4h=None, c1h=None, c15=None, **kw):
