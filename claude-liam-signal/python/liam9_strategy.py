@@ -57,7 +57,7 @@ TOP_LIQ_PATH = "/signals/top-liquidity.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.4",
+    "version": "liam9-dash-2.5",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -70,6 +70,14 @@ PARAMS = {
     "exp_min_n": 12,                # زیر این تعداد، کارنامه «نازک» است
     "exp_veto_mean_r": -0.25,       # کارنامهٔ قوی و منفی = وتو
     "min_quality": 55,              # کف امتیاز برای صدور
+    # نردبان خروج (دستور حمید، ۲۱ اوت — نسخهٔ دو از قانون تریل ۱۲ اوت):
+    # روی تی‌پی۱، یک‌سوم پوزیشن بسته و استاپ می‌آید جایی که کل معامله،
+    # صرف‌نظر از سرنوشت باقیمانده، خالص از کارمزد مثبت بماند. تی‌پی۲ دو
+    # برابر فاصلهٔ تی‌پی۱ است؛ بعد از آن استاپ در ۸۵٪ فاصلهٔ سود قفل و
+    # فقط بالاتر می‌رود، هرگز پایین‌تر.
+    "tp1_close_pct": 33,
+    "tp2_rr_mult": 2.0,             # تی‌پی۲ = این ضریب × فاصلهٔ تی‌پی۱
+    "tp2_trail_lock_pct": 85,
 }
 
 # پارامترهای اسکلپ ۱ دقیقه — از میز اسکلپ همین پنل، با محافظ‌های آن.
@@ -84,6 +92,10 @@ SCALP = {
     "liq_guard": 50.0,              # اهرم ≤ ۵۰/استاپ٪ (فاصلهٔ لیکویید)
     "hold_bars": 45,
 }
+# دستور حمید (۲۱ اوت): «ضریب پوزیشن‌های یک‌دقیقه‌ای نباید زیر ۲۰ باشه».
+# محافظ دائمی روی خودِ import — تا کسی سهواً lev_base را زیر این کف
+# نبرد. محافظ لیکویید (۱۹ اوت) هنوز سقف مطلق است؛ این فقط کف است.
+assert SCALP["lev_base"] >= 20, "کف اهرم اسکلپ (دستور ۲۱ اوت) نقض شد"
 
 # کارنامهٔ تجربه — با sync_experience() پر می‌شود. کلید: "SYMBOL|LONG".
 EXPERIENCE = {}
@@ -505,6 +517,40 @@ def _pullback(c15, direction, win_n=60, min_leg=8):
     return (px - lo) / (hi - lo), pull_hi
 
 
+def _exit_plan(direction, entry, tp1, risk, P):
+    """نردبان خروج دوپله (دستور حمید، ۲۱ اوت).
+
+    روی تی‌پی۱: {tp1_close_pct}٪ پوزیشن بسته و استاپ باقیمانده می‌آید روی
+    ورود + بافر کارمزد — همان فرمول اثبات‌شدهٔ «قانون تریل» ۱۲ اوت. چون
+    پلهٔ اول از قبل +rr_target R سود قطعی بسته، حتی اگر باقیمانده درست
+    روی این استاپ بخورد، برایند کل معامله خالص از کارمزد مثبت می‌ماند —
+    محاسبه، نه امید: banked=rr_target×close_pct، رست حداقل با هزینهٔ
+    کارمزد صفر یا اندکی مثبت می‌بندد.
+    تی‌پی۲ دو برابر فاصلهٔ تی‌پی۱ است؛ بعد از رسیدن به آن، استاپ روی
+    {tp2_trail_lock_pct}٪ فاصلهٔ سود همان لحظه قفل می‌شود و فقط بالاتر
+    می‌رود — این‌جا فقط عدد محاسبه می‌شود، حرکت زندهٔ استاپ کار خود
+    داشبورد/اجرای دستی است (این فایل هیچ پوزیشن بازی را پایش نمی‌کند)."""
+    fee_buf = entry * (P["fee_round_trip_pct"] / 100)
+    close1 = P["tp1_close_pct"]
+    tp2_dist = (tp1 - entry) * P["tp2_rr_mult"] if direction == "LONG" \
+        else (entry - tp1) * P["tp2_rr_mult"]
+    if direction == "LONG":
+        stop_after_tp1 = entry + fee_buf
+        tp2 = entry + tp2_dist
+    else:
+        stop_after_tp1 = entry - fee_buf
+        tp2 = entry - tp2_dist
+    return {"tp1_close_pct": close1,
+            "stop_after_tp1": round(stop_after_tp1, 8),
+            "tp2": round(tp2, 8),
+            "tp2_trail_lock_pct": P["tp2_trail_lock_pct"],
+            "note": (f"روی تی‌پی۱: {close1}٪ ببند، استاپ باقیمانده روی "
+                     f"{round(stop_after_tp1, 8)} (ورود+کارمزد) — برایند کل "
+                     "قطعاً مثبت. روی تی‌پی۲: استاپ در "
+                     f"{P['tp2_trail_lock_pct']}٪ فاصلهٔ سود قفل، فقط "
+                     "بالا می‌رود — این عدد را در تریل داشبورد بگذار.")}
+
+
 # ── تحلیل اصلی (۴س/۱س/۱۵د) ─────────────────────────────────────────────────
 def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     """تصمیم روش لیام تریدر ۹ روی کندل‌های داده‌شده.
@@ -622,6 +668,12 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     if rep:
         return no(rep)
 
+    plan = _exit_plan(direction, entry, tp1, risk, P)
+    why.append(f"🪜 نردبان خروج: تی‌پی۱ {plan['tp1_close_pct']}٪ ببند → "
+               f"استاپ {plan['stop_after_tp1']} (برایند مثبت قطعی) · "
+               f"تی‌پی۲ {plan['tp2']} → تریل {plan['tp2_trail_lock_pct']}٪ "
+               "فاصلهٔ سود، فقط بالا")
+
     return _finalize({"action": direction, "symbol": symbol,
             "entry": round(entry, 8), "sl": round(sl, 8),
             "tp1": round(tp1, 8), "rr_net": round(net_rr, 2),
@@ -630,6 +682,7 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
             "quality": quality, "exp_used": exp_used,
             "experience": exp, "pattern_align": align, "patterns": pat_names,
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
+            "exit_plan": plan,
             "mode": "swing", "tf": "15m",
             "panel": "لیام تریدر ۹", "version": P["version"],
             "t": int(time.time() * 1000), "why": why})
@@ -949,6 +1002,19 @@ def _selftest():
     assert r["margin_mode"] == "isolated" and r["product"] == "futures", r
     assert r["sl_tp_mandatory"] and r["stop_loss"] == r["sl"] \
         and r["take_profit"] == r["tp1"], r
+    # نردبان خروج (۲۱ اوت): تی‌پی۱ ۳۳٪، استاپ بعدش = ورود+کارمزد،
+    # تی‌پی۲ دو برابر فاصلهٔ تی‌پی۱، برایند کل حتی با بدترین حالت مثبت
+    ep = r["exit_plan"]
+    assert ep["tp1_close_pct"] == 33
+    fee_r_check = PARAMS["fee_round_trip_pct"] / 100 * r["entry"]
+    assert abs(ep["stop_after_tp1"] - (r["entry"] + fee_r_check)) < 1e-6, ep
+    assert ep["tp2"] > r["tp1"] > r["entry"], ep
+    assert abs((ep["tp2"] - r["entry"]) - 2 * (r["tp1"] - r["entry"])) < 1e-6, ep
+    banked = PARAMS["rr_target"] * (ep["tp1_close_pct"] / 100)
+    r_risk = r["entry"] - r["sl"]
+    rest_worst_r = fee_r_check / r_risk * (1 - ep["tp1_close_pct"] / 100)
+    assert banked + rest_worst_r > 0, (banked, rest_worst_r)
+    assert ep["tp2_trail_lock_pct"] == 85
 
     # آلت بدون بستر BTC = NO_SIGNAL (ریشهٔ شورت ARB در بازار مثبت)
     g0 = analyze("TESTUSDT", c4, c1, c15)
@@ -1086,7 +1152,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۴ گذشت — سوینگ، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۵ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
