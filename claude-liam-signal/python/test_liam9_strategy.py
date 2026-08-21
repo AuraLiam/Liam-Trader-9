@@ -54,7 +54,8 @@ def run():
         s = st.Liam9Strategy()
         check("ساخت کلاس بدون شبکه خطا نمی‌دهد", s.meta["version"])
         check("sync_all بی‌شبکه امن برمی‌گردد",
-              st.sync_all() == {"params": None, "experience_pairs": 0})
+              st.sync_all() == {"params": None, "experience_pairs": 0,
+                                "top_liquidity": 0})
     finally:
         st._get = old_get
 
