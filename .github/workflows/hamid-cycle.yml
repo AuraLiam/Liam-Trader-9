@@ -90,6 +90,7 @@ jobs:
           python3 -m hamid.test_single_bot
           python3 -m hamid.test_exec_contract
           python3 -m hamid.test_dash_backtest
+          python3 -m hamid.test_publish_top_liquidity
           python3 -m hamid.test_pump_budget
           python3 -m hamid.test_sentinel
           python3 -m hamid.test_scalp_dash_backtest
@@ -149,6 +150,16 @@ jobs:
       - name: انتشار کارنامهٔ تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.publish_experience || true
+
+      # لایهٔ نقدشوندگی برتر ۶۰ (دستور حمید، ۲۱ اوت: «همینو استراتژی کن»).
+      # سنجیده روی dash-backtest واقعی: top60 CI[+0.199,+0.669] کاملاً بالای
+      # صفر، رتبهٔ ۶۱+ هنوز صفر داخلش. از این پس liam9_strategy.analyze()
+      # فقط برای همین لایه سیگنال می‌دهد؛ نبود این فایل تازه = بی‌سیگنالِ
+      # کامل برای همهٔ آلت‌ها (قانون ۱)، نه عبور کور — پس این مرحله حیاتی
+      # است و هر ۳۰ دقیقه باید تازه شود.
+      - name: انتشار لایهٔ نقدشوندگی برتر ۶۰
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.publish_top_liquidity || true
 
       # نگهبان یکپارچگی (دستور حمید، ۲۰ اوت): «هیچ‌کس جز خودمان چیزی
       # این‌جا نگذارد». هر ورک‌فلوی تازه، نویسندهٔ ناشناس یا سکرت لو‌رفته

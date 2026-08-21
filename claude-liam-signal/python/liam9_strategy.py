@@ -53,10 +53,11 @@ REPO_RAW = "https://raw.githubusercontent.com/Auraliam/Liam-Trader-9/main"
 PAGES = "https://auraliam.github.io/Liam-Trader-9"
 PARAMS_PATH = "/signals/strategy-params.json"
 EXPERIENCE_PATH = "/signals/experience.json"
+TOP_LIQ_PATH = "/signals/top-liquidity.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.3",
+    "version": "liam9-dash-2.4",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -86,6 +87,16 @@ SCALP = {
 
 # کارنامهٔ تجربه — با sync_experience() پر می‌شود. کلید: "SYMBOL|LONG".
 EXPERIENCE = {}
+
+# لایهٔ نقدشوندگی برتر ۶۰ — با sync_top_liquidity() پر می‌شود (دستور حمید،
+# ۲۱ اوت: «همینو استراتژی کن»). یافتهٔ ۲۱ اوت روی dash-backtest واقعی:
+# top60 n=145 میانگین +0.436R CI[+0.199,+0.669] کاملاً بالای صفر؛
+# رتبهٔ ۶۱+ n=107 CI[-0.199,+0.321] هنوز صفر داخلش است — بدون لبهٔ
+# اثبات‌شده. تا سنجش تازه خلافش را نشان بدهد، سیگنال سوینگ فقط برای
+# نمادهای همین لایه صادر می‌شود. عدم همگام‌سازی = قانون ۱ (ناقص = بی‌سیگنال)،
+# نه عبور کور.
+TOP_LIQUIDITY = set()
+_TOP_LIQ_OK = False
 
 VENUES = [
     ("https://api.mexc.com/api/v3/klines?symbol={s}&interval={i}&limit={n}", "mexc"),
@@ -246,9 +257,34 @@ def sync_experience():
     return 0
 
 
+def sync_top_liquidity():
+    """لیست نمادهای لایهٔ نقدشوندگی برتر ۶۰ — تنها لایهٔ CI-تأییدشده (۲۱ اوت).
+
+    شکست همگام‌سازی هم بی‌صدا نیست: _TOP_LIQ_OK پرچم می‌ماند و analyze()
+    طبق قانون ۱ برای همهٔ آلت‌ها بی‌سیگنال می‌شود — نه اینکه بی‌صدا از
+    دروازه رد شوند."""
+    global _TOP_LIQ_OK
+    for base in (REPO_RAW, PAGES):
+        try:
+            d = _get(base + TOP_LIQ_PATH)
+            syms = d.get("symbols") if isinstance(d, dict) else None
+            if isinstance(syms, list) and syms:
+                TOP_LIQUIDITY.clear()
+                TOP_LIQUIDITY.update(s.upper() for s in syms)
+                _TOP_LIQ_OK = True
+                return len(TOP_LIQUIDITY)
+        except Exception as e:                        # noqa: BLE001
+            print(f"⚠️ لایهٔ نقدشوندگی از {base} نیامد ({type(e).__name__}) — "
+                  f"تا رفعش، سیگنال سوینگِ آلت صادر نمی‌شود (قانون ۱)", flush=True)
+            continue
+    _TOP_LIQ_OK = False
+    return 0
+
+
 def sync_all():
-    """یک خط برای داشبورد: پارامتر + تجربه. هر چرخه یک بار کافی است."""
-    return {"params": sync_params(), "experience_pairs": sync_experience()}
+    """یک خط برای داشبورد: پارامتر + تجربه + لایهٔ نقدشوندگی. هر چرخه کافی است."""
+    return {"params": sync_params(), "experience_pairs": sync_experience(),
+            "top_liquidity": sync_top_liquidity()}
 
 
 def experience_of(symbol, direction):
@@ -494,6 +530,10 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
         return no(f"روند ۴س ({t4}) و ۱س ({t1}) هم‌قصه نیستند — وتوی روند")
 
     is_btc = symbol.upper().replace("USDT", "").replace("USD", "") == "BTC"
+    if not is_btc and (not _TOP_LIQ_OK or symbol.upper() not in TOP_LIQUIDITY):
+        return no("خارج از لایهٔ نقدشوندگی برتر ۶۰ یا لایه همگام نشده — "
+                  "تنها لایهٔ سنجیده‌شده با CI بالای صفر (۲۱ اوت: top60 "
+                  "CI[+0.199,+0.669]؛ رتبهٔ ۶۱+ هنوز صفر داخلش هست)")
     mkt, mkt_why = ("ok", "خود بازار است") if is_btc else \
         market_gate(direction, btc4h, btc1h)
     if mkt == "veto":
@@ -897,6 +937,10 @@ def _selftest():
     c15 = mk(pull)
     c15[-1]["l"], c15[-1]["c"] = c15[-1]["c"] * 0.99, c15[-1]["c"] * 0.9905
     EXPERIENCE.clear()
+    global _TOP_LIQ_OK
+    TOP_LIQUIDITY.clear()
+    TOP_LIQUIDITY.update({"TESTUSDT", "BTCUSDT"})
+    _TOP_LIQ_OK = True
     r = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
     assert r["action"] == "LONG", r
     assert r["sl"] < r["entry"] < r["tp1"]
@@ -914,6 +958,21 @@ def _selftest():
     assert g2["action"] == "NO_SIGNAL" and "وتوی مطلق" in g2["why"], g2
     # خود BTC از دروازهٔ بستر معاف است (خودش بازار است)
     assert analyze("BTCUSDT", c4, c1, c15)["action"] == "LONG"
+
+    # دروازهٔ لایهٔ نقدشوندگی (۲۱ اوت، «همینو استراتژی کن»): نماد خارج از
+    # لیست = بی‌سیگنال، حتی با بستر BTC سالم
+    TOP_LIQUIDITY.discard("TESTUSDT")
+    g3 = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
+    assert g3["action"] == "NO_SIGNAL" and "نقدشوندگی" in g3["why"], g3
+    TOP_LIQUIDITY.add("TESTUSDT")
+    # عدم همگام‌سازی = بی‌سیگنال برای همهٔ آلت‌ها (قانون ۱)، نه عبور کور
+    _TOP_LIQ_OK = False
+    g4 = analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)
+    assert g4["action"] == "NO_SIGNAL" and "نقدشوندگی" in g4["why"], g4
+    assert analyze("BTCUSDT", c4, c1, c15)["action"] == "LONG", \
+        "قطع همگام‌سازی نباید خود BTC را ببندد"
+    _TOP_LIQ_OK = True
+    assert analyze("TESTUSDT", c4, c1, c15, btc4h=b4, btc1h=b1)["action"] == "LONG"
 
     # تجربهٔ مثبت امتیاز را بالا می‌برد
     EXPERIENCE["TESTUSDT|LONG"] = {"n": 30, "win_pct": 80.0, "mean_r": 0.4,
@@ -1027,7 +1086,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۳ گذشت — سوینگ، تجربه، اسکلپ، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۴ گذشت — سوینگ، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────

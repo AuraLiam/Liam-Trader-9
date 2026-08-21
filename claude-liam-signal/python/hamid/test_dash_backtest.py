@@ -53,6 +53,9 @@ c15[sig_i]["c"] = c15[sig_i]["c"] * 0.9895
 
 ST.EXPERIENCE.clear()
 ST.ENV["margin_mode"] = None
+ST.TOP_LIQUIDITY.clear()
+ST.TOP_LIQUIDITY.add("TESTUSDT")
+ST._TOP_LIQ_OK = True
 trades, reasons = BT.replay_symbol("TESTUSDT", c15, c1, c4,
                                    btc1h=c1, btc4h=c4)
 check("بک‌تست معاملهٔ واقعی ساخت (نه لیست خالی)", len(trades) >= 1,

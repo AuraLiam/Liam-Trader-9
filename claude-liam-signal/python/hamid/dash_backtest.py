@@ -146,6 +146,12 @@ def run(symbols=60, bars=1000, quiet=False):
     except Exception:                                  # noqa: BLE001
         from hamid.trainer import top_symbols
         syms = top_symbols(symbols)
+    # بک‌تست باید همچنان رتبهٔ ۶۱+ را هم بسازد تا per_liquidity_tier قابل
+    # پایش بماند — دروازهٔ نقدشوندگی (۲۱ اوت) فقط مسیر زندهٔ داشبورد را
+    # می‌بندد، نه اندازه‌گیری خودمان را کور می‌کند.
+    ST.TOP_LIQUIDITY.clear()
+    ST.TOP_LIQUIDITY.update(s.upper() for s in syms)
+    ST._TOP_LIQ_OK = True
     try:
         btc1 = _cd(sources.klines("BTCUSDT", "1h", 400))
         btc4 = _cd(sources.klines("BTCUSDT", "4h", 400))

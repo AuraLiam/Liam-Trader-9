@@ -48,6 +48,9 @@ c15 = mk(pull)
 c15[-1]["l"], c15[-1]["c"] = c15[-1]["c"] * 0.99, c15[-1]["c"] * 0.9905
 
 ST.EXPERIENCE.clear()
+ST.TOP_LIQUIDITY.clear()
+ST.TOP_LIQUIDITY.update({"TESTUSDT", "BTCUSDT"})
+ST._TOP_LIQ_OK = True
 r = ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(up), btc1h=mk(up))
 check("سوینگ: سیگنال با ایزوله + استاپ/تارگت صادر می‌شود",
       r.get("action") == "LONG" and r.get("margin_mode") == "isolated"
@@ -60,6 +63,18 @@ check("سوینگ: هر دو تایم BTC خلاف = وتوی مطلق",
       g2["action"] == "NO_SIGNAL" and "وتوی مطلق" in g2["why"], str(g2.get("why")))
 check("سوینگ: خود BTC از دروازهٔ بستر معاف است",
       ST.analyze("BTCUSDT", c4, c1, c15)["action"] == "LONG")
+
+# دروازهٔ لایهٔ نقدشوندگی برتر ۶۰ (۲۱ اوت): تنها لایهٔ CI-تأییدشده
+ST.TOP_LIQUIDITY.discard("TESTUSDT")
+g3 = ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(up), btc1h=mk(up))
+check("سوینگ: نماد خارج از لایهٔ نقدشوندگی برتر ۶۰ = NO_SIGNAL",
+      g3["action"] == "NO_SIGNAL" and "نقدشوندگی" in g3["why"], str(g3.get("why")))
+ST.TOP_LIQUIDITY.add("TESTUSDT")
+ST._TOP_LIQ_OK = False
+g4 = ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(up), btc1h=mk(up))
+check("سوینگ: عدم همگام‌سازی لایهٔ نقدشوندگی = بی‌سیگنال، نه عبور کور",
+      g4["action"] == "NO_SIGNAL" and "نقدشوندگی" in g4["why"], str(g4.get("why")))
+ST._TOP_LIQ_OK = True
 
 # اسکلپ: استثنای صریح حمید — دروازهٔ بازار ندارد ولی قرارداد اجرا دارد
 up1 = [100 + i * 0.05 for i in range(120)]
