@@ -102,6 +102,12 @@ def run():
     r = SH.decide("BTCUSDT", cd, "5m", equity=1000)
     check("شکار پامپ = اهرم ۱۵", r["mode"] == "PUMP_CHASE"
           and r["leverage"] == 15, str(r)[:160])
+    check("شکار پامپ: قرارداد اجرا کامل (ایزوله + SL/TP اجباری) — "
+          "همان محافظی که سوینگ/۱ساعته دارند، این‌جا هم قفل می‌شود",
+          r.get("margin_mode") == "isolated" and r.get("sl_tp_mandatory") is True
+          and r.get("stop_loss") and r.get("take_profit")
+          and r["stop_loss"] == r["sl"] and r["take_profit"] == r["tp1"],
+          str(r)[:200])
     cd3 = [dict(k) for k in cd]
     for i in range(1, 6):
         cd3.append({"t": cd[-1]["t"] + i * 300_000, "o": 101.5 - i * 0.22,
@@ -112,6 +118,11 @@ def run():
           r3["mode"] == "SHOCK_FOLLOW" and r3["leverage"] in (5, 6), str(r3)[:160])
     check("ورود روی اردر بلاک است، نه وسط ایمپالس",
           r3["ob"] is not None and r3["entry"] <= cd[-1]["h"], str(r3["ob"]))
+    check("دنبال‌کردن شوک: قرارداد اجرا کامل (ایزوله + SL/TP اجباری)",
+          r3.get("margin_mode") == "isolated" and r3.get("sl_tp_mandatory") is True
+          and r3.get("stop_loss") and r3.get("take_profit")
+          and r3["stop_loss"] == r3["sl"] and r3["take_profit"] == r3["tp1"],
+          str(r3)[:200])
 
     # محافظ لیکویید و سقف داشبورد، در همهٔ حالت‌ها
     for st in (0.4, 0.8, 1.5, 2.5, 3.0, 4.0):
