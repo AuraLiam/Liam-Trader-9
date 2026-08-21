@@ -56,6 +56,10 @@ check("سوینگ: سیگنال با ایزوله + استاپ/تارگت صاد
       r.get("action") == "LONG" and r.get("margin_mode") == "isolated"
       and r.get("stop_loss") and r.get("take_profit")
       and r.get("sl_tp_mandatory") is True, str(r.get("why")))
+check("سوینگ: نردبان خروج دوپله همراه سیگنال می‌آید (دستور ۲۱ اوت)",
+      "exit_plan" in r and r["exit_plan"]["tp1_close_pct"] == 33
+      and r["exit_plan"]["tp2"] > r["tp1"] > r["entry"]
+      and r["exit_plan"]["tp2_trail_lock_pct"] == 85, str(r.get("exit_plan")))
 check("سوینگ: آلت بدون بستر BTC = NO_SIGNAL",
       ST.analyze("TESTUSDT", c4, c1, c15)["action"] == "NO_SIGNAL")
 g2 = ST.analyze("TESTUSDT", c4, c1, c15, btc4h=mk(dn), btc1h=mk(dn))
