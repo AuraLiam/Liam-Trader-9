@@ -1,0 +1,84 @@
+# بک‌تست دفتر سناریو (۱د/۳د، BOS/CHoCH، سشن‌محور) روی کندل واقعی.
+# دستور حمید (۲۲ اوت): «بک‌تست در گذشتهٔ ارزها به‌صورت واقعی که از آینده
+# خبر ندارند، به‌صورت ۵ایکس، روی ۳۰ ارز ۳۰۰ بار پوزیشن باز شود.»
+# محاسبه و شبکهٔ واقعی فقط این‌جا — نه در نشست (قانون همیشگی پروژه).
+name: Scenario backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "چند نماد"
+        default: "30"
+      tf:
+        description: "تایم‌فریم (1m یا 3m)"
+        default: "1m"
+      bars:
+        description: "چند کندل ۱ دقیقه (سقف امن صرافی‌ها ۱۰۰۰)"
+        default: "1000"
+      target_trades:
+        description: "هدف تعداد معامله"
+        default: "300"
+      min_leg_atr:
+        description: "کف طول لگ بر حسب ATR (خالی = پیش‌فرض ۱.۰)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scenario-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_microstructure
+          python3 -m hamid.test_scenario_backtest
+      - name: Backtest on real candles
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          LEG=""
+          if [ -n "${{ github.event.inputs.min_leg_atr }}" ]; then
+            LEG="--min-leg-atr ${{ github.event.inputs.min_leg_atr }}"
+          fi
+          python3 -m hamid.scenario_backtest \
+            --symbols "${{ github.event.inputs.symbols || '30' }}" \
+            --tf "${{ github.event.inputs.tf || '1m' }}" \
+            --bars "${{ github.event.inputs.bars || '1000' }}" \
+            --target-trades "${{ github.event.inputs.target_trades || '300' }}" \
+            $LEG | tee scen.txt
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -40 scen.txt 2>/dev/null || echo "no output"; echo '```'; } \
+            >> $GITHUB_STEP_SUMMARY
+      - name: Publish
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A signals
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "بک‌تست سناریو $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
