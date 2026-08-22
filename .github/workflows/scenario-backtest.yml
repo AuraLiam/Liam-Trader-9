@@ -28,6 +28,15 @@ on:
       rr:
         description: "نسبت تارگت به استاپ (خالی = پیش‌فرض ۱.۵)"
         default: ""
+      leverage:
+        description: "اهرم (دستور حمید: ۱۰ تا ۱۵)"
+        default: "12"
+      universe:
+        description: "جهان نمادها: volatile (پرنوسانِ داخل نوار) یا liquidity"
+        default: "volatile"
+      sweep:
+        description: "جدول RR × پنجرهٔ نگهداری روی همان دادهٔ واقعی (true/false)"
+        default: "true"
 
 permissions:
   contents: write
@@ -54,7 +63,10 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           set -o pipefail
-          LEG=""; RR=""
+          LEG=""; RR=""; SWEEP=""
+          if [ "${{ github.event.inputs.sweep || 'true' }}" = "true" ]; then
+            SWEEP="--sweep"
+          fi
           if [ -n "${{ github.event.inputs.min_leg_atr }}" ]; then
             LEG="--min-leg-atr ${{ github.event.inputs.min_leg_atr }}"
           fi
@@ -66,8 +78,10 @@ jobs:
             --tf "${{ github.event.inputs.tf || '1m' }}" \
             --bars "${{ github.event.inputs.bars || '1000' }}" \
             --target-trades "${{ github.event.inputs.target_trades || '300' }}" \
-            --fee-model "${{ github.event.inputs.fee_model || 'taker' }}" \
-            $LEG $RR | tee scen.txt
+            --fee-model "${{ github.event.inputs.fee_model || 'maker_entry' }}" \
+            --leverage "${{ github.event.inputs.leverage || '12' }}" \
+            --universe "${{ github.event.inputs.universe || 'volatile' }}" \
+            $SWEEP $LEG $RR | tee scen.txt
       - name: Summary
         if: always()
         working-directory: claude-liam-signal/python
