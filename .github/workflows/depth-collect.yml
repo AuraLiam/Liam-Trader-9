@@ -42,6 +42,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: Self-test
@@ -81,7 +82,11 @@ jobs:
           for attempt in 1 2 3 4 5; do
             git push origin HEAD:main && exit 0
             git fetch origin main || true
-            git merge --no-edit origin/main || { git merge --abort; exit 1; }
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
             sleep $((attempt * 3))
           done
           exit 1
