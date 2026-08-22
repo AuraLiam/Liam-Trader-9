@@ -147,6 +147,22 @@ check("کارمزد میکر واقعاً کمتر از تیکر است (روی 
       f"maker={sum(t['fee_r'] for t in tr_mk)/len(tr_mk):.3f} "
       f"taker={sum(t['fee_r'] for t in trades)/len(trades):.3f}")
 
+# ── تصحیح چندآزمونی (López de Prado) ────────────────────────────────────
+# با ۱۲ ترکیب، «بهترین خانه» باید از آستانهٔ خانوادگی رد شود نه از ۱.۹۶.
+check("یک آزمون = آستانهٔ معمول ۱.۹۶", BT.multiple_test_penalty(1) == 1.96)
+check("آزمون بیشتر = آستانهٔ سخت‌تر",
+      BT.multiple_test_penalty(12) > BT.multiple_test_penalty(4)
+      and BT.multiple_test_penalty(100) > BT.multiple_test_penalty(12),
+      f"{BT.multiple_test_penalty(4)} / {BT.multiple_test_penalty(12)} / "
+      f"{BT.multiple_test_penalty(100)}")
+check("آستانه هرگز زیر ۱.۹۶ نمی‌رود", BT.multiple_test_penalty(2) >= 1.96)
+check("t_stat نمونهٔ کم = صفر", BT.t_stat([1.0, 2.0]) == 0.0)
+check("t_stat سریِ بی‌واریانس = صفر (نه تقسیم‌برصفر)",
+      BT.t_stat([0.1] * 40) == 0.0)
+_pos = BT.t_stat([0.3, 0.1, 0.2, 0.4, 0.15] * 12)
+check("t_stat سریِ مثبتِ پایدار بزرگ است", _pos > 5, str(_pos))
+check("t_stat سری متقارن ≈ صفر", abs(BT.t_stat([1.0, -1.0] * 30)) < 1e-9)
+
 # ── CI ───────────────────────────────────────────────────────────────────
 check("CI با نمونهٔ کم None است", BT.boot_ci([0.1] * 10) is None)
 ci = BT.boot_ci([0.5, -1.0, 2.0] * 20)
