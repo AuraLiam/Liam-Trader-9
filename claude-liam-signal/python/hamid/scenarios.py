@@ -37,17 +37,51 @@ from hamid import microstructure as MS
 
 PLAN_VERSION = "scen-1.0"
 
+# کارمزدهای راستی‌آزمایی‌شدهٔ بیت‌یونیکس (config/fees.json، ۱۶ اوت):
+# میکر ۰.۰۲٪ · تیکر ۰.۰۶٪ · لغزش ۰.۰۱۵٪ بر هر پا.
+MAKER_PCT = 0.02
+TAKER_PCT = 0.06
+SLIP_PCT = 0.015
+
+# دو مدل کارمزد — تفاوتشان همان چیزی است که بک‌تست اول نشان داد گلوگاه است.
+#   taker: ورود و خروج هر دو مارکت  →  ۰.۰۶×۲ + ۰.۰۱۵×۲ = ۰.۱۵٪
+#   maker_entry: ورود لیمیت روی خودِ سطح (بدون لغزش)، تارگت هم لیمیت،
+#     ولی **استاپ همیشه مارکت است** (استاپ لیمیت یعنی استاپِ اجرانشده).
+#     پس کارمزد به نتیجه بستگی دارد:
+#        تارگت → ۰.۰۲ + ۰.۰۲            = ۰.۰۴٪
+#        استاپ → ۰.۰۲ + ۰.۰۶ + ۰.۰۱۵    = ۰.۰۹۵٪
+# هزینهٔ واقعیِ میکر جای دیگری است: سفارش لیمیت ممکن است **پر نشود** —
+# و دقیقاً روی حرکت‌های تندِ برنده پر نمی‌شود (انتخاب نامساعد). بک‌تستی که
+# فرض کند لیمیت همیشه پر می‌شود، خودش را گول زده. مدل‌سازی‌اش در
+# scenario_backtest.maker_fill.
+FEE_MODELS = {
+    "taker": {"entry": TAKER_PCT + SLIP_PCT,
+              "exit_target": TAKER_PCT + SLIP_PCT,
+              "exit_stop": TAKER_PCT + SLIP_PCT},
+    "maker_entry": {"entry": MAKER_PCT,
+                    "exit_target": MAKER_PCT,
+                    "exit_stop": TAKER_PCT + SLIP_PCT},
+}
+
 P = {
     "atr_n": 14,
     "atr_stop_mult": 1.2,        # استاپ بیرون نویز (همان ضریب موتور سوینگ)
     "rr_target": 1.5,            # هدف اسکلپ (همان SCALP["rr_target"])
-    "fee_round_trip_pct": 0.15,  # تیکر دو سر + لغزش (بیت‌یونیکس VIP0)
+    "fee_model": "taker",
+    "fee_round_trip_pct": 0.15,  # تیکر دو سر + لغزش — برای دروازهٔ max_fee_r
     "max_fee_r": 0.30,           # استاپ تنگ = دام کارمزد → شاخه باطل
     "leverage": 5,               # دستور حمید برای این آزمایش
     "liq_guard": 50.0,           # اهرم ≤ ۵۰/استاپ٪ — محافظ فاصلهٔ لیکویید
     "max_stop_pct": 1.6,         # سقف استاپ اسکلپ (RISK_CONTRACT)
     "min_stop_pct": 0.10,        # زیر این، استاپ داخل اسپرد/نویز است
+    "maker_wait_bars": 3,        # لیمیت چند کندل منتظر پر شدن می‌ماند
 }
+
+
+def round_trip_pct(model, outcome="target"):
+    """کارمزد رفت‌وبرگشت برای یک مدل و یک نتیجه — درصد، نه R."""
+    f = FEE_MODELS[model]
+    return f["entry"] + (f["exit_stop"] if outcome == "stop" else f["exit_target"])
 
 
 def atr(cd, n=14):
@@ -138,7 +172,10 @@ def _build(direction, kind, level, struct_stop, a, q, st):
     stop_pct = risk / level * 100
     if not (q["min_stop_pct"] <= stop_pct <= q["max_stop_pct"]):
         return None
-    fee_r = (q["fee_round_trip_pct"] / 100) * level / risk
+    # دروازهٔ کارمزد با **بدترین حالتِ همان مدل** سنجیده می‌شود (خروج با
+    # استاپ)، نه با حالت خوش‌بینانه — وگرنه دروازه خودش را گول می‌زند.
+    rt = round_trip_pct(q["fee_model"], "stop")
+    fee_r = (rt / 100) * level / risk
     if fee_r > q["max_fee_r"]:
         return None
     lev = _leverage(stop_pct, q["leverage"])

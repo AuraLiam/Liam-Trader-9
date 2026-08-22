@@ -108,6 +108,45 @@ check("acct_pct = R خالص × ریسک ۲٪ (اهرم لبه را عوض نم�
 hit = [t for t in trades if t["outcome"] == "stop"]
 check("خروج استاپ‌دار وجود دارد (بدترین‌حالت واقعاً اعمال می‌شود)", len(hit) > 0)
 
+# ── مدل کارمزد میکر — جایی که بک‌تست‌ها معمولاً تقلب می‌کنند ─────────────
+check("جدول کارمزد از اعداد راستی‌آزمایی‌شدهٔ config/fees.json می‌آید",
+      abs(SC.round_trip_pct("taker", "stop") - 0.15) < 1e-9
+      and abs(SC.round_trip_pct("maker_entry", "target") - 0.04) < 1e-9
+      and abs(SC.round_trip_pct("maker_entry", "stop") - 0.095) < 1e-9)
+check("خروج با استاپ همیشه گران‌تر از تارگت است (استاپ مارکت است)",
+      SC.round_trip_pct("maker_entry", "stop")
+      > SC.round_trip_pct("maker_entry", "target"))
+
+# لیمیتی که قیمت هرگز به آن برنگردد نباید پر شود
+up_only = [{"t": j * 60000, "o": 100 + j, "h": 100.5 + j, "l": 99.9 + j,
+            "c": 100 + j, "v": 1.0} for j in range(10)]
+check("لیمیت لانگ وقتی قیمت برنمی‌گردد پر نمی‌شود (انتخاب نامساعد)",
+      BT.maker_fill(up_only, 1, 99.0, "LONG", 3, len(up_only)) is None)
+check("لیمیت لانگ وقتی قیمت برمی‌گردد پر می‌شود",
+      BT.maker_fill(up_only, 1, 105.0, "LONG", 6, len(up_only)) is not None)
+
+tr_mk, rs_mk = BT.replay_symbol("TESTUSDT", CD, {"fee_model": "maker_entry"})
+check("مدل میکر هم معامله می‌سازد", len(tr_mk) >= 3, str(len(tr_mk)))
+check("مدل میکر معامله‌های پرنشده را در قیف ثبت می‌کند، نه در سکوت",
+      any("میکر" in k for k in rs_mk), str(list(rs_mk)[:4]))
+# نرخ فیل باید زیر ۱۰۰٪ باشد. (فرض اولیه‌ام «میکر معاملهٔ کمتری می‌سازد»
+# غلط از آب درآمد و اندازه‌گیری ردش کرد: ماشهٔ پرنشده کندل بعد دوباره
+# امتحان می‌شود، پس تعداد کل می‌تواند حتی بیشتر شود. چیزی که واقعاً باید
+# قفل شود این است که فیلِ فرضی ساخته نمی‌شود.)
+_unfilled = sum(v for k, v in rs_mk.items() if "میکر" in k)
+_fill_rate = len(tr_mk) / (len(tr_mk) + _unfilled)
+check("نرخ فیلِ لیمیت زیر ۱۰۰٪ است (فیلِ فرضی ساخته نمی‌شود)",
+      0 < _fill_rate < 1.0, f"fill_rate={_fill_rate:.2%} unfilled={_unfilled}")
+check("کارمزد هر معامله با نتیجه‌اش می‌خواند",
+      all(abs(t["fee_pct"] - SC.round_trip_pct(
+          "maker_entry", "target" if t["outcome"] == "target" else "stop")) < 1e-9
+          for t in tr_mk))
+check("کارمزد میکر واقعاً کمتر از تیکر است (روی همان معیار)",
+      sum(t["fee_r"] for t in tr_mk) / len(tr_mk)
+      < sum(t["fee_r"] for t in trades) / len(trades),
+      f"maker={sum(t['fee_r'] for t in tr_mk)/len(tr_mk):.3f} "
+      f"taker={sum(t['fee_r'] for t in trades)/len(trades):.3f}")
+
 # ── CI ───────────────────────────────────────────────────────────────────
 check("CI با نمونهٔ کم None است", BT.boot_ci([0.1] * 10) is None)
 ci = BT.boot_ci([0.5, -1.0, 2.0] * 20)

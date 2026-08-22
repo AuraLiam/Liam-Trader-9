@@ -75,8 +75,25 @@ def resample(c1m, minutes):
     return out
 
 
+def maker_fill(cd, start_j, level, action, wait_bars, n):
+    """آیا سفارش لیمیتِ میکر روی `level` پر می‌شود؟ → (اندیس فیل، یا None).
+
+    مدل صادقانه: بعد از ماشه، قیمت باید **برگردد** و سطح را لمس کند تا
+    لیمیت پر شود. اگر در پنجرهٔ انتظار برنگشت، معامله‌ای در کار نیست.
+    این دقیقاً همان هزینهٔ واقعی میکر است: روی حرکت‌های تندِ برنده لیمیت
+    جا می‌ماند (انتخاب نامساعد) و فقط وقتی پر می‌شود که بازار برگردد."""
+    for j in range(start_j, min(start_j + wait_bars, n)):
+        if action == "LONG" and cd[j]["l"] <= level:
+            return j
+        if action == "SHORT" and cd[j]["h"] >= level:
+            return j
+    return None
+
+
 def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
     """نقشه روی کندل i، ماشه فقط از کندل i+1. خروجی: (معامله‌ها، علت‌های رد)."""
+    q = dict(SC.P, **(params or {}))
+    model = q["fee_model"]
     trades, reasons = [], {}
     i = WARMUP
     n = len(cd)
@@ -93,16 +110,32 @@ def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
             reasons["هیچ شاخه‌ای ماشه نخورد"] = reasons.get("هیچ شاخه‌ای ماشه نخورد", 0) + 1
             i += 1
             continue
-        sig = SC.resolve(br, nxt["c"])                # ورود = کلوزِ همان کندل
+        # ورود: تیکر = کلوزِ کندلِ ماشه. میکر = لیمیت روی خودِ سطح، که فقط
+        # اگر قیمت برگردد پر می‌شود — وگرنه معامله‌ای نیست (نه فیلِ فرضی).
+        if model == "maker_entry":
+            fj = maker_fill(cd, i + 2, br["level"], br["action"],
+                            q["maker_wait_bars"], n)
+            if fj is None:
+                reasons["لیمیت میکر پر نشد (قیمت برنگشت)"] = \
+                    reasons.get("لیمیت میکر پر نشد (قیمت برنگشت)", 0) + 1
+                i += 1
+                continue
+            sig = SC.resolve(br, br["level"])
+            first_exit_j = fj + 1
+            open_t = cd[fj]["t"]
+        else:
+            sig = SC.resolve(br, nxt["c"])
+            first_exit_j = i + 2
+            open_t = nxt["t"]
         entry, sl, tp = sig["entry"], sig["sl"], sig["tp1"]
         risk = abs(entry - sl)
         if risk <= 0:
             i += 1
             continue
         res, exit_px, bars = None, None, 0
-        for j in range(i + 2, min(i + 2 + max_hold, n)):
+        for j in range(first_exit_j, min(first_exit_j + max_hold, n)):
             k = cd[j]
-            bars = j - (i + 1)
+            bars = j - first_exit_j + 1
             if sig["action"] == "LONG":
                 if k["l"] <= sl:                      # بدترین حالت: استاپ اول
                     res, exit_px = "stop", sl
@@ -119,26 +152,30 @@ def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
                     break
         if res is None:
             res = "timeout"
-            exit_px = cd[min(i + 1 + max_hold, n - 1)]["c"]
+            exit_px = cd[min(first_exit_j + max_hold, n - 1)]["c"]
             bars = max(bars, 1)
         r = ((exit_px - entry) if sig["action"] == "LONG"
              else (entry - exit_px)) / risk
-        fee_r = (SC.P["fee_round_trip_pct"] / 100) * entry / risk
-        # از همان R خالصِ گردشده مشتق می‌شود تا گزارش با خودش نخواند نباشد
+        # کارمزد به **نتیجه** بستگی دارد: خروج با استاپ همیشه مارکت است،
+        # خروج با تارگت می‌تواند لیمیت باشد. تایم‌اوت هم مارکت است.
+        rt = SC.round_trip_pct(model, "target" if res == "target" else "stop")
+        fee_r = (rt / 100) * entry / risk
+        # از همان R خالصِ گردشده مشتق می‌شود تا گزارش با خودش ناخوان نباشد
         r_net = round(r - fee_r, 3)
         trades.append({
             "sym": sym, "dir": sig["action"], "kind": sig["kind"],
             "trigger": sig["trigger"], "outcome": res,
             "R": round(r, 3), "R_net": r_net,
+            "fee_pct": round(rt, 4), "fee_r": round(fee_r, 3),
             # درصد حساب: ریسک ثابت ۲٪ ضرب در R خالص. اهرم اندازهٔ مارجین را
             # عوض می‌کند نه این عدد — به‌عمد این‌طور، تا توهم «اهرم بیشتر =
             # لبهٔ بیشتر» ساخته نشود.
             "acct_pct": round(r_net * RISK_PCT, 4),
             "leverage": sig["leverage"], "stop_pct": sig["stop_pct"],
             "session": sig["session"], "bias_at_plan": sig["bias_at_plan"],
-            "bars": bars, "opened": nxt["t"],
+            "bars": bars, "opened": open_t,
         })
-        i = i + 1 + bars + 1                          # ضدهم‌پوشانی
+        i = first_exit_j + bars                       # ضدهم‌پوشانی
     return trades, reasons
 
 
@@ -170,7 +207,10 @@ def _split(ts, key):
 
 
 def run(symbols=30, tf="1m", bars=1000, target_trades=300, quiet=False,
-        params=None):
+        params=None, fee_model=None):
+    params = dict(params or {})
+    if fee_model:
+        params["fee_model"] = fee_model
     import sources
     try:
         syms = sources.top_symbols(symbols)
@@ -206,6 +246,8 @@ def run(symbols=30, tf="1m", bars=1000, target_trades=300, quiet=False,
         "drop_reasons": drops, "bars_1m": bars,
         "target_trades": target_trades,
         "leverage": SC.P["leverage"], "risk_pct_per_trade": RISK_PCT,
+        "fee_model": params.get("fee_model", SC.P["fee_model"]),
+        "fee_table_pct": SC.FEE_MODELS[params.get("fee_model", SC.P["fee_model"])],
         "params": dict(SC.P, min_leg_atr=MS.MIN_LEG_ATR, **(params or {})),
         "overall": _agg(all_tr),
         "per_kind": _split(all_tr, "kind"),          # BOS در برابر CHoCH
@@ -251,7 +293,14 @@ if __name__ == "__main__":
     ap.add_argument("--bars", type=int, default=1000)
     ap.add_argument("--target-trades", type=int, default=300)
     ap.add_argument("--min-leg-atr", type=float, default=None)
+    ap.add_argument("--fee-model", default="taker",
+                    choices=list(__import__("hamid.scenarios", fromlist=["x"]).FEE_MODELS))
+    ap.add_argument("--rr", type=float, default=None)
     a = ap.parse_args()
     if a.min_leg_atr is not None:
         MS.MIN_LEG_ATR = a.min_leg_atr
-    run(symbols=a.symbols, tf=a.tf, bars=a.bars, target_trades=a.target_trades)
+    pr = {}
+    if a.rr is not None:
+        pr["rr_target"] = a.rr
+    run(symbols=a.symbols, tf=a.tf, bars=a.bars, target_trades=a.target_trades,
+        params=pr, fee_model=a.fee_model)
