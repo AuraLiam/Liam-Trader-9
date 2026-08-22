@@ -1,6 +1,6 @@
 {
- "generated": 1787390258735,
- "generatedText": "2026-08-22 09:17 UTC",
+ "generated": 1787390439497,
+ "generatedText": "2026-08-22 09:20 UTC",
  "source": "کندل واقعی MEXC، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -516,7 +516,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": -0.399
+  "btcChange": -0.35
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -895,7 +895,51 @@
    },
    "trend4": "range",
    "trend1": "up",
-   "trend_mode": "with-trend"
+   "trend_mode": "with-trend",
+   "sync": {
+    "price": 4.114e-06,
+    "dist_pct": -0.87
+   },
+   "premortem": {
+    "pro": [
+     "RSI ۱۵د سالم (53)",
+     "تمرین تاریخی: 37 ریپلی همین ارز/جهت روی کندل واقعی — برد 35.1٪، میانگین +0.48R (بازه بالای صفر)",
+     "قانون تأییدشدهٔ تاریخی «داخل اردر بلاک» (+0.15R، n=620، CI ردشده از صفر)",
+     "رژیم ساختاری دامیننس BULLISH — USDT.D ساختار ۱س down · BTC.D ۱س down"
+    ],
+    "con": [
+     "استاپ 1.98٪ داخل نویز ۱۵د است (ATR 3.54٪) — ویک می‌خورد",
+     "اردر بلاک 1h (داخل، تازه (هنوز لمس‌نشده)) — خلاف جهت، دیوار جلوی راه"
+    ],
+    "pro_w": 7,
+    "con_w": 3,
+    "issue": false,
+    "note": "⚖️ بازجویی ۱۵د (وزنی): 7 امتیاز تارگت / 3 امتیاز استاپ — صادر شد · ⛔ استاپ داخل نویز — وتوی سخت",
+    "price": 4.114e-06,
+    "patterns": {
+     "by_tf": {},
+     "align": null,
+     "note": null,
+     "best": null
+    },
+    "noise_stop": true,
+    "ob_ctx": {
+     "align": "against",
+     "tf": "1h",
+     "reactions": 0,
+     "hunts": 0,
+     "fresh": true,
+     "note": "اردر بلاک 1h (داخل، تازه (هنوز لمس‌نشده))",
+     "low": 4.067e-06,
+     "high": 4.184e-06
+    },
+    "fib": 0.528,
+    "tv": {
+     "ema200_align": null,
+     "supertrend_align": "against",
+     "ict_align": "against"
+    }
+   }
   },
   {
    "strategy": "ibs",
@@ -1875,71 +1919,6 @@
    "trend_mode": "counter-blocked"
   },
   {
-   "strategy": "smc",
-   "strategyName": "کانال + اردر بلاک",
-   "sym": "DOTUSDT",
-   "tf": "15m",
-   "stage": "WATCH",
-   "dir": "SHORT",
-   "entry": 0.93,
-   "sl": 0.9503457142857142,
-   "tp1": 0.893,
-   "tp2": 0.8634,
-   "rr": 1.82,
-   "price": 0.93,
-   "conf": 41,
-   "ev": 0.16054466730134853,
-   "quality": 51,
-   "visits": 1,
-   "depth": 83,
-   "exited": true,
-   "inside": false,
-   "fvg": true,
-   "level": null,
-   "channel": {
-    "dir": "صعودی",
-    "drift": 14.3,
-    "posPct": 8
-   },
-   "adx": 46.5,
-   "room": {
-    "r": 1.52,
-    "blocker": "FVG مقابل"
-   },
-   "swept": null,
-   "thin": {
-    "insideRatio": 0.17,
-    "volRatio": 0.43
-   },
-   "goOnFirst": true,
-   "waitReason": null,
-   "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, swept, choch, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
-   "lastClose": 1787389200000,
-   "ob": {
-    "low": 0.943,
-    "high": 0.949
-   },
-   "learned": {
-    "boost": 0.233,
-    "rules": [
-     {
-      "rule": "جای حرکت بیش از ۱.۵ برابر",
-      "delta": 0.233
-     }
-    ]
-   },
-   "elite": true,
-   "learning": {
-    "verdict": "good",
-    "n": 120,
-    "hit": 35.0,
-    "ev": 0.485
-   },
-   "trend4": "range",
-   "trend1": "up",
-   "trend_mode": "counter-blocked"
-  },
-  {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "sym": "ZAMAUSDT",
@@ -2569,6 +2548,79 @@
   {
    "strategy": "smc",
    "strategyName": "کانال + اردر بلاک",
+   "sym": "DOTUSDT",
+   "tf": "15m",
+   "stage": "WATCH",
+   "dir": "SHORT",
+   "entry": 0.93,
+   "sl": 0.9503457142857142,
+   "tp1": 0.893,
+   "tp2": 0.8634,
+   "rr": 1.82,
+   "price": 0.93,
+   "conf": 41,
+   "ev": 0.16054466730134853,
+   "quality": 51,
+   "visits": 1,
+   "depth": 83,
+   "exited": true,
+   "inside": false,
+   "fvg": true,
+   "level": null,
+   "channel": {
+    "dir": "صعودی",
+    "drift": 14.3,
+    "posPct": 8
+   },
+   "adx": 46.5,
+   "room": {
+    "r": 1.52,
+    "blocker": "FVG مقابل"
+   },
+   "swept": null,
+   "thin": {
+    "insideRatio": 0.17,
+    "volRatio": 0.43
+   },
+   "goOnFirst": true,
+   "waitReason": null,
+   "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, swept, choch, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "lastClose": 1787389200000,
+   "ob": {
+    "low": 0.943,
+    "high": 0.949
+   },
+   "learned": {
+    "boost": -0.376,
+    "rules": [
+     {
+      "rule": "شورت همسو با بیت‌کوین",
+      "delta": -0.371
+     },
+     {
+      "rule": "بیت‌کوین نزولی",
+      "delta": -0.238
+     },
+     {
+      "rule": "جای حرکت بیش از ۱.۵ برابر",
+      "delta": 0.233
+     }
+    ]
+   },
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 120,
+    "hit": 35.0,
+    "ev": 0.485
+   },
+   "trend4": "range",
+   "trend1": "up",
+   "trend_mode": "counter-blocked"
+  },
+  {
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
    "sym": "WLFIUSDT",
    "tf": "15m",
    "stage": "WATCH",
@@ -2617,8 +2669,16 @@
     "high": 0.0634
    },
    "learned": {
-    "boost": -0.211,
+    "boost": -0.82,
     "rules": [
+     {
+      "rule": "شورت همسو با بیت‌کوین",
+      "delta": -0.371
+     },
+     {
+      "rule": "بیت‌کوین نزولی",
+      "delta": -0.238
+     },
      {
       "rule": "جای حرکت کمتر از ۱ برابر",
       "delta": -0.211
@@ -2685,8 +2745,16 @@
     "high": 0.3455
    },
    "learned": {
-    "boost": -0.211,
+    "boost": -0.82,
     "rules": [
+     {
+      "rule": "شورت همسو با بیت‌کوین",
+      "delta": -0.371
+     },
+     {
+      "rule": "بیت‌کوین نزولی",
+      "delta": -0.238
+     },
      {
       "rule": "جای حرکت کمتر از ۱ برابر",
       "delta": -0.211
