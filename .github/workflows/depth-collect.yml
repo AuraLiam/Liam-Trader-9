@@ -11,23 +11,36 @@
 name: Depth collect
 
 on:
+  # ساعتی، دقیقهٔ ۱ (فرد و خالی — بقیهٔ کرون‌های ریپو اشغالش نکرده‌اند).
+  # ۵۰ دقیقه برداشت یعنی پوشش ~۸۳٪ ساعت با یک جاب. یک‌بار برداشت هیچ
+  # حجمی انباشته نمی‌کند؛ سؤال «آیا عمق شکست واقعی را از کاذب جدا می‌کند»
+  # به نمونهٔ چندروزه نیاز دارد.
+  schedule:
+    - cron: "1 * * * *"
   workflow_dispatch:
     inputs:
       mode:
         description: "probe (کشف مسیر) یا collect (برداشت)"
-        default: "probe"
+        default: "collect"
       symbols:
         description: "نمادها با کاما"
-        default: "BTCUSDT,ETHUSDT,SOLUSDT"
+        default: ""
       minutes:
         description: "چند دقیقه برداشت"
-        default: "20"
+        default: "50"
       interval:
         description: "فاصلهٔ هر عکس (ثانیه)"
-        default: "3"
+        default: "2"
       path:
         description: "مسیر عمق بعد از کشف (خالی = هنوز کشف نشده)"
         default: ""
+
+env:
+  # مجموعهٔ ثابت — نه چرخشی. تاریخچهٔ عمق فقط وقتی ارزش دارد که روی
+  # همان نماد انباشته شود؛ چرخاندن نمادها داده را تکه‌تکه می‌کند.
+  # انتخاب: نقدشوندهٔ بیت‌یونیکس، داخل باند نوسان ۱-۳ دقیقهٔ
+  # volatility_universe (زیر باند = دام کارمزد، بالای باند = استاپ بزرگ).
+  DEPTH_SYMBOLS: "BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT,DOGEUSDT,ENAUSDT,ZECUSDT,DASHUSDT"
 
 permissions:
   contents: write
@@ -39,7 +52,9 @@ concurrency:
 jobs:
   depth:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # ۵۰ دقیقه برداشت + حاشیه برای نصب و انتشار. هرگز از ۶۰ رد نشود،
+    # وگرنه اجرای ساعت بعد پشت این صف می‌کشد (cancel-in-progress: false).
+    timeout-minutes: 58
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -52,27 +67,40 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           set -o pipefail
-          if [ "${{ github.event.inputs.mode || 'probe' }}" = "probe" ]; then
+          if [ "${{ github.event.inputs.mode || 'collect' }}" = "probe" ]; then
             python3 -m hamid.depth_collector --probe | tee depth.txt
           else
             P=""
             if [ -n "${{ github.event.inputs.path }}" ]; then
               P="--path ${{ github.event.inputs.path }}"
             fi
+            SYMS="${{ github.event.inputs.symbols }}"
+            [ -n "$SYMS" ] || SYMS="$DEPTH_SYMBOLS"
             python3 -m hamid.depth_collector \
-              --symbols "${{ github.event.inputs.symbols }}" \
-              --minutes "${{ github.event.inputs.minutes || '20' }}" \
-              --interval "${{ github.event.inputs.interval || '3' }}" \
+              --symbols "$SYMS" \
+              --minutes "${{ github.event.inputs.minutes || '50' }}" \
+              --interval "${{ github.event.inputs.interval || '2' }}" \
               $P | tee depth.txt
           fi
+      # برداشت‌های پیش از لایهٔ جمع‌بندی خام نوشته شدند — تا زده می‌شوند تا
+      # یک فرمت بماند. بعد از خالی شدن، این مرحله بی‌اثر است.
+      - name: Fold legacy raw
+        if: always() && github.event.inputs.mode != 'probe'
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.depth_collector --fold-raw
       - name: Summary
         if: always()
         working-directory: claude-liam-signal/python
         run: |
           { echo '```'; tail -60 depth.txt 2>/dev/null || echo "no output"; echo '```'; } \
             >> $GITHUB_STEP_SUMMARY
+          # انباشت واقعی — نه فرض. اگر یک نماد عقب بماند این‌جا پیداست.
+          python3 -m hamid.depth_collector --stats >> $GITHUB_STEP_SUMMARY
+      # اجرای زمان‌بندی‌شده inputs ندارد؛ شرط قبلی (`inputs.mode == 'collect'`)
+      # یعنی هر اجرای کرون بی‌صدا دادهٔ برداشته را دور می‌ریخت. حالا فقط
+      # حالت probe منتشر نمی‌کند.
       - name: Publish
-        if: github.event.inputs.mode == 'collect'
+        if: github.event.inputs.mode != 'probe'
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
