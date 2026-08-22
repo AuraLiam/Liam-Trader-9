@@ -45,6 +45,14 @@ WARMUP = 60                    # پیوت + ATR + حاشیه
 MAX_HOLD = 45                  # کندل؛ بعدش ستاپ اسکلپ مرده است
 RISK_PCT = 2.0                 # ریسک هر معامله از حساب (قانون سایز)
 
+# دستور صریح حمید (۲۲ اوت): «برای هر ترید ۱۰ دلار بذار».
+# مهم و صریح: ۱۰ دلار **مارجین** است، نه ضرر. با اهرم L، نوشنال = ۱۰×L
+# و ضررِ استاپ = نوشنال × استاپ٪. مثال: ۱۰$ با اهرم ۱۲ = ۱۲۰$ نوشنال؛
+# استاپ ۰.۵٪ یعنی ضرر ۰.۶۰$ — نه ۱۰$. آنچه ۱۰$ را کامل می‌سوزاند،
+# حرکت ۱/L برخلاف ماست (با اهرم ۱۲ ≈ ۸.۳٪) که محافظ لیکویید جلویش را
+# می‌گیرد. هر دو عدد گزارش می‌شوند تا جای حدس نماند.
+MARGIN_USD = 10.0
+
 
 def _cd(rows):
     return [{"t": k[0], "o": float(k[1]), "h": float(k[2]),
@@ -171,6 +179,13 @@ def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
             # عوض می‌کند نه این عدد — به‌عمد این‌طور، تا توهم «اهرم بیشتر =
             # لبهٔ بیشتر» ساخته نشود.
             "acct_pct": round(r_net * RISK_PCT, 4),
+            # پول واقعی با مارجین ثابت ۱۰$ (دستور حمید)
+            "margin_usd": MARGIN_USD,
+            "notional_usd": round(MARGIN_USD * sig["leverage"], 2),
+            "risk_usd": round(MARGIN_USD * sig["leverage"]
+                              * sig["stop_pct"] / 100, 4),
+            "pnl_usd": round(r_net * MARGIN_USD * sig["leverage"]
+                             * sig["stop_pct"] / 100, 4),
             "leverage": sig["leverage"], "stop_pct": sig["stop_pct"],
             "session": sig["session"], "bias_at_plan": sig["bias_at_plan"],
             "bars": bars, "opened": open_t,
@@ -197,6 +212,9 @@ def _agg(ts):
             "mean_r_net": round(sum(rs) / len(rs), 3), "ci95": boot_ci(rs),
             "mean_acct_pct": round(sum(t["acct_pct"] for t in ts) / len(ts), 4),
             "total_acct_pct": round(sum(t["acct_pct"] for t in ts), 2),
+            "total_pnl_usd": round(sum(t["pnl_usd"] for t in ts), 2),
+            "mean_pnl_usd": round(sum(t["pnl_usd"] for t in ts) / len(ts), 4),
+            "mean_risk_usd": round(sum(t["risk_usd"] for t in ts) / len(ts), 3),
             "outcomes": {o: sum(1 for t in ts if t["outcome"] == o)
                          for o in ("target", "stop", "timeout")}}
 
@@ -206,17 +224,98 @@ def _split(ts, key):
     return {str(v): _agg([t for t in ts if t[key] == v]) for v in vals}
 
 
+def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
+          holds=(45, 120, 300), fee_model="maker_entry", leverage=12,
+          universe="volatile", quiet=False):
+    """یک بار داده می‌گیرد، همان داده را با چند RR و چند پنجرهٔ نگهداری
+    بازپخش می‌کند. سؤال حمید («RR ۵ به بالا») با کندل واقعی جواب می‌گیرد،
+    نه با شبیه‌سازی.
+
+    چرا پنجرهٔ نگهداری هم در جدول است: اندازه‌گیری ۲۲ اوت نشان داد پنجرهٔ
+    ثابت ۴۵ کندل، RRهای بلند را **خفه می‌کند** — RR=5 با ۴۵ کندل ۰٪ برد
+    داد و با ۳۰۰ کندل ۱۷.۶٪. یعنی «RR ۵ جواب نمی‌دهد» و «به RR ۵ وقت
+    نداده‌ایم» دو چیز کاملاً متفاوت‌اند و باید از هم جدا شوند.
+
+    هشدار روش‌شناختی که در خروجی هم می‌آید: این یک **جست‌وجوی پارامتر**
+    است. بهترین خانهٔ جدول لزوماً لبه نیست — با این تعداد ترکیب، بهترین
+    عدد حتی روی دادهٔ تصادفی هم مثبت درمی‌آید. تأیید فقط با دادهٔ مستقل."""
+    import sources
+    if universe == "volatile":
+        from hamid.volatility_universe import build as vbuild
+        syms = vbuild(n=symbols, tf=tf, quiet=quiet)["symbols"]
+    else:
+        try:
+            syms = sources.top_symbols(symbols)
+        except Exception:                              # noqa: BLE001
+            from hamid.trainer import top_symbols
+            syms = top_symbols(symbols)
+    mins = int(tf.replace("m", ""))
+    series, drops = {}, {}
+    for sname in syms:
+        try:
+            c1 = _cd(sources.klines(sname, "1m", bars))
+        except Exception as e:                         # noqa: BLE001
+            drops[type(e).__name__] = drops.get(type(e).__name__, 0) + 1
+            continue
+        cd = resample(c1, mins)
+        if len(cd) >= WARMUP + 40:
+            series[sname] = cd
+    if not quiet:
+        print(f"دادهٔ {len(series)} نماد گرفته شد؛ حالا {len(rrs)}×{len(holds)} ترکیب")
+
+    grid = []
+    for rr in rrs:
+        for hold in holds:
+            tr = []
+            for sname, cd in series.items():
+                t, _ = replay_symbol(sname, cd,
+                                     {"fee_model": fee_model, "rr_target": rr,
+                                      "leverage": leverage}, max_hold=hold)
+                tr += t
+            a = _agg(tr)
+            a.update({"rr": rr, "max_hold": hold})
+            grid.append(a)
+            if not quiet and a.get("n"):
+                print(f"  RR={rr} hold={hold}: n={a['n']} برد {a['win_pct']}٪ "
+                      f"R {a['mean_r_net']:+.3f} CI {a['ci95']} "
+                      f"سود ${a['total_pnl_usd']:+.2f}")
+    ok = [g for g in grid if g.get("ci95") and g["ci95"][0] > 0]
+    res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
+           "mode": "sweep", "tf": tf, "symbols": len(series),
+           "universe": universe, "fee_model": fee_model,
+           "leverage": leverage, "margin_usd": MARGIN_USD,
+           "bars_1m": bars, "drop_reasons": drops,
+           "grid": sorted(grid, key=lambda g: -(g.get("mean_r_net") or -9)),
+           "ci_clears_zero": [{"rr": g["rr"], "hold": g["max_hold"],
+                               "n": g["n"], "ci95": g["ci95"]} for g in ok],
+           "warning": ("جست‌وجوی پارامتر است: با "
+                       f"{len(grid)} ترکیب، بهترین خانه حتی روی دادهٔ تصادفی هم "
+                       "مثبت درمی‌آید. هیچ خانه‌ای بدون تأیید روی دادهٔ مستقل "
+                       "«یافته» نیست (قانون CI + تصحیح چندآزمونی).")}
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    (OUT.parent / "scenario-sweep.json").write_text(
+        json.dumps(res, ensure_ascii=False, indent=1))
+    if not quiet:
+        print(f"خانه‌های با CI بالای صفر: {len(ok)} از {len(grid)}")
+        print(f"نوشته شد: {OUT.parent / 'scenario-sweep.json'}")
+    return res
+
+
 def run(symbols=30, tf="1m", bars=1000, target_trades=300, quiet=False,
         params=None, fee_model=None):
     params = dict(params or {})
     if fee_model:
         params["fee_model"] = fee_model
     import sources
-    try:
-        syms = sources.top_symbols(symbols)
-    except Exception:                                  # noqa: BLE001
-        from hamid.trainer import top_symbols
-        syms = top_symbols(symbols)
+    if params.pop("_universe", None) == "volatile":
+        from hamid.volatility_universe import build as vbuild
+        syms = vbuild(n=symbols, tf=tf, quiet=quiet)["symbols"]
+    else:
+        try:
+            syms = sources.top_symbols(symbols)
+        except Exception:                              # noqa: BLE001
+            from hamid.trainer import top_symbols
+            syms = top_symbols(symbols)
 
     mins = int(tf.replace("m", ""))
     all_tr, all_rs, drops = [], {}, {}
@@ -245,7 +344,9 @@ def run(symbols=30, tf="1m", bars=1000, target_trades=300, quiet=False,
         "tf": tf, "symbols": done, "skipped": sum(drops.values()),
         "drop_reasons": drops, "bars_1m": bars,
         "target_trades": target_trades,
-        "leverage": SC.P["leverage"], "risk_pct_per_trade": RISK_PCT,
+        "leverage": params.get("leverage", SC.P["leverage"]),
+        "risk_pct_per_trade": RISK_PCT, "margin_usd": MARGIN_USD,
+        "rr_target": params.get("rr_target", SC.P["rr_target"]),
         "fee_model": params.get("fee_model", SC.P["fee_model"]),
         "fee_table_pct": SC.FEE_MODELS[params.get("fee_model", SC.P["fee_model"])],
         "params": dict(SC.P, min_leg_atr=MS.MIN_LEG_ATR, **(params or {})),
@@ -296,11 +397,25 @@ if __name__ == "__main__":
     ap.add_argument("--fee-model", default="taker",
                     choices=list(__import__("hamid.scenarios", fromlist=["x"]).FEE_MODELS))
     ap.add_argument("--rr", type=float, default=None)
+    ap.add_argument("--leverage", type=int, default=None)
+    ap.add_argument("--universe", default="liquidity",
+                    choices=["liquidity", "volatile"])
+    ap.add_argument("--sweep", action="store_true",
+                    help="جدول RR × پنجرهٔ نگهداری روی همان دادهٔ واقعی")
     a = ap.parse_args()
     if a.min_leg_atr is not None:
         MS.MIN_LEG_ATR = a.min_leg_atr
     pr = {}
     if a.rr is not None:
         pr["rr_target"] = a.rr
+    if a.leverage is not None:
+        pr["leverage"] = a.leverage
+    if a.universe == "volatile":
+        pr["_universe"] = "volatile"
+    if a.sweep:
+        sweep(symbols=a.symbols, tf=a.tf, bars=a.bars,
+              fee_model=a.fee_model, leverage=a.leverage or 12,
+              universe=a.universe)
+        raise SystemExit(0)
     run(symbols=a.symbols, tf=a.tf, bars=a.bars, target_trades=a.target_trades,
         params=pr, fee_model=a.fee_model)
