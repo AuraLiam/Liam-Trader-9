@@ -92,6 +92,31 @@ check("عکس اول تغییر ندارد (چیزی برای مقایسه نب�
 check("نام فیلدها d_ است نه ofi (این OFI واقعی نیست — قانون ۰۸)",
       not any(k.startswith("ofi") for k in f2))
 
+# ── api_ok: پاسخ ۲۰۰ با کد خطای داخلی موفقیت نیست ──────────────────────
+# درس probe اول (۲۲ اوت): هر پنج مسیر HTTP 200 دادند ولی چهارتا داخلشان
+# code=404 و یکی code=10008 داشت. اگر فقط کد HTTP دیده می‌شد، probe
+# می‌گفت «همه جواب دادند» و مسیر غلط ثابت می‌شد.
+ok, why = DC.api_ok({"code": 0, "data": {"bids": [], "asks": []}})
+check("پاسخ سالم (code=0 و data پر) موفق است", ok and why is None)
+for label, bad in (
+        ("۴۰۴ داخلی", {"code": 404, "data": None, "msg": "Not Found"}),
+        ("پارامتر نامعتبر", {"code": 10008, "data": None,
+                             "msg": "Parameter 20 does not match"}),
+        ("data خالی", {"code": 0, "data": None, "msg": "ok"})):
+    ok2, why2 = DC.api_ok(bad)
+    check(f"«{label}» با کد ۲۰۰ هم موفقیت حساب نمی‌شود", not ok2, str(why2))
+check("پیام خطای داخلی در دلیل می‌آید (نه فقط False)",
+      "10008" in str(DC.api_ok({"code": 10008, "data": None, "msg": "x"})[1]))
+
+# مقدار limit باید از فهرستی باشد که خودِ API اعلام کرد
+check("limit پیش‌فرض از مقادیر مجاز API است",
+      str(DC.DEPTH_LIMIT) in DC.VALID_LIMITS,
+      f"{DC.DEPTH_LIMIT} not in {DC.VALID_LIMITS}")
+check("مسیر عمق بعد از کشف ثابت شده است",
+      DC.DEPTH_PATH and "market/depth" in DC.DEPTH_PATH)
+check("سطوح گزارش‌شده از عمق درخواستی بیشتر نیست",
+      max(DC.LEVELS) <= DC.DEPTH_LIMIT)
+
 # ── _get: خطا هرگز بی‌جزئیات نیست ───────────────────────────────────────
 import io                                              # noqa: E402
 import urllib.error                                    # noqa: E402
@@ -109,11 +134,15 @@ check("خطای HTTP کد وضعیت و بدنه را حمل می‌کند",
       data is None and "404" in err and "path not found" in err, str(err))
 
 # collect بدون مسیر کشف‌شده نباید چیزی حدس بزند
+_saved = DC.DEPTH_PATH
+DC.DEPTH_PATH = None
 try:
     DC.collect(["BTCUSDT"], minutes=0.001, depth_path=None)
     raised = False
 except RuntimeError as e:
     raised = "probe" in str(e)
+finally:
+    DC.DEPTH_PATH = _saved
 check("بدون مسیر کشف‌شده، برداشت شروع نمی‌شود (حدس ممنوع)", raised)
 
 print()

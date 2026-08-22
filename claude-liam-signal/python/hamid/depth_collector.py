@@ -62,8 +62,17 @@ CANDIDATES = [
     "/api/v1/futures/market/books?symbol={s}&limit={n}",
     "/api/v1/futures/market/depth/{s}?limit={n}",
 ]
-DEPTH_PATH = None            # بعد از probe این‌جا ثابت می‌شود
-LEVELS = (1, 5, 10)          # عمق تجمعی در این تعداد سطح گزارش می‌شود
+
+# کشف‌شده در probe روی Actions (۲۲ اوت): مسیر درست همین یکی است — بقیه
+# ۴۰۴ واقعی برگرداندند. و خودِ API گفت limit فقط این مقادیر را می‌پذیرد:
+#     {"code":10008, "msg":"Parameter 20 does not match,
+#      alternative value [\"1\",\"5\",\"15\",\"50\",\"max\"]"}
+# یعنی ۲۰ (حدس اولیهٔ من) نامعتبر بود. ۵۰ سطح انتخاب شد: عمیق‌ترین مقدار
+# عددی، که برای عدم‌تعادل چندسطحی کافی است بی‌آنکه پاسخ را بی‌جهت بزرگ کند.
+DEPTH_PATH = "/api/v1/futures/market/depth?symbol={s}&limit={n}"
+DEPTH_LIMIT = 50
+VALID_LIMITS = ("1", "5", "15", "50", "max")
+LEVELS = (1, 5, 15)          # عمق تجمعی در این تعداد سطح گزارش می‌شود
 
 
 def _get(url, timeout=12):
@@ -83,7 +92,21 @@ def _get(url, timeout=12):
         return None, f"{type(e).__name__}: {e}"
 
 
-def probe(symbol="BTCUSDT", limit=20):
+def api_ok(payload):
+    """پاسخ ۲۰۰ با کد خطای داخلی، **موفقیت نیست**.
+
+    درس probe اول: هر پنج مسیر HTTP 200 دادند، ولی چهارتا داخلشان
+    code=404 داشتند و یکی code=10008 (پارامتر نامعتبر). اگر فقط به کد
+    HTTP نگاه می‌کردیم، «همه جواب دادند» گزارش می‌شد."""
+    if not isinstance(payload, dict):
+        return True, None
+    code = payload.get("code")
+    if code in (0, "0", None) and payload.get("data") is not None:
+        return True, None
+    return False, f"code={code} msg={payload.get('msg')!r}"
+
+
+def probe(symbol="BTCUSDT", limit=DEPTH_LIMIT):
     """هر مسیر نامزد را می‌زند و واقعیت را چاپ می‌کند."""
     print(f"کاوش مسیر عمق روی {BASE} برای {symbol}:\n")
     found = []
@@ -92,6 +115,10 @@ def probe(symbol="BTCUSDT", limit=20):
         data, err = _get(url)
         if err:
             print(f"  ✗ {tmpl}\n      {err}")
+            continue
+        ok, why = api_ok(data)
+        if not ok:
+            print(f"  ✗ {tmpl}\n      پاسخ ۲۰۰ ولی خطای داخلی: {why}")
             continue
         keys = list(data)[:8] if isinstance(data, dict) else f"list[{len(data)}]"
         print(f"  ✓ {tmpl}\n      کلیدها: {keys}")
@@ -183,10 +210,15 @@ def collect(symbols, minutes=20, interval_s=3.0, depth_path=None, quiet=False):
     end = time.time() + minutes * 60
     while time.time() < end:
         for s in symbols:
-            url = BASE + path.format(s=s, n=20)
+            url = BASE + path.format(s=s, n=DEPTH_LIMIT)
             data, err = _get(url)
             if err:
                 errs[err[:60]] = errs.get(err[:60], 0) + 1
+                continue
+            ok, why = api_ok(data)
+            if not ok:
+                errs[f"خطای API: {why}"[:60]] = \
+                    errs.get(f"خطای API: {why}"[:60], 0) + 1
                 continue
             b, a = parse_book(data)
             if not b:
