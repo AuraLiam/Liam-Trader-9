@@ -1,14 +1,14 @@
 {
- "generated": 1787386111447,
+ "generated": 1787387922341,
  "panel": "لیام تریدر ۹",
  "engine": "E10 big-money-divergence",
  "source": "gate.io contract_stats",
- "symbols_tested": 0,
- "symbols_skipped": 3,
+ "symbols_tested": 14,
+ "symbols_skipped": 1,
  "drop_reasons": {
-  "RuntimeError": 3
+  "RuntimeError": 1
  },
- "first_error_example": "BTCUSDT: HTTP 400 Bad Request از https://api.gateio.ws/api/v4/futures/usdt/contract_stats?contract=BTCUSDT_USDT&interval=5m&from=1783066087&limit=100 — بدنه: '{\"label\":\"CONTRACT_NOT_FOUND\"}'",
+ "first_error_example": "WXTUSDT: HTTP 400 Bad Request از https://api.gateio.ws/api/v4/futures/usdt/contract_stats?contract=WXT_USDT&interval=5m&from=1783066349&limit=100 — بدنه: '{\"label\":\"CONTRACT_NOT_FOUND\"}'",
  "interval": "5m",
  "days": 50,
  "cost_bps": 15.0,
@@ -34,8 +34,352 @@
    "desc": "لانگ٪ کوهورت برتر به حجم، تنها"
   }
  },
- "pooled_oos": {},
+ "pooled_oos": {
+  "crowd|1h": {
+   "n": 2621,
+   "win_pct": 33.7,
+   "mean_pct_net": -0.1167,
+   "ci95_pct": [
+    -0.1516,
+    -0.0844
+   ]
+  },
+  "div|1h": {
+   "n": 2616,
+   "win_pct": 34.2,
+   "mean_pct_net": -0.0947,
+   "ci95_pct": [
+    -0.1332,
+    -0.0556
+   ]
+  },
+  "skew|1h": {
+   "n": 2597,
+   "win_pct": 33.0,
+   "mean_pct_net": -0.1208,
+   "ci95_pct": [
+    -0.157,
+    -0.0807
+   ]
+  },
+  "size|1h": {
+   "n": 2602,
+   "win_pct": 32.9,
+   "mean_pct_net": -0.1223,
+   "ci95_pct": [
+    -0.1597,
+    -0.0814
+   ]
+  },
+  "dsize|1h": {
+   "n": 2596,
+   "win_pct": 32.0,
+   "mean_pct_net": -0.1584,
+   "ci95_pct": [
+    -0.1917,
+    -0.1255
+   ]
+  },
+  "dsize|4h": {
+   "n": 653,
+   "win_pct": 38.1,
+   "mean_pct_net": -0.1721,
+   "ci95_pct": [
+    -0.3067,
+    -0.0309
+   ]
+  },
+  "crowd|4h": {
+   "n": 657,
+   "win_pct": 38.7,
+   "mean_pct_net": -0.2264,
+   "ci95_pct": [
+    -0.4126,
+    -0.0688
+   ]
+  },
+  "div|4h": {
+   "n": 669,
+   "win_pct": 39.6,
+   "mean_pct_net": -0.0974,
+   "ci95_pct": [
+    -0.2652,
+    0.093
+   ]
+  },
+  "skew|4h": {
+   "n": 670,
+   "win_pct": 40.3,
+   "mean_pct_net": -0.018,
+   "ci95_pct": [
+    -0.1769,
+    0.1722
+   ]
+  },
+  "size|4h": {
+   "n": 668,
+   "win_pct": 40.3,
+   "mean_pct_net": -0.0215,
+   "ci95_pct": [
+    -0.1843,
+    0.1764
+   ]
+  }
+ },
  "ci_clears_zero": null,
- "per_symbol": {},
+ "per_symbol": {
+  "BTCUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "crowd",
+    "label": "پوزیشن جمعیت",
+    "desc": "لانگ٪ همهٔ حساب‌ها — معیار خلاف‌روند رایج",
+    "horizon": "1h",
+    "bars": 12,
+    "sign": -1,
+    "n": 1187,
+    "oosN": 188,
+    "oosMean": -0.1274,
+    "oosHit": 22.3,
+    "oosT": -4.44,
+    "thin": false
+   }
+  },
+  "ETHUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "crowd",
+    "label": "پوزیشن جمعیت",
+    "desc": "لانگ٪ همهٔ حساب‌ها — معیار خلاف‌روند رایج",
+    "horizon": "1h",
+    "bars": 12,
+    "sign": -1,
+    "n": 1187,
+    "oosN": 161,
+    "oosMean": -0.0805,
+    "oosHit": 20.5,
+    "oosT": -1.27,
+    "thin": false
+   }
+  },
+  "XRPUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "div",
+    "label": "واگرایی — پول درشت منهای جمعیت",
+    "desc": "لانگ٪ کوهورت برتر به حجم منهای لانگ٪ همهٔ حساب‌ها",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": 1,
+    "n": 296,
+    "oosN": 47,
+    "oosMean": -0.0573,
+    "oosHit": 27.7,
+    "oosT": -0.36,
+    "thin": false
+   }
+  },
+  "SOLUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "dsize",
+    "label": "مومنتوم حجم لانگِ کوهورت",
+    "desc": "تغییر یک‌ساعتهٔ حجم پوزیشن لانگ کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 50,
+    "oosMean": 0.009,
+    "oosHit": 40.0,
+    "oosT": 0.07,
+    "thin": false
+   }
+  },
+  "BNBUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "skew",
+    "label": "چولگی حجم کوهورت",
+    "desc": "(حجم لانگ - حجم شورت)/کل حجم، کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 47,
+    "oosMean": -0.0872,
+    "oosHit": 38.3,
+    "oosT": -0.67,
+    "thin": false
+   }
+  },
+  "TRUMPUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "div",
+    "label": "واگرایی — پول درشت منهای جمعیت",
+    "desc": "لانگ٪ کوهورت برتر به حجم منهای لانگ٪ همهٔ حساب‌ها",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 47,
+    "oosMean": 0.612,
+    "oosHit": 48.9,
+    "oosT": 0.6,
+    "thin": false
+   }
+  },
+  "DOGEUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "div",
+    "label": "واگرایی — پول درشت منهای جمعیت",
+    "desc": "لانگ٪ کوهورت برتر به حجم منهای لانگ٪ همهٔ حساب‌ها",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 46,
+    "oosMean": -0.0248,
+    "oosHit": 43.5,
+    "oosT": -0.16,
+    "thin": false
+   }
+  },
+  "PUMPUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "skew",
+    "label": "چولگی حجم کوهورت",
+    "desc": "(حجم لانگ - حجم شورت)/کل حجم، کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": 1,
+    "n": 296,
+    "oosN": 45,
+    "oosMean": 0.1321,
+    "oosHit": 40.0,
+    "oosT": 0.37,
+    "thin": false
+   }
+  },
+  "PYTHUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "dsize",
+    "label": "مومنتوم حجم لانگِ کوهورت",
+    "desc": "تغییر یک‌ساعتهٔ حجم پوزیشن لانگ کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": 1,
+    "n": 296,
+    "oosN": 49,
+    "oosMean": 0.3173,
+    "oosHit": 55.1,
+    "oosT": 0.92,
+    "thin": false
+   }
+  },
+  "ADAUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "crowd",
+    "label": "پوزیشن جمعیت",
+    "desc": "لانگ٪ همهٔ حساب‌ها — معیار خلاف‌روند رایج",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 43,
+    "oosMean": -0.0711,
+    "oosHit": 37.2,
+    "oosT": -0.38,
+    "thin": false
+   }
+  },
+  "ZECUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "skew",
+    "label": "چولگی حجم کوهورت",
+    "desc": "(حجم لانگ - حجم شورت)/کل حجم، کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 47,
+    "oosMean": 0.0838,
+    "oosHit": 40.4,
+    "oosT": 0.23,
+    "thin": false
+   }
+  },
+  "BCHUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "size",
+    "label": "پوزیشن پول درشت",
+    "desc": "لانگ٪ کوهورت برتر به حجم، تنها",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": 1,
+    "n": 296,
+    "oosN": 55,
+    "oosMean": 0.1705,
+    "oosHit": 49.1,
+    "oosT": 0.79,
+    "thin": false
+   }
+  },
+  "LTCUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "dsize",
+    "label": "مومنتوم حجم لانگِ کوهورت",
+    "desc": "تغییر یک‌ساعتهٔ حجم پوزیشن لانگ کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": 1,
+    "n": 296,
+    "oosN": 44,
+    "oosMean": -0.1184,
+    "oosHit": 43.2,
+    "oosT": -1.17,
+    "thin": false
+   }
+  },
+  "LITUSDT": {
+   "n_bars": 14400,
+   "tests": 10,
+   "best": {
+    "feature": "skew",
+    "label": "چولگی حجم کوهورت",
+    "desc": "(حجم لانگ - حجم شورت)/کل حجم، کوهورت برتر",
+    "horizon": "4h",
+    "bars": 48,
+    "sign": -1,
+    "n": 296,
+    "oosN": 47,
+    "oosMean": 0.6778,
+    "oosHit": 66.0,
+    "oosT": 2.42,
+    "thin": false
+   }
+  }
+ },
  "note": "معامله‌های اوت‌آف‌سمپل همهٔ نمادها روی هم ریخته شد؛ حکم فقط برای (ویژگی، افق) که CI۹۵ کاملاً بالای صفر است — بقیه بدون حکم"
 }
