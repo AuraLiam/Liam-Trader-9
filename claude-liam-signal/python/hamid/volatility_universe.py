@@ -51,7 +51,7 @@ def atr_pct(cd, n=14):
     return (a / px * 100) if px > 0 else None
 
 
-def build(n=30, tf="3m", pool=LIQ_POOL, bars=200, quiet=False):
+def build(n=30, tf="3m", pool=LIQ_POOL, bars=200, quiet=False, offset=0):
     import sources
     from hamid.scenario_backtest import resample, _cd
     lo, hi = BAND[tf]
@@ -85,13 +85,17 @@ def build(n=30, tf="3m", pool=LIQ_POOL, bars=200, quiet=False):
     # داخل نوار، پرنوسان‌ترین اول — چون همان‌ها بیشترین فرصت را می‌سازند
     # بدون اینکه از سقف ریسک رد شوند.
     in_band.sort(key=lambda r: -r["atr_pct"])
-    picked = in_band[:n]
+    # offset: نمونهٔ نمادیِ **مستقل**. برای تأیید یک فرضیه، دوباره برش‌زدن
+    # همان نمونه بی‌فایده است؛ نمادهای رتبهٔ n+1 تا 2n یک آزمون واقعاً جدا
+    # می‌دهند (قانون CI + تصحیح چندآزمونی).
+    picked = in_band[offset:offset + n]
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "tf": tf, "band_atr_pct": {"min": lo, "max": hi},
            "pool_scanned": len(rows), "in_band": len(in_band),
            "too_quiet": sum(1 for r in rows if r["atr_pct"] < lo),
            "too_wild": sum(1 for r in rows if r["atr_pct"] > hi),
            "drop_reasons": drops,
+           "offset": offset,
            "symbols": [r["sym"] for r in picked],
            "detail": picked,
            "note": ("رتبه = پرنوسان‌ترینِ *داخل نوار مجاز*، نه پرنوسان‌ترینِ مطلق. "
@@ -112,5 +116,6 @@ if __name__ == "__main__":
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--tf", default="3m", choices=list(BAND))
     ap.add_argument("--pool", type=int, default=LIQ_POOL)
+    ap.add_argument("--offset", type=int, default=0)
     a = ap.parse_args()
-    build(n=a.n, tf=a.tf, pool=a.pool)
+    build(n=a.n, tf=a.tf, pool=a.pool, offset=a.offset)

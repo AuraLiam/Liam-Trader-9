@@ -226,7 +226,7 @@ def _split(ts, key):
 
 def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
           holds=(45, 120, 300), fee_model="maker_entry", leverage=12,
-          universe="volatile", quiet=False):
+          universe="volatile", quiet=False, offset=0):
     """یک بار داده می‌گیرد، همان داده را با چند RR و چند پنجرهٔ نگهداری
     بازپخش می‌کند. سؤال حمید («RR ۵ به بالا») با کندل واقعی جواب می‌گیرد،
     نه با شبیه‌سازی.
@@ -242,7 +242,7 @@ def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
     import sources
     if universe == "volatile":
         from hamid.volatility_universe import build as vbuild
-        syms = vbuild(n=symbols, tf=tf, quiet=quiet)["symbols"]
+        syms = vbuild(n=symbols, tf=tf, quiet=quiet, offset=offset)["symbols"]
     else:
         try:
             syms = sources.top_symbols(symbols)
@@ -282,7 +282,7 @@ def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
     ok = [g for g in grid if g.get("ci95") and g["ci95"][0] > 0]
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "mode": "sweep", "tf": tf, "symbols": len(series),
-           "universe": universe, "fee_model": fee_model,
+           "universe": universe, "offset": offset, "fee_model": fee_model,
            "leverage": leverage, "margin_usd": MARGIN_USD,
            "bars_1m": bars, "drop_reasons": drops,
            "grid": sorted(grid, key=lambda g: -(g.get("mean_r_net") or -9)),
@@ -400,6 +400,8 @@ if __name__ == "__main__":
     ap.add_argument("--leverage", type=int, default=None)
     ap.add_argument("--universe", default="liquidity",
                     choices=["liquidity", "volatile"])
+    ap.add_argument("--offset", type=int, default=0,
+                    help="نمونهٔ نمادیِ مستقل: از رتبهٔ offset+1 شروع کن")
     ap.add_argument("--sweep", action="store_true",
                     help="جدول RR × پنجرهٔ نگهداری روی همان دادهٔ واقعی")
     a = ap.parse_args()
@@ -415,7 +417,7 @@ if __name__ == "__main__":
     if a.sweep:
         sweep(symbols=a.symbols, tf=a.tf, bars=a.bars,
               fee_model=a.fee_model, leverage=a.leverage or 12,
-              universe=a.universe)
+              universe=a.universe, offset=a.offset)
         raise SystemExit(0)
     run(symbols=a.symbols, tf=a.tf, bars=a.bars, target_trades=a.target_trades,
         params=pr, fee_model=a.fee_model)
