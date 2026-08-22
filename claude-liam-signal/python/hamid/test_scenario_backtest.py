@@ -156,6 +156,33 @@ check("آزمون بیشتر = آستانهٔ سخت‌تر",
       f"{BT.multiple_test_penalty(4)} / {BT.multiple_test_penalty(12)} / "
       f"{BT.multiple_test_penalty(100)}")
 check("آستانه هرگز زیر ۱.۹۶ نمی‌رود", BT.multiple_test_penalty(2) >= 1.96)
+
+# ── محافظِ ترمیم‌شده (۲۲ اوت) ───────────────────────────────────────────
+# آستانهٔ قبلی sqrt(2·ln n) بود و **غلط** بود: آن عدد تقریبِ امیدِ بیشینهٔ
+# نویز است، پس بیشینهٔ واقعی تقریباً نیمی از دفعات از آن رد می‌شود — یعنی
+# روی دادهٔ کاملاً بی‌اثر ~۵۰٪ مواقع یک «کشف». سه آزمون بالا این را
+# نمی‌گرفتند؛ فقط یکنوایی و کف را می‌سنجیدند. شکستِ محافظ بود، پس اول
+# محافظ تعمیر شد: حالا خودِ نرخ خطای خانوادگی شبیه‌سازی می‌شود.
+import math                                              # noqa: E402
+import random as _rnd                                    # noqa: E402
+
+for m in (4, 12, 30):
+    r = _rnd.Random(4242 + m)
+    thr = BT.multiple_test_penalty(m)
+    trials = 4000
+    false_families = sum(
+        1 for _ in range(trials)
+        if max(abs(r.gauss(0, 1)) for _ in range(m)) >= thr)
+    rate = false_families / trials
+    check(f"با {m} آزمونِ نویزِ محض، نرخ کشف کاذب ≈۵٪ می‌ماند نه بیشتر",
+          rate <= 0.075, f"نرخ={rate:.3f} آستانه={thr}")
+# و صریحاً: آستانهٔ غلط قبلی این آزمون را رد می‌کرد
+_old = math.sqrt(2 * math.log(12))
+_r2 = _rnd.Random(99)
+_old_rate = sum(1 for _ in range(2000)
+                if max(abs(_r2.gauss(0, 1)) for _ in range(12)) >= _old) / 2000
+check("آستانهٔ قدیمی sqrt(2·ln n) واقعاً نشت داشت (ثبت درس، نه تزئین)",
+      _old_rate > 0.25, f"نرخ کشف کاذب با آستانهٔ قدیمی={_old_rate:.3f}")
 check("t_stat نمونهٔ کم = صفر", BT.t_stat([1.0, 2.0]) == 0.0)
 check("t_stat سریِ بی‌واریانس = صفر (نه تقسیم‌برصفر)",
       BT.t_stat([0.1] * 40) == 0.0)

@@ -194,23 +194,29 @@ def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
     return trades, reasons
 
 
-def multiple_test_penalty(n_trials):
+def multiple_test_penalty(n_trials, alpha=0.05):
     """آستانهٔ z که یک نتیجه باید از آن رد شود، وقتی n_trials پیکربندی
-    آزموده‌ایم (تصحیح چندآزمونی، خانوادهٔ Deflated Sharpe / Šidák).
+    آزموده‌ایم (تصحیح چندآزمونی Šidák، خانوادهٔ Deflated Sharpe).
 
-    منطق: با n آزمونِ مستقل، بیشینهٔ z تصادفی حدوداً به اندازهٔ
-    sqrt(2·ln n) بالا می‌رود. پس «بهترین خانه» باید از همین آستانه رد شود
-    نه از ۱.۹۶ معمولی. با ۱۲ ترکیب آستانه ≈ ۲.۲۳ — یعنی نتیجه‌ای که فقط
-    تازه از صفر رد شده، عملاً هیچ نگفته.
+    **تصحیح ۲۲ اوت — آستانهٔ قبلی غلط بود.** قبلاً sqrt(2·ln n) بود با
+    این استدلال که «بیشینهٔ z تصادفی حدوداً همین‌قدر بالا می‌رود». همان
+    جمله دلیلِ غلط بودنش است: sqrt(2·ln n) تقریبِ **امید ریاضیِ بیشینه**
+    است، پس بیشینهٔ واقعی تقریباً نصفِ دفعات از آن رد می‌شود. یعنی
+    استفاده از آن به‌عنوان دروازه، روی دادهٔ کاملاً بی‌اثر حدود ۵۰٪ مواقع
+    یک «کشف» تولید می‌کند. این را آزمونِ نویزِ محضِ test_depth_bos گرفت:
+    با ۱۲ ویژگیِ تصادفی، یکی ستاره گرفت.
+
+    درست: Šidák. برای نگه داشتن خطای خانوادگی روی alpha با m آزمون،
+    سطح هر آزمون α' = ۱ − (۱−α)^(۱/m) و آستانهٔ دوطرفه z = Φ⁻¹(۱ − α'/۲).
+    با ۱۲ آزمون ≈ ۲.۸۷ (به‌جای ۲.۲۳)، با ۱ آزمون همان ۱.۹۶.
 
     منبع: Bailey & López de Prado, "The Deflated Sharpe Ratio" (JPM 2014)
     و Bailey et al., "Pseudo-Mathematics and Financial Charlatanism"
     (Notices of the AMS 2014) — هر دو در brain/library/queue.jsonl."""
-    import math
+    from statistics import NormalDist
     n = max(1, int(n_trials))
-    if n == 1:
-        return 1.96
-    return round(max(1.96, math.sqrt(2.0 * math.log(n))), 3)
+    per = 1.0 - (1.0 - alpha) ** (1.0 / n)
+    return round(NormalDist().inv_cdf(1.0 - per / 2.0), 3)
 
 
 def t_stat(rs):
