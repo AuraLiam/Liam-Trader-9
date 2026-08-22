@@ -22,6 +22,12 @@ on:
       min_leg_atr:
         description: "کف طول لگ بر حسب ATR (خالی = پیش‌فرض ۱.۰)"
         default: ""
+      fee_model:
+        description: "مدل کارمزد: taker یا maker_entry"
+        default: "taker"
+      rr:
+        description: "نسبت تارگت به استاپ (خالی = پیش‌فرض ۱.۵)"
+        default: ""
 
 permissions:
   contents: write
@@ -48,16 +54,20 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           set -o pipefail
-          LEG=""
+          LEG=""; RR=""
           if [ -n "${{ github.event.inputs.min_leg_atr }}" ]; then
             LEG="--min-leg-atr ${{ github.event.inputs.min_leg_atr }}"
+          fi
+          if [ -n "${{ github.event.inputs.rr }}" ]; then
+            RR="--rr ${{ github.event.inputs.rr }}"
           fi
           python3 -m hamid.scenario_backtest \
             --symbols "${{ github.event.inputs.symbols || '30' }}" \
             --tf "${{ github.event.inputs.tf || '1m' }}" \
             --bars "${{ github.event.inputs.bars || '1000' }}" \
             --target-trades "${{ github.event.inputs.target_trades || '300' }}" \
-            $LEG | tee scen.txt
+            --fee-model "${{ github.event.inputs.fee_model || 'taker' }}" \
+            $LEG $RR | tee scen.txt
       - name: Summary
         if: always()
         working-directory: claude-liam-signal/python
