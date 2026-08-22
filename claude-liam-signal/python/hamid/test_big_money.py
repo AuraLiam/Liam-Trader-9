@@ -8,10 +8,13 @@
 واقعاً یک نتیجهٔ حکم‌دار بسازد (n≥30، thin=False) وگرنه تست الکی سبز
 می‌شود؛ (۲) z-score باید اثبات‌شده بدون نگاه به آینده باشد، نه فقط ادعا.
 """
+import io
 import math
 import random
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -94,6 +97,27 @@ check("fetch_stats دو ردیف صعودی برمی‌گرداند", len(got) =
 check("fetch_stats نسبت‌ها را به درصد لانگ تبدیل می‌کند",
       abs(got[0]["allLong"] - 50.0) < 1e-6 and abs(got[0]["topSizeLong"] - 75.0) < 1e-6,
       str(got[0]))
+
+# ── _get_json: خطا هرگز خاموش نمی‌شود — درس اجرای اول روی Actions (۲۲ اوت):
+# ۱۵ از ۱۵ نماد با «HTTPError» بی‌جزئیات برگشت و کد وضعیت/بدنه هیچ‌جا
+# ثبت نشده بود، پس علتش (مسدودیت IP؟ پارامتر غلط؟) هرگز روشن نشد.
+def _fake_urlopen_403(req, timeout=None):
+    raise urllib.error.HTTPError(req.full_url, 403, "Forbidden", {},
+                                 io.BytesIO(b'{"label":"IP_FORBIDDEN"}'))
+
+
+old_urlopen = urllib.request.urlopen
+urllib.request.urlopen = _fake_urlopen_403
+try:
+    try:
+        BM._get_json("https://api.gateio.ws/x", tries=1)
+        err = None
+    except Exception as e:                             # noqa: BLE001
+        err = e
+finally:
+    urllib.request.urlopen = old_urlopen
+check("HTTPError با کد وضعیت و بدنهٔ پاسخ به بیرون درز می‌کند",
+      err is not None and "403" in str(err) and "IP_FORBIDDEN" in str(err), str(err))
 
 # ── run_backtest: فیکسچر مهندسی‌شده با واگرایی پیشگو ──────────────────────
 # div بالا (پول درشت لانگ‌تر از جمعیت) → قیمت طی افق بعدی بالا می‌رود.

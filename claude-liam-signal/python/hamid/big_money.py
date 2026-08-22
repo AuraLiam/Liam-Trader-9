@@ -26,6 +26,7 @@ z-score غلتان، و run_backtest (کوانتایل + این‌سمپل/او�
 """
 import json
 import time
+import urllib.error
 import urllib.request
 
 STATS_URL = "https://api.gateio.ws/api/v4/futures/usdt/contract_stats"
@@ -59,14 +60,30 @@ BT_FEATURES = [
 
 
 def _get_json(url, tries=3):
+    """گیت‌آی‌او را می‌خواند. خطا هرگز خاموش نمی‌شود — کد وضعیت و بدنهٔ پاسخ
+    به پیام خطا الصاق می‌شوند وگرنه «HTTPError» تنها یعنی هیچ‌چیز؛ درسِ
+    ۲۲ اوت: اولین اجرای این ماژول روی Actions با ۱۵ از ۱۵ HTTPError بدون
+    جزئیات برگشت و علتش هرگز روشن نشد."""
+    last = None
     for i in range(tries):
         try:
             req = urllib.request.Request(url, headers=UA)
             with urllib.request.urlopen(req, timeout=20) as r:
                 return json.loads(r.read().decode())
-        except Exception:                             # noqa: BLE001
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode("utf-8", "replace")[:300]
+            except Exception:                          # noqa: BLE001
+                pass
+            last = RuntimeError(f"HTTP {e.code} {e.reason} از {url} — بدنه: {body!r}")
             if i == tries - 1:
-                raise
+                raise last from e
+            time.sleep(2 * (i + 1))
+        except Exception as e:                         # noqa: BLE001
+            last = RuntimeError(f"{type(e).__name__}: {e} — از {url}")
+            if i == tries - 1:
+                raise last from e
             time.sleep(2 * (i + 1))
 
 

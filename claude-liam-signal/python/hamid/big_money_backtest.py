@@ -55,11 +55,15 @@ def run(symbols=30, days=BM.BT_DAYS, cost_bps=BM.BT_COST_BPS, quiet=False):
     frm = to - days * 86400
     interval, bar_secs = BM._tier(frm)
 
+    first_error = None
     for sym in syms:
         try:
             rows = BM.fetch_stats(sym, interval, frm, to)
         except Exception as e:                         # noqa: BLE001
-            drops[type(e).__name__] = drops.get(type(e).__name__, 0) + 1
+            key = type(e).__name__
+            drops[key] = drops.get(key, 0) + 1
+            if first_error is None:
+                first_error = f"{sym}: {e}"
             continue
         rows = [r for r in rows if r["px"] > 0]
         if len(rows) < 200:
@@ -95,7 +99,8 @@ def run(symbols=30, days=BM.BT_DAYS, cost_bps=BM.BT_COST_BPS, quiet=False):
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "engine": "E10 big-money-divergence", "source": "gate.io contract_stats",
            "symbols_tested": done, "symbols_skipped": sum(drops.values()),
-           "drop_reasons": drops, "interval": interval, "days": days,
+           "drop_reasons": drops, "first_error_example": first_error,
+           "interval": interval, "days": days,
            "cost_bps": cost_bps,
            "feature_defs": {k: {"label": lbl, "desc": d} for k, lbl, d in BM.BT_FEATURES},
            "pooled_oos": pooled_report,
