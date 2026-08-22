@@ -57,8 +57,14 @@ def run(symbols=30, days=BM.BT_DAYS, cost_bps=BM.BT_COST_BPS, quiet=False):
 
     first_error = None
     for sym in syms:
+        # hamid.big_money مثل فایل اصلی حمید نماد خام می‌خواهد ("BTC")؛
+        # top_symbols به قرارداد بایننس («BTCUSDT») برمی‌گردد. اجرای اول
+        # روی Actions با ۳ از ۳ نماد CONTRACT_NOT_FOUND رد شد چون
+        # contract=BTCUSDT_USDT ساخته می‌شد — همان کلاس عیبِ نگاشت نماد
+        # که sources._under() قبلاً برایش راه‌حل داشت.
+        bare = sym[:-4] if sym.upper().endswith("USDT") else sym
         try:
-            rows = BM.fetch_stats(sym, interval, frm, to)
+            rows = BM.fetch_stats(bare, interval, frm, to)
         except Exception as e:                         # noqa: BLE001
             key = type(e).__name__
             drops[key] = drops.get(key, 0) + 1

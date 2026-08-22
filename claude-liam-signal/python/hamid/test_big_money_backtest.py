@@ -59,7 +59,14 @@ def _synthetic(seed):
     return rows
 
 
-FIXTURES = {"AUSDT": _synthetic(11), "BUSDT": _synthetic(12)}
+# کلیدها نمادِ خام (بدون USDT) هستند — دقیقاً چیزی که hamid.big_money
+# (مثل فایل اصلی حمید، "BTC" نه "BTCUSDT") انتظار دارد. ولی top_symbols
+# قرارداد بایننس برمی‌گرداند («AUSDT»)؛ این دقیقاً همان کلاس‌عیبِ ۲۲ اوت
+# است (contract=BTCUSDT_USDT → CONTRACT_NOT_FOUND) — فیکسچر عمداً با
+# نمادهای بایننس‌قرارداد ساخته شده تا اگر run() دوباره فراموش کند نماد را
+# لخت کند، fetch_stats با KeyError رد شود، نه اینکه بی‌صدا صفر داده کند.
+FIXTURES = {"A": _synthetic(11), "B": _synthetic(12)}
+seen_calls = []
 
 old_hz, old_zwin = BM.BT_HORIZONS, BM.BT_ZWIN_SECS
 old_fetch = BM.fetch_stats
@@ -67,7 +74,14 @@ old_tier = BM._tier
 BM.BT_HORIZONS = [("1h", 3600)]
 BM.BT_ZWIN_SECS = 9000
 BM._tier = lambda frm: ("5m", bar_secs)
-BM.fetch_stats = lambda sym, interval, frm, to: FIXTURES[sym]
+
+
+def _fake_fetch(sym, interval, frm, to):
+    seen_calls.append(sym)
+    return FIXTURES[sym]
+
+
+BM.fetch_stats = _fake_fetch
 
 import sources                                          # noqa: E402
 from hamid import trainer                                # noqa: E402
@@ -78,13 +92,15 @@ tmp = Path(BB.OUT.parent) / "big-money-backtest-test.json"
 
 if old_top is not None:
     del sources.top_symbols
-trainer.top_symbols = lambda n: list(FIXTURES.keys())
+trainer.top_symbols = lambda n: [f"{k}USDT" for k in FIXTURES]     # قرارداد بایننس
 BB.OUT = tmp
 try:
     res = BB.run(symbols=2, quiet=True)
     check("run() بدون sources.top_symbols هم از مسیر جایگزین رد می‌شود",
           not hasattr(sources, "top_symbols") and res["symbols_tested"] == 2,
           str(res.get("symbols_tested")))
+    check("نماد قبل از fetch_stats لخت می‌شود (بدون پسوند USDT) — کلاس‌عیب ۲۲ اوت",
+          seen_calls and all(not s.endswith("USDT") for s in seen_calls), str(seen_calls))
     key = "div|1h"
     pooled = res["pooled_oos"].get(key)
     check("واگراییِ استخر‌شده از هر دو نماد حکم‌دار می‌شود",
@@ -94,7 +110,7 @@ try:
     check("ci_clears_zero درست به این ویژگی اشاره می‌کند",
           res["ci_clears_zero"] == key, str(res.get("ci_clears_zero")))
     check("per_symbol برای هر دو نماد جدا ثبت شده",
-          set(res["per_symbol"].keys()) == set(FIXTURES.keys()))
+          set(res["per_symbol"].keys()) == {f"{k}USDT" for k in FIXTURES})
     check("فایل روی دیسک نوشته و JSON معتبر است", tmp.exists())
 finally:
     BM.BT_HORIZONS, BM.BT_ZWIN_SECS = old_hz, old_zwin
