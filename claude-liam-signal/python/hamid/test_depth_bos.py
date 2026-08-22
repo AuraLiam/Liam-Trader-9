@@ -164,6 +164,79 @@ check("حتی با اثر عظیم، کف نمونه دور زده نمی‌شو
       DB.analyse([sample(1, 50.0) for _ in range(29)]
                  + [sample(0, 0.0) for _ in range(29)])["features"] == [])
 
+# ── پیش‌ثبت فرضیه ───────────────────────────────────────────────────────
+check("جدول پیش‌ثبت خالی نیست و هر فرضیه جهت و منبع و استدلال دارد",
+      len(DB.PREREGISTERED) >= 3 and all(
+          s in (1, -1) and src and why
+          for s, src, why in DB.PREREGISTERED.values()),
+      str(list(DB.PREREGISTERED)))
+check("ویژگی‌ای که جهتش را نمی‌دانیم پیش‌ثبت نشده (اسپرد)",
+      "spread_bps" not in DB.PREREGISTERED)
+check("آستانهٔ یک‌طرفهٔ خانوادهٔ کوچک از دوطرفهٔ خانوادهٔ بزرگ سست‌تر است",
+      DB.one_sided_threshold(4) < DB.multiple_test_threshold(14),
+      f"{DB.one_sided_threshold(4)} / {DB.multiple_test_threshold(14)}")
+check("پیش‌ثبتِ بیشتر، آستانهٔ سخت‌تر (پاداش بی‌حساب نیست)",
+      DB.one_sided_threshold(10) > DB.one_sided_threshold(2))
+
+
+def frame(y, vals):
+    f = {"spread_bps": rnd.gauss(0, 1), "micro_dev": 0.0,
+         "imb_mean_1": 0.0, "imb_mean_5": 0.0, "imb_mean_15": 0.0,
+         "imb_last_15": 0.0, "imb_extreme_15": 0.0,
+         "micro_dev_mean": 0.0, "eaten_5": 0.0, "eaten_15": 0.0,
+         "refill_5": 0.0, "refill_15": 0.0,
+         "net_taken_5": 0.0, "net_taken_15": 0.0}
+    f.update(vals)
+    return {"y": y, "f": f}
+
+
+# فرضیه در جهت پیش‌بینی‌شده: imb_mean_15 در شکست واقعی بالاتر
+asp = ([frame(1, {"imb_mean_15": rnd.gauss(0.9, 1)}) for _ in range(140)]
+       + [frame(0, {"imb_mean_15": rnd.gauss(0.0, 1)}) for _ in range(140)])
+ares = DB.analyse(asp)
+amap = {f["feature"]: f for f in ares["features"]}
+check("فرضیهٔ درست‌جهت تأیید می‌شود", "imb_mean_15" in ares["confirmed"],
+      str(ares["confirmed"]))
+check("سطر تأییدی جهت پیش‌بینی و منبعش را حمل می‌کند",
+      amap["imb_mean_15"]["predicted_sign"] == 1
+      and amap["imb_mean_15"]["source"]
+      and amap["imb_mean_15"]["direction_as_predicted"])
+check("تأییدی‌ها اول جدول می‌آیند",
+      ares["features"][0]["kind"] == "preregistered")
+
+# **مهم‌ترین**: اثر قوی ولی در جهتِ خلافِ پیش‌بینی = رد فرضیه، نه تأیید.
+# refill_15 پیش‌بینی شده منفی باشد؛ این نمونه عمداً مثبتش می‌کند.
+wrong = ([frame(1, {"refill_15": rnd.gauss(1.2, 1)}) for _ in range(140)]
+         + [frame(0, {"refill_15": rnd.gauss(0.0, 1)}) for _ in range(140)])
+wres = DB.analyse(wrong)
+wmap = {f["feature"]: f for f in wres["features"]}
+check("اثر قویِ خلافِ جهتِ پیش‌بینی، تأیید حساب نمی‌شود",
+      "refill_15" not in wres["confirmed"], str(wres["confirmed"]))
+check("خلافِ پیش‌بینی صریحاً «رد فرضیه» ثبت می‌شود، نه «چیزی پیدا نشد»",
+      "refill_15" in wres["refuted"] and
+      wmap["refill_15"]["refutes_prediction"], str(wres["refuted"]))
+check("حکم، ردِ فرضیه را جدا از نیافتن اعلام می‌کند",
+      "خلافِ پیش‌بینی" in wres["verdict"], wres["verdict"][:90])
+
+# اکتشافی با خانوادهٔ کامل و دوطرفه داوری می‌شود
+check("ویژگی غیرپیش‌ثبت اکتشافی برچسب می‌خورد",
+      amap["spread_bps"]["kind"] == "exploratory")
+check("دو آستانهٔ جدا گزارش می‌شود",
+      ares["t_threshold_preregistered"] != ares["t_threshold_exploratory"]
+      and ares["t_threshold_preregistered"] is not None)
+
+# نویز محض: نه تأیید، نه رد، نه کشف اکتشافی
+nz = ([frame(1, {}) for _ in range(150)] + [frame(0, {}) for _ in range(150)])
+for s in nz:
+    s["f"] = {k: rnd.gauss(0, 1) for k in s["f"]}
+nres2 = DB.analyse(nz)
+check("روی نویز محض نه تأییدی هست نه ردی نه کشف اکتشافی",
+      not nres2["confirmed"] and not nres2["refuted"]
+      and not nres2["exploratory_hits"],
+      f"{nres2['confirmed']} {nres2['refuted']} {nres2['exploratory_hits']}")
+check("حکم نویز می‌گوید هیچ‌کدام از دو خانواده چیزی نداد",
+      "جدا نکرد" in nres2["verdict"], nres2["verdict"][:100])
+
 # ── جفت‌کردن رویداد با سطر عمق ─────────────────────────────────────────
 # ساختن سریِ آزمون خودش دو درس داد و هر دو در همین شکل قفل شده‌اند:
 #   ۱. پله‌ای که هر لگ دقیقاً از سقف لگ قبل شروع شود، سقف‌های **برابر**
