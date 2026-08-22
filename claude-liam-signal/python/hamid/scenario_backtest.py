@@ -194,6 +194,36 @@ def replay_symbol(sym, cd, params=None, max_hold=MAX_HOLD):
     return trades, reasons
 
 
+def multiple_test_penalty(n_trials):
+    """آستانهٔ z که یک نتیجه باید از آن رد شود، وقتی n_trials پیکربندی
+    آزموده‌ایم (تصحیح چندآزمونی، خانوادهٔ Deflated Sharpe / Šidák).
+
+    منطق: با n آزمونِ مستقل، بیشینهٔ z تصادفی حدوداً به اندازهٔ
+    sqrt(2·ln n) بالا می‌رود. پس «بهترین خانه» باید از همین آستانه رد شود
+    نه از ۱.۹۶ معمولی. با ۱۲ ترکیب آستانه ≈ ۲.۲۳ — یعنی نتیجه‌ای که فقط
+    تازه از صفر رد شده، عملاً هیچ نگفته.
+
+    منبع: Bailey & López de Prado, "The Deflated Sharpe Ratio" (JPM 2014)
+    و Bailey et al., "Pseudo-Mathematics and Financial Charlatanism"
+    (Notices of the AMS 2014) — هر دو در brain/library/queue.jsonl."""
+    import math
+    n = max(1, int(n_trials))
+    if n == 1:
+        return 1.96
+    return round(max(1.96, math.sqrt(2.0 * math.log(n))), 3)
+
+
+def t_stat(rs):
+    """t میانگین R — پایهٔ مقایسه با آستانهٔ چندآزمونی."""
+    n = len(rs)
+    if n < 3:
+        return 0.0
+    m = sum(rs) / n
+    var = sum((x - m) ** 2 for x in rs) / (n - 1)
+    se = (var / n) ** 0.5
+    return round(m / se, 3) if se > 1e-15 else 0.0
+
+
 def boot_ci(rs, n_boot=3000, seed=7):
     if len(rs) < 30:
         return None
@@ -273,21 +303,34 @@ def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
                                       "leverage": leverage}, max_hold=hold)
                 tr += t
             a = _agg(tr)
-            a.update({"rr": rr, "max_hold": hold})
+            a.update({"rr": rr, "max_hold": hold,
+                      "t_stat": t_stat([t["R_net"] for t in tr]) if tr else None})
             grid.append(a)
             if not quiet and a.get("n"):
                 print(f"  RR={rr} hold={hold}: n={a['n']} برد {a['win_pct']}٪ "
                       f"R {a['mean_r_net']:+.3f} CI {a['ci95']} "
                       f"سود ${a['total_pnl_usd']:+.2f}")
+    # تصحیح چندآزمونی: هر خانه t خودش را دارد و باید از آستانهٔ خانوادگی
+    # رد شود، نه از ۱.۹۶. این همان چیزی است که تا امروز فقط «هشدار» بود.
+    thr = multiple_test_penalty(len(grid))
+    for g in grid:
+        g["t_stat"] = g.pop("_t", None) or g.get("t_stat")
     ok = [g for g in grid if g.get("ci95") and g["ci95"][0] > 0]
+    survivors = [g for g in grid
+                 if g.get("t_stat") is not None and g["t_stat"] > thr]
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "mode": "sweep", "tf": tf, "symbols": len(series),
            "universe": universe, "offset": offset, "fee_model": fee_model,
            "leverage": leverage, "margin_usd": MARGIN_USD,
            "bars_1m": bars, "drop_reasons": drops,
            "grid": sorted(grid, key=lambda g: -(g.get("mean_r_net") or -9)),
+           "trials": len(grid),
+           "multiple_test_threshold_t": thr,
            "ci_clears_zero": [{"rr": g["rr"], "hold": g["max_hold"],
                                "n": g["n"], "ci95": g["ci95"]} for g in ok],
+           "survives_multiple_testing": [
+               {"rr": g["rr"], "hold": g["max_hold"], "n": g["n"],
+                "t_stat": g["t_stat"], "ci95": g["ci95"]} for g in survivors],
            "warning": ("جست‌وجوی پارامتر است: با "
                        f"{len(grid)} ترکیب، بهترین خانه حتی روی دادهٔ تصادفی هم "
                        "مثبت درمی‌آید. هیچ خانه‌ای بدون تأیید روی دادهٔ مستقل "
@@ -297,6 +340,8 @@ def sweep(symbols=30, tf="3m", bars=1000, rrs=(1.5, 2.0, 3.0, 5.0),
         json.dumps(res, ensure_ascii=False, indent=1))
     if not quiet:
         print(f"خانه‌های با CI بالای صفر: {len(ok)} از {len(grid)}")
+        print(f"آستانهٔ t با {len(grid)} آزمون: {thr} · "
+              f"از این آستانه رد شد: {len(survivors)}")
         print(f"نوشته شد: {OUT.parent / 'scenario-sweep.json'}")
     return res
 
