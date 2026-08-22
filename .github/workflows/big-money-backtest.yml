@@ -1,0 +1,74 @@
+# بک‌تست واگرایی «بیگ‌مانی» (E10) روی contract_stats گیت‌آی‌او — دستور
+# حمید (۲۲ اوت): فایلی که فرستاد را بخوان، به‌صورت داشبورد اجرا کن، نتایج
+# را به‌صورت بک‌تست بگو. طبق قانون همیشگی پروژه، کار سنگین و شبکهٔ واقعی
+# فقط این‌جا انجام می‌شود، نه در نشست (پروکسی نشست api.gateio.ws را
+# صراحتاً ۴۰۳ می‌کند). هنوز فقط پژوهش (RESEARCHED) است، نه دروازهٔ زنده —
+# بدون schedule تا وقتی حکم روشن نشود (قانون ۰۳).
+name: Big money backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "چند نماد"
+        default: "15"
+      days:
+        description: "چند روز تاریخچهٔ contract_stats (سقف امن ۵۰)"
+        default: "50"
+      cost_bps:
+        description: "کارمزد دوسر به bps (پیش‌فرض = ۰.۱۵٪ لیام)"
+        default: "15"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: big-money-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_big_money
+          python3 -m hamid.test_big_money_backtest
+      - name: Backtest on real Gate.io positioning
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          python3 -m hamid.big_money_backtest \
+            --symbols "${{ github.event.inputs.symbols || '15' }}" \
+            --days "${{ github.event.inputs.days || '50' }}" \
+            --cost-bps "${{ github.event.inputs.cost_bps || '15' }}" | tee bm.txt
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -40 bm.txt 2>/dev/null || echo "no output"; echo '```'; } \
+            >> $GITHUB_STEP_SUMMARY
+      - name: Publish
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A signals
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "بک‌تست بیگ‌مانی $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
