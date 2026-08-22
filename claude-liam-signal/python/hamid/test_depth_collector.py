@@ -282,8 +282,11 @@ check("سطل‌ها یکتا و صعودی‌اند (سطل دوباره باز
       str([r["t"] for r in rows]))
 check("خطای برداشت در شمارش خطاها می‌آید", res["errors"].get("خطای ساختگی") == 1,
       str(res["errors"]))
-check("مجموع n سطرها = نمونه‌های موفق", sum(r["n"] for r in rows) == _tick["i"] - 1,
-      f"{sum(r['n'] for r in rows)} vs {_tick['i'] - 1}")
+# منهای دو: یکی برای عکسِ اعتبارسنجیِ ابتدای collect (که سطر نمی‌سازد)،
+# یکی برای نمونهٔ ازدست‌رفتهٔ ساختگی.
+check("مجموع n سطرها = نمونه‌های موفقِ داخل حلقه",
+      sum(r["n"] for r in rows) == _tick["i"] - 2,
+      f"{sum(r['n'] for r in rows)} vs {_tick['i'] - 2}")
 
 # ── گزارش انباشت ────────────────────────────────────────────────────────
 with tempfile.TemporaryDirectory() as td:
@@ -304,6 +307,33 @@ check("گزارش انباشت مجموع درست می‌دهد", tot == 4, str
 check("هر نماد یک سطر در گزارش دارد",
       txt.count("| AAAUSDT |") == 1 and txt.count("| BBBUSDT |") == 1)
 check("ستون ازدست‌رفته در گزارش هست (سکوت ≠ سلامت)", "ازدست‌رفته" in txt)
+
+# ── اعتبارسنجی نماد پیش از شروع ─────────────────────────────────────────
+# درس ۲۲ اوت: برداشت با ۶ نماد شروع شد و ۴ فایل ساخت. دو نمادِ باقی فقط
+# **غایب** بودند — نه خطا، نه دلیل. غیبتِ بی‌دلیل شبیه «داده نبود» است
+# در حالی که خرابی پیکربندی بود.
+_saved_snap2 = DC.snapshot
+DC.snapshot = lambda s, path=None, prev=None: (
+    (None, "CONTRACT_NOT_FOUND") if s.startswith("BAD")
+    else (DC.features([(100.0, 5)], [(100.1, 4)], now_ms=B0), None))
+try:
+    good, bad = DC.verify_symbols(["OKUSDT", "BADUSDT", "BAD2USDT"], quiet=True)
+finally:
+    DC.snapshot = _saved_snap2
+check("نماد سالم از ناسالم جدا می‌شود", good == ["OKUSDT"], str(good))
+check("نماد ردشده دلیل واقعی را حمل می‌کند (نه فقط غیبت)",
+      bad == {"BADUSDT": "CONTRACT_NOT_FOUND",
+              "BAD2USDT": "CONTRACT_NOT_FOUND"}, str(bad))
+
+DC.snapshot = lambda s, path=None, prev=None: (None, "همه خرابند")
+try:
+    DC.collect(["BADUSDT"], minutes=0.001, quiet=True)
+    raised2 = False
+except RuntimeError as e:
+    raised2 = "هیچ نماد سالمی" in str(e)
+finally:
+    DC.snapshot = _saved_snap2
+check("اگر هیچ نمادی سالم نباشد، برداشت با خطا می‌ایستد (نه سکوت)", raised2)
 
 # ── تا زدن عکس خام قدیمی ────────────────────────────────────────────────
 # برداشت‌های پیش از لایهٔ جمع‌بندی خام نوشته شدند؛ آن داده باید به همان

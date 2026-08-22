@@ -424,6 +424,28 @@ def stats(outdir=None):
     return "\n".join(lines), tot
 
 
+def verify_symbols(symbols, path=None, quiet=False):
+    """قبل از شروع حلقه، هر نماد یک بار زده می‌شود → (سالم‌ها، دلیلِ ردها).
+
+    برداشت ۲۲ اوت با ۶ نماد شروع شد و ۴ فایل ساخت. دو نماد **هیچ فایلی
+    نساختند** و در گزارش پایانی هم فقط غایب بودند — نه خطایی، نه دلیلی.
+    غیبت بی‌دلیل بدترین شکل خرابی است: شبیه «نبود داده» است، در حالی که
+    خرابی پیکربندی است. حالا هر نماد اول اعتبارسنجی می‌شود و دلیل ردش
+    عیناً چاپ."""
+    good, bad = [], {}
+    for s in symbols:
+        f, why = snapshot(s, path)
+        if f is None:
+            bad[s] = why
+        else:
+            good.append(s)
+    if not quiet and bad:
+        print(f"نمادهای غیرقابل‌برداشت ({len(bad)}) — با دلیل، نه سکوت:")
+        for s, why in bad.items():
+            print(f"  ✗ {s}: {why}")
+    return good, bad
+
+
 def collect(symbols, minutes=20, interval_s=3.0, depth_path=None, quiet=False,
             agg=True):
     """حلقهٔ برداشت — دفتر خام دور ریخته می‌شود.
@@ -435,6 +457,9 @@ def collect(symbols, minutes=20, interval_s=3.0, depth_path=None, quiet=False,
     if not path:
         raise RuntimeError("مسیر عمق معلوم نیست — اول --probe را اجرا کن")
     OUTDIR.mkdir(parents=True, exist_ok=True)
+    symbols, rejected = verify_symbols(symbols, path, quiet=quiet)
+    if not symbols:
+        raise RuntimeError(f"هیچ نماد سالمی نماند — دلایل: {rejected}")
     prev, wrote, errs, bins = {}, {}, {}, {}
     end = time.time() + minutes * 60
     while time.time() < end:
@@ -477,7 +502,9 @@ def collect(symbols, minutes=20, interval_s=3.0, depth_path=None, quiet=False,
             print(f"  {s}: {n}")
         if errs:
             print(f"خطاها: {dict(list(errs.items())[:5])}")
-    return {"wrote": wrote, "errors": errs}
+        if rejected:
+            print(f"نمادهای ردشده پیش از شروع: {rejected}")
+    return {"wrote": wrote, "errors": errs, "rejected": rejected}
 
 
 if __name__ == "__main__":
