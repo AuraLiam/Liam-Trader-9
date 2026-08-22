@@ -145,6 +145,193 @@ finally:
     DC.DEPTH_PATH = _saved
 check("بدون مسیر کشف‌شده، برداشت شروع نمی‌شود (حدس ممنوع)", raised)
 
+# ── جمع‌بندی دقیقه‌ای ───────────────────────────────────────────────────
+# چرا این لایه اضافه شد: گام ۳ثانیه‌ای ۶ نماد = ~۵۵ مگابایت در روز، که در
+# گیت قابل نگهداری نیست؛ و سؤالی که این داده باید جواب بدهد روی کندل
+# ۱ دقیقه پرسیده می‌شود. پس واحد ذخیره دقیقه است. آنچه این‌جا قفل می‌شود
+# همان چیزهایی است که اگر خراب باشند سطر دقیقه‌ای بی‌صدا دروغ می‌گوید.
+import json                                              # noqa: E402
+import tempfile                                          # noqa: E402
+
+# ۱۷۰۰۰۰۰۰۴۰۰۰۰ مضرب دقیق ۶۰۰۰۰ است (۱.۷e۱۲ نیست — این را همین آزمون
+# اولین بار گرفت: مرزِ فرضیِ من مرز نبود).
+B0 = 1_700_000_040_000
+check("مرز سطل دقیقاً روی مضرب ۶۰ هزار است",
+      DC.bucket_of(B0) == B0 and DC.bucket_of(B0 + 60_000) == B0 + 60_000,
+      f"{DC.bucket_of(B0)}")
+check("هر زمانی داخل یک دقیقه به یک سطل می‌رود",
+      {DC.bucket_of(B0 + k) for k in (0, 1, 59_999)} == {B0})
+check("یک میلی‌ثانیه بعد از مرز، سطل عوض می‌شود",
+      DC.bucket_of(B0 + 60_000) != B0)
+agg = DC.MinuteAgg(B0)
+prev_f = None
+# سه عکس با عمق بید صعودی و mid بالارونده — هم آمار پایه، هم up/dn
+for k, (bq, aq, px) in enumerate(((5.0, 4.0, 100.0), (7.0, 3.0, 100.2),
+                                  (6.0, 9.0, 100.1))):
+    ff = DC.features([(px, bq), (px - 0.1, 1)], [(px + 0.1, aq), (px + 0.2, 1)],
+                     prev=prev_f, now_ms=B0 + k * 3000)
+    agg.add(ff)
+    prev_f = ff
+agg.miss()
+row = agg.close()
+
+check("سطر دقیقه‌ای زمان سطل را می‌گیرد نه زمان نمونه", row["t"] == B0)
+check("تعداد نمونه‌ها ثبت می‌شود", row["n"] == 3, str(row["n"]))
+check("نمونهٔ ازدست‌رفته پنهان نمی‌شود (miss روی سطر)", row["miss"] == 1)
+check("span_ms فاصلهٔ اولین تا آخرین نمونه است", row["span_ms"] == 6000,
+      str(row["span_ms"]))
+check("mid_o اولین و mid_c آخرین است",
+      row["mid_o"] == 100.05 and abs(row["mid_c"] - 100.15) < 1e-9,
+      f"{row['mid_o']} {row['mid_c']}")
+check("mid_h و mid_l سقف و کف دقیقه‌اند",
+      abs(row["mid_h"] - 100.25) < 1e-9 and abs(row["mid_l"] - 100.05) < 1e-9,
+      f"{row['mid_h']} {row['mid_l']}")
+check("میانگین عدم‌تعادل از همان سه نمونه حساب می‌شود",
+      abs(row["imb_mean_1"] - (1/9 + 0.4 + (-0.2)) / 3) < 1e-5,
+      str(row["imb_mean_1"]))
+check("imb_last آخرین نمونه است نه میانگین",
+      abs(row["imb_last_1"] - (-0.2)) < 1e-5, str(row["imb_last_1"]))
+check("کمینه و بیشینهٔ عدم‌تعادل جدا نگه داشته می‌شوند",
+      row["imb_min_1"] <= row["imb_mean_1"] <= row["imb_max_1"]
+      and abs(row["imb_max_1"] - 0.4) < 1e-5,
+      f"{row['imb_min_1']}..{row['imb_max_1']}")
+# میانگینِ تنها، جهشِ لحظه‌ای را پنهان می‌کند — دلیل وجود min/max:
+flat = DC.MinuteAgg(B0)
+spiky = DC.MinuteAgg(B0)
+for q in (3.0, 3.0, 3.0):
+    flat.add(DC.features([(100.0, q)], [(100.1, 3.0)], now_ms=B0))
+for q in (1.0, 100.0, 1.0):
+    spiky.add(DC.features([(100.0, q)], [(100.1, 3.0)], now_ms=B0))
+fr, sr = flat.close(), spiky.close()
+check("سطلِ آرام و سطلِ جهش‌دار با min/max از هم جدا می‌شوند",
+      sr["imb_max_1"] - sr["imb_min_1"] > fr["imb_max_1"] - fr["imb_min_1"] + 0.5,
+      f"جهش {sr['imb_min_1']}..{sr['imb_max_1']} / آرام {fr['imb_min_1']}..{fr['imb_max_1']}")
+# up/dn: بید از ۵ به ۷ (+۲) و از ۷ به ۶ (−۱)
+check("جمع تغییرهای مثبت و منفی جدا ثبت می‌شود، نه فقط برایند",
+      abs(row["up_bid_1"] - 2.0) < 1e-6 and abs(row["dn_bid_1"] - (-1.0)) < 1e-6,
+      f"up={row['up_bid_1']} dn={row['dn_bid_1']}")
+check("نام فیلد up/dn است نه add/cancel (تفکیک‌ناپذیرند — قانون ۰۸)",
+      not any(k.startswith(("add_", "cxl_", "cancel_")) for k in row))
+check("سطل بی‌نمونه سطر نمی‌سازد (داده ساخته نمی‌شود)",
+      DC.MinuteAgg(B0).close() is None)
+
+# ── نوشتن/خواندن روزانهٔ فشرده ──────────────────────────────────────────
+with tempfile.TemporaryDirectory() as td:
+    _saved_out = DC.OUTDIR
+    DC.OUTDIR = Path(td)
+    try:
+        p1 = DC.write_minute("TESTUSDT", row)
+        # اجرای دوم، سطل بعدی: باید به همان فایل append شود (gzip چندعضوی)
+        row2 = dict(row, t=B0 + 60_000)
+        p2 = DC.write_minute("TESTUSDT", row2)
+        # روز بعد: فایل جدا
+        p3 = DC.write_minute("TESTUSDT", dict(row, t=B0 + 86_400_000))
+        back = DC.read_minutes("TESTUSDT", outdir=td)
+        size = p1.stat().st_size
+    finally:
+        DC.OUTDIR = _saved_out
+
+check("فایل روزانه است و نامش تاریخ دارد", p1 == p2 and p1 != p3,
+      f"{p1.name} / {p3.name}")
+check("فایل فشرده است (.gz)", p1.name.endswith(".m1.jsonl.gz"), p1.name)
+check("append دوم گم نمی‌شود (gzip چندعضوی درست خوانده می‌شود)",
+      len(back) == 3, str(len(back)))
+check("سطرها بر زمان مرتب برمی‌گردند",
+      [r["t"] for r in back] == sorted(r["t"] for r in back))
+check("محتوای سطر بعد از رفت‌وبرگشت دست‌نخورده است", back[0] == row)
+check("فشرده‌سازی واقعاً کوچک‌تر از خام است",
+      size < len(json.dumps(row)) , f"gz={size} خام={len(json.dumps(row))}")
+
+# ── حلقه: مسیر جمع‌بندی، بدون شبکه ─────────────────────────────────────
+# snapshot جعلی می‌شود تا خودِ حلقه سنجیده شود نه API.
+_saved_snap = DC.snapshot
+_tick = {"i": 0}
+
+
+def _fake_snapshot(sym, path=None, prev=None):
+    i = _tick["i"]
+    _tick["i"] += 1
+    if i == 2:
+        return None, "خطای ساختگی"          # یک نمونهٔ ازدست‌رفته
+    t = B0 + i * 30_000                      # هر گام نیم دقیقه → چند سطل
+    return DC.features([(100.0 + i * 0.01, 5)], [(100.1 + i * 0.01, 4)],
+                       prev=prev, now_ms=t), None
+
+
+with tempfile.TemporaryDirectory() as td:
+    _saved_out = DC.OUTDIR
+    DC.OUTDIR = Path(td)
+    DC.snapshot = _fake_snapshot
+    try:
+        res = DC.collect(["TESTUSDT"], minutes=0.02, interval_s=0.001,
+                         quiet=True, agg=True)
+        rows = DC.read_minutes("TESTUSDT", outdir=td)
+    finally:
+        DC.snapshot = _saved_snap
+        DC.OUTDIR = _saved_out
+
+check("حلقه در حالت جمع‌بندی سطر دقیقه‌ای می‌نویسد", len(rows) >= 2,
+      f"{len(rows)} سطر")
+check("سطل نیمه‌تمام آخر هم نوشته می‌شود (داده دور ریخته نمی‌شود)",
+      res["wrote"].get("TESTUSDT", 0) == len(rows),
+      f"{res['wrote']} vs {len(rows)}")
+check("هر سطر روی مرز دقیقه نشسته است",
+      all(r["t"] % DC.BUCKET_MS == 0 for r in rows))
+check("سطل‌ها یکتا و صعودی‌اند (سطل دوباره باز نمی‌شود)",
+      [r["t"] for r in rows] == sorted({r["t"] for r in rows}),
+      str([r["t"] for r in rows]))
+check("خطای برداشت در شمارش خطاها می‌آید", res["errors"].get("خطای ساختگی") == 1,
+      str(res["errors"]))
+check("مجموع n سطرها = نمونه‌های موفق", sum(r["n"] for r in rows) == _tick["i"] - 1,
+      f"{sum(r['n'] for r in rows)} vs {_tick['i'] - 1}")
+
+# ── گزارش انباشت ────────────────────────────────────────────────────────
+with tempfile.TemporaryDirectory() as td:
+    _saved_out = DC.OUTDIR
+    DC.OUTDIR = Path(td)
+    try:
+        for t in (B0, B0 + 60_000, B0 + 86_400_000):
+            DC.write_minute("AAAUSDT", dict(row, t=t))
+        DC.write_minute("BBBUSDT", dict(row, t=B0))
+        syms = DC.symbols_on_disk(td)
+        txt, tot = DC.stats(td)
+    finally:
+        DC.OUTDIR = _saved_out
+
+check("نماد از نام فایل روزانه درست بیرون کشیده می‌شود",
+      syms == ["AAAUSDT", "BBBUSDT"], str(syms))
+check("گزارش انباشت مجموع درست می‌دهد", tot == 4, str(tot))
+check("هر نماد یک سطر در گزارش دارد",
+      txt.count("| AAAUSDT |") == 1 and txt.count("| BBBUSDT |") == 1)
+check("ستون ازدست‌رفته در گزارش هست (سکوت ≠ سلامت)", "ازدست‌رفته" in txt)
+
+# ── تا زدن عکس خام قدیمی ────────────────────────────────────────────────
+# برداشت‌های پیش از لایهٔ جمع‌بندی خام نوشته شدند؛ آن داده باید به همان
+# شکل دقیقه‌ای بیاید، نه اینکه به‌عنوان فرمت دوم رها شود.
+with tempfile.TemporaryDirectory() as td:
+    raw = Path(td) / "CCCUSDT.jsonl"
+    pf = None
+    with raw.open("w") as fh:
+        # ۵۰ عکس با گام ۳ثانیه = ۱۵۰ ثانیه = بخشی از ۳ دقیقه
+        for k in range(50):
+            ff = DC.features([(100.0 + k * 0.01, 5)], [(100.1 + k * 0.01, 4)],
+                             prev=pf, now_ms=B0 + k * 3000)
+            pf = ff
+            fh.write(json.dumps(ff) + "\n")
+    made = DC.fold_raw("CCCUSDT", outdir=td, remove=True)
+    folded = DC.read_minutes("CCCUSDT", outdir=td)
+    gone = not raw.exists()
+
+check("خام به سطر دقیقه‌ای تا می‌شود", made == len(folded) == 3,
+      f"made={made} rows={len(folded)}")
+check("هیچ عکسی در تا زدن گم نمی‌شود",
+      sum(r["n"] for r in folded) == 50, str(sum(r["n"] for r in folded)))
+check("سطرهای تاشده هم روی مرز دقیقه‌اند",
+      all(r["t"] % DC.BUCKET_MS == 0 for r in folded))
+check("فایل خام بعد از تا شدن حذف می‌شود (دو فرمت هم‌زمان نمی‌ماند)", gone)
+check("OUTDIR بعد از تا زدن به جای خودش برمی‌گردد",
+      DC.OUTDIR == _saved_out, str(DC.OUTDIR))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
