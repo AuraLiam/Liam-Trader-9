@@ -37,6 +37,9 @@ on:
       sweep:
         description: "جدول RR × پنجرهٔ نگهداری روی همان دادهٔ واقعی (true/false)"
         default: "true"
+      offset:
+        description: "نمونهٔ نمادیِ مستقل — از رتبهٔ offset+1 (۰ = نمونهٔ اصلی)"
+        default: "0"
 
 permissions:
   contents: write
@@ -81,6 +84,7 @@ jobs:
             --fee-model "${{ github.event.inputs.fee_model || 'maker_entry' }}" \
             --leverage "${{ github.event.inputs.leverage || '12' }}" \
             --universe "${{ github.event.inputs.universe || 'volatile' }}" \
+            --offset "${{ github.event.inputs.offset || '0' }}" \
             $SWEEP $LEG $RR | tee scen.txt
       - name: Summary
         if: always()
