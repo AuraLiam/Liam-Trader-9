@@ -53,6 +53,18 @@ Continuously test every versioned strategy across current Top-200 and historical
 - No future universe membership.
 - No parameter promotion from in-sample results.
 - When live market has no setup, use idle budget for replay/research—not random browsing.
+- **A new experience is tested out-of-sample first** — an unseen symbol
+  or an unseen window — and does not enter real signalling without human
+  approval (Rules 03 and 12).
+- **Measure more than win/loss**: cost, slippage, MFE/MAE, time-to-target,
+  and trades that were in profit before being stopped. The paper books
+  already carry these fields; a report that omits them is incomplete.
+- **Current measured status of the 1m scalp edge: none.** n=2153, gross
+  +0.0304R, fee 0.2182R, net **−0.1878R**, CI95 [−0.225, −0.149]. Even
+  at zero assumed cost the interval includes zero. Any claim of a 1m
+  scalp edge must be accompanied by a fresh measurement that overturns
+  this one; asserting it without measurement violates the reporting rule.
+  Reproduce with `python3 -m hamid.scalp_report`.
 
 ## Learning routine
 
@@ -75,5 +87,8 @@ Return or validate `ExperimentResult` exactly as registered in `config/engine_re
 - https://www.ssc.wisc.edu/~bhansen/papers/ier_05.pdf
 - Marcos López de Prado — Advances in Financial Machine Learning
 - David Aronson — Evidence-Based Technical Analysis
+- Robert Pardo — The Evaluation and Optimization of Trading Strategies
+  (walk-forward design; the last stage of Hamid's 23 Aug curriculum
+  order, together with Aronson, as the anti-data-snooping pair)
 
 Read only what answers the active research question. A source may inform a hypothesis; LIAM historical tests decide whether it becomes a rule.
