@@ -56,7 +56,10 @@ check("کلیدواژهٔ موجود، تکهٔ شاهد می‌گیرد",
 check("کلیدواژهٔ غایب اصلاً کلید نمی‌سازد (نه تکهٔ خالی)", "غایب" not in ex)
 
 _pad = "متن پرکننده برای عبور از آستانهٔ نازکی. " * 60
-big = "<html><body><p>" + _pad + " barstate.isconfirmed تعریف </p></body></html>"
+# باید از هر شش سند دست‌کم یک کلیدواژه داشته باشد، وگرنه همان سندِ
+# بی‌شاهد NO_EVIDENCE می‌گیرد (که خودش رفتار درست است).
+_kw = " ".join(sorted({w for d in DP.DOCS for w in d["want"]}))
+big = "<html><body><p>" + _pad + " " + _kw + " </p></body></html>"
 
 with tempfile.TemporaryDirectory() as td:
     _out, _fetch = DP.OUT, DP.fetch
@@ -88,6 +91,24 @@ check("سند دریافت‌شده فهرست یافته/غایب دارد",
 check("گزارش روی دیسک نوشته می‌شود", disk["total"] == 6 and disk["docs"])
 check("هیچ حالتی بدون status نمی‌ماند",
       all(d.get("status") for r in (r_block, r_thin, r_ok) for d in r["docs"]))
+
+# صفحهٔ پرحجمِ بی‌شاهد (پوستهٔ SPA) — عیب واقعیِ ۲۳ اوت
+shell = "<html><body><p>" + ("منو پانوشت راهنما جستجو " * 300) + "</p></body></html>"
+with tempfile.TemporaryDirectory() as td:
+    _o, _f = DP.OUT, DP.fetch
+    DP.OUT = Path(td) / "d.json"
+    try:
+        DP.fetch = lambda u, timeout=25: (shell, 200, None)
+        r_shell = DP.probe(quiet=True)
+    finally:
+        DP.OUT, DP.fetch = _o, _f
+check("صفحهٔ پرحجم ولی بی‌کلیدواژه NO_EVIDENCE می‌شود، نه FETCHED",
+      all(d["status"] == "NO_EVIDENCE" for d in r_shell["docs"])
+      and r_shell["ok"] == 0, str(r_shell["docs"][0])[:200])
+check("بی‌شاهدها جدا فهرست می‌شوند", len(r_shell["no_evidence"]) == 6)
+check("حجمِ بایت به‌تنهایی «دریافت شد» نمی‌سازد",
+      r_shell["docs"][0]["chars"] > 1200
+      and r_shell["docs"][0]["status"] != "FETCHED")
 
 print()
 if FAIL:

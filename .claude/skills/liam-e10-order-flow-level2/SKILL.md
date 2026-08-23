@@ -82,9 +82,38 @@ displayed level is not a promise; Cartea gives the mathematics of
 execution cost that decides whether a 1m entry survives its fees.
 
 Honest boundary on the 30-second unit: exchange candles start at one
-minute, so a 30s bar must be built from the raw trade stream over
-WebSocket — that is the local Python service's job (Rule 02), not
-Actions. Until that service exists, no 30-second number is fabricated.
+minute — now verified, not assumed: the Bybit V5 kline stream lists
+intervals 1, 3, 5, 15, 30 (min) upward, with nothing below one minute. So
+a 30s bar must be built from the raw trade stream over WebSocket — that
+is the local Python service's job (Rule 02), not Actions. Until that
+service exists, no 30-second number is fabricated.
+
+### Wire facts (verified 23 Aug from the exchange docs, not from memory)
+
+These come from a runner fetch of the primary pages, with the text kept
+in `signals/docs-probe.json` as evidence. Shelf entries `dx-bybit-*`.
+
+- **Trade stream is sufficient to build a 30s bar, and gives more than a
+  candle would.** Fields are `T` (fill time, ms), `s`, `S`, `v`, `p`, `L`,
+  `i`, `BT`, sorted ascending by match time. Critically `S` is *"Side of
+  taker"* — so aggressive buy/sell volume separates, which a 1-minute
+  candle cannot give you.
+- **Order book depth and cadence**: linear/inverse level 1 @ 10ms, 50 @
+  20ms, 200 @ 100ms, 1000 @ 200ms. A `snapshot` arrives first, then
+  `delta`. `u` is the update id and `seq` is the cross sequence — a
+  smaller `seq` means the data was generated earlier. RPI orders are
+  excluded from the messages.
+- **The re-sent snapshot trap**: for perps and futures, if nothing changes
+  for 3 seconds the snapshot is pushed again *with the same `u`*. Treat
+  that as "no change", never as fresh depth movement — counting it as
+  change manufactures book activity out of a quiet market.
+- **Liquidation `S` is the position side, not the order side.** Verbatim:
+  *"Position side. Buy, Sell. When you receive a Buy update, this means
+  that a long position has been liquidated."* So `S=Buy` is forced
+  *selling* pressure. Reading this backwards inverts the direction of
+  liquidity pressure, which is why it is written down here. Also `p` is
+  the **bankruptcy price**, not the last traded price — do not use it as
+  a market-price reference for distance measurements.
 
 ## Learning proof
 

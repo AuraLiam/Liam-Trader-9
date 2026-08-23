@@ -61,6 +61,24 @@ Curriculum order for this engine: Murphy + Nison (foundation) → Brooks
 (bar-by-bar behaviour). Reading a source yields a better hypothesis, not
 a proven edge — Rule 03 still decides.
 
+### What "closed" means on the wire (verified 23 Aug, primary source)
+
+Bybit V5 WebSocket kline, quoted verbatim: *"If `confirm=true`, this
+means that the candle has closed. Otherwise, the candle is still open and
+updating."* That flag is the exchange-side equivalent of Pine's
+`barstate.isconfirmed`, and it is the only honest closed-bar signal —
+`timestamp` alone does not tell you whether the bar is final.
+
+The same page settles the 30-second question: the available intervals are
+**1, 3, 5, 15, 30 (min), 60, 120, 240, 360, 720 (min), D, W, M**. There is
+no sub-minute interval. So a 30-second bar cannot be requested — it must
+be built from the raw trade stream, which is the local Python service's
+job (Rule 02). Push frequency is 1–60s; fields are `start`, `end`,
+`interval`, `open`, `close`, `high`, `low`, `volume`, `turnover`,
+`confirm`, `timestamp`.
+
+Shelf entry: `dx-bybit-kline-confirm`. Evidence: `signals/docs-probe.json`.
+
 ## Crypto adaptation
 
 Because crypto is 24/7, patterns whose textbook definition depends on overnight gaps receive low/default weight unless a genuine discontinuity exists. Focus more on relative geometry, displacement, rejection, sweep/close behavior, and contextual confirmation.

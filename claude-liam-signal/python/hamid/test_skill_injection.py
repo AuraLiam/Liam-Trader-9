@@ -107,6 +107,31 @@ check("E09 الگو را ماشهٔ مستقل نمی‌کند",
 check("E19 مرز اجرای زنده را نگه داشته (پاسبان نمی‌بندد)",
       "does not close" in e19 and "Rule 05" in e19)
 
+# متنِ مهارت جریانِ خطی است و عبارت بین دو خط می‌شکند؛ بررسیِ نثر باید
+# فاصله‌ها را یکدست کند وگرنه صرفاً به محلِ شکستِ خط حساس می‌شود.
+def flat(s):
+    return " ".join(s.split())
+
+
+e09f, e10f = flat(e09), flat(e10)
+
+print("\n— حقایق راستی‌آزمایی‌شدهٔ صرافی سرِ جایشان است:")
+check("E09 معنی confirm را عیناً دارد",
+      "confirm=true" in e09f and "the candle has closed" in e09f)
+check("E09 فهرست بازه‌ها را دارد و می‌گوید زیر-دقیقه نیست",
+      "1, 3, 5, 15, 30" in e09f and "no sub-minute" in e09f)
+check("E10 می‌گوید S در استریم معامله سمتِ تیکر است",
+      "Side of taker" in e10f)
+check("E10 تلهٔ snapshot تکراری با همان u را دارد",
+      "same `u`" in e10f and "3 seconds" in e10f)
+check("E10 معنی درست side در لیکوییدیشن را عیناً دارد (وارونه‌خوانی رایج)",
+      "a long position has been liquidated" in e10f
+      and "not the order side" in e10f)
+check("E10 هشدار می‌دهد p قیمت ورشکستگی است نه قیمت بازار",
+      "bankruptcy price" in e10f)
+check("هر ادعای صرافی به شواهدِ قابل‌بازبینی ارجاع دارد",
+      "docs-probe.json" in e09f and "docs-probe.json" in e10f)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
