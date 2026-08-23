@@ -1,8 +1,30 @@
 #!/usr/bin/env python3
-"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۳ (۲۰ اوت).
+"""استراتژی لیام تریدر ۹ — نسخهٔ داشبورد ۲.۶ (۲۳ اوت).
 
 این فایل را کامل در قسمت «استراتژی» داشبورد بگذار (جای نسخهٔ قبل). تک و
 مستقل است — فقط کتابخانهٔ استاندارد پایتون.
+
+## تازه‌های ۲.۶ (دستورهای صریح حمید، ۲۳ اوت)
+
+  · **اهرم واحدِ اطمینان‌محور ۱۵–۳۹** برای هر دو حالت و هر دو جهت.
+    ریشهٔ «لانگ با ۵، شورت با ۲۰»: هیچ منطق وابسته به جهت وجود نداشت؛
+    سه فایل داشبوردی سه رژیم اهرم داشتند و عدد بسته به موتورِ مولد
+    سیگنال فرق می‌کرد. حالا: اهرم = ۱۵ + ۲۴×اطمینان، همیشه زیر محافظ
+    لیکویید (≤ ۵۰/استاپ٪). **مرز صادقانه**: اهرم لبه و نرخ برد را عوض
+    نمی‌کند؛ فقط مارجین و فاصلهٔ لیکویید — بازهٔ ۱۵–۳۹ یعنی با استاپ
+    گشادتر از ~۳.۳٪ سیگنال رد می‌شود.
+  · **سایز ۲۵–۳۰٪ از مارجین فیوچرز** بر اساس اطمینان (`margin_pct` روی
+    خروجی) + سقف **۳ پوزیشن هم‌زمان** (۳×۳۰٪=۹۰٪). عدد صادقانه: ضرر یک
+    استاپ = اهرم×استاپ٪ از مارجینِ همان پوزیشن (اهرم ۳۹ × استاپ ۱٪ = ۳۹٪).
+  · **تریل از نقطهٔ سود خالص** — `exit_plan.trail_arm` = ورود±کارمزد
+    رفت‌وبرگشت: عبور از آن یعنی معامله خالص از کارمزد در سود است؛ از
+    همان‌جا استاپ به سربه‌سرِ کارمزددار می‌آید و فقط در جهت سود می‌رود.
+  · **کندلِ بسته، نه باز** — اگر آخرین کندل ۱د هنوز باز باشد حذف می‌شود
+    (هم‌ارز barstate.isconfirmed). سیگنالِ کندلِ باز = repaint.
+  · **ناحیهٔ اعتبار ورود + EXPIRED** — `entry_zone` = ورود±۰.۳۵×ریسک؛
+    بیرونش ورود ممنوع و سیگنال منقضی است. تعقیب قیمت ممنوع.
+  · `max_hold_min` روی خروجی — پاسبان پوزیشنِ ماندهٔ بیش از حد
+    (hamid/position_watch.py در چرخه) از همین عدد استفاده می‌کند.
 
 چه چیزی نسبت به ۱.۰ عوض شد و چرا (همه از اندازه‌گیری، نه سلیقه):
 
@@ -57,7 +79,7 @@ TOP_LIQ_PATH = "/signals/top-liquidity.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.5",
+    "version": "liam9-dash-2.6",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -92,10 +114,30 @@ SCALP = {
     "liq_guard": 50.0,              # اهرم ≤ ۵۰/استاپ٪ (فاصلهٔ لیکویید)
     "hold_bars": 45,
 }
-# دستور حمید (۲۱ اوت): «ضریب پوزیشن‌های یک‌دقیقه‌ای نباید زیر ۲۰ باشه».
-# محافظ دائمی روی خودِ import — تا کسی سهواً lev_base را زیر این کف
-# نبرد. محافظ لیکویید (۱۹ اوت) هنوز سقف مطلق است؛ این فقط کف است.
-assert SCALP["lev_base"] >= 20, "کف اهرم اسکلپ (دستور ۲۱ اوت) نقض شد"
+# دستور حمید (۲۳ اوت) — جایگزین بازهٔ قبلی: «ضرایب بر اساس میزان
+# اطمینان از سیگنال از ۱۵ تا ۳۹ متغیر است» و «هر ترید ۲۵ تا ۳۰ درصد از
+# مارجین فیوچرز». این دستور صریح، کف ۲۰ (۲۱ اوت) و باند پیپرِ ۴۵–۹۰
+# (۱۸ اوت) را برای خروجی داشبورد نسخ می‌کند. محافظ لیکویید (۱۹ اوت)
+# همچنان سقف مطلق است — اطمینانِ بالا اجازهٔ رد شدن از آن را نمی‌دهد.
+LEV_MIN, LEV_MAX_CONF = 15, 39
+MARGIN_PCT_MIN, MARGIN_PCT_MAX = 25.0, 30.0
+MAX_CONCURRENT = 3      # ۳×۳۰٪ = ۹۰٪ مارجین؛ پوزیشن چهارم یعنی بی‌ذخیره‌گی
+assert LEV_MIN >= 1 and LEV_MAX_CONF <= 50, "بازهٔ اهرم ۲۳ اوت خراب شد"
+
+
+def _confidence01(quality):
+    """کیفیت ۰..۱۰۰ → اطمینان ۰..۱. زیر ۴۰ اصلاً سیگنال صادر نمی‌شود،
+    پس نگاشت از ۴۰ شروع می‌شود تا کل بازهٔ ۱۵–۳۹ واقعاً استفاده شود."""
+    return max(0.0, min(1.0, (quality - 40) / 60.0))
+
+
+def margin_pct_for(quality):
+    """سهم مارجین این معامله از کل مارجین فیوچرز — ۲۵٪ تا ۳۰٪ بر اساس
+    اطمینان (دستور ۲۳ اوت). عدد صادقانهٔ کنارش: ضررِ یک استاپ نسبت به
+    همین مارجین = اهرم × استاپ٪ — با اهرم ۳۹ و استاپ ۱٪ یعنی ۳۹٪ از
+    مارجینِ همان پوزیشن."""
+    c = _confidence01(quality)
+    return round(MARGIN_PCT_MIN + (MARGIN_PCT_MAX - MARGIN_PCT_MIN) * c, 1)
 
 # کارنامهٔ تجربه — با sync_experience() پر می‌شود. کلید: "SYMBOL|LONG".
 EXPERIENCE = {}
@@ -540,7 +582,13 @@ def _exit_plan(direction, entry, tp1, risk, P):
     else:
         stop_after_tp1 = entry - fee_buf
         tp2 = entry - tp2_dist
+    # دستور ۲۳ اوت: «سود تریل بشه از زمانی که با کسر کارمزد سود واقعی
+    # شد». trail_arm همان نقطه است: عبور قیمت از آن یعنی معامله خالص از
+    # کارمزد در سود است — از این‌جا استاپ به سربه‌سرِ کارمزددار می‌آید و
+    # فقط در جهت سود حرکت می‌کند، هرگز برعکس.
+    trail_arm = entry + fee_buf if direction == "LONG" else entry - fee_buf
     return {"tp1_close_pct": close1,
+            "trail_arm": round(trail_arm, 8),
             "stop_after_tp1": round(stop_after_tp1, 8),
             "tp2": round(tp2, 8),
             "tp2_trail_lock_pct": P["tp2_trail_lock_pct"],
@@ -682,6 +730,7 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
             "quality": quality, "exp_used": exp_used,
             "experience": exp, "pattern_align": align, "patterns": pat_names,
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
+            "margin_pct": margin_pct_for(quality),
             "exit_plan": plan,
             "mode": "swing", "tf": "15m",
             "panel": "لیام تریدر ۹", "version": P["version"],
@@ -710,12 +759,15 @@ def suggest_leverage(stop_pct, quality, mode="swing"):
     if stop_pct <= 0:
         return None
     guard = int(SCALP["liq_guard"] / stop_pct)
-    if mode == "scalp":
-        bump = SCALP["lev_step"] * (1 if quality >= 70 else 0) \
-            + SCALP["lev_step"] * (1 if quality >= 85 else 0)
-        lev = min(SCALP["lev_base"] + bump, SCALP["lev_max"], guard)
-        return lev if lev >= SCALP["lev_base"] else None
-    return max(3, min(10, guard))
+    # نگاشت واحد ۲۳ اوت — یکی برای هر دو حالت و هر دو جهت. ریشهٔ گلایهٔ
+    # «لانگ با ۵ و شورت با ۲۰ باز می‌شود»: هیچ منطقِ وابسته به جهت وجود
+    # نداشت؛ سه فایل داشبوردی سه رژیم اهرم متفاوت داشتند (سوینگ ۳–۱۰،
+    # شوکِ بازگشت‌به‌OB ۵–۶، سقف h1 بیست) و بسته به اینکه سیگنال از کدام
+    # موتور آمده بود عدد فرق می‌کرد. حالا: اهرم = ۱۵ + ۲۴×اطمینان،
+    # سقف‌خورده با محافظ لیکویید.
+    want = LEV_MIN + round((LEV_MAX_CONF - LEV_MIN) * _confidence01(quality))
+    lev = min(want, guard)
+    return lev if lev >= LEV_MIN else None
 
 
 def scalp_decide(c1m, symbol="?"):
@@ -727,6 +779,16 @@ def scalp_decide(c1m, symbol="?"):
 
     if not c1m or len(c1m) < 90:
         return no("کندل ۱ دقیقه کافی نیست — قانون ۱")
+    # قاعدهٔ کندلِ بسته (دستور ۲۳ اوت + barstate.isconfirmed در منابع):
+    # اگر آخرین کندل هنوز باز است (زمانِ بازش به اندازهٔ یک تایم‌فریم از
+    # الان عقب نیست)، حذف می‌شود — تصمیم فقط روی کندلِ قطعی. سیگنالی که
+    # روی کندلِ باز گرفته شود همان repaint است: در تاریخچه عوض می‌شود و
+    # بک‌تستش دروغ می‌گوید.
+    _now = int(time.time() * 1000)
+    if c1m and _now - c1m[-1]["t"] < 60_000:
+        c1m = c1m[:-1]
+        if len(c1m) < 90:
+            return no("بعد از حذف کندل باز، کندل کافی نیست — قانون ۱")
     closes = [k["c"] for k in c1m]
     e21, e55 = ema(closes[-90:], 21), ema(closes[-90:], 55)
     if e21 is None or e55 is None:
@@ -795,8 +857,17 @@ def scalp_decide(c1m, symbol="?"):
     rep = _repeat_gate(symbol, direction, k_last["t"], "scalp")
     if rep:
         return no(rep)
+    # ناحیهٔ اعتبار ورود (دستور ۲۳ اوت): تصمیم روی کندلِ بسته گرفته شده؛
+    # اگر تا لحظهٔ اجرا قیمت بیش از ۰.۳۵×ریسک از ورود دور شده باشد،
+    # سیگنال EXPIRED است — تعقیبِ قیمت ممنوع. داشبورد قبل از سفارش این
+    # بازه را چک می‌کند (liam9_link.validate_exec هم همین را رد می‌کند).
+    zone = 0.35 * abs(entry - sl)
     return _finalize({"action": direction, "symbol": symbol, "mode": "scalp", "tf": "1m",
             "entry": round(entry, 8), "sl": round(sl, 8), "tp1": round(tp1, 8),
+            "entry_zone": [round(entry - zone, 8), round(entry + zone, 8)],
+            "expiry_rule": "بیرون از entry_zone = EXPIRED؛ ورود نکن",
+            "max_hold_min": S["hold_bars"],
+            "margin_pct": margin_pct_for(quality),
             "stop_pct": round(stop_pct, 3), "fee_r": round(fee_r, 3),
             "rr_net": round(S["rr_target"] - fee_r, 2), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "session": sess, "leverage": lev,
@@ -1068,7 +1139,10 @@ def _selftest():
     c1m[-4]["l"] = c1m[-1]["c"] * 0.993
     s = scalp_decide(c1m, "TESTUSDT")
     assert s["action"] == "LONG", s
-    assert 45 <= s["leverage"] <= 90, s
+    assert 15 <= s["leverage"] <= 39, s      # بازهٔ ۲۳ اوت
+    assert 25.0 <= s["margin_pct"] <= 30.0, s
+    assert s["entry_zone"][0] < s["entry"] < s["entry_zone"][1], s
+    assert s["max_hold_min"] == 45, s
     assert s["leverage"] <= int(50.0 / s["stop_pct"]), s
     assert s["fee_r"] < SCALP["max_fee_r"], s
     assert "candle_evidence" in s and s["candle_evidence"]["formula_version"] == CANDLE_GEOM_VERSION, s
@@ -1139,8 +1213,22 @@ def _selftest():
     _LAST.clear()
 
     # اهرم هرگز از محافظ لیکویید رد نمی‌شود
-    assert suggest_leverage(3.0, 100, mode="scalp") is None
+    # با کف جدید ۱۵ (۲۳ اوت)، استاپ ۳٪ دیگر رد نمی‌شود (محافظ = ۱۶ ≥ ۱۵)؛
+    # مرز ردِ محافظ لیکویید حالا استاپ > ۵۰/۱۵ ≈ ۳.۳۳٪ است.
+    assert suggest_leverage(3.0, 100, mode="scalp") == 16
+    assert suggest_leverage(3.4, 100, mode="scalp") is None
     assert suggest_leverage(0.7, 90, mode="scalp") <= int(50 / 0.7)
+    # نگاشت اطمینان → اهرم (۲۳ اوت): کیفیت ۴۰ = ۱۵، کیفیت ۱۰۰ = ۳۹،
+    # و محافظ لیکویید همیشه حاکم است — اطمینان بالا از آن رد نمی‌شود.
+    assert suggest_leverage(0.5, 40, mode="scalp") == 15
+    assert suggest_leverage(0.5, 100, mode="scalp") == 39
+    assert suggest_leverage(0.5, 70, mode="scalp") == 27
+    assert suggest_leverage(2.0, 100, mode="scalp") == 25      # ۵۰/۲
+    assert suggest_leverage(0.5, 100, mode="swing") == 39      # نگاشت واحد
+    assert margin_pct_for(40) == 25.0 and margin_pct_for(100) == 30.0
+    ep = _exit_plan("LONG", 100.0, 101.5, 1.0, PARAMS)
+    assert ep["trail_arm"] == 100.15                            # ورود+کارمزد
+    assert _exit_plan("SHORT", 100.0, 98.5, 1.0, PARAMS)["trail_arm"] == 99.85
 
     # ممیزی: کف استاپ ۲.۵٪ باید تداخل جدی اعلام شود
     a = audit_environment({"max_leverage": 20, "min_stop_pct": 2.5,
@@ -1152,7 +1240,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۵ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۶ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
