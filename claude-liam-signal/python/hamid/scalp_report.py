@@ -120,6 +120,38 @@ def summarize(rows, min_n=MIN_N):
     return res
 
 
+def fee_sensitivity(rows, costs=(0.15, 0.10, 0.05, 0.04, 0.03, 0.0),
+                    min_n=MIN_N):
+    """اگر کارمزد این‌قدر بود، دفتر چه می‌شد؟ — روی همان معامله‌های واقعی.
+
+    پرسش حمید (۲۳ اوت): «کارمزد KCEX را ببین، شاید جابه‌جا شویم؛ برای
+    اسکلپ منطقی است.» جواب را نباید حدس زد: کارمزد در واحد R یعنی
+    `کارمزد٪ ÷ استاپ٪`، و استاپِ هر معامله روی دفتر ثبت است، پس R خالص
+    را می‌شود دقیقاً با هر فرضِ هزینه بازحساب کرد.
+
+    **لغزش با عوض کردن صرافی کم نمی‌شود.** هزینهٔ ورودی این تابع
+    «رفت‌وبرگشتِ کل» است — کارمزد + لغزش. صرافی کوچک‌تر معمولاً عمق
+    کمتری دارد، پس ممکن است کارمزدِ کمتر با لغزشِ بیشتر خنثی شود. عددِ
+    لغزش برای هیچ صرافی‌ای جز آنچه داده‌اش را داریم، اندازه‌گیری‌شده
+    نیست."""
+    out = []
+    usable = [r for r in rows
+              if isinstance(r.get("why"), dict) and r["why"].get("stop_pct")]
+    for c in costs:
+        net = [r["R"] - c / r["why"]["stop_pct"] for r in usable]
+        if len(net) < min_n:
+            out.append({"cost_pct": c, "n": len(net), "ci95": None})
+            continue
+        lo, hi = boot_ci(net)
+        out.append({
+            "cost_pct": c, "n": len(net),
+            "R_net_mean": round(sum(net) / len(net), 4),
+            "ci95": [round(lo, 4), round(hi, 4)],
+            "verdict": ("مثبت" if lo > 0 else
+                        "منفی" if hi < 0 else "بی‌نتیجه")})
+    return out
+
+
 def by_key(rows, keyfn, min_n=MIN_N, top=8):
     """تفکیک بر اساس یک کلید (نماد، جهت، ...) — فقط دسته‌های به‌اندازه."""
     buckets = {}
@@ -148,6 +180,7 @@ def run(tf="1m", stage="scalp", quiet=False, ledger=None, recent_days=None):
     res = summarize(rows)
     res["tf"] = tf
     res["book"] = f"paper/{stage}"
+    res["fee_sensitivity"] = fee_sensitivity(rows)
     res["by_symbol"], res["symbols_total"] = by_key(rows, lambda r: r.get("sym", "?"))
     res["by_dir"], _ = by_key(rows, lambda r: r.get("dir", "?"))
     if not quiet:
@@ -166,6 +199,12 @@ def run(tf="1m", stage="scalp", quiet=False, ledger=None, recent_days=None):
                   f"استاپ {res['stop_rate']}%")
             print()
             print(f"حکم: {res['verdict']}")
+            if res.get("fee_sensitivity"):
+                print("\nحساسیت به هزینه (کارمزد+لغزش رفت‌وبرگشت):")
+                for f in res["fee_sensitivity"]:
+                    if f.get("ci95"):
+                        print(f"  {f['cost_pct']:.2f}%  R={f['R_net_mean']:+.4f}  "
+                              f"CI={f['ci95']}  {f['verdict']}")
             if res["by_dir"]:
                 print("\nبه تفکیک جهت:")
                 for d in res["by_dir"]:
