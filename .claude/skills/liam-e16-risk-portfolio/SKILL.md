@@ -52,10 +52,31 @@ Approve or block entry based on invalidation, RR, liquidity hunt, correlation cl
 ## Hard rules
 
 - LIVE_EXECUTION remains disabled.
-- No leverage above 15x without Hamid’s explicit approval.
+- No leverage above 15x without Hamid’s explicit approval. That approval
+  now exists, dated 23 Aug, and is scoped to the dashboard scalp output
+  only — see the sizing section below.
 - Default paper risk is conservative and configurable; never hardcode aggressive live risk.
 - Stop location follows invalidation and hunt evidence, not a desired position size.
 - Risk Officer can veto any signal.
+
+## Confidence-scaled sizing (Hamid, 23 Aug — Rule 10)
+
+Source of truth is `liam9_strategy.py`; these numbers are mirrored here
+and a guard (`hamid/test_skill_injection.py`) fails the cycle if the two
+ever drift apart.
+
+- **Leverage = 15 + 24 × confidence**, range **15–39**. This supersedes
+  the 21 Aug floor of 20 and the 18 Aug paper band of 45–90 for the
+  dashboard output.
+- **The liquidation guard outranks confidence absolutely**: leverage ≤
+  50 ÷ stop%. A stop wider than roughly 3.3% therefore yields no valid
+  leverage and the signal is rejected rather than shrunk.
+- **Size = 25–30% of futures margin** by confidence, with at most **3
+  concurrent positions** (3 × 30% = 90%). A fourth position means no
+  reserve.
+- State the honest number, not the flattering one: one stop costs
+  leverage × stop% of that position's margin. Leverage moves margin and
+  liquidation distance; it never moves R or the win rate.
 
 ## Learning routine
 

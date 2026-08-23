@@ -36,6 +36,31 @@ The candle packet must state:
 - E10 confirmation status;
 - whether the candle improved entry timing, stop placement, or invalidation.
 
+## Scalp 1m/30s entry discipline (Hamid, 23 Aug — Rule 10)
+
+These are hard constraints on any candle work feeding the 1m scalp path.
+The reference document is `.claude/rules/10-scalp-1m-candle-entry.md`; the
+production implementation is `liam9_strategy.scalp_decide`.
+
+1. **Closed candles only.** The still-open bar is dropped before any
+   feature is computed (the `barstate.isconfirmed` equivalent). A feature
+   read off an open bar repaints, and its backtest is a lie.
+2. **A pattern is never the trigger.** Candle geometry is secondary
+   confirmation (Rule 09); the trigger is structure plus location.
+3. **Order of analysis**: 4H/1H direction → 15m/5m location → 1m/30s
+   entry trigger. The low timeframe may not overrule the high one.
+4. **Stop sits at structural invalidation** — behind the last valid
+   swing, outside the Order Block edge, or behind the end of the
+   liquidity hunt — plus a margin covering spread, slippage and recent
+   volatility. The margin is measured, never a fixed guess, and options
+   are compared in PAPER only.
+5. **Entry validity window**: outside `entry_zone` (entry ± 0.35 × risk)
+   the setup is EXPIRED. Chasing price is forbidden.
+
+Curriculum order for this engine: Murphy + Nison (foundation) → Brooks
+(bar-by-bar behaviour). Reading a source yields a better hypothesis, not
+a proven edge — Rule 03 still decides.
+
 ## Crypto adaptation
 
 Because crypto is 24/7, patterns whose textbook definition depends on overnight gaps receive low/default weight unless a genuine discontinuity exists. Focus more on relative geometry, displacement, rejection, sweep/close behavior, and contextual confirmation.
