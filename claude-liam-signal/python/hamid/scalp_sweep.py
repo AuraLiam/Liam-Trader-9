@@ -432,8 +432,18 @@ def run(bars=1500, n_symbols=60, quiet=False):
         res["verdict"] = ("هیچ خانه‌ای حتی روی نمونهٔ جستجو از آستانه رد "
                           "نشد — تأیید خارج از نمونه اجرا نشد، چون چیزی "
                           "برای تأیید نبود")
+    # ── آزمون دوم: دروازهٔ ساختار، روی **بهترین هندسه** ──────────────────
+    # روی هندسهٔ دلبخواه سنجیدنش بی‌معناست: اگر خودِ هندسه غلط باشد،
+    # هیچ فیلتری نجاتش نمی‌دهد و فرضیهٔ ساختار بی‌دلیل رد می‌شود.
+    # آزمون جداست و آستانهٔ خودش را دارد (پیش‌ثبت E07).
+    if best:
+        try:
+            res["structure"] = compare_structure(A, B, best["params"],
+                                                 quiet=quiet)
+        except Exception as e:                         # noqa: BLE001
+            res["structure"] = {"error": f"{type(e).__name__}: {e}"}
     if not quiet:
-        print(f"\nحکم: {res['verdict']}")
+        print(f"\nحکم هندسه: {res['verdict']}")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1))
     return res
