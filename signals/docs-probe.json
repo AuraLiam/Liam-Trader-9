@@ -1,0 +1,225 @@
+{
+ "generated": 1787499841835,
+ "panel": "لیام تریدر ۹",
+ "docs": [
+  {
+   "id": "bybit-ws-kline",
+   "url": "https://bybit-exchange.github.io/docs/v5/websocket/public/kline",
+   "engine": "E09",
+   "topic": "candle-close",
+   "question": "معنی confirm و فهرست بازه‌های رسمی (آیا زیر ۱ دقیقه هست؟)",
+   "http": 200,
+   "at": 1787499840767,
+   "status": "FETCHED",
+   "chars": 2786,
+   "found": [
+    "confirm",
+    "end",
+    "interval",
+    "start",
+    "timestamp"
+   ],
+   "missing": [],
+   "excerpts": {
+    "confirm": [
+     "FQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nKline\nOn this page Kline\nSubscribe to the klines stream.\ntip If confirm =true, this means that the candle has closed. Otherwise, the candle is still open and updating.\nAvailable intervals:\n1 3 5 15 30 (min)\n60 120 240 360 72",
+     "en string Open price\n> close string Close price\n> high string Highest price\n> low string Lowest price\n> volume string Trade volume\n> turnover string Turnover\n> confirm boolean Whether the tick is ended or not\n> timestamp number The timestamp (ms) of the last matched order in the candle\nSubscribe Example\nfrom pybit . un",
+     "2325099999 ,\n\"interval\" : \"5\" ,\n\"open\" : \"16649.5\" ,\n\"close\" : \"16677\" ,\n\"high\" : \"16677\" ,\n\"low\" : \"16608\" ,\n\"volume\" : \"2.081\" ,\n\"turnover\" : \"34666.4005\" ,\n\"confirm\" : false ,\n\"timestamp\" : 1672324988882\n}\n] ,\n\"ts\" : 1672324988882 ,\n\"type\" : \"snapshot\"\n}\nPrevious Ticker Next All Liquidation Response Parameters\nSubsc"
+    ],
+    "interval": [
+     "Kline\nSubscribe to the klines stream.\ntip If confirm =true, this means that the candle has closed. Otherwise, the candle is still open and updating.\nAvailable intervals:\n1 3 5 15 30 (min)\n60 120 240 360 720 (min)\nD (day)\nW (week)\nM (month)\nPush frequency: 1-60s\nTopic:\nkline.{interval}.{symbol} e.g., kline.30.BTCUSDT\nR",
+     "ndle is still open and updating.\nAvailable intervals:\n1 3 5 15 30 (min)\n60 120 240 360 720 (min)\nD (day)\nW (week)\nM (month)\nPush frequency: 1-60s\nTopic:\nkline.{interval}.{symbol} e.g., kline.30.BTCUSDT\nResponse Parameters\nParameter Type Comments\ntopic string Topic name\ntype string Data type. snapshot\nts number The time",
+     "ts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest price\n> low string Lowest price\n> volume string Trade v",
+     "p (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest price\n> low string Lowest price\n> volume string Trade volume\n> turnover strin"
+    ],
+    "timestamp": [
+     "ne.{interval}.{symbol} e.g., kline.30.BTCUSDT\nResponse Parameters\nParameter Type Comments\ntopic string Topic name\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval strin",
+     "ic string Topic name\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest pr",
+     "a type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest price\n> low string Lowest price\n> volu",
+     "igh string Highest price\n> low string Lowest price\n> volume string Trade volume\n> turnover string Turnover\n> confirm boolean Whether the tick is ended or not\n> timestamp number The timestamp (ms) of the last matched order in the candle\nSubscribe Example\nfrom pybit . unified_trading import WebSocket\nfrom time import sle"
+    ],
+    "start": [
+     "Kline | Bybit API Documentation\nSkip to main content V5 API P2P Trading Bybit Pay Tax API V3 Extras Pilot Features\nChangelog\nAPI Explorer\nFAQ\nHow To Start Copy Trading\nInstitution Self Match Prevention\nSpot DMM Listing Integration\nMMWS\nGet Whitelist IP\nGet IP Change Log\nInstitutional Loan\nSBE\nEnglish English",
+     "meter Type Comments\ntopic string Topic name\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n>",
+     "ts\ntopic string Topic name\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string High",
+     "tream (\ninterval = 5 ,\nsymbol = \"BTCUSDT\" ,\ncallback = handle_message\n)\nwhile True :\nsleep ( 1 )\nResponse Example\n{\n\"topic\" : \"kline.5.BTCUSDT\" ,\n\"data\" : [\n{\n\"start\" : 1672324800000 ,\n\"end\" : 1672325099999 ,\n\"interval\" : \"5\" ,\n\"open\" : \"16649.5\" ,\n\"close\" : \"16677\" ,\n\"high\" : \"16677\" ,\n\"low\" : \"16608\" ,\n\"volume\" : \"2."
+    ],
+    "end": [
+     "e\nAll Liquidation\nInsurance Pool\nOrder Price Limit\nADL Alert\nPrivate\nTrade\nSystem\nSpread Trading\nRFQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nKline\nOn this page Kline\nSubscribe to the klines stream.\ntip If confirm =true, this means that the candle has closed. Otherwis",
+     "ame\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest price\n> low string",
+     "Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object\n> start number The start timestamp (ms)\n> end number The end timestamp (ms)\n> interval string Kline interval\n> open string Open price\n> close string Close price\n> high string Highest price\n> low string Lowest price\n>",
+     "Close price\n> high string Highest price\n> low string Lowest price\n> volume string Trade volume\n> turnover string Turnover\n> confirm boolean Whether the tick is ended or not\n> timestamp number The timestamp (ms) of the last matched order in the candle\nSubscribe Example\nfrom pybit . unified_trading import WebSocket\nfrom"
+    ]
+   }
+  },
+  {
+   "id": "bybit-ws-trade",
+   "url": "https://bybit-exchange.github.io/docs/v5/websocket/public/trade",
+   "engine": "E10",
+   "topic": "raw-trades",
+   "question": "آیا فیلدها برای ساخت کندل ۳۰ثانیه‌ای کافی است؟",
+   "http": 200,
+   "at": 1787499840929,
+   "status": "FETCHED",
+   "chars": 3089,
+   "found": [
+    "price",
+    "side",
+    "size",
+    "timestamp"
+   ],
+   "missing": [
+    "tickDirection"
+   ],
+   "excerpts": {
+    "side": [
+     "ay Object. Sorted by the time the trade was matched in ascending order\n> T number The timestamp (ms) that the order is filled\n> s string Symbol name\n> S string Side of taker. Buy , Sell\n> v string Trade size\n> p string Trade price\n> L string Direction of price change. Unique field for Perps & futures\n> i string Trade I"
+    ],
+    "size": [
+     "matched in ascending order\n> T number The timestamp (ms) that the order is filled\n> s string Symbol name\n> S string Side of taker. Buy , Sell\n> v string Trade size\n> p string Trade price\n> L string Direction of price change. Unique field for Perps & futures\n> i string Trade ID\n> BT boolean Whether it is a block trade"
+    ],
+    "price": [
+     "ance\nBybit Card\nWeb3\nPre-upgrade\nWebSocket Stream Connect\nPublic Orderbook\nRPI Orderbook\nFull Orderbook\nTrade\nTicker\nKline\nAll Liquidation\nInsurance Pool\nOrder Price Limit\nADL Alert\nPrivate\nTrade\nSystem\nSpread Trading\nRFQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nTrade",
+     "order\n> T number The timestamp (ms) that the order is filled\n> s string Symbol name\n> S string Side of taker. Buy , Sell\n> v string Trade size\n> p string Trade price\n> L string Direction of price change. Unique field for Perps & futures\n> i string Trade ID\n> BT boolean Whether it is a block trade order or not\n> RPI boo",
+     "(ms) that the order is filled\n> s string Symbol name\n> S string Side of taker. Buy , Sell\n> v string Trade size\n> p string Trade price\n> L string Direction of price change. Unique field for Perps & futures\n> i string Trade ID\n> BT boolean Whether it is a block trade order or not\n> RPI boolean Whether it is a RPI trade",
+     "ing Trade ID\n> BT boolean Whether it is a block trade order or not\n> RPI boolean Whether it is a RPI trade or not\n> seq integer cross sequence\n> mP string Mark price, unique field for option\n> iP string Index price, unique field for option\n> mIv string Mark iv, unique field for option\n> iv string iv, unique field for o"
+    ],
+    "timestamp": [
+     "Response Parameters\nParameter Type Comments\nid string Message id. Unique field for option\ntopic string Topic name\ntype string Data type. snapshot\nts number The timestamp (ms) that the system generates the data\ndata array Object. Sorted by the time the trade was matched in ascending order\n> T number The timestamp (ms) t",
+     "t\nts number The timestamp (ms) that the system generates the data\ndata array Object. Sorted by the time the trade was matched in ascending order\n> T number The timestamp (ms) that the order is filled\n> s string Symbol name\n> S string Side of taker. Buy , Sell\n> v string Trade size\n> p string Trade price\n> L string Dire"
+    ]
+   }
+  },
+  {
+   "id": "bybit-ws-orderbook",
+   "url": "https://bybit-exchange.github.io/docs/v5/websocket/public/orderbook",
+   "engine": "E10",
+   "topic": "depth",
+   "question": "عمق‌ها، نرخ push، و تشخیص از دست رفتن پیام (seq)",
+   "http": 200,
+   "at": 1787499841127,
+   "status": "FETCHED",
+   "chars": 5765,
+   "found": [
+    "delta",
+    "depth",
+    "frequency",
+    "seq",
+    "snapshot",
+    "u"
+   ],
+   "missing": [],
+   "excerpts": {
+    "snapshot": [
+     "cy: 200ms\nOption:\nLevel 25 data, push frequency: 20ms\nLevel 100 data, push frequency: 100ms\nTopic:\norderbook.{depth}.{symbol} e.g., orderbook.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSo",
+     "data, push frequency: 20ms\nLevel 100 data, push frequency: 100ms\nTopic:\norderbook.{depth}.{symbol} e.g., orderbook.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSocket will keep pushing del",
+     "k.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSocket will keep pushing delta messages every time the orderbook changes. If you receive a new snapshot message, you will have to reset your l",
+     "ve subscribed successfully, you will receive a snapshot . The WebSocket will keep pushing delta messages every time the orderbook changes. If you receive a new snapshot message, you will have to reset your local orderbook. If there is a problem on Bybit's end, a snapshot will be re-sent, which is guaranteed to contain"
+    ],
+    "delta": [
+     "Option:\nLevel 25 data, push frequency: 20ms\nLevel 100 data, push frequency: 100ms\nTopic:\norderbook.{depth}.{symbol} e.g., orderbook.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSocket will",
+     "requency: 20ms\nLevel 100 data, push frequency: 100ms\nTopic:\norderbook.{depth}.{symbol} e.g., orderbook.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSocket will keep pushing delta messages e",
+     "ss snapshot and delta messages, please follow these rules:\nOnce you have subscribed successfully, you will receive a snapshot . The WebSocket will keep pushing delta messages every time the orderbook changes. If you receive a new snapshot message, you will have to reset your local orderbook. If there is a problem on By",
+     "have to reset your local orderbook. If there is a problem on Bybit's end, a snapshot will be re-sent, which is guaranteed to contain the latest data.\nTo apply delta updates:\nIf you receive an amount that is 0 , delete the entry\nIf you receive an amount that does not exist, insert it\nIf the entry exists, you simply upd"
+    ],
+    "seq": [
+     "Perps and Futures, the snapshot data will be pushed again when there is no change in 3 seconds, and the \"u\" will be the same as that in the previous message\n> seq integer Cross sequence You can use this field to compare different levels orderbook data, and for the smaller seq, then it means the data is generated earli",
+     ", the snapshot data will be pushed again when there is no change in 3 seconds, and the \"u\" will be the same as that in the previous message\n> seq integer Cross sequence You can use this field to compare different levels orderbook data, and for the smaller seq, then it means the data is generated earlier.\ncts number The",
+     "be the same as that in the previous message\n> seq integer Cross sequence You can use this field to compare different levels orderbook data, and for the smaller seq, then it means the data is generated earlier.\ncts number The timestamp from the matching engine when this orderbook data is produced. It can be correlated w",
+     "\"b\" : [\n... ,\n[\n\"16493.50\" ,\n\"0.006\"\n] ,\n[\n\"16493.00\" ,\n\"0.100\"\n]\n] ,\n\"a\" : [\n[\n\"16611.00\" ,\n\"0.029\"\n] ,\n[\n\"16612.00\" ,\n\"0.213\"\n] ,\n... ,\n] ,\n\"u\" : 18521288 ,\n\"seq\" : 7961638724\n} ,\n\"cts\" : 1672304484976\n}\n{\n\"topic\" : \"orderbook.50.BTCUSDT\" ,\n\"type\" : \"delta\" ,\n\"ts\" : 1687940967466 ,\n\"data\" : {\n\"s\" : \"BTCUSDT\" ,\n\"b\" :"
+    ],
+    "u": [
+     "Orderbook | Bybit API Documentation\nSkip to main content V5 API P2P Trading Bybit Pay Tax API V3 Extras Pilot Features\nChangelog\nAPI Explorer\nFAQ\nHow To Start Copy Trading\nInstitution S",
+     "Orderbook | Bybit API Documentation\nSkip to main content V5 API P2P Trading Bybit Pay Tax API V3 Extras Pilot Features\nChangelog\nAPI Explorer\nFAQ\nHow To Start Copy Trading\nInstitution Self Match Prevention\nSpot DMM Listing Integration\nMMWS\nGet Whitelist IP\nGet IP Change Log",
+     "API Documentation\nSkip to main content V5 API P2P Trading Bybit Pay Tax API V3 Extras Pilot Features\nChangelog\nAPI Explorer\nFAQ\nHow To Start Copy Trading\nInstitution Self Match Prevention\nSpot DMM Listing Integration\nMMWS\nGet Whitelist IP\nGet IP Change Log\nInstitutional Loan\nSBE\nEnglish English\n中文（台灣）\nSearch Integratio",
+     "angelog\nAPI Explorer\nFAQ\nHow To Start Copy Trading\nInstitution Self Match Prevention\nSpot DMM Listing Integration\nMMWS\nGet Whitelist IP\nGet IP Change Log\nInstitutional Loan\nSBE\nEnglish English\n中文（台灣）\nSearch Integration Guidance\nBybit Platform\nMarket\nTrade\nSpot Margin Trade\nPosition\nAccount\nAsset\nUser\nSpread Trading\nRFQ"
+    ],
+    "depth": [
+     "nums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nOrderbook\nOn this page Orderbook\nSubscribe to the orderbook stream. Supports different depths.\ninfo Retail Price Improvement (RPI) orders will not be included in the messages.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 da",
+     "s page Orderbook\nSubscribe to the orderbook stream. Supports different depths.\ninfo Retail Price Improvement (RPI) orders will not be included in the messages.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push freq",
+     "ush frequency: 100ms\nLevel 1000 data, push frequency: 200ms\nOption:\nLevel 25 data, push frequency: 20ms\nLevel 100 data, push frequency: 100ms\nTopic:\norderbook.{depth}.{symbol} e.g., orderbook.1.BTCUSDT\nProcess snapshot/delta\nTo process snapshot and delta messages, please follow these rules:\nOnce you have subscribed suc",
+     "from time import sleep\nws = WebSocket (\ntestnet = True ,\nchannel_type = \"linear\" ,\n)\ndef handle_message ( message ) :\nprint ( message )\nws . orderbook_stream (\ndepth = 50 ,\nsymbol = \"BTCUSDT\" ,\ncallback = handle_message\n)\nwhile True :\nsleep ( 1 )\nResponse Example\nSnapshot\nDelta\n{\n\"topic\" : \"orderbook.50.BTCUSDT\" ,\n\"typ"
+    ],
+    "frequency": [
+     "stream. Supports different depths.\ninfo Retail Price Improvement (RPI) orders will not be included in the messages.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push frequency: 200ms\nSpot:\nLevel 1 data, push freque",
+     "nfo Retail Price Improvement (RPI) orders will not be included in the messages.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push frequency: 200ms\nSpot:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push freque",
+     "ders will not be included in the messages.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push frequency: 200ms\nSpot:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push freque",
+     "es.\nDepths\nLinear & inverse:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push frequency: 200ms\nSpot:\nLevel 1 data, push frequency: 10ms\nLevel 50 data, push frequency: 20ms\nLevel 200 data, push frequency: 100ms\nLevel 1000 data, push freque"
+    ]
+   }
+  },
+  {
+   "id": "bybit-ws-liquidation",
+   "url": "https://bybit-exchange.github.io/docs/v5/websocket/public/all-liquidation",
+   "engine": "E10",
+   "topic": "liquidation",
+   "question": "side یعنی سمتِ پوزیشنِ لیکوییدشده یا سمتِ سفارش؟",
+   "http": 200,
+   "at": 1787499841247,
+   "status": "FETCHED",
+   "chars": 2379,
+   "found": [
+    "liquidat",
+    "position",
+    "side"
+   ],
+   "missing": [],
+   "excerpts": {
+    "side": [
+     "ot\nts number The timestamp (ms) that the system generates the data\ndata Object\n> T number The updated timestamp (ms)\n> s string Symbol name\n> S string Position side. Buy , Sell . When you receive a Buy update, this means that a long position has been liquidated\n> v string Executed size\n> p string Bankruptcy price\nSubsc"
+    ],
+    "position": [
+     "MMWS\nGet Whitelist IP\nGet IP Change Log\nInstitutional Loan\nSBE\nEnglish English\n中文（台灣）\nSearch Integration Guidance\nBybit Platform\nMarket\nTrade\nSpot Margin Trade\nPosition\nAccount\nAsset\nUser\nSpread Trading\nRFQ Trading\nAffiliate\nCrypto Loan\nInstitution\nBroker\nFinance\nBybit Card\nWeb3\nPre-upgrade\nWebSocket Stream Connect\nPub",
+     "e. snapshot\nts number The timestamp (ms) that the system generates the data\ndata Object\n> T number The updated timestamp (ms)\n> s string Symbol name\n> S string Position side. Buy , Sell . When you receive a Buy update, this means that a long position has been liquidated\n> v string Executed size\n> p string Bankruptcy pr",
+     "bject\n> T number The updated timestamp (ms)\n> s string Symbol name\n> S string Position side. Buy , Sell . When you receive a Buy update, this means that a long position has been liquidated\n> v string Executed size\n> p string Bankruptcy price\nSubscribe Example\nfrom pybit . unified_trading import WebSocket\nfrom time impo"
+    ],
+    "liquidat": [
+     "All Liquidation | Bybit API Documentation\nSkip to main content V5 API P2P Trading Bybit Pay Tax API V3 Extras Pilot Features\nChangelog\nAPI Explorer\nFAQ\nHow To Start",
+     "rypto Loan\nInstitution\nBroker\nFinance\nBybit Card\nWeb3\nPre-upgrade\nWebSocket Stream Connect\nPublic Orderbook\nRPI Orderbook\nFull Orderbook\nTrade\nTicker\nKline\nAll Liquidation\nInsurance Pool\nOrder Price Limit\nADL Alert\nPrivate\nTrade\nSystem\nSpread Trading\nRFQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoi",
+     "Price Limit\nADL Alert\nPrivate\nTrade\nSystem\nSpread Trading\nRFQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nAll Liquidation\nOn this page All Liquidation\nSubscribe to the liquidation stream, push all liquidations that occur on Bybit.\nCovers: USDT contract / USDC contract /",
+     "e\nTrade\nSystem\nSpread Trading\nRFQ Trading\nRate Limit\nEnums Definitions\nError Codes\nAbandoned Endpoints\nWebSocket Stream\nPublic\nAll Liquidation\nOn this page All Liquidation\nSubscribe to the liquidation stream, push all liquidations that occur on Bybit.\nCovers: USDT contract / USDC contract / Inverse contract\nPush freque"
+    ]
+   }
+  },
+  {
+   "id": "tv-bar-states",
+   "url": "https://www.tradingview.com/pine-script-docs/concepts/bar-states/",
+   "engine": "E09",
+   "topic": "candle-close",
+   "question": "تعریف عین‌به‌عین barstate.isconfirmed",
+   "http": 200,
+   "at": 1787499841511,
+   "status": "FETCHED",
+   "chars": 11064,
+   "found": [],
+   "missing": [
+    "barstate.isconfirmed",
+    "barstate.islast",
+    "barstate.isrealtime"
+   ],
+   "excerpts": {}
+  },
+  {
+   "id": "tv-repainting",
+   "url": "https://www.tradingview.com/pine-script-docs/concepts/repainting/",
+   "engine": "E18",
+   "topic": "repaint",
+   "question": "سند چه چیزی را عامل بک‌تستِ غیرواقعی می‌داند؟",
+   "http": 200,
+   "at": 1787499841834,
+   "status": "FETCHED",
+   "chars": 13492,
+   "found": [],
+   "missing": [
+    "repaint",
+    "lookahead",
+    "realtime",
+    "historical"
+   ],
+   "excerpts": {}
+  }
+ ],
+ "ok": 6,
+ "total": 6,
+ "note": "اسناد حمید (۲۳ اوت). نشستِ کلود به این دامنه‌ها دسترسی ندارد، پس کاوش روی رانر انجام می‌شود. تکهٔ متن شاهد است؛ ورود به قفسه فقط بعد از خواندنِ همین شواهد (قانون ۰۳)."
+}
