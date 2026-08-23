@@ -106,6 +106,7 @@ jobs:
           python3 -m hamid.test_scalp_report
           python3 -m hamid.test_venue_probe
           python3 -m hamid.test_scalp_sweep
+          python3 -m hamid.test_position_watch
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -182,6 +183,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python3 -m hamid.sentinel --alert || true
+      - name: پاسبان پوزیشن مانده (دستور ۲۳ اوت)
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.position_watch --alert || true
 
       - name: Summary
         if: always()
