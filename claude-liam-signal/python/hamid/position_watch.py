@@ -44,6 +44,21 @@ def max_hold_for(tf):
     return MAX_HOLD_MIN.get(tf, DEFAULT_HOLD_MIN)
 
 
+# سطل‌های بزرگیِ مشکل — کلید آلارم از این‌جا می‌آید تا نوسانِ جزئی
+# (بسته‌شدن دو پوزیشن) پیام تازه نسازد.
+BUCKETS = ((5, "۱-۵"), (20, "۶-۲۰"), (50, "۲۱-۵۰"), (200, "۵۱-۲۰۰"))
+
+
+def stale_bucket(n):
+    """تعداد پوزیشنِ مانده → برچسب سطل. صفر یعنی کلیدِ خالی (رفع شده)."""
+    if n <= 0:
+        return ""
+    for hi, label in BUCKETS:
+        if n <= hi:
+            return f"stale:{label}"
+    return "stale:۲۰۰+"
+
+
 def scan(rows, now_ms=None):
     """پوزیشن‌های باز → (مانده‌ها، سالم‌ها). مانده = سن > سقفِ تایم‌فریمش."""
     now = now_ms or int(time.time() * 1000)
@@ -93,16 +108,25 @@ def run(alert=False, quiet=False, path=None, now_ms=None):
             print(f"  ⏰ {s_['sym']} {s_['dir']} {s_['tf']}: "
                   f"{s_['age_min']}د باز (سقف {s_['max_hold_min']}د، "
                   f"{s_['over_by_min']}د اضافه)")
-    if alert and stale:
-        try:
-            import telegram as TG
-            lines = [f"⏰ {s_['sym']} {s_['dir']} ({s_['tf']}): "
-                     f"{s_['over_by_min']}د بیش از سقف باز است"
-                     for s_ in stale[:6]]
-            TG.send_text("⏰ لیام تریدر ۹ — پوزیشنِ مانده:\n" + "\n".join(lines)
-                         + "\nستاپش منقضی شده — بستن/بازبینی دستی لازم است.")
-        except Exception as e:                        # noqa: BLE001
-            print(f"(آلارم نرفت: {type(e).__name__})")
+    if alert:
+        # دروازهٔ مشترک آلارم (۲۳ اوت): تا امروز این پیام هر چرخه — یعنی
+        # ۲۴ بار در روز — تکرار می‌شد، چون دفتر باز روزها همان است.
+        #
+        # کلید عمداً **سطلی** است، نه فهرست نماد و نه شمارش دقیق. نسخهٔ
+        # اول همین رفع، کلید را از مجموعهٔ نمادها ساخت و باز اسپم می‌شد:
+        # هر چرخه چند پوزیشن بسته می‌شود، مجموعه عوض می‌شود، و «کلید
+        # تازه» یعنی پیام تازه. سطل یعنی فقط وقتی خبر می‌دهیم که وضعیت
+        # از نظر بزرگی عوض شده باشد — نه با هر جابه‌جاییِ جزئی.
+        from hamid import alert_gate
+        key = stale_bucket(len(stale))
+        lines = [f"⏰ {s_['sym']} {s_['dir']} ({s_['tf']}): "
+                 f"{s_['over_by_min']}د بیش از سقف باز است" for s_ in stale[:6]]
+        more = f"\n… و {len(stale) - 6} پوزیشن دیگر" if len(stale) > 6 else ""
+        alert_gate.send(
+            "position_watch", key,
+            "⏰ لیام تریدر ۹ — پوزیشنِ مانده:\n" + "\n".join(lines) + more
+            + "\nستاپش منقضی شده — بستن/بازبینی دستی لازم است.",
+            recovered_text="✅ لیام تریدر ۹ — دیگر پوزیشنِ ماندهٔ بیش از سقف نداریم.")
     return res
 
 
