@@ -40,6 +40,14 @@ def walk(n=1200, seed=5, vol=0.0012):
     return cd
 
 
+def _raises(fn):
+    try:
+        fn()
+        return False
+    except Exception:                                    # noqa: BLE001
+        return True
+
+
 P = {"rr": 2.5, "max_fee_r": 0.30, "ibs_max": 0.30, "hold": 45}
 
 # ── شبکه ────────────────────────────────────────────────────────────────
@@ -133,6 +141,54 @@ check("با R منفی، هر چیدمانی انتظارِ منفی می‌ده
 check("با R مثبت علامت برمی‌گردد (فرمول جهت‌دار درست است)",
       all(r["expected_per_round"] > 0
           for r in SW.portfolio(+0.19, 0.685, cfg)))
+
+# ── دروازهٔ ساختار (فرضیهٔ حمید) ────────────────────────────────────────
+check("سه حالت دروازه تعریف شده و هرکدام توضیح دارد",
+      set(SW.STRUCT_MODES) == {"off", "aligned", "fresh"}
+      and all(len(v) > 20 for v in SW.STRUCT_MODES.values()))
+check("حالت off همیشه اجازه می‌دهد (پایه = همان تولید امروز)",
+      SW.struct_ok(CD[:200], "LONG", "off") == (True, None))
+check("حالت ناشناخته خطا می‌دهد نه عبور کور",
+      _raises(lambda: SW.struct_ok(CD[:200], "LONG", "bogus")))
+# ساختارِ محاسبه‌نشدنی باید **رد** شود، نه عبور (قانون ۱)
+check("ساختار محاسبه‌نشدنی = رد، نه عبورِ کور (دادهٔ ناموجود = NO_SIGNAL)",
+      SW.struct_ok(CD[:8], "LONG", "aligned")[0] is False)
+check("ساختار محاسبه‌نشدنی دلیلش را حمل می‌کند",
+      "محاسبه‌نشدنی" in str(SW.struct_ok(CD[:8], "LONG", "fresh")[1]))
+# دروازه واقعاً باید معامله کم کند، نه اینکه بی‌اثر باشد
+# یک گشتِ تنها فقط چند معامله می‌دهد و اثر فیلتر دیده نمی‌شود؛ چند
+# سری با هم تا نمونه به اندازهٔ سنجش برسد (خودِ همین آزمون اول با
+# ۶ معامله قرمز شد و عیبْ نمونهٔ کوچکِ من بود، نه دروازه).
+_S = [walk(1400, seed=30 + k) for k in range(6)]
+n_off = sum(len(SW.replay(c, dict(P, struct="off"))) for c in _S)
+n_al = sum(len(SW.replay(c, dict(P, struct="aligned"))) for c in _S)
+n_fr = sum(len(SW.replay(c, dict(P, struct="fresh"))) for c in _S)
+check("دروازهٔ هم‌جهت تعداد معامله را کم می‌کند (واقعاً فیلتر می‌کند)",
+      n_al < n_off, f"off={n_off} aligned={n_al}")
+check("دروازهٔ «تازه» از هم‌جهت هم سخت‌گیرتر است",
+      n_fr <= n_al, f"aligned={n_al} fresh={n_fr}")
+check("سیگنالِ دروازه‌دار برچسب رویداد ساختار را حمل می‌کند",
+      all("struct_event" in (SW.decide(CD[:i + 1], dict(P, struct="aligned"))
+                             or {"struct_event": None})
+          for i in (300, 600)))
+
+# مهم‌ترین: باید بتواند فرضیه را **رد** کند، نه فقط تأیید
+_A = {"x": walk(1400, seed=21), "y": walk(1400, seed=22)}
+_B = {"z": walk(1400, seed=23)}
+cs = SW.compare_structure(_A, _B, P, quiet=True)
+check("مقایسهٔ ساختار پایه و هر دو حالت را گزارش می‌کند",
+      cs["baseline"]["n"] > 0 and len(cs["modes"]) == 2)
+check("هر حالت هم می‌تواند تأیید کند هم رد (نه فقط تأیید)",
+      all({"confirms_hypothesis", "refutes_hypothesis"} <= set(m)
+          for m in cs["modes"] if m.get("lift_ci95")))
+check("روی گشت تصادفی، دروازهٔ ساختار فرضیه را تأیید نمی‌کند",
+      not any(m.get("confirms_hypothesis") for m in cs["modes"]),
+      cs["verdict"])
+check("وقتی چیزی تأیید نشد، تأیید خارج از نمونه اصلاً اجرا نمی‌شود",
+      "confirm_b" not in cs or any(m.get("confirms_hypothesis")
+                                   for m in cs["modes"]))
+check("آستانهٔ یک‌طرفه برای دو فرضیهٔ جهت‌دار به کار می‌رود",
+      cs["threshold_one_sided"] > 1.9)
 
 print()
 if FAIL:

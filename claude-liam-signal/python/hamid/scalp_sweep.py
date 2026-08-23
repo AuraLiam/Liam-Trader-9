@@ -45,6 +45,7 @@ PY = HERE.parent
 ROOT = PY.parents[1]
 sys.path.insert(0, str(PY))
 
+from hamid import microstructure as MS                 # noqa: E402
 from hamid import scalp as SC                          # noqa: E402
 from hamid.scenario_backtest import multiple_test_penalty   # noqa: E402
 
@@ -75,6 +76,48 @@ def cells():
                     out.append({"rr": rr, "max_fee_r": mf,
                                 "ibs_max": ib, "hold": h})
     return out
+
+
+# ── دروازهٔ ساختار (فرضیهٔ حمید، ۲۳ اوت) ────────────────────────────────
+# «اطمینان از نتیجهٔ معامله برمی‌گردد به تجربهٔ کندل‌شناسی و الگوهای
+# BOS و CHoCH که در تایم ۱ دقیقه می‌بینیم.»
+#
+# موتور اسکلپ امروز ساختار را **اصلاً نگاه نمی‌کند** (EMA21/55 + IBS +
+# پولبک). پس این فرضیه تا امروز نه رد شده نه تأیید — فقط آزموده نشده.
+#
+# عمداً بُعدِ شبکهٔ جستجو نشد: افزودنش شبکه را سه‌برابر و آستانهٔ
+# چندآزمونی را سخت‌تر می‌کرد. به‌جایش آزمونِ جداگانه با **جهت
+# پیش‌بینی‌شده**: ساختارِ هم‌جهت باید R ناخالص را بالا ببرد، نه پایین.
+STRUCT_MODES = {
+    "off":     "بدون دروازهٔ ساختار (پایه — همان چیزی که امروز اجرا می‌شود)",
+    "aligned": "فقط وقتی سوگیری ساختار ۱ دقیقه هم‌جهت معامله است",
+    "fresh":   "فقط تا ۱۰ کندل بعد از BOS/CHoCH هم‌جهت",
+}
+FRESH_BARS = 10
+
+
+def struct_ok(win, direction, mode):
+    """آیا ساختار ۱ دقیقه اجازه می‌دهد؟ → (بله/خیر، برچسب رویداد).
+
+    ساختار از همان microstructure ای خوانده می‌شود که پیوت را با تأخیر
+    تأیید می‌کند (confirmed_at_i = i+right) — یعنی هیچ نگاهی به آینده
+    ندارد. اگر ساختار قابل‌محاسبه نبود، **رد** می‌شود نه عبورِ کور
+    (قانون ۱: دادهٔ ناموجود = NO_SIGNAL)."""
+    if mode == "off":
+        return True, None
+    st = MS.structure(win)
+    if not st:
+        return False, "ساختار محاسبه‌نشدنی"
+    want = "up" if direction == "LONG" else "down"
+    if mode == "aligned":
+        return st["bias"] == want, st.get("last_event")
+    if mode == "fresh":
+        ev = st.get("last_event")
+        if not ev or st.get("last_event_dir") != want:
+            return False, ev
+        age = (len(win) - 1) - (st.get("last_event_i") or 0)
+        return age <= FRESH_BARS, f"{ev}+{age}"
+    raise ValueError(f"حالت ناشناختهٔ ساختار: {mode}")
 
 
 def decide(win, p, now_ms=None):
@@ -121,8 +164,12 @@ def decide(win, p, now_ms=None):
     lev = min(SC.LEV_MAX, int(50.0 / stop_pct) if stop_pct > 0 else SC.LEV_MAX)
     if lev < 1:
         return None
+    ok, ev = struct_ok(win, d, p.get("struct", "off"))
+    if not ok:
+        return None
     tp = px + p["rr"] * risk if d == "LONG" else px - p["rr"] * risk
     return {"dir": d, "entry": px, "sl": sl, "tp1": tp, "risk": risk,
+            "struct_event": ev,
             "stop_pct": stop_pct, "fee_r": fee_r, "lev": lev,
             "ibs": i, "session": SC.session_of(now_ms or win[-1]["t"])}
 
@@ -231,6 +278,81 @@ def portfolio(r_net_mean, stop_pct, configs, r_net_sd=None):
             row["sd_per_trade"] = round(r_net_sd * per_stop, 2)
         out.append(row)
     return out
+
+
+def compare_structure(A, B, geom, quiet=False):
+    """آیا دروازهٔ ساختار ۱ دقیقه لبهٔ ناخالص را بالا می‌برد؟
+
+    **پیش‌ثبت (پیش از دیدن نتیجه):** فرضیهٔ حمید می‌گوید بله — ساختارِ
+    هم‌جهت باید R ناخالص را نسبت به پایه **بالا** ببرد. جهت پیش‌بینی
+    مثبت است؛ اگر نتیجه منفی و معنادار درآمد، فرضیه **رد** می‌شود، نه
+    اینکه «چیزی پیدا نشد».
+
+    سه حالت = سه آزمون → آستانهٔ یک‌طرفهٔ Šidák روی m=۲ (دو حالتِ
+    دروازه‌دار در برابر پایه؛ خودِ پایه فرضیه نیست).
+
+    A برای اندازه‌گیری، B برای تأیید — همان تفکیک همیشگی.
+    """
+    from statistics import mean
+    thr = multiple_test_penalty(2)
+    base_trades = []
+    for cd in A.values():
+        base_trades += replay(cd, dict(geom, struct="off"))
+    base = score(base_trades)
+    rows = []
+    for mode in ("aligned", "fresh"):
+        tr = []
+        for cd in A.values():
+            tr += replay(cd, dict(geom, struct=mode))
+        sc = score(tr)
+        if not sc.get("ci95") or not base.get("ci95"):
+            rows.append({"mode": mode, **sc, "verdict": "نمونه کم"})
+            continue
+        lift = sc["R_gross"] - base["R_gross"]
+        # اختلاف دو نمونهٔ مستقل: بوت‌استرپ دو نمونه‌ای روی R ناخالص
+        ga = [t["R"] for t in tr]
+        gb = [t["R"] for t in base_trades]
+        rnd = random.Random(11)
+        ds = sorted((sum(ga[rnd.randrange(len(ga))] for _ in range(len(ga))) / len(ga)
+                     - sum(gb[rnd.randrange(len(gb))] for _ in range(len(gb))) / len(gb))
+                    for _ in range(3000))
+        lo, hi = ds[75], ds[2925]
+        t = t_stat([x - mean(gb) for x in ga])
+        passed = lo > 0 and t >= thr
+        refuted = hi < 0 and abs(t) >= thr
+        rows.append({"mode": mode, **sc, "lift_gross": round(lift, 4),
+                     "lift_ci95": [round(lo, 4), round(hi, 4)],
+                     "t": round(t, 3), "confirms_hypothesis": passed,
+                     "refutes_hypothesis": refuted,
+                     "verdict": ("فرضیه تأیید شد" if passed else
+                                 "فرضیه رد شد — ساختار **بدترش** کرد"
+                                 if refuted else "بی‌نتیجه")})
+    res = {"geometry": geom, "threshold_one_sided": thr,
+           "baseline": base, "modes": rows}
+    winner = next((r for r in rows if r.get("confirms_hypothesis")), None)
+    if winner:
+        tb = []
+        for cd in B.values():
+            tb += replay(cd, dict(geom, struct=winner["mode"]))
+        res["confirm_b"] = score(tb)
+        ok = res["confirm_b"].get("ci95") and res["confirm_b"]["ci95"][0] > 0
+        res["verdict"] = (f"دروازهٔ «{winner['mode']}» روی A تأیید شد و روی B "
+                          f"هم CI بالای صفر داد — نامزد واقعی" if ok else
+                          f"دروازهٔ «{winner['mode']}» روی A تأیید شد ولی روی "
+                          f"B نیفتاد — نویزِ جستجو")
+    else:
+        res["verdict"] = ("هیچ حالتی از دروازهٔ ساختار لبه را بالا نبرد؛ "
+                          "تأیید خارج از نمونه اجرا نشد")
+    if not quiet:
+        print(f"\nدروازهٔ ساختار ۱ دقیقه (پایه: {base.get('R_gross')}R ناخالص، "
+              f"n={base.get('n')})")
+        for r in rows:
+            print(f"  {r['mode']:<9} n={r.get('n',0):<5} "
+                  f"ناخالص={r.get('R_gross',0):+.4f} "
+                  f"تفاوت={r.get('lift_gross',0):+.4f} "
+                  f"CI={r.get('lift_ci95')}  {r['verdict']}")
+        print(f"  حکم: {res['verdict']}")
+    return res
 
 
 def run(bars=1500, n_symbols=60, quiet=False):
