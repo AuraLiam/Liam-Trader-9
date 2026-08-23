@@ -104,7 +104,12 @@ jobs:
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
-          git add -A brain/depth signals/depth-health.json
+          git add -A brain/depth
+          # فایل سلامت ممکن است نباشد (probe، یا شکست پیش از نوشتن). با
+          # `bash -e` یک `git add` روی فایل غایب کل مرحله را می‌کشد — و
+          # چون این ورک‌فلو در دروازهٔ خودآزمایی زنجیرهٔ سیگنال هم سنجیده
+          # می‌شود، همان یک خط کل زنجیره را قرمز کرد. گارد [ -f اجباری است.
+          [ -f signals/depth-health.json ] && git add signals/depth-health.json || true
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "عمق بیت‌یونیکس $(date -u '+%Y-%m-%d %H:%M') UTC"
           for attempt in 1 2 3 4 5; do
