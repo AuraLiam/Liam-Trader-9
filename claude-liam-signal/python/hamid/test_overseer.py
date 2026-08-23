@@ -28,11 +28,20 @@ def run():
     now = int(time.time() * 1000)
 
     # ۱) کارنامهٔ ضعیف دفتر → دستور دقت به E17/E11 با دلیل عددی
-    rep = {"paper": {"lifetime": {"trades": 30, "win_pct": 40, "mean_r": -0.1}}}
+    rep = {"paper": {"sent_scan_signals": {"trades": 30, "win_pct": 40,
+                                          "mean_r": -0.1}}}
     ds = ov.directives(rep, now)
     d = [x for x in ds if x["engine"] == "E17,E11"]
-    check("برد ۴۰٪ → دستور دقت به کمیته/روتر", d and d[0]["sev"] == "high")
+    check("برد ۴۰٪ در دفترِ صادرشده → دستور دقت به کمیته/روتر",
+          d and d[0]["sev"] == "high")
     check("دلیل عددی نوشته شده", "40" in d[0]["reason"], d[0]["reason"])
+    # عیب ممیزی ۲۳ اوت: lifetime دفترهای تمرین/اسکلپ/شوک را قاطی می‌کند و
+    # مبنای دستور نیست — دفترِ آلودهٔ منفی با دفترِ صادرشدهٔ سالم = بی‌دستور.
+    ds2 = ov.directives({"paper": {
+        "lifetime": {"trades": 31000, "win_pct": 40, "mean_r": -0.1},
+        "sent_scan_signals": {"trades": 300, "win_pct": 80, "mean_r": 0.1}}}, now)
+    check("دفتر آلودهٔ lifetime دیگر دستور نمی‌سازد (قلاب به دفتر صادرشده)",
+          not [x for x in ds2 if x["engine"] == "E17,E11"], str(ds2))
 
     # ۲) کارنامهٔ پیش‌بینی دامیننس زیر ۵۰٪ → دستور به E03/E04
     (tmp / "dominance.json").write_text(json.dumps({
@@ -66,8 +75,8 @@ def run():
     # ۶) وضعیت سالم → فقط پیام info، نه دستور الکی؛ و run() فایل می‌نویسد
     (tmp / "dominance.json").write_text(json.dumps({"generated": now}))
     (tmp / "rewards.json").write_text(json.dumps({"board": []}))
-    ds = ov.run({"paper": {"lifetime": {"trades": 30, "win_pct": 60,
-                                        "mean_r": 0.2}}})
+    ds = ov.run({"paper": {"sent_scan_signals": {"trades": 30, "win_pct": 60,
+                                                 "mean_r": 0.2}}})
     check("وضعیت سالم = فقط info", len(ds) == 1 and ds[0]["sev"] == "info")
     j = json.loads(ov.OUT.read_text())
     check("خروجی پنل نوشته شد و بدون وتو است", j["engine"] == "E26"

@@ -8,6 +8,15 @@ description: Working rules for Hamid's trading panel. Load before changing the e
 The goal is signals that land above 90%. Nothing below is a style preference —
 each rule exists because breaking it already cost days.
 
+## Read every instruction three times (Hamid, 23 Aug)
+
+Hamid's messages are dense lists, and skipping an item once already cost a
+full apology cycle. So: read the message once to understand, once to extract
+every single ask into a checklist, and a **third time at the end of the work
+to verify each item is actually done** — done in the repo, not promised in
+the reply. An item that cannot be done gets said out loud with its reason,
+never silently dropped. The final reply mirrors the checklist.
+
 ## Measure first, and measure the right thing
 
 Never change a threshold on intuition. The tools are in `tests/`:

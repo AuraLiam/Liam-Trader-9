@@ -279,6 +279,27 @@ def gate_stages(setups, kget=None):
             s["stage"] = "WATCH"
             s["skip"] = a["reason"]
             demoted += 1
+            continue
+        # نقشهٔ نقدینگی اجباری (دستور حمید، ۲۳ اوت: «نقشهٔ نقدینگی ارزها
+        # حتماً بررسی بشه»). از کندل‌هایی که همین ستاپ از قبل دارد ساخته
+        # می‌شود — صفر فچ اضافه، صفر تأخیر. نبودِ نقشه = دادهٔ ناقص در
+        # فیلدِ حالا-اجباری = انتشار ممنوع (قانون ۱)، همان الگوی دروازهٔ
+        # روند بالا.
+        try:
+            from hamid import liqmap
+            lm = liqmap.build(s.get("candles") or [])
+        except Exception:                            # noqa: BLE001
+            lm = None
+        if not lm:
+            s["stage"] = "WATCH"
+            s["skip"] = "نقشهٔ نقدینگی ساخته نشد — بررسی نقدینگی اجباری است"
+            demoted += 1
+            continue
+        s["liq_map"] = {"magnet": lm["magnet"], "above": lm["above"][:2],
+                        "below": lm["below"][:2]}
+        ln = liqmap.note(lm, s.get("dir"))
+        if ln:
+            s["liqmap_note"] = ln
     return demoted
 
 
