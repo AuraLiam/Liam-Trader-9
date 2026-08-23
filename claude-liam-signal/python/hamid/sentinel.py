@@ -177,10 +177,26 @@ def check(accept=False):
 
 
 def alert(res):
-    """فقط تخلف high به تلگرام می‌رود — سروصدای بی‌مورد ممنوع (قانون ۰۷)."""
+    """فقط تخلف high به تلگرام می‌رود — سروصدای بی‌مورد ممنوع (قانون ۰۷).
+
+    و فقط **یک بار** برای هر مجموعهٔ یافته (۲۳ اوت): تا امروز این تابع
+    حافظه نداشت، پس تا وقتی یک ورک‌فلوی ثبت‌نشده روی مرجع نمی‌نشست، همان
+    هشدارِ «مسیر کلاسیک نشت سکرت» هر ۳۰ دقیقه تکرار می‌شد. حالا از
+    دروازهٔ مشترک رد می‌شود: کلید = مجموعهٔ یافته‌های high."""
     high = [f for f in res["findings"] if f["level"] == "high"]
-    if not high:
+    from hamid import alert_gate
+    key = ",".join(sorted(f"{f['kind']}:{f['what']}" for f in high))
+    ok, _reason = alert_gate.decide("sentinel", key)
+    if not ok:
         return False
+    if not high:                                     # recovered → خبر سلامتی
+        try:
+            import telegram as TG
+            TG.send_text("✅ نگهبان یکپارچگی — لیام تریدر ۹: مورد مشکوک "
+                         "قبلی برطرف شد؛ ریپو پاک است.")
+        except Exception:                            # noqa: BLE001
+            return False
+        return True
     try:
         from telegram import creds, _post
     except Exception:                                # noqa: BLE001
