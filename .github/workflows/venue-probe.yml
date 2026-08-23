@@ -66,11 +66,12 @@ jobs:
           { echo '```'; tail -120 venue.txt 2>/dev/null || echo "no output";
             echo '```'; } >> $GITHUB_STEP_SUMMARY
       - name: Publish
-        if: github.event.inputs.mode == 'compare'
+        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs'
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
           [ -f signals/venue-compare.json ] && git add signals/venue-compare.json || true
+          [ -f signals/docs-probe.json ] && git add signals/docs-probe.json || true
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC"
           for attempt in 1 2 3 4 5; do
