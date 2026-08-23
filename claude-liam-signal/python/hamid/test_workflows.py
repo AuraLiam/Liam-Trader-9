@@ -233,6 +233,32 @@ check("هیچ زنجیرهٔ خوددعوتی بعد از شکستِ درواز�
 if selfdispatch:
     print(f"      ↳ {selfdispatch}")
 
+# ── بودجهٔ تلاشِ پوش (عیب ۲۳ اوت) ──────────────────────────────────────
+#
+# main امروز ۶۴۶ پوش خورد — یعنی هر ~۲ دقیقه یکی. حلقهٔ قدیمی ۵ تلاش با
+# sleep=attempt*3 داشت: مجموعاً ۳۰ ثانیه پنجره، و بدون jitter دو رانر
+# دقیقاً هم‌گام تلاش می‌کردند. نتیجه: «cannot lock ref … is at X but
+# expected Y» و یک اجرای سرخ که هیچ عیب واقعی‌ای نداشت.
+import re as _re
+_weak_loop, _no_jitter = [], []
+for f in files:
+    src = f.read_text(encoding="utf-8", errors="ignore")
+    if "git push" not in src:
+        continue
+    for m in _re.finditer(r"for (?:attempt|a|i) in ([\d ]+); do", src):
+        if len(m.group(1).split()) < 8:
+            _weak_loop.append(f"{f.name}:{m.group(1).strip()}")
+    for m in _re.finditer(r"sleep \$\(\(([^)]*)\)\)", src):
+        body = m.group(1)
+        if ("attempt" in body or _re.search(r"\ba\b|\bi\b", body)) \
+                and "RANDOM" not in body:
+            _no_jitter.append(f"{f.name}:{body.strip()}")
+
+check(f"هر حلقهٔ پوش دست‌کم ۸ تلاش دارد (بی‌بودجه: {_weak_loop[:4]})",
+      not _weak_loop)
+check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم‌گام تلاش نکنند "
+      f"(بی‌jitter: {_no_jitter[:4]})", not _no_jitter)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

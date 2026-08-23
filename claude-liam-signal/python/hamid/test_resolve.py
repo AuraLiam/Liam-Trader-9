@@ -280,6 +280,58 @@ check("و عکس‌فوری نسخهٔ همین اجرا را گرفت",
 check("چیزی حل‌نشده نماند (نام فارسی)",
       not git("diff", "--name-only", "--diff-filter=U", cwd=tmp).stdout.strip())
 
+# ── دفتر عمقِ فشرده (عیب ۲۳ اوت) ────────────────────────────────────────
+#
+# برداشت عمق ~۵۳ دقیقه طول می‌کشد و کرونش ساعتی است، پس دو اجرا به هم
+# می‌رسند و هر دو روی فایلِ همان روز می‌نویسند. گیت باینری را merge
+# نمی‌کند و handler نبود → «دستی بماند» → exit 1 → ۵۳ دقیقه دادهٔ
+# برداشت‌شده دور ریخته می‌شد (دو بار در یک روز).
+import gzip as _gzip
+
+_gzp = tmp / "brain" / "depth"
+_gzp.mkdir(parents=True, exist_ok=True)
+_gzf = "brain/depth/BTCUSDT-20260823.m1.jsonl.gz"
+
+
+def _write_gz(rows, mode="wt"):
+    with _gzip.open(tmp / _gzf, mode, encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def _row(t_, n):
+    return {"t": t_, "n": n, "miss": 0, "mid_o": 100.0 + n}
+
+
+_write_gz([_row(1000, 5), _row(2000, 5)])
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "gz-base", cwd=tmp)
+# شاخهٔ پایه صریح — آزمون قبلی HEAD را روی fa-base گذاشته و برگشت به
+# main یعنی brain/depth اصلاً وجود ندارد (همان‌جا اولین بار افتاد).
+git("checkout", "-qb", "gz-base-br", cwd=tmp)
+git("checkout", "-qb", "gz-other", cwd=tmp)
+_write_gz([_row(3000, 9), _row(4000, 9)], mode="at")
+git("commit", "-qam", "gz-other", cwd=tmp)
+git("checkout", "-q", "gz-base-br", cwd=tmp)
+_write_gz([_row(2000, 18), _row(5000, 18)], mode="at")   # ۲۰۰۰ در هر دو طرف
+git("commit", "-qam", "gz-mine", cwd=tmp)
+_m = git("merge", "gz-other", cwd=tmp)
+check("دفتر عمق فشرده واقعاً تعارض باینری می‌سازد", _m.returncode != 0)
+_r = subprocess.run([sys.executable, "scripts/resolve_brain_conflicts.py"],
+                    cwd=tmp, capture_output=True, text=True)
+check("حل‌کننده دفتر gz را می‌شناسد و exit 0 می‌دهد", _r.returncode == 0,
+      )
+_rows = [json.loads(l) for l in
+         _gzip.open(tmp / _gzf, "rt", encoding="utf-8")]
+_ts = sorted(r["t"] for r in _rows)
+check("هیچ دقیقه‌ای گم نشد — اجتماع هر دو طرف",
+      _ts == [1000, 2000, 3000, 4000, 5000])
+check("دقیقهٔ مشترک نسخهٔ کامل‌تر (n بیشتر) را نگه می‌دارد",
+      [r["n"] for r in _rows if r["t"] == 2000] == [18])
+check("خروجی هنوز gzip خواندنی است (چندعضوی نشکسته)",
+      len(_rows) == 5)
+git("commit", "--no-edit", "-q", cwd=tmp)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

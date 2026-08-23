@@ -54,7 +54,7 @@ jobs:
           for _f in signals/news.json; do [ -f "$_f" ] && git add "$_f"; done
           if ! git diff --cached --quiet 2>/dev/null; then
             git commit -q -m "شکار خبر $(date -u '+%H:%M') UTC"
-            for i in 1 2 3; do git push origin HEAD:main -q && break; git pull --rebase origin main -q || true; sleep $((i*2)); done
+            for i in 1 2 3 4 5 6 7 8; do git push origin HEAD:main -q && break; git pull --rebase origin main -q || true; sleep $((i * 4 + RANDOM % 7)); done
           fi
       - name: انتشار روی پنل
         run: |
@@ -67,5 +67,5 @@ jobs:
           git add signals
           if ! git diff --cached --quiet; then
             git commit -q -m "شکار خبر $(date -u '+%H:%M') UTC"
-            for i in 1 2 3; do git push origin HEAD:gh-pages -q && break; git fetch origin gh-pages -q||true; git rebase origin/gh-pages -q||{ git rebase --abort; break; }; done
+            for i in 1 2 3 4 5 6 7 8; do git push origin HEAD:gh-pages -q && break; git fetch origin gh-pages -q||true; git rebase origin/gh-pages -q||{ git rebase --abort; break; }; done
           fi

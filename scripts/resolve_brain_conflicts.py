@@ -21,6 +21,7 @@
 """
 from __future__ import annotations
 
+import gzip
 import json
 import subprocess
 import sys
@@ -32,6 +33,13 @@ ROOT = Path(__file__).resolve().parent.parent
 def _stage(stage, path):
     r = subprocess.run(["git", "show", f":{stage}:{path}"],
                        capture_output=True, text=True, cwd=ROOT)
+    return r.stdout if r.returncode == 0 else None
+
+
+def _stage_bytes(stage, path):
+    """نسخهٔ باینریِ همان — فایل فشرده با text=True خراب خوانده می‌شود."""
+    r = subprocess.run(["git", "show", f":{stage}:{path}"],
+                       capture_output=True, cwd=ROOT)
     return r.stdout if r.returncode == 0 else None
 
 
@@ -65,6 +73,49 @@ def merge_jsonl(path):
     rows.sort(key=lambda x: x[0])
     (ROOT / path).write_text("\n".join(l for _, l in rows) + "\n", encoding="utf-8")
     return f"{len(rows)} ردیف یکتا"
+
+
+def merge_gz_minutes(path):
+    """دفتر دقیقه‌ایِ gzip (عمق دفتر) → اجتماع بر مهر زمان سطل.
+
+    عیب ۲۳ اوت: برداشت عمق ~۵۳ دقیقه طول می‌کشد و کرون ساعتی است، پس دو
+    اجرا تقریباً به هم می‌رسند و هر دو روی فایلِ **همان روز** می‌نویسند.
+    گیت فایل باینری را merge نمی‌کند و این‌جا handler نبود → «دستی بماند»
+    → exit 1 → کلِ ۵۳ دقیقه دادهٔ برداشت‌شده دور ریخته می‌شد. دو بار امروز.
+
+    اجتماع این‌جا دقیق و بی‌اتلاف است چون هر سطر یک سطلِ دقیقه است با
+    کلید یکتای `t`: دو اجرا دقیقه‌های متفاوتِ همان روز را دارند، پس
+    اتحادشان همان چیزی است که یک اجرای پیوسته می‌ساخت. اگر یک `t` در هر
+    دو طرف بود، سطرِ با نمونهٔ بیشتر (`n`) نگه داشته می‌شود — همان دقیقه
+    است، ولی یکی کامل‌تر دیده شده."""
+    best = {}
+    for st in (2, 3):
+        blob = _stage_bytes(st, path)
+        if not blob:
+            continue
+        try:
+            text = gzip.decompress(blob).decode("utf-8", "replace")
+        except Exception:                            # noqa: BLE001 - طرفِ خراب رد
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+                t = int(row["t"])
+            except Exception:                        # noqa: BLE001
+                continue
+            old = best.get(t)
+            if old is None or (row.get("n") or 0) > (old.get("n") or 0):
+                best[t] = row
+    out = [best[t] for t in sorted(best)]
+    p = ROOT / path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(p, "wt", encoding="utf-8") as fh:
+        for row in out:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    return f"{len(out)} سطل دقیقه (اجتماع)"
 
 
 def merge_lessons(path):
@@ -192,6 +243,8 @@ def handler_for(path):
         return merge_key_list                         # دفتر ضدتکرار، نه عکس‌فوری
     if path in DERIVED_SNAPSHOTS:
         return take_ours                              # مشتق‌شده، تاریخ ندارد
+    if path.startswith("brain/") and path.endswith(".jsonl.gz"):
+        return merge_gz_minutes                       # دفتر دقیقه‌ای فشرده
     if path.startswith("brain/") and path.endswith(".jsonl"):
         return merge_jsonl                            # هر دفتر append-only
     if path.startswith("brain/") and path.endswith("-state.json"):
