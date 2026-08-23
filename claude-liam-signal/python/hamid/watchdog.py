@@ -156,7 +156,7 @@ def c_learning_alive():
         if worst is None or age_h > worst[1]:
             worst = (rel, age_h)
     if worst[1] > 24:
-        return "bad", (f"{worst[0]} از {worst[1]:.0f} ساعت پیش ننوشته — "
+        return "down", (f"{worst[0]} از {worst[1]:.0f} ساعت پیش ننوشته — "
                        "تسویه/جایزه/بونفرونی ایستاده (کلاس عیب ۱۹-۲۳ اوت)")
     return "ok", f"تازه‌ترین کهنگی دفتر یادگیری {worst[1]:.1f} ساعت"
 
@@ -234,7 +234,11 @@ def run(alert=False, quiet=False):
     if not quiet:
         print("\nدیده‌بان پنل\n" + "═" * 72)
         for r in rows:
-            mark = {"ok": "✓", "warn": "!", "down": "✗", "skip": "–"}[r["status"]]
+            # وضعیت ناشناخته هرگز خودِ دیده‌بان را نمی‌کشد (درس ۲۳ اوت:
+            # وضعیت جدید «bad» کل اجرای دیده‌بان را KeyError کرد —
+            # نگهبانِ مرده بدتر از نگهبانِ نصفه است)؛ «؟» چاپ می‌شود.
+            mark = {"ok": "✓", "warn": "!", "down": "✗",
+                    "skip": "–"}.get(r["status"], "؟")
             print(f"  {mark}  {r['name']:<30} {r['detail']}")
         print("═" * 72)
         n_ok = sum(1 for r in rows if r["status"] == "ok")
