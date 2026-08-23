@@ -151,11 +151,13 @@ _up240 = [100 + i * 0.5 + 6 * math.sin(i / 3.0) for i in range(240)]
 def _kget_up(sym, tf, n):
     return _mk_tg(_up240, 14400000 if tf == "4h" else 3600000)
 
+# کندل ۵ دقیقه برای نقشهٔ نقدینگی — دروازه حالا نقشه را اجباری می‌گیرد
+_liq_cd = _mk_tg([100 + (i % 7) * 0.3 for i in range(120)], 300000)
 setups = [
     {"sym": "ARBUSDT", "dir": "SHORT", "tf": "5m", "stage": "ARMED",
-     "quality": 56},
+     "quality": 56, "candles": _liq_cd},
     {"sym": "ARBUSDT", "dir": "LONG", "tf": "5m", "stage": "SIGNAL",
-     "quality": 80},
+     "quality": 80, "candles": _liq_cd},
     {"sym": "XUSDT", "dir": "SHORT", "tf": "5m", "stage": "WATCH"},
 ]
 n_dem = SC.gate_stages(setups, kget=_kget_up)
@@ -165,6 +167,17 @@ check("اسکن: ARMED خلاف هر دو تایم بالا به WATCH تنزل 
 check("اسکن: ستاپ هم‌جهت دست‌نخورده می‌ماند و روندش ثبت می‌شود",
       setups[1]["stage"] == "SIGNAL" and setups[1].get("trend4") == "up")
 check("اسکن: مراحل WATCH بی‌جهت شبکه نمی‌خورند", "trend4" not in setups[2])
+check("اسکن: نقشهٔ نقدینگی روی ستاپ منتشرشونده نشسته (دستور ۲۳ اوت)",
+      setups[1].get("liq_map") and "magnet" in setups[1]["liq_map"],
+      str(setups[1].get("liq_map"))[:150])
+
+# ستاپ بی‌کندل = نقشه ساختنی نیست = انتشار ممنوع (قانون ۱)
+s_noliq = [{"sym": "ZUSDT", "dir": "LONG", "tf": "5m", "stage": "SIGNAL",
+            "quality": 80}]
+SC.gate_stages(s_noliq, kget=_kget_up)
+check("اسکن: بدون نقشهٔ نقدینگی، سیگنال منتشر نمی‌شود",
+      s_noliq[0]["stage"] == "WATCH" and "نقدینگی" in s_noliq[0].get("skip", ""),
+      str(s_noliq[0].get("skip")))
 
 def _kget_boom(sym, tf, n):
     raise RuntimeError("network down")

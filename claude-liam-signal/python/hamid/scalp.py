@@ -36,7 +36,13 @@ FEE_RT_PCT = 0.15          # رفت‌وبرگشت + لغزش — در ۱ دقی
 IBS_LONG, IBS_SHORT = 0.30, 0.70
 RR_TARGET = 1.5            # اسکلپ: تارگت نزدیک، خروج سریع
 HOLD_BARS = 45             # حداکثر نگهداری ~۴۵ دقیقه
-LEV_BASE, LEV_STEP, LEV_MAX = 45, 15, 90
+# قانون اهرم واحد (دستور حمید، ۲۳ اوت): ۱۵ + ۲۴×اطمینان، بازهٔ ۱۵–۳۹ —
+# از منبع حقیقت (liam9_strategy) خوانده می‌شود تا دو عددِ واگرا نسازیم.
+# باند پیپر ۴۵–۹۰ (۱۸ اوت) نسخ شد؛ اطمینانِ این میز = سهم تأییدها از ۳
+# (بدنهٔ قاطع، سوییپ-شدو، سشن هم‌پوشان).
+import liam9_strategy as _ST
+LEV_BASE, LEV_MAX = _ST.LEV_MIN, _ST.LEV_MAX_CONF
+_N_CONFIRM = 3
 
 
 def session_of(ms):
@@ -113,8 +119,8 @@ def decide(win, now_ms=None):
         return None                    # دام اسکالپ: کارمزد بازی را می‌خورد
     decisive, sweep = candle_feats(win, direction)
     sess = session_of(now_ms or win[-1]["t"])
-    lev = LEV_BASE + LEV_STEP * (int(decisive) + int(sweep)
-                                 + int(sess == "overlap"))
+    conf01 = (int(decisive) + int(sweep) + int(sess == "overlap")) / _N_CONFIRM
+    lev = LEV_BASE + round((LEV_MAX - LEV_BASE) * conf01)
     # محافظ لیکویید: استاپ باید < نصف فاصلهٔ لیکویید بماند؛ به‌جای رد کردن
     # معامله، اهرم تا حد امن پایین می‌آید (lev < 50/stop_pct). اگر حتی
     # اهرم پایه هم امن نیست، استاپ برای اسکلپ اهرمی زیادی گشاد است — رد.

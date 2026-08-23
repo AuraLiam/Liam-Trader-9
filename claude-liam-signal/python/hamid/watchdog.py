@@ -141,6 +141,26 @@ def c_paper_moving():
                   f"${e['balance']} ({e['return_pct']:+.2f}٪) · افت {e['max_drawdown_pct']}٪")
 
 
+def c_learning_alive():
+    """زنجیرهٔ یادگیری (تسویه → جایزه → بونفرونی) نباید بی‌صدا بایستد.
+
+    درس ۲۳ اوت: یک ردیف سمی (entry=sl) تسویه را از ۱۹ اوت خواباند؛ جایزه و
+    reasons چهار روز ننوشتند و دیده‌بان «سالم» می‌گفت چون فقط وجودِ دفتر را
+    می‌سنجید، نه حرکتش. حالا کهنگیِ خودِ دفترهای یادگیری عیب است."""
+    worst = None
+    for rel in ("brain/rewards.json", "brain/paper/reasons.json"):
+        p = ROOT / rel
+        if not p.exists():
+            return "warn", f"{rel} وجود ندارد — زنجیرهٔ یادگیری ناقص است"
+        age_h = (time.time() - p.stat().st_mtime) / 3600
+        if worst is None or age_h > worst[1]:
+            worst = (rel, age_h)
+    if worst[1] > 24:
+        return "down", (f"{worst[0]} از {worst[1]:.0f} ساعت پیش ننوشته — "
+                       "تسویه/جایزه/بونفرونی ایستاده (کلاس عیب ۱۹-۲۳ اوت)")
+    return "ok", f"تازه‌ترین کهنگی دفتر یادگیری {worst[1]:.1f} ساعت"
+
+
 def c_brain_writing():
     """اتاق‌ها باید همین امروز چیزی نوشته باشند."""
     ev = ROOT / "brain" / "events" / f"{datetime.now(timezone.utc):%Y-%m-%d}.jsonl"
@@ -191,6 +211,7 @@ CHECKS = [
     ("اسکن زنده روی پنل", c_scan_fresh),
     ("هماهنگی پنل با آخرین چرخه", c_pages_matches_main),
     ("دفتر ترید کاغذی", c_paper_moving),
+    ("زنجیرهٔ یادگیری زنده است", c_learning_alive),
     ("اتاق‌ها در حال نوشتن", c_brain_writing),
     ("راندمان اتاق‌ها (payroll)", c_rooms_scored),
     ("آمادگی تلگرام", c_telegram_ready),
@@ -213,7 +234,11 @@ def run(alert=False, quiet=False):
     if not quiet:
         print("\nدیده‌بان پنل\n" + "═" * 72)
         for r in rows:
-            mark = {"ok": "✓", "warn": "!", "down": "✗", "skip": "–"}[r["status"]]
+            # وضعیت ناشناخته هرگز خودِ دیده‌بان را نمی‌کشد (درس ۲۳ اوت:
+            # وضعیت جدید «bad» کل اجرای دیده‌بان را KeyError کرد —
+            # نگهبانِ مرده بدتر از نگهبانِ نصفه است)؛ «؟» چاپ می‌شود.
+            mark = {"ok": "✓", "warn": "!", "down": "✗",
+                    "skip": "–"}.get(r["status"], "؟")
             print(f"  {mark}  {r['name']:<30} {r['detail']}")
         print("═" * 72)
         n_ok = sum(1 for r in rows if r["status"] == "ok")

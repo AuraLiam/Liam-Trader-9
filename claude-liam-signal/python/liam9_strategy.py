@@ -79,7 +79,7 @@ TOP_LIQ_PATH = "/signals/top-liquidity.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.6",
+    "version": "liam9-dash-2.7",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -600,6 +600,68 @@ def _exit_plan(direction, entry, tp1, risk, P):
 
 
 # ── تحلیل اصلی (۴س/۱س/۱۵د) ─────────────────────────────────────────────────
+# ── نقشهٔ نقدینگی (دستور حمید، ۲۳ اوت: «نقشهٔ نقدینگی ارزها حتماً بررسی
+# بشه») — همان تخمین بازتولیدپذیر hamid/liqmap، این‌جا خودکفا چون این فایل
+# باید stdlib-only در باکس داشبورد جا بگیرد. هر ساعتِ پرحجم یعنی ورودِ
+# پوزیشن در آن قیمت؛ اهرم‌های رایج نقطهٔ لیکوییدش را می‌سازند؛ جمعِ
+# حجم‌وزنی روی سطل‌های قیمتی = خوشه‌ها. تخمین است نه دادهٔ صرافی — و
+# فقط بستر/هشدار است، نه امتیاز و نه وتو (اثرِ امتیازی بدون CI ممنوع).
+_LIQ_LEV = ((10, 1.0), (25, 0.8), (50, 0.6), (100, 0.4))
+
+
+def _liq_map(cd, look=48, bins=60, span_pct=6.0):
+    """→ نقشه یا None وقتی داده کم است. نبودِ نقشه = دادهٔ ناقص (قانون ۱)."""
+    if not cd or len(cd) < look + 2:
+        return None
+    px = cd[-1]["c"]
+    lo, hi = px * (1 - span_pct / 100), px * (1 + span_pct / 100)
+    step = (hi - lo) / bins
+    if step <= 0 or px <= 0:
+        return None
+    heat = [0.0] * bins
+    window = cd[-look:]
+    vmax = max(c.get("v") or 0 for c in window) or 1.0
+    for c in window:
+        w_vol = (c.get("v") or 0) / vmax
+        for lev, w in _LIQ_LEV:
+            for liq_px in (c["c"] * (1 - 1 / lev), c["c"] * (1 + 1 / lev)):
+                k = int((liq_px - lo) / step)
+                if 0 <= k < bins:
+                    heat[k] += w_vol * w
+    peak = max(heat) or 1.0
+    clusters = [{"price": round(lo + (k + 0.5) * step, 10),
+                 "pct_away": round(((lo + (k + 0.5) * step) / px - 1) * 100, 2),
+                 "score": round(h / peak * 100)}
+                for k, h in enumerate(heat) if h >= peak * 0.35]
+    above = sorted([c for c in clusters if c["pct_away"] > 0],
+                   key=lambda c: c["pct_away"])[:3]
+    below = sorted([c for c in clusters if c["pct_away"] < 0],
+                   key=lambda c: -c["pct_away"])[:3]
+    sa, sb = sum(c["score"] for c in above), sum(c["score"] for c in below)
+    magnet = None
+    if sa or sb:
+        magnet = "above" if sa > sb * 1.3 else ("below" if sb > sa * 1.3
+                                                else "balanced")
+    return {"above": above, "below": below, "magnet": magnet,
+            "note": "تخمین از کندل واقعی (حجم × اهرم‌های رایج)"}
+
+
+def _liq_line(lm):
+    """یک خط فارسی برای کپشن — فقط وقتی چیزی برای گفتن هست."""
+    bits = []
+    if lm["above"]:
+        a = lm["above"][0]
+        bits.append(f"خوشهٔ لیکویید بالا {a['pct_away']:+}٪ (شدت {a['score']})")
+    if lm["below"]:
+        b = lm["below"][0]
+        bits.append(f"پایین {b['pct_away']:+}٪ (شدت {b['score']})")
+    if not bits:
+        return None
+    tail = {"above": "— آهن‌ربا بالا", "below": "— آهن‌ربا پایین",
+            "balanced": "— متوازن"}.get(lm["magnet"], "")
+    return "💧 " + " · ".join(bits) + (f" {tail}" if tail else "")
+
+
 def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     """تصمیم روش لیام تریدر ۹ روی کندل‌های داده‌شده.
 
@@ -716,6 +778,16 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     if rep:
         return no(rep)
 
+    # نقشهٔ نقدینگی اجباری (۲۳ اوت) — از همان کندل ۱س که در دست است؛
+    # نبودش = دادهٔ ناقص در فیلد اجباری = NO_SIGNAL (قانون ۱). فقط بستر
+    # است: نه امتیاز عوض می‌کند نه وتو — اثرِ بی‌CI وارد تصمیم نمی‌شود.
+    lm = _liq_map(c1h)
+    if lm is None:
+        return no("نقشهٔ نقدینگی از کندل ۱س ساختنی نیست — بررسی نقدینگی اجباری است")
+    _ll = _liq_line(lm)
+    if _ll:
+        why.append(_ll)
+
     plan = _exit_plan(direction, entry, tp1, risk, P)
     why.append(f"🪜 نردبان خروج: تی‌پی۱ {plan['tp1_close_pct']}٪ ببند → "
                f"استاپ {plan['stop_after_tp1']} (برایند مثبت قطعی) · "
@@ -727,7 +799,7 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
             "tp1": round(tp1, 8), "rr_net": round(net_rr, 2),
             "stop_pct": round(stop_pct, 3), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "trend_4h": t4, "trend_1h": t1,
-            "quality": quality, "exp_used": exp_used,
+            "quality": quality, "exp_used": exp_used, "liq_map": lm,
             "experience": exp, "pattern_align": align, "patterns": pat_names,
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
             "margin_pct": margin_pct_for(quality),
@@ -857,6 +929,11 @@ def scalp_decide(c1m, symbol="?"):
     rep = _repeat_gate(symbol, direction, k_last["t"], "scalp")
     if rep:
         return no(rep)
+    # نقشهٔ نقدینگی اجباری (۲۳ اوت) — روی اسکلپ از همان کندل ۱د؛ نبودش =
+    # NO_SIGNAL (قانون ۱). بستر است، نه امتیاز و نه وتو.
+    lm = _liq_map(c1m)
+    if lm is None:
+        return no("نقشهٔ نقدینگی از کندل ۱د ساختنی نیست — بررسی نقدینگی اجباری است")
     # ناحیهٔ اعتبار ورود (دستور ۲۳ اوت): تصمیم روی کندلِ بسته گرفته شده؛
     # اگر تا لحظهٔ اجرا قیمت بیش از ۰.۳۵×ریسک از ورود دور شده باشد،
     # سیگنال EXPIRED است — تعقیبِ قیمت ممنوع. داشبورد قبل از سفارش این
@@ -872,7 +949,7 @@ def scalp_decide(c1m, symbol="?"):
             "rr_net": round(S["rr_target"] - fee_r, 2), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "session": sess, "leverage": lev,
             "quality": quality, "pattern_align": align, "patterns": pat_names,
-            "candle_evidence": geom, "order_block": own_ob,
+            "candle_evidence": geom, "order_block": own_ob, "liq_map": lm,
             "trail_at": round(entry + (tp1 - entry) / 3, 8),
             "panel": "لیام تریدر ۹", "version": PARAMS["version"],
             "t": int(time.time() * 1000),
@@ -1069,6 +1146,13 @@ def _selftest():
     assert r["action"] == "LONG", r
     assert r["sl"] < r["entry"] < r["tp1"]
     assert r["exp_used"] is False and 0 <= r["quality"] <= 100
+    # نقشهٔ نقدینگی (۲۳ اوت): اجباری روی خروجی؛ دادهٔ کم = None = NO_SIGNAL
+    assert "liq_map" in r and r["liq_map"] is not None, r
+    assert _liq_map(c1[:20]) is None
+    _lm_v = _liq_map([{"t": i, "o": 100, "h": 101, "l": 99, "c": 100 + (i % 5),
+                       "v": 1.0 + (i % 3)} for i in range(60)])
+    assert _lm_v and (_lm_v["above"] or _lm_v["below"]), _lm_v
+    assert _liq_line(_lm_v) and "لیکویید" in _liq_line(_lm_v)
     # قرارداد اجرا (۲۰ اوت): ایزوله + استاپ/تارگت اجباری روی خود خروجی
     assert r["margin_mode"] == "isolated" and r["product"] == "futures", r
     assert r["sl_tp_mandatory"] and r["stop_loss"] == r["sl"] \
@@ -1146,6 +1230,7 @@ def _selftest():
     assert s["leverage"] <= int(50.0 / s["stop_pct"]), s
     assert s["fee_r"] < SCALP["max_fee_r"], s
     assert "candle_evidence" in s and s["candle_evidence"]["formula_version"] == CANDLE_GEOM_VERSION, s
+    assert "liq_map" in s and s["liq_map"] is not None, s  # نقدینگی اجباری (۲۳ اوت)
     assert "order_block" in s, s
 
     # اردر بلاک مخالفِ تازه سرِ راه تارگت → وتوی واقعی (تزریق قطعی برای
@@ -1240,7 +1325,7 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۶ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، لایهٔ نقدشوندگی، ممیزی")
+    print("✓ خودآزمایی استراتژی ۲.۷ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
