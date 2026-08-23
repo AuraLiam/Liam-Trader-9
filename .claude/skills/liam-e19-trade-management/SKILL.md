@@ -55,6 +55,23 @@ Track paper/live-signal state, invalidation, partial targets, trailing, break-ev
 - Do not hide missed entries or late fills.
 - Every state transition is timestamped and auditable.
 
+## Trailing and stale positions (Hamid, 23 Aug — Rule 10)
+
+- **Trailing arms at real profit, not at nominal profit.** The arming
+  point is `exit_plan.trail_arm` = entry ± the round-trip fee buffer.
+  Before that point the trade is not yet profitable net of cost, so
+  moving the stop there would lock in a loss and call it a win.
+- Once armed, the stop only ever moves in the profit direction.
+- **Every exit plan carries `max_hold_min`.** A scalp setup that was
+  right resolves within a few candles; one still open past its cap is no
+  longer the setup that was entered — its reason has expired and holding
+  it is unpriced risk. `hamid/position_watch.py` sweeps the open book
+  each cycle and publishes stale positions to
+  `signals/position-watch.json` with an alarm.
+- **The watcher announces; it does not close.** Closing a position is
+  live execution and stays outside this package (Rule 05). The action is
+  the dashboard's own facility or Hamid's hand.
+
 ## Learning routine
 
 After every closed signal; monthly trailing/partial-exit experiment review.
