@@ -12,6 +12,12 @@ on:
       bars:
         description: "چند کندل ۱ دقیقه (سقف صرافی‌ها معمولاً ~۱۰۰۰)"
         default: "1000"
+      strategy_ref:
+        description: "A/B هم‌پنجره: نسخهٔ قدیمی liam9_strategy.py از این کامیت (خالی = نسخهٔ فعلی)"
+        default: ""
+      publish:
+        description: "نتیجه روی ریپو ثبت شود؟ (برای A/B خالی بگذارید = no)"
+        default: "yes"
   schedule:
     - cron: "37 4 * * *"        # روزی یک بار، دقیقهٔ فرد (کرون */N ممنوع)
 
@@ -36,6 +42,19 @@ jobs:
         run: |
           python3 -m hamid.test_scalp_dash_backtest
           python3 -m hamid.test_exec_contract
+      # A/B هم‌پنجره: بک‌تستِ دو نسخه در دو زمانِ مختلف قابل مقایسه نیست —
+      # تختهٔ بازار عوض می‌شود و بهبودِ ظاهری می‌تواند فقط تختهٔ مهربان‌تر
+      # باشد (این اشتباه قبلاً در همین پروژه رخ داده). این گام فقط فایل
+      # استراتژی را به نسخهٔ قدیمی برمی‌گرداند تا هر دو روی *همین* پنجره
+      # سنجیده شوند. بقیهٔ خط لوله (و منطق امنِ انتشار) از main می‌ماند.
+      - name: Old strategy version for same-window A/B
+        if: github.event.inputs.strategy_ref != ''
+        run: |
+          set -e
+          git checkout "${{ github.event.inputs.strategy_ref }}" -- \
+            claude-liam-signal/python/liam9_strategy.py
+          echo "نسخهٔ زیر آزمایش می‌شود:"
+          grep -m2 -n '"version"' claude-liam-signal/python/liam9_strategy.py
       - name: Backtest on real candles
         working-directory: claude-liam-signal/python
         run: |
@@ -50,6 +69,7 @@ jobs:
           { echo '```'; tail -30 scalp-dash.txt 2>/dev/null || echo "no output"; echo '```'; } \
             >> $GITHUB_STEP_SUMMARY
       - name: Publish
+        if: github.event.inputs.publish != 'no' && github.event.inputs.strategy_ref == ''
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"

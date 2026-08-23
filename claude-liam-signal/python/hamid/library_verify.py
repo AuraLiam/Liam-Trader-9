@@ -275,6 +275,47 @@ def dupe_key(entry):
     return f"{norm_key(entry.get('title', ''))}::{author_hint(entry.get('source', ''))}"
 
 
+def same_work(a, b, min_stem=12):
+    """آیا دو مدخل یک اثرند؟ برابریِ کلید کافی نیست.
+
+    عیبِ دیده‌شده (۲۳ اوت، روی خودِ قفسه): کتاب Harris دو بار VERIFIED
+    نشسته بود و هیچ پاسبانی نگرفت — چون یک مدخل عنوان کامل انگلیسی
+    داشت («Trading and Exchanges: Market Microstructure for
+    Practitioners») و دیگری عنوان کوتاه با زیرعنوان فارسی («Trading and
+    Exchanges — ریزساختار…») که نرمال‌سازی، فارسی را می‌اندازد و کلیدِ
+    کوتاه‌تر می‌سازد. کلیدِ کوتاه **پیشوندِ** کلیدِ بلند است، پس تساوی
+    هرگز رخ نمی‌دهد.
+
+    پس شرط: نویسندهٔ اول یکی باشد **و** یک عنوان پیشوندِ دیگری باشد، با
+    ساقهٔ به‌قدر کافی بلند. نویسنده عمداً اجباری است تا «Limit Order
+    Books»ِ Gould و Abergel به هم نچسبند.
+    """
+    ta, aa = norm_key(a.get("title", "")), author_hint(a.get("source", ""))
+    tb, ab = norm_key(b.get("title", "")), author_hint(b.get("source", ""))
+    if not (ta and tb and aa and ab) or aa != ab:
+        return False
+    if ta == tb:
+        return True
+    return (ta.startswith(tb) or tb.startswith(ta)) and \
+        min(len(ta), len(tb)) >= min_stem
+
+
+def dupe_groups(entries):
+    """گروه‌های هم‌اثر با بیش از یک مدخل → [[e1, e2], ...]."""
+    groups, used = [], set()
+    for i, a in enumerate(entries):
+        if i in used:
+            continue
+        g = [a]
+        for j in range(i + 1, len(entries)):
+            if j not in used and same_work(a, entries[j]):
+                g.append(entries[j])
+                used.add(j)
+        if len(g) > 1:
+            groups.append(g)
+    return groups
+
+
 def decide(entry):
     """→ (status, note). کلیدِ ناموجود = QUEUED می‌ماند (پیش‌فرض امن)."""
     k = norm_key(entry.get("title", ""), entry.get("source", ""))
