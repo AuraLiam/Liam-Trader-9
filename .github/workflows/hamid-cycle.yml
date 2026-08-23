@@ -109,6 +109,7 @@ jobs:
           python3 -m hamid.test_position_watch
           python3 -m hamid.test_skill_injection
           python3 -m hamid.test_alert_gate
+          python3 -m hamid.test_experience_effect
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -164,6 +165,12 @@ jobs:
       - name: انتشار کارنامهٔ تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.publish_experience || true
+
+      # اثر تجربه روی نتیجه، با CI (دستور حمید ۲۳ اوت: «یادگیری و تجربه
+      # چقدر تأثیر داشت؟»). عددی که راه بازتولید ندارد گزارش نمی‌شود.
+      - name: سنجهٔ اثر تجربه
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.experience_effect --days 7 || true
 
       # لایهٔ نقدشوندگی برتر ۶۰ (دستور حمید، ۲۱ اوت: «همینو استراتژی کن»).
       # سنجیده روی dash-backtest واقعی: top60 CI[+0.199,+0.669] کاملاً بالای
@@ -264,6 +271,7 @@ jobs:
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
+                   experience-effect \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
             cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
