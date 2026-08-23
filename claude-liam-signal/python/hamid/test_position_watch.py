@@ -73,6 +73,15 @@ check("مرز صادقانه در خروجی هست: پاسبان نمی‌بن�
 check("دفتر ناموجود = گزارش خالی، نه خطا",
       PW.load_open("/nonexistent/x.jsonl") == [])
 
+# عیب ۲۳ اوت: پاسبان TG.send_text را صدا می‌زد که وجود نداشت — آلارم هر
+# چرخه با AttributeError می‌مرد و آزمونِ جعلی نمی‌دید. حالا رابط واقعی
+# سنجیده می‌شود، نه جعلی.
+import telegram as _TG
+check("رابط آلارم (telegram.send_text) واقعاً وجود دارد و صدازدنی است",
+      callable(getattr(_TG, "send_text", None)))
+check("پیام بی‌کلید بی‌صدا False برمی‌گرداند، نه خطا",
+      _TG.send_text("آزمون", quiet=True) in (False, True))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

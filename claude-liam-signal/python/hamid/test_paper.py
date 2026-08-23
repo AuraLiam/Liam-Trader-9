@@ -198,6 +198,48 @@ def t_no_candle_expiry():
         paper.CLOSED, paper.OPEN, paper.EQUITY, paper._candles_since = old
 
 
+def t_poison_row_isolated():
+    """عیب ۲۳ اوت — قطعی ۴روزهٔ کل زنجیرهٔ یادگیری: روی میکروکپ، entry و sl
+    به یک float گرد شدند (3e-08)، risk صفر شد و اولین تقسیم، mark را برای
+    *همهٔ* پوزیشن‌ها می‌کشت. دو ضمانت: (۱) ردیف risk-صفر همان لحظه با R=None
+    بسته می‌شود؛ (۲) هر خطای دیگرِ یک ردیف، ایزوله می‌ماند و بقیه تسویه
+    می‌شوند."""
+    import tempfile, time as _t
+    d = Path(tempfile.mkdtemp())
+    old = (paper.CLOSED, paper.OPEN, paper.EQUITY, paper._candles_since)
+    paper.CLOSED, paper.OPEN, paper.EQUITY = d / "c.jsonl", d / "o.jsonl", d / "e.json"
+    now = _t.time() * 1000
+    paper._candles_since = lambda sym, since: [
+        {"t": int(now - 3600e3), "o": 1.0, "h": 1.03, "l": 0.999, "c": 1.02, "v": 5}]
+    try:
+        paper._append(paper.OPEN, {"sym": "POISONUSDT", "dir": "LONG",
+                                   "entry": 3e-08, "sl": 3e-08, "tp1": 4e-08,
+                                   "opened": int(now - 2 * 3600e3),
+                                   "filled": int(now - 2 * 3600e3),
+                                   "why": {"stage": "first"}})
+        paper._append(paper.OPEN, {"sym": "BROKENROW"})     # بی‌کلید → خطا
+        paper._append(paper.OPEN, {"sym": "GOODUSDT", "dir": "LONG", "entry": 1.0,
+                                   "sl": 0.99, "tp1": 1.02, "tp2": None,
+                                   "opened": int(now - 2 * 3600e3),
+                                   "filled": int(now - 2 * 3600e3),
+                                   "why": {"stage": "alarm"}})
+        still, closed = paper.mark()
+        cl = paper._read(paper.CLOSED)
+        by = {t["sym"]: t for t in cl}
+        check("ردیف سمی (risk صفر) بسته شد با R=None، نه crash",
+              "POISONUSDT" in by and by["POISONUSDT"]["R"] is None
+              and by["POISONUSDT"]["outcome"] == "no_data", str(by.get("POISONUSDT")))
+        check("ردیف سالمِ کنارش تسویه شد — یک ردیف خراب دفتر را گرسنه نمی‌کند",
+              "GOODUSDT" in by and by["GOODUSDT"]["outcome"] == "target",
+              str(by.get("GOODUSDT")))
+        opens = paper._read(paper.OPEN)
+        check("ردیف خطادار باز ماند و برچسب خورد (گم نشد)",
+              any(o.get("sym") == "BROKENROW" and o.get("mark_error")
+                  for o in opens), str(opens))
+    finally:
+        paper.CLOSED, paper.OPEN, paper.EQUITY, paper._candles_since = old
+
+
 def t_trailing_stop():
     """قانون تریل حمید (درس EURI): ⅓ مسیر تارگت → استاپ در سودِ کارمزددار؛
     ⅔ → استاپ در ⅓؛ برگشتِ کامل دیگر ضرر نمی‌سازد."""
@@ -250,6 +292,7 @@ def main():
     t_stables_rejected()
     t_viability_gate()
     t_no_candle_expiry()
+    t_poison_row_isolated()
     t_trailing_stop()
     bad = [(n, d) for ok, n, d in R if not ok]
     print(f"\n{'=' * 74}")

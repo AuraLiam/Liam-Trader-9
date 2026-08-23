@@ -369,6 +369,27 @@ def caption(s):
     return "\n".join(L)
 
 
+def send_text(text, quiet=True):
+    """یک پیام متنی با امضای پنل — برای پاسبان‌ها و آلارم‌های غیرسیگنالی.
+
+    عیب ۲۳ اوت: پاسبان پوزیشنِ مانده `TG.send_text` را صدا می‌زد که اصلاً
+    وجود نداشت؛ آلارمش هر چرخه با AttributeError بی‌صدا می‌مرد و آزمونش هم
+    نمی‌گرفت چون تلگرام را جعلی کرده بود. حالا رابط واقعی این‌جاست و آزمون،
+    وجودِ همین تابع را روی ماژول واقعی می‌سنجد.
+
+    امضای پنل (دستور ۱۶ اوت) اگر در متن نبود، اضافه می‌شود."""
+    token, chat = creds()
+    if not token:
+        if not quiet:
+            print("telegram: بدون کلید — پیام نرفت")
+        return False
+    if PANEL_NAME not in text:
+        text = f"{text}\n{BRAND}"
+    r = _post(token, "sendMessage",
+              {"chat_id": chat, "text": text, "parse_mode": "HTML"})
+    return bool(r)
+
+
 def send_signals(signals, render_chart, limit=8):
     """render_chart(setup, path) -> path, or None when a chart cannot be drawn."""
     token, chat = creds()

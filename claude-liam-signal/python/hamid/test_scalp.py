@@ -51,9 +51,12 @@ def run():
     cd[-4]["l"] = cd[-1]["c"] * 0.993
     s = scalp.decide(cd)
     check("ستاپ لانگ ساخته شد", s is not None and s["dir"] == "LONG", str(s))
-    check("اهرم بین ۴۵ و ۹۰ و سقفش با فاصلهٔ لیکویید محدود شد",
-          45 <= s["lev"] <= 90 and s["lev"] <= int(50.0 / s["stop_pct"]),
-          str(s["lev"]))
+    # قانون واحد ۲۳ اوت: بازه از liam9_strategy می‌آید (۱۵–۳۹)، نه عدد
+    # جدا برای این میز — باند ۴۵–۹۰ نسخ شد.
+    import liam9_strategy as _ST
+    check("اهرم در بازهٔ قانون واحد و سقفش با فاصلهٔ لیکویید محدود شد",
+          _ST.LEV_MIN <= s["lev"] <= _ST.LEV_MAX_CONF
+          and s["lev"] <= int(50.0 / s["stop_pct"]), str(s["lev"]))
     check("سشن و ویژگی کندل قبلی ثبت شد",
           s["session"] == "overlap" and (s["decisive_prev"] or s["shadow_sweep"]))
 

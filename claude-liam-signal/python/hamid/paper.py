@@ -217,6 +217,163 @@ def _candles_since(sym, since_ms):
             for k in rows if k[0] >= since_ms]
 
 
+def _settle_one(p, now, still, box):
+    """تسویهٔ یک پوزیشن — ایزوله، تا یک ردیف خراب کل دفتر را گرسنه نکند.
+
+    (درس ۲۳ اوت: یک ردیف با risk صفر، تسویه را از ۱۹ اوت خواباند.)"""
+    cd = _candles_since(p["sym"], p["opened"])
+    if not cd:
+        # عیب‌یابی ۱۳ اوت: نماد بی‌کندل (دیلیست‌شده یا غایب از منبع) تا
+        # ابد در دفتر باز می‌ماند و هر دور دوباره فچ می‌شود — ۲۷ اردر با
+        # عمر ۸۴ ساعت پیدا شد. حالا بعد از مهلت، بدون داده هم بسته
+        # می‌شود: پرنشده = expired؛ پرشده = no_data با R=None تا آمار را
+        # آلوده نکند. اجازهٔ ماندن فقط داخل مهلت است، نه برای همیشه.
+        age = now - (p.get("opened") or now)
+        if p.get("filled") is None and age > FILL_HOURS * 3600_000:
+            p["outcome"] = "expired"
+            p["R"] = None
+            p["closed"] = int(now)
+            _append(CLOSED, p)
+            box[0] += 1
+        elif p.get("filled") and now - p["filled"] > 2 * HOLD_HOURS * 3600_000:
+            p["outcome"] = "no_data"
+            p["R"] = None
+            p["closed"] = int(now)
+            _append(CLOSED, p)
+            box[0] += 1
+        else:
+            still.append(p)
+        return
+    long = p["dir"] == "LONG"
+    risk = abs(p["entry"] - p["sl"])
+    # عیب ۲۳ اوت (قطعی ۴روزهٔ تسویه): روی میکروکپ‌ها ورود و استاپ به یک
+    # float گرد می‌شوند (entry=sl=3e-08) و risk صفر می‌شود؛ اولین تقسیم
+    # بر risk کل mark را می‌کُشت و از ۱۹ اوت ۲۰:۰۵ هیچ معامله‌ای تسویه
+    # نشد (۳۰۰۰+ پوزیشن باز، جایزه/درس/بونفرونی همه گرسنه). ورود=استاپ
+    # اصلاً معامله نیست — همان لحظه با R=None بسته می‌شود.
+    if risk <= 0:
+        p["outcome"] = "no_data"
+        p["R"] = None
+        p["note"] = "risk صفر — ورود=استاپ (دقت اعشار میکروکپ)"
+        p["closed"] = int(now)
+        _append(CLOSED, p)
+        box[0] += 1
+        return
+
+    if p["filled"] is None:
+        for c in cd:
+            if c["l"] <= p["entry"] <= c["h"]:
+                p["filled"] = c["t"]
+                # برچسب برای بازبینی: پر شدن بعد از ۶ ساعت — تا اثر باز
+                # کردن پنجره جدا سنجیده شود، نه قاطی کل دفتر.
+                if c["t"] - p["opened"] > 6 * 3600_000:
+                    p["late_fill"] = True
+                break
+        if p["filled"] is None:
+            if now - p["opened"] > FILL_HOURS * 3600_000:
+                # never touched: not a trade, and must not be scored as one
+                p["outcome"] = "expired"
+                p["R"] = None
+                p["closed"] = int(now)
+                _append(CLOSED, p)
+                box[0] += 1
+            else:
+                still.append(p)
+            return
+
+    after = [c for c in cd if c["t"] >= p["filled"]]
+    done = None
+    # MFE/MAE — منشور LIAM بند ۲۲: هر معامله باید بگوید تا کجا به نفعش
+    # رفت و تا کجا علیه‌اش، تا بازبینی بفهمد «جهت درست بود و تایم غلط» یا
+    # ورود زود بود — نه فقط برد/باخت خام.
+    mfe = mae = 0.0
+    mfe_bar = mae_bar = 0
+    bar = 0
+    end_t = p["filled"]
+    # تریل — قانون حمید (EURI درس شد): «هر ارزی که یک‌سوم مسیر تارگت را
+    # رفت، استاپ بیاید در سود با حساب کارمزد؛ سود که بالاتر رفت، استاپ هم
+    # در سود بیشتر.» نردبان: ⅓ مسیر → استاپ = ورود + کارمزد دو سر؛
+    # ⅔ مسیر → استاپ = ⅓ مسیر. تریل از اکسترمم کندل‌های *قبلی* حساب
+    # می‌شود، نه همان کندل — محافظه‌کار، بدون خوش‌بینی درون-کندلی.
+    tp_dist = abs(p["tp1"] - p["entry"])
+    fee_px = p["entry"] * 0.0015              # ~۰.۱٪ کارمزد دو سر + لغزش
+    sgn = 1 if long else -1
+    sl_eff = p["sl"]
+    best = p["entry"]
+    for c in after:
+        if tp_dist > 0:
+            prog = sgn * (best - p["entry"]) / tp_dist
+            if prog >= 2 / 3:
+                lvl = p["entry"] + sgn * tp_dist / 3
+            elif prog >= 1 / 3:
+                lvl = p["entry"] + sgn * fee_px
+            else:
+                lvl = None
+            if lvl is not None:
+                sl_eff = max(sl_eff, lvl) if long else min(sl_eff, lvl)
+        bar += 1
+        fav = ((c["h"] - p["entry"]) if long else (p["entry"] - c["l"])) / risk
+        adv = ((p["entry"] - c["l"]) if long else (c["h"] - p["entry"])) / risk
+        if fav > mfe:
+            mfe, mfe_bar = fav, bar
+        if adv > mae:
+            mae, mae_bar = adv, bar
+        end_t = c["t"]
+        hit_sl = (c["l"] <= sl_eff) if long else (c["h"] >= sl_eff)
+        hit_tp = (c["h"] >= p["tp1"]) if long else (c["l"] <= p["tp1"])
+        trailed = (sl_eff > p["sl"]) if long else (sl_eff < p["sl"])
+        if hit_sl:                                # هم‌زمانی با تارگت → محافظه‌کار: استاپ اول
+            R = sgn * (sl_eff - p["entry"]) / risk if trailed else -1.0
+            done = ("trail" if trailed else "stop", R)
+            break
+        if hit_tp:
+            done = ("target", abs(p["tp1"] - p["entry"]) / risk)
+            break
+        best = max(best, c["h"]) if long else min(best, c["l"])
+    if done is None and now - p["filled"] > HOLD_HOURS * 3600_000:
+        last = after[-1]["c"] if after else p["entry"]
+        R = ((last - p["entry"]) if long else (p["entry"] - last)) / risk
+        done = ("timeout", R)
+    if done is None:
+        if sl_eff != p["sl"]:
+            p["sl_eff"] = round(sl_eff, 10)       # تریلِ تا این لحظه، ثبت‌شده
+        still.append(p)
+        return
+
+    p["outcome"], p["R"] = done[0], round(done[1], 4)
+    if sl_eff != p["sl"]:
+        p["sl_eff"] = round(sl_eff, 10)
+    p["mfe_r"], p["mae_r"] = round(mfe, 3), round(mae, 3)
+    p["held_h"] = round((end_t - p["filled"]) / 3600e3, 1)
+    # همان امضای رفتاری، این بار **داخل why** و با همان نام و همان علامتی
+    # که میز تمرین می‌نویسد (mae منفی است). دلیلش اندازه‌گیری ۱۶ اوت بود:
+    # پل تمرین→سیگنال پنج یافته روی دفتر تمرین کشف کرد و هیچ‌کدام قابل
+    # تکرار نبود — نه به‌خاطر نبودِ شاهد، بلکه چون دفتر سیگنال واقعی این
+    # ستون‌ها را **اصلاً نمی‌نوشت**. mfe_r بالای رکورد بود و شرط‌های
+    # paper.CONDITIONS از why می‌خوانند، پس همیشه خالی دیده می‌شد.
+    #
+    # هشدار صادقانه دربارهٔ واحد: این‌جا «کندل» همیشه ۱۵دقیقه است، ولی
+    # میز تمرین سه تایم‌فریم دارد. پس mfe/mae مستقیماً قابل مقایسه‌اند
+    # (به واحد R)، اما mfe_bar فقط داخل هم‌تایم‌فریم معنا دارد.
+    w = p.setdefault("why", {})
+    w["mfe"] = round(mfe, 2)
+    w["mae"] = round(-mae, 2)
+    w["mfe_bar"], w["mae_bar"] = mfe_bar, mae_bar
+    # R خالص با کارمزد+لغزش ~۰.۰۵٪ هر طرف — روی استاپ تنگ چند دهم R است
+    try:
+        fee_r = 0.001 * p["entry"] / abs(p["entry"] - p["sl"])
+        p["fee_r"] = round(fee_r, 4)
+        p["R_net"] = round(p["R"] - fee_r, 4)
+    except Exception:                            # noqa: BLE001
+        pass
+    p["closed"] = int(now)
+    _append(CLOSED, p)
+    box[0] += 1
+    brain.room_log("paper", f"{p['sym']} {p['dir']} بسته شد: "
+                            f"{p['outcome']} {p['R']:+.2f}R", "close")
+
+
+
 def mark():
     """Walk every open position forward and close what has resolved."""
     positions = _read(OPEN)
@@ -226,145 +383,19 @@ def mark():
     still, closed = [], 0
     now = time.time() * 1000
 
+    box = [0]
+    errors = 0
     for p in positions:
-        cd = _candles_since(p["sym"], p["opened"])
-        if not cd:
-            # عیب‌یابی ۱۳ اوت: نماد بی‌کندل (دیلیست‌شده یا غایب از منبع) تا
-            # ابد در دفتر باز می‌ماند و هر دور دوباره فچ می‌شود — ۲۷ اردر با
-            # عمر ۸۴ ساعت پیدا شد. حالا بعد از مهلت، بدون داده هم بسته
-            # می‌شود: پرنشده = expired؛ پرشده = no_data با R=None تا آمار را
-            # آلوده نکند. اجازهٔ ماندن فقط داخل مهلت است، نه برای همیشه.
-            age = now - (p.get("opened") or now)
-            if p.get("filled") is None and age > FILL_HOURS * 3600_000:
-                p["outcome"] = "expired"
-                p["R"] = None
-                p["closed"] = int(now)
-                _append(CLOSED, p)
-                closed += 1
-            elif p.get("filled") and now - p["filled"] > 2 * HOLD_HOURS * 3600_000:
-                p["outcome"] = "no_data"
-                p["R"] = None
-                p["closed"] = int(now)
-                _append(CLOSED, p)
-                closed += 1
-            else:
-                still.append(p)
-            continue
-        long = p["dir"] == "LONG"
-        risk = abs(p["entry"] - p["sl"])
-
-        if p["filled"] is None:
-            for c in cd:
-                if c["l"] <= p["entry"] <= c["h"]:
-                    p["filled"] = c["t"]
-                    # برچسب برای بازبینی: پر شدن بعد از ۶ ساعت — تا اثر باز
-                    # کردن پنجره جدا سنجیده شود، نه قاطی کل دفتر.
-                    if c["t"] - p["opened"] > 6 * 3600_000:
-                        p["late_fill"] = True
-                    break
-            if p["filled"] is None:
-                if now - p["opened"] > FILL_HOURS * 3600_000:
-                    # never touched: not a trade, and must not be scored as one
-                    p["outcome"] = "expired"
-                    p["R"] = None
-                    p["closed"] = int(now)
-                    _append(CLOSED, p)
-                    closed += 1
-                else:
-                    still.append(p)
-                continue
-
-        after = [c for c in cd if c["t"] >= p["filled"]]
-        done = None
-        # MFE/MAE — منشور LIAM بند ۲۲: هر معامله باید بگوید تا کجا به نفعش
-        # رفت و تا کجا علیه‌اش، تا بازبینی بفهمد «جهت درست بود و تایم غلط» یا
-        # ورود زود بود — نه فقط برد/باخت خام.
-        mfe = mae = 0.0
-        mfe_bar = mae_bar = 0
-        bar = 0
-        end_t = p["filled"]
-        # تریل — قانون حمید (EURI درس شد): «هر ارزی که یک‌سوم مسیر تارگت را
-        # رفت، استاپ بیاید در سود با حساب کارمزد؛ سود که بالاتر رفت، استاپ هم
-        # در سود بیشتر.» نردبان: ⅓ مسیر → استاپ = ورود + کارمزد دو سر؛
-        # ⅔ مسیر → استاپ = ⅓ مسیر. تریل از اکسترمم کندل‌های *قبلی* حساب
-        # می‌شود، نه همان کندل — محافظه‌کار، بدون خوش‌بینی درون-کندلی.
-        tp_dist = abs(p["tp1"] - p["entry"])
-        fee_px = p["entry"] * 0.0015              # ~۰.۱٪ کارمزد دو سر + لغزش
-        sgn = 1 if long else -1
-        sl_eff = p["sl"]
-        best = p["entry"]
-        for c in after:
-            if tp_dist > 0:
-                prog = sgn * (best - p["entry"]) / tp_dist
-                if prog >= 2 / 3:
-                    lvl = p["entry"] + sgn * tp_dist / 3
-                elif prog >= 1 / 3:
-                    lvl = p["entry"] + sgn * fee_px
-                else:
-                    lvl = None
-                if lvl is not None:
-                    sl_eff = max(sl_eff, lvl) if long else min(sl_eff, lvl)
-            bar += 1
-            fav = ((c["h"] - p["entry"]) if long else (p["entry"] - c["l"])) / risk
-            adv = ((p["entry"] - c["l"]) if long else (c["h"] - p["entry"])) / risk
-            if fav > mfe:
-                mfe, mfe_bar = fav, bar
-            if adv > mae:
-                mae, mae_bar = adv, bar
-            end_t = c["t"]
-            hit_sl = (c["l"] <= sl_eff) if long else (c["h"] >= sl_eff)
-            hit_tp = (c["h"] >= p["tp1"]) if long else (c["l"] <= p["tp1"])
-            trailed = (sl_eff > p["sl"]) if long else (sl_eff < p["sl"])
-            if hit_sl:                                # هم‌زمانی با تارگت → محافظه‌کار: استاپ اول
-                R = sgn * (sl_eff - p["entry"]) / risk if trailed else -1.0
-                done = ("trail" if trailed else "stop", R)
-                break
-            if hit_tp:
-                done = ("target", abs(p["tp1"] - p["entry"]) / risk)
-                break
-            best = max(best, c["h"]) if long else min(best, c["l"])
-        if done is None and now - p["filled"] > HOLD_HOURS * 3600_000:
-            last = after[-1]["c"] if after else p["entry"]
-            R = ((last - p["entry"]) if long else (p["entry"] - last)) / risk
-            done = ("timeout", R)
-        if done is None:
-            if sl_eff != p["sl"]:
-                p["sl_eff"] = round(sl_eff, 10)       # تریلِ تا این لحظه، ثبت‌شده
-            still.append(p)
-            continue
-
-        p["outcome"], p["R"] = done[0], round(done[1], 4)
-        if sl_eff != p["sl"]:
-            p["sl_eff"] = round(sl_eff, 10)
-        p["mfe_r"], p["mae_r"] = round(mfe, 3), round(mae, 3)
-        p["held_h"] = round((end_t - p["filled"]) / 3600e3, 1)
-        # همان امضای رفتاری، این بار **داخل why** و با همان نام و همان علامتی
-        # که میز تمرین می‌نویسد (mae منفی است). دلیلش اندازه‌گیری ۱۶ اوت بود:
-        # پل تمرین→سیگنال پنج یافته روی دفتر تمرین کشف کرد و هیچ‌کدام قابل
-        # تکرار نبود — نه به‌خاطر نبودِ شاهد، بلکه چون دفتر سیگنال واقعی این
-        # ستون‌ها را **اصلاً نمی‌نوشت**. mfe_r بالای رکورد بود و شرط‌های
-        # paper.CONDITIONS از why می‌خوانند، پس همیشه خالی دیده می‌شد.
-        #
-        # هشدار صادقانه دربارهٔ واحد: این‌جا «کندل» همیشه ۱۵دقیقه است، ولی
-        # میز تمرین سه تایم‌فریم دارد. پس mfe/mae مستقیماً قابل مقایسه‌اند
-        # (به واحد R)، اما mfe_bar فقط داخل هم‌تایم‌فریم معنا دارد.
-        w = p.setdefault("why", {})
-        w["mfe"] = round(mfe, 2)
-        w["mae"] = round(-mae, 2)
-        w["mfe_bar"], w["mae_bar"] = mfe_bar, mae_bar
-        # R خالص با کارمزد+لغزش ~۰.۰۵٪ هر طرف — روی استاپ تنگ چند دهم R است
         try:
-            fee_r = 0.001 * p["entry"] / abs(p["entry"] - p["sl"])
-            p["fee_r"] = round(fee_r, 4)
-            p["R_net"] = round(p["R"] - fee_r, 4)
-        except Exception:                            # noqa: BLE001
-            pass
-        p["closed"] = int(now)
-        _append(CLOSED, p)
-        closed += 1
-        brain.room_log("paper", f"{p['sym']} {p['dir']} بسته شد: "
-                                f"{p['outcome']} {p['R']:+.2f}R", "close")
-
+            _settle_one(p, now, still, box)
+        except Exception as e:                   # noqa: BLE001
+            # ردیفِ خراب باز می‌ماند و برچسب می‌خورد؛ بقیهٔ دفتر تسویه می‌شود.
+            p["mark_error"] = type(e).__name__
+            still.append(p)
+            errors += 1
+    closed = box[0]
+    if errors:
+        print(f"⚠ تسویهٔ {errors} پوزیشن خطا داد — باز ماندند و برچسب خوردند")
     _write(OPEN, still)
     _equity()
     print(f"{len(still)} پوزیشن باز، {closed} بسته شد")
