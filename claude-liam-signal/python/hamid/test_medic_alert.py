@@ -80,10 +80,19 @@ for _ in range(32):                       # ۸ ساعت × ۴ اجرا در سا
     if go:
         sent += 1
     prev = {"sick": True, "alerted_at": now if go else prev.get("alerted_at", 0)}
-# اولی سرِ «تازه خراب شد»، بعد هر ساعت یکی: ۱ + ۷ = ۸ (نه ۹ — همین
-# آزمون حسابِ خودم را تصحیح کرد).
-check("۸ ساعت خرابی پیوسته = ۸ پیام، نه ۳۲ تا",
-      sent == 8, f"{sent} پیام")
+# اولی سرِ «تازه خراب شد»، بعد هر ESCALATE_MS یکی. با استاندارد ۶ ساعتِ
+# ۲۳ اوت: ۱ + ۱ = ۲ پیام در ۸ ساعت (قبلاً ساعتی بود و ۸ تا می‌شد).
+_expect = 1 + int(8 * 3600_000 // M.ESCALATE_MS)
+check(f"۸ ساعت خرابی پیوسته = {_expect} پیام، نه ۳۲ تا",
+      sent == _expect, f"{sent} پیام")
+
+# هم‌واژگیِ کادنس با دروازهٔ مشترک — دو عدد نباید از هم جدا بیفتند،
+# وگرنه یکی از پاسبان‌ها دوباره پرحرف می‌شود بی‌آنکه کسی بفهمد.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from hamid import alert_gate as _AG                  # noqa: E402
+check("کادنس یادآوری عیب‌یاب با alert_gate یکی است (۶ ساعت)",
+      M.ESCALATE_MS == int(_AG.REPEAT_H * 3600_000),
+      f"medic={M.ESCALATE_MS} gate={_AG.REPEAT_H}")
 
 # ── متن پیام ────────────────────────────────────────────────────────────
 txt = M.alert_text(SICK, "new")

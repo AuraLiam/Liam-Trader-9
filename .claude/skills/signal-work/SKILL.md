@@ -8,6 +8,42 @@ description: Working rules for Hamid's trading panel. Load before changing the e
 The goal is signals that land above 90%. Nothing below is a style preference —
 each rule exists because breaking it already cost days.
 
+## Every closed trade changes who decides the next one (Hamid, 23 Aug)
+
+Hamid: *"With every single trade, and finding its cause, and drawing the
+conclusion — you are different from the person you were. One more thing
+was added to your experience. And you must make a better impact on the
+next analysis and the next signal. After each round of learning, you are
+an agent with more experience making the final decision."*
+
+Treat that as architecture, not encouragement. Three obligations follow:
+
+1. **A trade that closes without a cause is wasted.** Every close gets
+   digested in the same cycle — a case file, and where it generalizes, a
+   lesson. Not tomorrow, not "when there's time".
+2. **The next decision must actually read that record.** Before a signal
+   the engine asks what this coin, this direction, this shape has already
+   done, and the learning room holds back a setup whose record is bad on
+   a real sample. If a change cannot alter a future decision, it is not
+   learning — it is note-taking.
+3. **Never claim the improvement — measure it.** Accumulated experience
+   is not a guarantee of profit, and this is where the principle would
+   quietly turn into self-flattery. A single good day proves nothing.
+
+   The live example that keeps this honest (23 Aug): on the multi-day
+   book, "issued with experience" measured **+0.443R, CI [+0.037,
+   +0.839]** — real and significant. On that *single day's* sample (57
+   with experience vs 80 without) the same comparison gave **−0.070R, CI
+   [−0.374, +0.251]** — an interval straddling zero, indistinguishable
+   from noise. Both numbers are correct; the difference is sample size.
+   So: report the day's outcome as an outcome, and report the *effect of
+   learning* only from a sample large enough to carry a confidence
+   interval.
+
+The honest form of the principle: each trade adds a case, the ledger
+changes the next decision, and how much that helped is a measured
+quantity that can come out flat — or negative — on any given day.
+
 ## Read every instruction three times (Hamid, 23 Aug)
 
 Hamid's messages are dense lists, and skipping an item once already cost a
