@@ -137,6 +137,21 @@ DECISIONS = {
            "نشان می‌دهد؛ سفارش بزرگ تکه‌تکه اجرا می‌شود و ردپایش همان "
            "چیزی است که «اردر بلاک» نامیده می‌شود — با ریاضیِ سنجیدنی."),
 
+
+    "evidence based technical analysis": (
+        V, "Aronson (Wiley 2006) — تحلیل تکنیکال به‌عنوان ادعای قابل‌آزمون: "
+           "سوگیری data-mining و آزمون معناداری روی قواعد. همان قانون CI "
+           "ما، با استدلال کامل. در برنامهٔ درسی حمید (۲۳ اوت) مرحلهٔ آخر."),
+    "the evaluation and optimization of trading strategies": (
+        V, "Pardo (Wiley 2008) — مرجع Walk-Forward: آموزش روی گذشته، آزمون "
+           "روی بازهٔ دیده‌نشده. دقیقاً تفکیک جستجو/تأییدی که scalp_sweep "
+           "پیاده می‌کند، با چارچوب کامل."),
+    "foundations of technical analysis computational algorithms "
+    "statistical inference and empirical implementation": (
+        V, "Lo, Mamaysky, Wang — Journal of Finance 2000. تبدیل الگوی چشمی "
+           "به الگوریتم با هموارسازی کرنل + آزمون آماری محتوای اطلاعاتی. "
+           "الگوی روشیِ ما برای هر «ستاپ چشمی» که حمید توصیف می‌کند."),
+
     # E09 — کندل‌شناسی. شواهدش عمداً هر دو طرف دارد.
     "japanese candlestick charting techniques": (
         V, "Nison — منبع تاریخیِ تعریف الگوها. تعریف را از این‌جا "
