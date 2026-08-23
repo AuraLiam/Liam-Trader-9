@@ -160,6 +160,36 @@ check("هیچ مدخل تأییدشده‌ای یادداشت خالی یا کو
       all(len(n) >= 40 for _, n in LV.DECISIONS.values()),
       str([k for k, (_, n) in LV.DECISIONS.items() if len(n) < 40]))
 
+# ── تکراریِ پیشوندی روی قفسه (عیب ۲۳ اوت) ─────────────────────────────
+_h1 = {"title": "Trading and Exchanges: Market Microstructure for Practitioners",
+       "source": "book | Larry Harris | 2002 | https://doi.org/x"}
+_h2 = {"title": "Trading and Exchanges — ریزساختار بازار برای اهل عمل",
+       "source": "Larry Harris — Trading and Exchanges (OUP)"}
+check("عنوان کامل و عنوانِ کوتاه با زیرعنوان فارسی، یک اثر شناخته می‌شوند",
+      LV.same_work(_h1, _h2), f"{LV.dupe_key(_h1)} vs {LV.dupe_key(_h2)}")
+check("همان اثر با نویسندهٔ متفاوت، تکراری نیست",
+      not LV.same_work(_h1, {"title": _h1["title"],
+                             "source": "book | Someone Else | 2002 | x"}))
+check("دو جلدِ متفاوتِ یک نویسنده به هم نمی‌چسبند (Trends/Reversals)",
+      not LV.same_work(
+          {"title": "Trading Price Action: Trends", "source": "Al Brooks — x"},
+          {"title": "Trading Price Action: Reversals", "source": "Al Brooks — x"}))
+check("ساقهٔ کوتاه پیشوندی نمی‌چسبد (ضد چسبِ بی‌جا)",
+      not LV.same_work({"title": "Risk", "source": "book | A Jorion | 1 | x"},
+                       {"title": "Risk Management Handbook",
+                        "source": "book | A Jorion | 1 | x"}))
+check("مدخل بی‌نویسنده هرگز تکراری اعلام نمی‌شود (پیش‌فرض امن)",
+      not LV.same_work(_h1, {"title": _h1["title"], "source": ""}))
+_g = LV.dupe_groups([_h1, _h2, {"title": "Other Book",
+                                "source": "book | Zed | 1 | x"}])
+check("گروه‌بندی، فقط گروهِ واقعی را برمی‌گرداند",
+      len(_g) == 1 and len(_g[0]) == 2)
+
+_shelf = LV.load(LV.SHELF)
+_live = LV.dupe_groups([e for e in _shelf if e.get("status") == "VERIFIED"])
+check("قفسهٔ واقعی هیچ تکراریِ VERIFIED ندارد", not _live,
+      "; ".join(" + ".join(e["id"] for e in g) for g in _live))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

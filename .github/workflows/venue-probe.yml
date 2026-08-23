@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe (کشف مسیر) یا compare (مقایسهٔ اسپرد/عمق)"
+        description: "probe (کشف مسیر) · compare (اسپرد/عمق) · docs (اسناد فنی حمید)"
         default: "probe"
       symbols:
         description: "نمادها برای مقایسه"
@@ -40,12 +40,16 @@ jobs:
         with: { python-version: "3.11" }
       - name: Self-test
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.test_venue_probe
+        run: |
+          python3 -m hamid.test_venue_probe
+          python3 -m hamid.test_docs_probe
       - name: Probe or compare
         working-directory: claude-liam-signal/python
         run: |
           set -o pipefail
-          if [ "${{ github.event.inputs.mode || 'probe' }}" = "probe" ]; then
+          if [ "${{ github.event.inputs.mode || 'probe' }}" = "docs" ]; then
+            python3 -m hamid.docs_probe | tee venue.txt
+          elif [ "${{ github.event.inputs.mode || 'probe' }}" = "probe" ]; then
             python3 -m hamid.venue_probe --probe | tee venue.txt
           else
             D=""
@@ -62,11 +66,12 @@ jobs:
           { echo '```'; tail -120 venue.txt 2>/dev/null || echo "no output";
             echo '```'; } >> $GITHUB_STEP_SUMMARY
       - name: Publish
-        if: github.event.inputs.mode == 'compare'
+        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs'
         run: |
           git config user.name "Hamid Signal Agent"
           git config user.email "actions@users.noreply.github.com"
           [ -f signals/venue-compare.json ] && git add signals/venue-compare.json || true
+          [ -f signals/docs-probe.json ] && git add signals/docs-probe.json || true
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC"
           for attempt in 1 2 3 4 5; do
