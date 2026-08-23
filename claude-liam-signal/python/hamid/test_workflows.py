@@ -194,6 +194,45 @@ check("هیچ `git add` روی فایل تکیِ ممکن‌الغیاب نیس�
 if addfile:
     print(f"      ↳ {addfile}")
 
+# ── عقب‌گرد در برابر کرش‌لوپ (درس ۲۳ اوت) ───────────────────────────────
+# زنجیرهٔ سیگنال خودش را dispatch می‌کند. شرطش `always()` بود، پس حتی
+# وقتی دروازهٔ خودآزماییِ خودش شکسته بود اجرای بعدی را صدا می‌زد. یک خط
+# اشتباه در ورک‌فلوی عمق آن دروازه را قرمز کرد و نتیجه ~۵۵۰ اجرای
+# شکست‌خورده در ۸ ساعت شد — یک بار در دقیقه — که ظرفیت رانر را بلعید و
+# live-scan و scalp و shock-desk را هم از ۴ اجرا در ساعت به ۱ رساند.
+# سیگنال ۸ ساعت قطع بود.
+#
+# قاعده: هر گامی که ورک‌فلوی خودش را dispatch می‌کند، حق ندارد بعد از
+# شکستِ گامِ خودآزمایی اجرا شود. کرون و مدیک تور ایمنی‌اند (۴ تلاش در
+# ساعت به‌جای ۶۰).
+selfdispatch = []
+for f in files:
+    try:
+        doc = yaml.safe_load(f.read_text())
+    except yaml.YAMLError:
+        continue
+    for job in (doc.get("jobs") or {}).values():
+        if not isinstance(job, dict):
+            continue
+        steps = [s for s in (job.get("steps") or []) if isinstance(s, dict)]
+        # id گام‌هایی که آزمون/خودآزمایی‌اند
+        gates = [s.get("id") for s in steps if s.get("id")
+                 and re.search(r"test|selftest|خودآزمایی|آزمون",
+                               f"{s.get('id','')} {s.get('name','')}")]
+        for st in steps:
+            run = st.get("run") or ""
+            if f"workflows/{f.name}/dispatches" not in run:
+                continue
+            cond = str(st.get("if") or "")
+            if "always()" not in cond:
+                continue          # بدون always() اصلاً بعد از شکست اجرا نمی‌شود
+            if not any(g and f"steps.{g}.outcome" in cond for g in gates):
+                selfdispatch.append(f"{f.name}: «{st.get('name')}»")
+check("هیچ زنجیرهٔ خوددعوتی بعد از شکستِ دروازهٔ خودش دوباره صدا نمی‌شود",
+      not selfdispatch)
+if selfdispatch:
+    print(f"      ↳ {selfdispatch}")
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

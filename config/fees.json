@@ -11,5 +11,33 @@
   "https://tradersunion.com/brokers/crypto/view/bitunix/fees/",
   "https://www.bitunix.com/hub/blog/bitunix-features/bitunix-fees-spot-futures-vip-trading-discounts",
   "https://www.mexc.com/news/1135898"
- ]
+ ],
+ "candidate_venues": {
+  "kcex": {
+   "status": "UNVERIFIED",
+   "claimed_futures_maker_pct": 0.0,
+   "claimed_futures_taker_pct": 0.01,
+   "claimed_spot_pct": 0.0,
+   "slippage_pct_per_leg": null,
+   "blocking_gaps": [
+    "عدد کارمزد از منبع رسمی راستی‌آزمایی نشده (دامنه از این محیط مسدود)",
+    "brain/venues/listings.json برای kcex صفر نماد دارد — نمی‌دانیم چه چیزی قابل معامله است",
+    "عمق/لغزش KCEX هرگز اندازه‌گیری نشده؛ کل دادهٔ عمق ما بیت‌یونیکس است",
+    "قرارداد اجرا، اعتبارسنجی نماد و جمع‌آورندهٔ عمق همه بیت‌یونیکس-شکل‌اند"
+   ],
+   "sources_secondary": [
+    "https://tradersunion.com/brokers/crypto/view/kcex/fees/",
+    "https://tradingfinder.com/exchanges/kcex/"
+   ],
+   "checked_at": "2026-08-23",
+   "probe_2026_08_23": {
+    "from": "GitHub Actions runner (شبکهٔ دیتاسنتر)",
+    "api.kcex.com": "DNS حل می‌شود ولی HTTP 403 با صفحهٔ خطای HTML — امضای مسدودسازی لبه/WAF، نه پاسخ API",
+    "contract.kcex.com": "DNS اصلاً حل نمی‌شود — این میزبان وجود ندارد",
+    "www.kcex.com": "HTML اپ وب برمی‌گرداند (۴۰۴ برای مسیرهای API) — API نیست",
+    "conclusion": "از رانر Actions هم به KCEX نمی‌رسیم. ۴۰۳ با بدنهٔ HTML یعنی درخواست پیش از رسیدن به API بلوکه شده؛ اگر فقط مسیر غلط بود، JSON با کد خطا می‌گرفتیم. کلید API این را باز نمی‌کند چون مسدودسازی روی IP/ASN است نه احراز هویت.",
+    "architectural_impact": "هر یکپارچه‌سازی KCEX باید از شبکهٔ خود حمید اجرا شود (سرویس محلی Python، قانون ۰۲) — نه از Actions. یعنی مدل «محاسبات سنگین روی Actions» برای دادهٔ KCEX کار نمی‌کند."
+   }
+  }
+ }
 }
