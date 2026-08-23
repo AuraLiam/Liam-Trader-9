@@ -143,3 +143,35 @@ if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
     sys.exit(1)
 print(f"پاسبان کارنامهٔ اسکلپ: هر {OK} بررسی سبز")
+
+# ── حساسیت به هزینه (پرسش KCEX، ۲۳ اوت) ────────────────────────────────
+def wstop(r=0.5, stop=1.0, n=1):
+    t = trade(r=r, fee=0.0)
+    t["why"]["stop_pct"] = stop
+    return t
+
+
+base = [wstop(r=0.5, stop=1.0) for _ in range(200)]
+fs = SR.fee_sensitivity(base, costs=(0.0, 0.5))
+check("هزینهٔ صفر یعنی R خالص = R ناخالص",
+      abs(fs[0]["R_net_mean"] - 0.5) < 1e-6, str(fs[0]))
+check("کارمزد در واحد R = کارمزد٪ ÷ استاپ٪",
+      abs(fs[1]["R_net_mean"] - 0.0) < 1e-6, str(fs[1]))
+check("هزینهٔ بیشتر همیشه R کمتر می‌دهد (یکنوا)",
+      fs[0]["R_net_mean"] > fs[1]["R_net_mean"])
+# استاپ تنگ‌تر = ضربهٔ کارمزد بزرگ‌تر — قلبِ «دام اسکلپ»
+tight = SR.fee_sensitivity([wstop(r=0.5, stop=0.2) for _ in range(200)],
+                           costs=(0.05,))[0]
+wide = SR.fee_sensitivity([wstop(r=0.5, stop=2.0) for _ in range(200)],
+                          costs=(0.05,))[0]
+check("با همان کارمزد، استاپ تنگ خیلی بیشتر ضربه می‌خورد (دام اسکلپ)",
+      tight["R_net_mean"] < wide["R_net_mean"] - 0.2,
+      f"تنگ={tight['R_net_mean']} گشاد={wide['R_net_mean']}")
+check("هر سطر هزینه CI و حکم خودش را دارد",
+      all(f["ci95"] and f["verdict"] for f in fs))
+check("معاملهٔ بدون stop_pct وارد محاسبه نمی‌شود (حدس زده نمی‌شود)",
+      SR.fee_sensitivity([trade() for _ in range(200)],
+                         costs=(0.05,))[0]["ci95"] is None)
+check("زیر کف نمونه CI گزارش نمی‌شود",
+      SR.fee_sensitivity([wstop() for _ in range(5)],
+                         costs=(0.05,))[0]["ci95"] is None)

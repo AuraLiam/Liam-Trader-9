@@ -65,27 +65,34 @@ jobs:
             done
           fi
 
-      - name: هشدار تلگرام در خرابی
-        if: steps.medic.outputs.sick != '0'
+      # ۲۳ اوت: پیام قبلی هر ۱۵ دقیقه **همهٔ** یافته‌ها را می‌فرستاد — شش خط
+      # «سالم» و خبر واقعی خط هشتم. زنجیرهٔ سیگنال ۸ ساعت مرده بود و همان
+      # پیامِ یک‌شکل ده‌ها بار رفت؛ آلارمی که تکرار یکنواخت شود دیگر آلارم
+      # نیست (قانون E23: routine still-alive spam ممنوع). حالا medic خودش
+      # تصمیم می‌گیرد — تازه‌خراب / هنوز‌خراب (ساعتی) / رفع‌شد — و متن
+      # خبرمحور را در فایل می‌گذارد. نبودِ فایل یعنی چیزی برای گفتن نیست.
+      - name: هشدار تلگرام — فقط تغییر وضعیت یا یادآوری ساعتی
+        if: always()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          [ -z "$TELEGRAM_BOT_TOKEN" ] && exit 0
+          [ -f signals/medic-alert.txt ] || { echo "چیزی برای اعلام نیست"; exit 0; }
+          [ -n "$TELEGRAM_BOT_TOKEN" ] || { echo "تلگرام وصل نیست"; exit 0; }
           python3 - <<'EOF'
-          import json, os, urllib.request
-          try:
-              st = json.loads(open("brain/medic.json").read())
-          except Exception:
-              st = {"findings": ["فایل وضعیت خوانده نشد"]}
-          text = "⚕️ نگهبان پنل:\n" + "\n".join(st.get("findings", []))
-          if st.get("treated"): text += "\n" + st["treated"]
+          import json, os, sys, urllib.request
+          text = open("signals/medic-alert.txt", encoding="utf-8").read()
           req = urllib.request.Request(
               f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_TOKEN']}/sendMessage",
-              data=json.dumps({"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": text}).encode(),
+              data=json.dumps({"chat_id": os.environ["TELEGRAM_CHAT_ID"],
+                               "text": text}).encode(),
               headers={"Content-Type": "application/json"}, method="POST")
+          # نتیجه بلعیده نمی‌شود: آلارمِ نرسیده باید دیده شود، وگرنه دوباره
+          # همان حالتی می‌شود که ۸ ساعت کسی خبردار نشد.
           try:
-              urllib.request.urlopen(req, timeout=20)
-          except Exception:
-              pass  # هشدارِ نرسیده نباید نگهبان را قرمز کند
+              r = urllib.request.urlopen(req, timeout=20)
+              print(f"آلارم رفت (HTTP {r.status})")
+          except Exception as e:
+              print(f"::warning::آلارم نرفت — {type(e).__name__}: {e}")
           EOF
+          rm -f signals/medic-alert.txt
