@@ -16,7 +16,7 @@ on:
         default: "1500"
       symbols:
         description: "تعداد نماد (نصف A، نصف B)"
-        default: "60"
+        default: "200"
 
 permissions:
   contents: write
@@ -28,7 +28,7 @@ concurrency:
 jobs:
   sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
