@@ -190,6 +190,24 @@ check("وقتی چیزی تأیید نشد، تأیید خارج از نمونه
 check("آستانهٔ یک‌طرفه برای دو فرضیهٔ جهت‌دار به کار می‌رود",
       cs["threshold_one_sided"] > 1.9)
 
+# ── لایهٔ داده هم باید سنجیده شود ───────────────────────────────────────
+# اجرای ۲۳ اوت با AttributeError مرد: `sources.top_symbols` وجود نداشت.
+# پاسبان نگرفتش چون همهٔ آزمون‌ها با گشت ساختگی کار می‌کنند و هرگز به
+# لایهٔ داده نمی‌رسند. ریاضی سنجیده می‌شد، مسیرِ داده نه.
+import importlib                                        # noqa: E402
+import inspect                                          # noqa: E402
+
+_src = inspect.getsource(SW.run)
+for name in ("top_symbols", "klines"):
+    check(f"تابع «{name}» که run صدا می‌زند واقعاً وجود دارد",
+          any(hasattr(importlib.import_module(m), name)
+              for m in ("hamid.trainer", "sources")),
+          f"در هیچ ماژولی پیدا نشد — {name}")
+check("run جهان نماد را از ماژولی می‌گیرد که واقعاً داردش",
+      "from hamid.trainer import top_symbols" in _src)
+check("جهانِ خالی خطا می‌دهد نه جستجوی بی‌نماد",
+      "جهان نماد خالی" in _src)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

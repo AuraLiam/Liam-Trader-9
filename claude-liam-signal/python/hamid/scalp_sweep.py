@@ -357,7 +357,13 @@ def compare_structure(A, B, geom, quiet=False):
 
 def run(bars=1500, n_symbols=60, quiet=False):
     import sources
-    syms = sources.top_symbols(n_symbols)
+    # `sources.top_symbols` وجود ندارد — این فراخوانی را از
+    # scenario_backtest کپی کرده بودم بدون توجه به اینکه آن‌جا داخل
+    # try/except با fallback است. جهانِ نمادها در hamid.trainer است.
+    from hamid.trainer import top_symbols
+    syms = top_symbols(n_symbols)
+    if not syms:
+        raise RuntimeError("جهان نماد خالی برگشت — بدون نماد جستجو معنا ندارد")
     # دو نمونهٔ **مستقل**: جستجو روی A، تأیید روی B. یک‌درمیان تا هر دو
     # نمونه ترکیب مشابهی از نقدشوندگی داشته باشند، نه اینکه B فقط
     # ته‌ماندهٔ کم‌حجم باشد.
