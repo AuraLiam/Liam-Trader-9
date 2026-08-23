@@ -1,0 +1,74 @@
+# جستجوی هندسهٔ اسکلپ — با تفکیک اجباری جستجو از تأیید.
+#
+# پرسش حمید (۲۳ اوت): کارمزد و استاپ را چطور حل کنیم؛ کیفیت ورود از
+# کندل‌شناسی و BOS/CHoCH ۱ دقیقه؛ افق ۱۵ دقیقه؛ اهرم ۳۰–۶۰.
+#
+# ۵۴ خانه روی نمونهٔ A جستجو می‌شود و **فقط بهترین خانه، فقط یک بار**،
+# روی نمونهٔ B (نمادهای مستقل) تأیید. درس ۲۲ اوت: جستجوی پارامتری
+# +۰.۱۲۶R «کشف» کرد و خارج از نمونه هر ۱۲ خانه رد شد.
+name: Scalp sweep
+
+on:
+  workflow_dispatch:
+    inputs:
+      bars:
+        description: "کندل ۱ دقیقه در هر نماد"
+        default: "1500"
+      symbols:
+        description: "تعداد نماد (نصف A، نصف B)"
+        default: "60"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scalp-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Self-test
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_scalp_sweep
+          python3 -m hamid.test_scalp_report
+      - name: Sweep
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          python3 -m hamid.scalp_sweep \
+            --bars "${{ github.event.inputs.bars || '1500' }}" \
+            --symbols "${{ github.event.inputs.symbols || '60' }}" \
+            | tee sweep.txt
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -40 sweep.txt 2>/dev/null || echo "no output";
+            echo '```'; } >> $GITHUB_STEP_SUMMARY
+      - name: Publish
+        if: always()
+        run: |
+          git config user.name "Hamid Signal Agent"
+          git config user.email "actions@users.noreply.github.com"
+          [ -f signals/scalp-sweep.json ] && git add signals/scalp-sweep.json || true
+          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
+          git commit -q -m "جستجوی هندسهٔ اسکلپ $(date -u '+%Y-%m-%d %H:%M') UTC"
+          for attempt in 1 2 3 4 5; do
+            git push origin HEAD:main && exit 0
+            git fetch origin main || true
+            if ! git merge --no-edit origin/main; then
+              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
+                || { git merge --abort; exit 1; }
+              git commit --no-edit || { git merge --abort; exit 1; }
+            fi
+            sleep $((attempt * 3))
+          done
+          exit 1
