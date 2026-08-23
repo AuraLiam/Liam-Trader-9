@@ -41,14 +41,20 @@ def directives(report=None, now_ms=None):
     def order(engine, text, why, sev="normal"):
         out.append({"engine": engine, "order": text, "reason": why, "sev": sev})
 
-    # ۱) کیفیت سیگنال — کارنامهٔ دفتر اصلی
+    # ۱) کیفیت سیگنال — فقط از دفترِ سیگنال‌های واقعاً صادرشده.
+    # عیب ممیزی ۲۳ اوت: این ماشه از lifetime می‌خواند که تمرین/اسکلپ/شوک/
+    # آلارم را با محصول واقعی قاطی می‌کند (۳۱هزار معامله، R منفیِ آلوده) و
+    # به E17/E11 دستورِ «دقت را بالا ببر» می‌داد در حالی که دفتر صادرشده
+    # +۸۰٪ برد داشت. دستورِ ناظر باید به همان دفتری قلاب باشد که محصول است
+    # (همان تفکیک قانون ۰۷)؛ دفترِ آلوده اصلاً مبنای دستور نیست.
     paper = (rep.get("paper") or {})
-    life = paper.get("lifetime") or {}
-    n, wp = life.get("trades") or 0, life.get("win_pct")
-    mr = life.get("mean_r")
+    sig = paper.get("sent_scan_signals") or {}
+    n, wp = sig.get("trades") or 0, sig.get("win_pct")
+    mr = sig.get("mean_r")
     if n >= 20 and wp is not None and (wp < 45 or (mr or 0) < 0):
         order("E17,E11", "دقت را بالا ببرید: فقط ستاپ‌های باکیفیت‌تر از میانه عبور کنند",
-              f"کارنامهٔ دفتر: {n} معامله، برد {wp}٪، میانگین R={mr}", "high")
+              f"کارنامهٔ دفتر صادرشده: {n} معامله، برد {wp}٪"
+              + (f"، میانگین R={mr}" if mr is not None else ""), "high")
 
     # ۲) دامیننس — کارنامهٔ پیش‌بینی ضعیف = اعتماد کم، تحلیل عمیق‌تر
     sb = ((dom.get("forecast") or {}).get("scoreboard")) or {}
