@@ -29,7 +29,15 @@
     "https://tradersunion.com/brokers/crypto/view/kcex/fees/",
     "https://tradingfinder.com/exchanges/kcex/"
    ],
-   "checked_at": "2026-08-23"
+   "checked_at": "2026-08-23",
+   "probe_2026_08_23": {
+    "from": "GitHub Actions runner (شبکهٔ دیتاسنتر)",
+    "api.kcex.com": "DNS حل می‌شود ولی HTTP 403 با صفحهٔ خطای HTML — امضای مسدودسازی لبه/WAF، نه پاسخ API",
+    "contract.kcex.com": "DNS اصلاً حل نمی‌شود — این میزبان وجود ندارد",
+    "www.kcex.com": "HTML اپ وب برمی‌گرداند (۴۰۴ برای مسیرهای API) — API نیست",
+    "conclusion": "از رانر Actions هم به KCEX نمی‌رسیم. ۴۰۳ با بدنهٔ HTML یعنی درخواست پیش از رسیدن به API بلوکه شده؛ اگر فقط مسیر غلط بود، JSON با کد خطا می‌گرفتیم. کلید API این را باز نمی‌کند چون مسدودسازی روی IP/ASN است نه احراز هویت.",
+    "architectural_impact": "هر یکپارچه‌سازی KCEX باید از شبکهٔ خود حمید اجرا شود (سرویس محلی Python، قانون ۰۲) — نه از Actions. یعنی مدل «محاسبات سنگین روی Actions» برای دادهٔ KCEX کار نمی‌کند."
+   }
   }
  }
 }
