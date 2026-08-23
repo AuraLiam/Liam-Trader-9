@@ -115,7 +115,7 @@ jobs:
             git add signals brain claude-liam-signal/backtests 2>/dev/null
             if ! git diff --cached --quiet; then
               git commit -q -m "ضربان $(date -u '+%Y-%m-%d %H:%M') UTC"
-              for a in 1 2 3; do
+              for a in 1 2 3 4 5 6 7 8; do
                 git push origin HEAD:main && break
                 git fetch origin main || true
                 if ! git merge --no-edit origin/main; then
@@ -139,7 +139,7 @@ jobs:
                   echo "انتشار متوقف شد: نشانهٔ تعارض باقی مانده"
                   break
                 fi
-                sleep $((a * 3))
+                sleep $((a * 4 + RANDOM % 7))
               done
             else
               echo "چیزی تغییر نکرد"
@@ -156,7 +156,7 @@ jobs:
                 git add signals
                 if ! git diff --cached --quiet; then
                   git commit -q -m "ضربان $(date -u '+%H:%M') UTC"
-                  for a in 1 2 3; do
+                  for a in 1 2 3 4 5 6 7 8; do
                     git push origin HEAD:gh-pages -q && break
                     git fetch origin gh-pages -q || true
                     git rebase origin/gh-pages -q || { git rebase --abort; break; }

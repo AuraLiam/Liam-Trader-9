@@ -58,10 +58,10 @@ jobs:
             git commit -m "عیب‌یاب: وضعیت عوض شد $(date -u '+%Y-%m-%d %H:%M UTC')"
             # ضربان هم به main پوش می‌کند؛ چند بار تلاش با ریبیس، بعد رها کن —
             # وضعیت در اجرای بعدی دوباره نوشته می‌شود، گم نمی‌شود.
-            for i in 1 2 3; do
+            for i in 1 2 3 4 5 6 7 8; do
               git push origin HEAD:main && break
               git pull --rebase origin main || true
-              sleep $((i*3))
+              sleep $((i * 4 + RANDOM % 7))
             done
           fi
 

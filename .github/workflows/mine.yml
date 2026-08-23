@@ -94,7 +94,7 @@ jobs:
           # conflicts for no good reason, so this merges instead: .gitattributes
           # union-merges the append-only logs, and for the whole-file room state
           # the copy this run just produced is the fresher one and wins.
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             git push origin "HEAD:$BRANCH" && exit 0
             git fetch origin "$BRANCH" || true
             if ! git merge --no-edit "origin/$BRANCH"; then
@@ -115,6 +115,6 @@ jobs:
               echo "refusing to push: conflict markers survived the merge"
               exit 1
             fi
-            sleep $((attempt * 3))
+            sleep $((attempt * 4 + RANDOM % 7))
           done
           exit 1

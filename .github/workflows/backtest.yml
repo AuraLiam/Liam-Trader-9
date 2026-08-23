@@ -103,7 +103,7 @@ jobs:
           # land a commit in that window — which is exactly what sank the first
           # run. Rebase onto whatever arrived and try again; the report is a new
           # file each time, so there is nothing for a rebase to conflict with.
-          for attempt in 1 2 3 4 5; do
+          for attempt in 1 2 3 4 5 6 7 8; do
             if git push origin "HEAD:$BRANCH"; then
               echo "pushed on attempt $attempt"
               exit 0
@@ -112,7 +112,7 @@ jobs:
             git fetch origin "$BRANCH" || true
             git -c rebase.autoStash=true rebase "origin/$BRANCH" \
               || { git rebase --abort 2>/dev/null; exit 1; }
-            sleep $((attempt * 3))
+            sleep $((attempt * 4 + RANDOM % 7))
           done
           echo "could not push the report after five attempts"
           exit 1
