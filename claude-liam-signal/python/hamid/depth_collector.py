@@ -345,7 +345,11 @@ def snapshot(symbol, path=None, prev=None):
         return None, f"خطای API: {why}"[:60]
     b, a = parse_book(data)
     if not b:
-        return None, "شکل دفتر ناشناخته"
+        # «ناشناخته» برای عیب‌یابی بی‌فایده است. ۲۳ اوت ZEC و DASH دقیقاً
+        # همین را دادند و بدون دیدن بدنه نمی‌شد فهمید دفتر خالی است یا
+        # شکلش فرق دارد. نمونهٔ کوتاهِ خودِ پاسخ به دلیل می‌چسبد.
+        raw = json.dumps(data, ensure_ascii=False)[:140]
+        return None, f"شکل دفتر ناشناخته — {raw}"
     f = features(b, a, prev)
     if f is None:
         return None, "دفتر متقاطع"

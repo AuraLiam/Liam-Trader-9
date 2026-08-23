@@ -390,6 +390,23 @@ check("فایل خام بعد از تا شدن حذف می‌شود (دو فرم
 check("OUTDIR بعد از تا زدن به جای خودش برمی‌گردد",
       DC.OUTDIR == _saved_out, str(DC.OUTDIR))
 
+# ── دلیلِ «شکل ناشناخته» باید بدنه را نشان بدهد ─────────────────────────
+# ۲۳ اوت: ZEC و DASH فقط «شکل دفتر ناشناخته» دادند و بدون دیدن پاسخ
+# نمی‌شد فهمید دفتر خالی است یا شکلش فرق دارد. دلیلِ بی‌نمونه یعنی
+# یک دور عیب‌یابیِ دیگر.
+_saved_get = DC._get
+DC._get = lambda url, timeout=12: ({"code": 0, "data": {"bids": [],
+                                                        "asks": []}}, None)
+try:
+    _f, _why = DC.snapshot("ZECUSDT")
+finally:
+    DC._get = _saved_get
+check("دلیلِ شکل ناشناخته نمونهٔ خودِ پاسخ را حمل می‌کند",
+      _f is None and "شکل دفتر ناشناخته" in _why and "bids" in _why, str(_why))
+check("نمونهٔ پاسخ کوتاه نگه داشته می‌شود (لاگ را پر نکند)",
+      len(_why) < 220, str(len(_why)))
+
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
