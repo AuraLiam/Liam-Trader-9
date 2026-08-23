@@ -395,6 +395,39 @@ def fold_raw(symbol, outdir=None, remove=False):
     return made
 
 
+HEALTH = ROOT / "signals" / "depth-health.json"
+
+
+def write_health(result, outdir=None):
+    """وضعیت برداشت را به‌عنوان **خروجی منتشرشده** می‌نویسد، نه لاگ.
+
+    دو بار امشب دلیلِ نبودن یک نماد فقط داخل لاگ جاب ماند و بازیابی‌اش
+    از API لاگ به مشکل خورد (خروجی با فهرست فایل‌های کامیت پر می‌شود).
+    چیزی که برای عیب‌یابی لازم است نباید در لاگ زندگی کند — این فایل در
+    ریپو می‌نشیند و همیشه در دسترس است."""
+    rows = []
+    for s in symbols_on_disk(outdir):
+        r = read_minutes(s, outdir=outdir)
+        if r:
+            rows.append({"symbol": s, "minutes": len(r),
+                         "first": r[0]["t"], "last": r[-1]["t"],
+                         "samples_per_min": round(
+                             sum(x["n"] for x in r) / len(r), 2),
+                         "missed": sum(x.get("miss", 0) for x in r)})
+    payload = {
+        "at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+        "symbols": rows,
+        "total_minutes": sum(r["minutes"] for r in rows),
+        # همان چیزی که دو بار در لاگ گم شد:
+        "rejected": (result or {}).get("rejected", {}),
+        "errors": (result or {}).get("errors", {}),
+        "endpoint": BASE + DEPTH_PATH, "depth_limit": DEPTH_LIMIT,
+        "levels": list(LEVELS)}
+    HEALTH.parent.mkdir(parents=True, exist_ok=True)
+    HEALTH.write_text(json.dumps(payload, ensure_ascii=False, indent=1))
+    return payload
+
+
 def symbols_on_disk(outdir=None):
     """نمادهایی که فایل دقیقه‌ای دارند — نام نماد خودش خط تیره ندارد."""
     d = Path(outdir) if outdir else OUTDIR
@@ -530,6 +563,9 @@ if __name__ == "__main__":
     elif a.probe:
         probe()
     else:
-        collect([s.strip() for s in a.symbols.split(",") if s.strip()],
-                minutes=a.minutes, interval_s=a.interval, depth_path=a.path,
-                agg=not a.raw)
+        res = collect([s.strip() for s in a.symbols.split(",") if s.strip()],
+                      minutes=a.minutes, interval_s=a.interval,
+                      depth_path=a.path, agg=not a.raw)
+        h = write_health(res)
+        print(f"سلامت برداشت نوشته شد: {HEALTH.relative_to(ROOT)} "
+              f"({h['total_minutes']} دقیقه، {len(h['rejected'])} نماد ردشده)")

@@ -308,6 +308,34 @@ check("هر نماد یک سطر در گزارش دارد",
       txt.count("| AAAUSDT |") == 1 and txt.count("| BBBUSDT |") == 1)
 check("ستون ازدست‌رفته در گزارش هست (سکوت ≠ سلامت)", "ازدست‌رفته" in txt)
 
+# ── فایل سلامت: دلیلِ رد باید منتشر شود، نه فقط در لاگ بماند ────────────
+# دو بار امشب دلیل نبودن یک نماد فقط داخل لاگ جاب ماند و از API لاگ
+# قابل بازیابی نبود (خروجی با فهرست فایل‌های کامیت پر می‌شود).
+with tempfile.TemporaryDirectory() as td:
+    _saved_out = DC.OUTDIR
+    _saved_h = DC.HEALTH
+    DC.OUTDIR = Path(td)
+    DC.HEALTH = Path(td) / "depth-health.json"
+    try:
+        DC.write_minute("HHHUSDT", dict(row, t=B0))
+        h = DC.write_health({"rejected": {"ZECUSDT": "CONTRACT_NOT_FOUND"},
+                             "errors": {"timeout": 3}}, outdir=td)
+        on_disk = json.loads(DC.HEALTH.read_text())
+    finally:
+        DC.OUTDIR, DC.HEALTH = _saved_out, _saved_h
+
+check("فایل سلامت روی دیسک نوشته می‌شود", on_disk == h)
+check("دلیل ردِ نماد در فایل منتشرشده هست (نه فقط لاگ)",
+      on_disk["rejected"]["ZECUSDT"] == "CONTRACT_NOT_FOUND")
+check("خطاهای حین برداشت هم منتشر می‌شوند", on_disk["errors"]["timeout"] == 3)
+check("فایل سلامت انباشت هر نماد را دارد",
+      on_disk["symbols"][0]["symbol"] == "HHHUSDT"
+      and on_disk["total_minutes"] == 1)
+check("فایل سلامت پیکربندی برداشت را ثبت می‌کند (مسیر/عمق/سطوح)",
+      "market/depth" in on_disk["endpoint"]
+      and on_disk["depth_limit"] == DC.DEPTH_LIMIT
+      and on_disk["levels"] == list(DC.LEVELS))
+
 # ── اعتبارسنجی نماد پیش از شروع ─────────────────────────────────────────
 # درس ۲۲ اوت: برداشت با ۶ نماد شروع شد و ۴ فایل ساخت. دو نمادِ باقی فقط
 # **غایب** بودند — نه خطا، نه دلیل. غیبتِ بی‌دلیل شبیه «داده نبود» است
