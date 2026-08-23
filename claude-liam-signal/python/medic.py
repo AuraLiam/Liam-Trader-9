@@ -306,6 +306,62 @@ def revive(workflow):
         return f"روشن کردن {workflow} شکست خورد: {type(e).__name__}"
 
 
+# ── آلارم: چه چیزی فرستاده شود و کِی ────────────────────────────────────
+# درس ۲۳ اوت: زنجیرهٔ سیگنال ۸ ساعت مرده بود. عیب‌یاب **درست تشخیص داده
+# بود** (sick=True از ۰۲:۴۸ به بعد) و آلارم هم شرطش برقرار بود، ولی
+# پیامی که می‌رفت ۱۰ خط بود که شش خطش «سالم» بود و خبر واقعی خط هشتم —
+# و همان پیام هر ۱۵ دقیقه تکرار می‌شد. آلارمی که هر ربع ساعت یک‌شکل
+# بیاید دیگر آلارم نیست، نویز است؛ قانون E23 هم صریح همین را منع کرده
+# («routine still-alive spam ممنوع»).
+FAULT_MARKS = ("⚠️", "⛔", "❌")
+ESCALATE_MS = 3600_000        # تا وقتی خراب است، یادآوری ساعتی نه ربع‌ساعتی
+
+
+def fault_lines(findings):
+    """فقط خطوطی که واقعاً خبرِ خرابی‌اند — «سالم»ها کنار می‌روند."""
+    return [f for f in (findings or [])
+            if any(m in f for m in FAULT_MARKS)
+            or ("ناموفق" in f or "شکست خورده" in f)]
+
+
+def alert_decision(state, prev, now_ms=None):
+    """→ (بفرست؟, دلیل). سه حالت می‌ارزد به پیام، بقیه سکوت.
+
+    ۱. تازه خراب شد (سالم → خراب)
+    ۲. هنوز خراب است ولی از آخرین یادآوری بیش از یک ساعت گذشته
+    ۳. تازه خوب شد (خراب → سالم) — بهبود هم خبر است
+    """
+    now = now_ms or int(time.time() * 1000)
+    was, is_ = bool(prev.get("sick")), bool(state.get("sick"))
+    if is_ and not was:
+        return True, "new"
+    if not is_ and was:
+        return True, "recovered"
+    if is_ and was:
+        last = prev.get("alerted_at") or 0
+        if now - last >= ESCALATE_MS:
+            return True, "still"
+        return False, "duplicate"
+    return False, "healthy"
+
+
+def alert_text(state, reason):
+    """پیام کوتاه و خبرمحور — خرابی اول، سالم‌ها فقط شمرده."""
+    finds = state.get("findings") or []
+    faults = fault_lines(finds)
+    if reason == "recovered":
+        return ("✅ لیام تریدر ۹ — خرابی رفع شد.\n"
+                f"همهٔ {len(finds)} بررسی سالم است.")
+    head = {"new": "⛔ لیام تریدر ۹ — خرابی تازه:",
+            "still": "⛔ لیام تریدر ۹ — خرابی هنوز پابرجاست:"}[reason]
+    body = "\n".join(f"• {f}" for f in faults) or "• (جزئیات در brain/medic.json)"
+    ok = len(finds) - len(faults)
+    tail = f"\n\n{ok} بررسی دیگر سالم است."
+    if state.get("treated"):
+        tail += f"\n🔧 {state['treated']}"
+    return f"{head}\n{body}{tail}"
+
+
 def main():
     sick, finds, wake, total = examine()
     treated = "؛ ".join(revive(w) for w in dict.fromkeys(wake)) or None
@@ -322,8 +378,20 @@ def main():
             prev = {}
     if total is None:
         state["total_closed"] = prev.get("total_closed")
+    # تصمیم آلارم پیش از نوشتن وضعیت گرفته می‌شود — بعدش prev دیگر
+    # همان قبلی نیست و «تازه خراب شد» قابل تشخیص نخواهد بود.
+    send, why_alert = alert_decision(state, prev)
+    state["alerted_at"] = (state["at"] if send
+                           else prev.get("alerted_at") or 0)
+    state["alert_reason"] = why_alert
+    if send:
+        # مسیر آلارم داخل خود medic است تا آزمون‌پذیر باشد؛ ورک‌فلو فقط
+        # همین متن را می‌فرستد. متن خالی = چیزی برای گفتن نیست.
+        (ROOT / "signals").mkdir(parents=True, exist_ok=True)
+        (ROOT / "signals" / "medic-alert.txt").write_text(
+            alert_text(state, why_alert), encoding="utf-8")
     changed = prev.get("sick") != sick or prev.get("findings") != finds \
-        or prev.get("total_closed") != state["total_closed"]
+        or prev.get("total_closed") != state["total_closed"] or send
     if changed:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(state, ensure_ascii=False, indent=1))
