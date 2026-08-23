@@ -140,6 +140,17 @@ def probe(docs=None, quiet=False):
                 rec["status"] = "THIN"
                 rec["note"] = ("صفحه محتوای متنی کافی نداشت (احتمالاً "
                                "رندر سمت کلاینت) — راستی‌آزمایی نشد")
+            elif not ex:
+                # درسِ ۲۳ اوت: صفحهٔ TradingView ۱۱ هزار کاراکتر برگرداند و
+                # هیچ‌کدام از کلیدواژه‌ها را نداشت — یعنی منو و پانوشت آمده
+                # بود و متنِ اصلی سمت کلاینت رندر می‌شود. حجمِ بایت دلیل
+                # محتوا نیست؛ صفحه‌ای که هیچ شاهدی ندارد نباید «دریافت شد»
+                # حساب شود، وگرنه دقیقاً همان موفقیتِ خاموشی است که این
+                # ماژول برای جلوگیری از آن نوشته شد.
+                rec["status"] = "NO_EVIDENCE"
+                rec["note"] = ("صفحه آمد ولی هیچ کلیدواژه‌ای در متنش نبود "
+                               "(محتوا سمت کلاینت رندر می‌شود) — ادعا "
+                               "UNVERIFIED می‌ماند")
         rows.append(rec)
         if not quiet:
             print(f"  [{rec['status']:11}] {rec['id']:22} http={rec['http']} "
@@ -147,6 +158,7 @@ def probe(docs=None, quiet=False):
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
            "docs": rows,
            "ok": sum(1 for r in rows if r["status"] == "FETCHED"),
+           "no_evidence": [r["id"] for r in rows if r["status"] == "NO_EVIDENCE"],
            "total": len(rows),
            "note": ("اسناد حمید (۲۳ اوت). نشستِ کلود به این دامنه‌ها دسترسی "
                     "ندارد، پس کاوش روی رانر انجام می‌شود. تکهٔ متن شاهد است؛ "
