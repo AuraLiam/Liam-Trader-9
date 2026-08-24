@@ -115,6 +115,7 @@ jobs:
           python3 -m hamid.test_paper_dedupe
           python3 -m hamid.test_edge_export
           python3 -m hamid.test_trail_alert
+          python3 -m hamid.test_polymarket
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -184,6 +185,13 @@ jobs:
       - name: سنجهٔ اثر تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.experience_effect --days 7 || true
+
+      # پالی‌مارکت (دستور حمید ۲۴ اوت): احتمالِ ضمنیِ پولِ واقعی + ردِ
+      # پول بزرگ در برابر خرد، مقایسه با رژیم خودمان، و اثباتِ بازدید در
+      # brain/research/polymarket/visits.jsonl. شاهد است، نه دروازه.
+      - name: پیش‌بینی‌های پالی‌مارکت
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.polymarket || true
 
       # انتقال مهارت به داشبورد (دستور حمید ۲۴ اوت): قانون‌های CI-گذشتهٔ
       # بک‌تست شبانه → signals/edge.json → داشبورد با sync_all می‌کشد و
