@@ -103,6 +103,13 @@ check("و با هر بزرگی/کوچکی حروف",
       S._known("auraliam9", "18R.LIAM@GMAIL.COM"))
 check("ولی جیمیلِ غریبه هنوز غریبه است (فهرست دقیق است، نه پسوند gmail)",
       not S._known("Someone", "someone.else@gmail.com"))
+# رفعِ اول فقط author را دید و روی رانر دوباره افتاد: بررسی، committer را
+# هم می‌سنجد و committer هر merge سرورساید «GitHub <noreply@github.com>» است.
+check("committerِ merge سرورساید گیت‌هاب هم خودی است",
+      S._known("GitHub", "noreply@github.com"))
+check("جفتِ کاملِ کامیتِ merge (author+committer) هر دو خودی‌اند",
+      S._known("AuraLiam9", "18r.liam@gmail.com")
+      and S._known("GitHub", "noreply@github.com"))
 
 print()
 if FAIL:
