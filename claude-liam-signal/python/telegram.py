@@ -358,6 +358,16 @@ def caption(s):
         bits.append(f"ADX {s['adx']}")
     if bits:
         L.append(" · ".join(bits))
+    # بلوک سفارشِ آماده‌کپی (دستور حمید ۲۴ اوت) — همین پیام باید بدون
+    # حساب‌کردنِ دستی به یک سفارش لیمیت تبدیل شود. نبودِ بلوک یعنی یکی از
+    # دروازه‌ها (هندسهٔ استاپ، محافظ لیکویید، دام کارمزد) عبور نکرده؛
+    # سیگنال هنوز خبر است، ولی دستورِ سفارش نیست.
+    try:
+        from hamid import order_ticket as OT
+        L += OT.lines(OT.ticket(s))
+    except Exception as e:                       # noqa: BLE001
+        # هیچ خطایی حق ندارد جلوی خودِ سیگنال را بگیرد (دستور «بدون تأخیر»).
+        print(f"telegram: بلوک سفارش ساخته نشد — {e}", flush=True)
     L += ["", "<i>اسکن از راه دور روی کندل واقعی — قبل از ورود خودت هم چارت را ببین.</i>"]
     # Each strategy carries its own measured record. Attaching one strategy's
     # win rate to another's signal would be worse than attaching none: it reads

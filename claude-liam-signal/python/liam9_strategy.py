@@ -76,10 +76,11 @@ PAGES = "https://auraliam.github.io/Liam-Trader-9"
 PARAMS_PATH = "/signals/strategy-params.json"
 EXPERIENCE_PATH = "/signals/experience.json"
 TOP_LIQ_PATH = "/signals/top-liquidity.json"
+EDGE_PATH = "/signals/edge.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
-    "version": "liam9-dash-2.7",
+    "version": "liam9-dash-2.8",
     "ibs_long_max": 0.30,
     "ibs_short_min": 0.70,
     "min_net_rr": 1.8,
@@ -335,10 +336,74 @@ def sync_top_liquidity():
     return 0
 
 
+# ── قفسهٔ لبه: قانون‌های CI-گذشتهٔ بک‌تست شبانه (انتقال مهارت، ۲۴ اوت) ──
+# تا v2.7 این یادگیری فقط روی رانر عمل می‌کرد (scan.apply_learned_rules) و
+# داشبورد از آن بی‌خبر بود. حالا همان دلتاهای اندازه‌گیری‌شده این‌جا هم
+# می‌نشینند — فقط به‌عنوان وزن امتیاز؛ هیچ دروازهٔ سختی با این‌ها باز یا
+# بسته نمی‌شود، و قفسهٔ کهنه (stale) اصلاً اثر ندارد.
+EDGE = {"rules": {}, "stale": True}
+# نگاشتِ دلتای R به امتیاز کیفیت (۰..۱۰۰): ۲۰ امتیاز بر ۱R، جمعِ اثر
+# سقف ±۱۵. این نگاشت یک انتخاب است نه اندازه‌گیری — روی خروجی ثبت
+# می‌شود (`edge`) تا ماشین بونفرونی شبانه سهمش را از نتیجه جدا بسنجد.
+EDGE_POINTS_PER_R = 20
+EDGE_CAP = 15
+
+
+def sync_edge():
+    for base in (REPO_RAW, PAGES):
+        try:
+            d = _get(base + EDGE_PATH)
+            if isinstance(d, dict) and isinstance(d.get("rules"), dict):
+                EDGE.clear()
+                EDGE.update({"rules": d["rules"],
+                             "stale": bool(d.get("stale", True)),
+                             "measured_at": d.get("measured_at")})
+                return 0 if EDGE["stale"] else d.get("n_rules", 0)
+        except Exception:                            # noqa: BLE001
+            continue
+    return 0
+
+
+def edge_boost(strategy, flags):
+    """قانون‌های تأییدشده → (امتیاز سقف‌خورده، خطوط دلیل، رکورد اثر).
+
+    `flags`: dir · btc_up/btc_down · in_ob. شرطی که این‌جا قابل آزمودن
+    نیست، بی‌صدا حذف نمی‌شود — در رکورد `untested` شمرده می‌شود.
+    """
+    if EDGE.get("stale") or not EDGE.get("rules"):
+        return 0, [], None
+    d = flags.get("dir")
+    tests = {
+        "لانگ همسو با بیت‌کوین": d == "LONG" and flags.get("btc_up"),
+        "شورت همسو با بیت‌کوین": d == "SHORT" and flags.get("btc_down"),
+        "بیت‌کوین صعودی": bool(flags.get("btc_up")),
+        "بیت‌کوین نزولی": bool(flags.get("btc_down")),
+        "داخل اردر بلاک": bool(flags.get("in_ob")),
+    }
+    total, hits, untested = 0.0, [], 0
+    for r in EDGE["rules"].get(strategy, []):
+        cond = r.get("condition")
+        if cond not in tests:
+            untested += 1
+            continue
+        if tests[cond]:
+            total += float(r.get("delta") or 0)
+            hits.append({"rule": cond, "delta": r.get("delta"),
+                         "n": r.get("n")})
+    if not hits:
+        return 0, [], ({"untested": untested} if untested else None)
+    pts = max(-EDGE_CAP, min(EDGE_CAP, round(total * EDGE_POINTS_PER_R)))
+    lines = [f"🎓 قانون تأییدشدهٔ بک‌تست: {h['rule']} "
+             f"({h['delta']:+}R · n={h['n']})" for h in hits]
+    return pts, lines, {"boost_pts": pts, "delta_r": round(total, 3),
+                        "rules": hits, "untested": untested}
+
+
 def sync_all():
-    """یک خط برای داشبورد: پارامتر + تجربه + لایهٔ نقدشوندگی. هر چرخه کافی است."""
+    """یک خط برای داشبورد: پارامتر + تجربه + نقدشوندگی + قفسهٔ لبه."""
     return {"params": sync_params(), "experience_pairs": sync_experience(),
-            "top_liquidity": sync_top_liquidity()}
+            "top_liquidity": sync_top_liquidity(),
+            "edge_rules": sync_edge()}
 
 
 def experience_of(symbol, direction):
@@ -760,6 +825,17 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     if 0.38 <= ratio <= 0.705:
         quality += 5
         why.append("عمق پولبک در ناحیهٔ طلایی فیبوناچی (آزمایشی)")
+    # قفسهٔ لبه (انتقال مهارت، ۲۴ اوت): همان قانون‌هایی که بک‌تست شبانه
+    # با CI بالای صفر تأیید کرده، این‌جا هم وزن می‌گیرند — سقف ±۱۵ امتیاز،
+    # وتو نه. BTC خودش بسترش خودش است؛ آلت از کندل BTC داده‌شده.
+    _bt = t4 if is_btc else (trend(btc4h) if btc4h else None)
+    _ob = order_block_zone(c1h, direction)
+    edge_pts, edge_lines, edge_rec = edge_boost("ibs", {
+        "dir": direction, "btc_up": _bt == "up", "btc_down": _bt == "down",
+        "in_ob": bool(_ob and _ob.get("fresh")
+                      and _ob["lo"] <= k_last["c"] <= _ob["hi"])})
+    quality += edge_pts
+    why += edge_lines
     quality = max(0, min(100, quality))
     if quality < P["min_quality"]:
         return no(f"امتیاز کیفیت {quality} زیر کف {P['min_quality']}")
@@ -800,6 +876,9 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
             "stop_pct": round(stop_pct, 3), "ibs": round(i, 2),
             "pullback": round(ratio, 3), "trend_4h": t4, "trend_1h": t1,
             "quality": quality, "exp_used": exp_used, "liq_map": lm,
+            # ردپای قفسهٔ لبه — تا ماشین بونفرونی شبانه سهم edge_used را
+            # از نتیجه جدا بسنجد (قانون «انجین بی‌ردپا ناقص تحویل شده»).
+            "edge": edge_rec, "edge_used": bool(edge_pts),
             "experience": exp, "pattern_align": align, "patterns": pat_names,
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
             "margin_pct": margin_pct_for(quality),
@@ -1325,7 +1404,29 @@ def _selftest():
                             "timeframes": ["1m", "15m", "1h", "4h"],
                             "fee_pct": 0.15})
     assert not a2["conflicts"], a2
-    print("✓ خودآزمایی استراتژی ۲.۷ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، ممیزی")
+    # ── قفسهٔ لبه (v2.8): فقط وزن، با سقف، و کهنه = بی‌اثر ──────────────
+    _edge_bak = dict(EDGE)
+    try:
+        EDGE.clear()
+        EDGE.update({"stale": False, "rules": {"ibs": [
+            {"condition": "لانگ همسو با بیت‌کوین", "delta": 0.2,
+             "ci": [0.01, 0.4], "n": 231},
+            {"condition": "شرط ناشناخته", "delta": 9.9,
+             "ci": [1, 2], "n": 50}]}})
+        pts, lines, rec = edge_boost("ibs", {"dir": "LONG", "btc_up": True})
+        assert pts == 4 and len(lines) == 1, (pts, lines)   # 0.2R×۲۰=۴
+        assert rec["untested"] == 1, rec        # شرط ناشناخته حذفِ بی‌صدا نشد
+        pts2, _, _ = edge_boost("ibs", {"dir": "SHORT", "btc_up": True})
+        assert pts2 == 0, pts2                  # شرطِ برقرارنشده اثر ندارد
+        EDGE["rules"]["ibs"][0]["delta"] = 5.0
+        pts3, _, _ = edge_boost("ibs", {"dir": "LONG", "btc_up": True})
+        assert pts3 == EDGE_CAP, pts3           # سقف ±۱۵ — لبه وتو نمی‌سازد
+        EDGE["stale"] = True
+        assert edge_boost("ibs", {"dir": "LONG", "btc_up": True})[0] == 0
+    finally:
+        EDGE.clear()
+        EDGE.update(_edge_bak)
+    print("✓ خودآزمایی استراتژی ۲.۸ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، قفسهٔ لبه، ممیزی")
 
 
 # ── قالب کلاسی برای داشبورد (BaseStrategy + meta) ───────────────────────────
