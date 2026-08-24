@@ -30,6 +30,10 @@ jobs:
       - name: Self-test (حکم)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.test_scalp_verdict
+        # پاسبان موتور قطعیِ ۱د + کانال آپدیت تحلیل
+      - name: Self-test (موتور ۱د)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_scalp1m
       - name: Run scalp desk
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.scalp
