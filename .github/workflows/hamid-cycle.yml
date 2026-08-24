@@ -113,6 +113,7 @@ jobs:
           python3 -m hamid.test_order_ticket
           python3 -m hamid.test_work_report
           python3 -m hamid.test_paper_dedupe
+          python3 -m hamid.test_edge_export
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -182,6 +183,14 @@ jobs:
       - name: سنجهٔ اثر تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.experience_effect --days 7 || true
+
+      # انتقال مهارت به داشبورد (دستور حمید ۲۴ اوت): قانون‌های CI-گذشتهٔ
+      # بک‌تست شبانه → signals/edge.json → داشبورد با sync_all می‌کشد و
+      # همان دلتاهای اندازه‌گیری‌شده را روی امتیازش می‌گذارد (سقف ±۱۵،
+      # وتو نه). قفسهٔ کهنه‌تر از ۴۸ ساعت خودش را stale علامت می‌زند.
+      - name: قفسهٔ لبه برای داشبورد
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.edge_export || true
 
       # گزارش کار (دستور حمید ۲۴ اوت: «تا گفتم گزارش کار را بده، نتایج را
       # با جزئیات و خلاصه و دقیق بهم بگو» → مهارت work-report). این‌جا هر
