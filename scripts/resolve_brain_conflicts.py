@@ -57,22 +57,57 @@ def unresolved():
     return [p for p in r.stdout.split("\n") if p.strip()]
 
 
+def trade_key(rec):
+    """هویتِ یک معامله — نه متنِ خطش.
+
+    عیبِ کشف‌شدهٔ ۲۴ اوت (بزرگ‌ترین تحریفِ آماریِ این ریپو تا امروز):
+    یکتاسازی روی **متنِ خط** بود. دو رانرِ هم‌زمان همان معاملهٔ باز را
+    جدا تسویه می‌کنند و هر کدام ردیفی با `closed` (و گاهی mfe/mae) کمی
+    متفاوت می‌سازد — یعنی دو خطِ *متفاوت* برای *یک* معامله. اجتماعِ
+    متنی هر دو را نگه می‌داشت. نتیجه: ۴۸.۶٪ از ۴۵٬۳۴۵ ردیف دفتر
+    تکراری بود، و روی دفتر سیگنال وین‌ریت را از ۷۱.۳٪ به ۷۸.۸٪ و
+    انتظار را از +۰.۱۲۸R به +۰.۲۵۱R باد کرده بود.
+
+    کلید عمداً از میدان‌هایی ساخته می‌شود که در لحظهٔ **باز شدن** قطعی
+    شده‌اند و تسویه عوضشان نمی‌کند. `closed` داخل کلید نیست — همان چیزی
+    است که بین دو نسخه فرق می‌کند.
+    """
+    return (rec.get("sym"), rec.get("opened"), rec.get("entry"),
+            (rec.get("why") or {}).get("stage"))
+
+
 def merge_jsonl(path):
-    """اجتماع خطوط یکتا. خط تکراری یک معامله نیست، همان معامله است."""
-    rows, seen = [], set()
+    """اجتماع بر **هویت معامله**، نه بر متن خط.
+
+    وقتی یک معامله دو تسویه دارد، **زودترین** نگه داشته می‌شود: آن یکی
+    لحظهٔ واقعیِ برخورد به استاپ/تارگت را دیده؛ تسویه‌های بعدی
+    بازمحاسبه‌اند و فقط دیرتر ثبت شده‌اند.
+    """
+    best, order, dropped = {}, [], 0
     for st in (2, 3):
         for line in (_stage(st, path) or "").splitlines():
             line = line.strip()
-            if not line or line in seen:
+            if not line:
                 continue
-            seen.add(line)
             try:
-                rows.append((json.loads(line).get("closed") or 0, line))
+                rec = json.loads(line)
             except Exception:                        # noqa: BLE001 - خط خراب رد
                 continue
-    rows.sort(key=lambda x: x[0])
+            k = trade_key(rec)
+            if k[1] is None and k[0] is None:        # ردیفی که هویت ندارد
+                k = ("__raw__", line)                # → مثل قبل، متنی
+            closed = rec.get("closed") or 0
+            if k in best:
+                dropped += 1
+                if closed < best[k][0]:              # زودترین تسویه برنده
+                    best[k] = (closed, line)
+                continue
+            best[k] = (closed, line)
+            order.append(k)
+    rows = sorted((best[k] for k in order), key=lambda x: x[0])
     (ROOT / path).write_text("\n".join(l for _, l in rows) + "\n", encoding="utf-8")
-    return f"{len(rows)} ردیف یکتا"
+    extra = f" ({dropped} تسویهٔ تکراری حذف شد)" if dropped else ""
+    return f"{len(rows)} معاملهٔ یکتا{extra}"
 
 
 def merge_gz_minutes(path):

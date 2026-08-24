@@ -176,6 +176,12 @@ def open_from(setups, context):
                 pass
         _append(OPEN, {
             "sym": s["symbol"], "dir": s["dir"],
+            # تایم‌فریمِ ستاپ (۲۴ اوت). تا امروز این دفتر `tf` نمی‌نوشت و
+            # دو چیز را کور می‌کرد: پرسش «موفقیت در کدام تایم بیشتر بوده»
+            # روی دفتر سیگنال اصلاً جواب نداشت (پوشش صفر)، و پاسبان
+            # پوزیشن سقفِ نگهداریِ پیش‌فرض ۷۲۰ دقیقه را به همه می‌داد —
+            # حتی به ستاپ ۵ دقیقه‌ای که باید بعد از ۴ ساعت منقضی شود.
+            "tf": s.get("tf"),
             "entry": float(s["entry"]), "sl": float(s["sl"]),
             "tp1": float(s["tp1"]), "tp2": float(s.get("tp2") or 0) or None,
             "opened": int(time.time() * 1000),
@@ -374,6 +380,22 @@ def _settle_one(p, now, still, box):
 
 
 
+def trade_key(rec):
+    """هویت معامله — از میدان‌هایی که تسویه عوضشان نمی‌کند.
+
+    باید مو‌به‌مو با `scripts/resolve_brain_conflicts.trade_key` یکی بماند؛
+    آن یکی تعارضِ بین دو رانر را جمع می‌کند، این یکی جلوی ثبتِ دوباره را
+    داخل همان رانر می‌گیرد. `test_paper_dedupe` هم‌ارزی‌شان را می‌سنجد.
+    """
+    return (rec.get("sym"), rec.get("opened"), rec.get("entry"),
+            (rec.get("why") or {}).get("stage"))
+
+
+def closed_keys():
+    """هویتِ هر معامله‌ای که قبلاً بسته شده. یک بار در هر اجرا خوانده می‌شود."""
+    return {trade_key(t) for t in _read(CLOSED)}
+
+
 def mark():
     """Walk every open position forward and close what has resolved."""
     positions = _read(OPEN)
@@ -383,9 +405,18 @@ def mark():
     still, closed = [], 0
     now = time.time() * 1000
 
+    # ضدِ ثبتِ دوباره (۲۴ اوت). ریشهٔ ۴۸.۶٪ تکرار در دفتر بسته، تسویهٔ
+    # هم‌زمان دو رانر بود؛ ادغامِ تعارض حالا بر هویتِ معامله یکتا می‌کند.
+    # این‌جا لایهٔ دوم است: پوزیشنی که هویتش از قبل در دفتر بسته هست،
+    # اصلاً دوباره تسویه نمی‌شود — فقط از دفتر باز برداشته می‌شود.
+    done = closed_keys()
+    dedup = 0
     box = [0]
     errors = 0
     for p in positions:
+        if trade_key(p) in done:
+            dedup += 1
+            continue
         try:
             _settle_one(p, now, still, box)
         except Exception as e:                   # noqa: BLE001
@@ -394,6 +425,8 @@ def mark():
             still.append(p)
             errors += 1
     closed = box[0]
+    if dedup:
+        print(f"↺ {dedup} پوزیشن از قبل در دفتر بسته بود — دوباره ثبت نشد")
     if errors:
         print(f"⚠ تسویهٔ {errors} پوزیشن خطا داد — باز ماندند و برچسب خوردند")
     _write(OPEN, still)
