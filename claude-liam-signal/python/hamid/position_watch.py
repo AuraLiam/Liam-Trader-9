@@ -60,13 +60,25 @@ def stale_bucket(n):
 
 
 def scan(rows, now_ms=None):
-    """پوزیشن‌های باز → (مانده‌ها، سالم‌ها). مانده = سن > سقفِ تایم‌فریمش."""
+    """پوزیشن‌های **پرشده** → (مانده‌ها، سالم‌ها). مانده = سن > سقفِ تایم‌فریمش.
+
+    سفارش‌های هنوز پرنشده این‌جا شمرده نمی‌شوند؛ کارِ `scan_pending` است.
+    قبل از ۲۴ اوت این تابع `filled or opened` می‌گرفت و لیمیتِ پرنشده را
+    «پوزیشن باز» جا می‌زد — یعنی هم آمارِ مانده را باد می‌کرد و هم خودِ
+    مشکلِ لیمیتِ منقضی را پنهان می‌کرد.
+    """
     now = now_ms or int(time.time() * 1000)
     stale, ok = [], []
+    seen = set()
     for r in rows:
-        opened = r.get("filled") or r.get("opened")
+        opened = r.get("filled")
         if not opened:
             continue
+        k = (r.get("sym"), r.get("opened"), r.get("entry"),
+             (r.get("why") or {}).get("stage"))
+        if k in seen:                # نسخهٔ تکراری = همان پوزیشن، یک بار
+            continue
+        seen.add(k)
         age_min = (now - opened) / 60000
         cap = max_hold_for(r.get("tf"))
         rec = {"sym": r.get("sym"), "dir": r.get("dir"), "tf": r.get("tf"),
@@ -75,6 +87,63 @@ def scan(rows, now_ms=None):
         (stale if age_min > cap else ok).append(rec)
     stale.sort(key=lambda x: -x["over_by_min"])
     return stale, ok
+
+
+# سقف مطلقِ انتظارِ یک لیمیت — همان عددی که paper.py با آن سفارش پرنشده
+# را کنسل می‌کند. این‌جا دوباره تعریف نمی‌شود تا دو جا از هم دور نیفتند.
+def _fill_cap_min(tf):
+    """مهلت انتظار یک لیمیتِ پرنشده — همان قاعدهٔ خودِ دفتر (paper).
+
+    از ۲۴ اوت این عدد در paper.pending_valid_min تعریف می‌شود و mark
+    سفارشِ گذشته از آن را خودش expired می‌کند؛ این‌جا فقط همان خوانده
+    می‌شود تا پاسبان و تعمیرکار هرگز دو تعریفِ واگرا نداشته باشند.
+    """
+    try:
+        from hamid.paper import pending_valid_min
+        return pending_valid_min(tf)
+    except Exception:                              # noqa: BLE001
+        return min(max_hold_for(tf), 24 * 60)
+
+
+def scan_pending(rows, now_ms=None):
+    """سفارش‌های لیمیتِ هنوز پرنشده → (منقضی‌ها، هنوز-معتبرها).
+
+    دستور حمید (۲۴ اوت): «از همین پوزیشن‌ها برای لیمیت گذاشتن هم
+    استفاده کن.» نتیجهٔ مستقیمش این است که حالا سفارشِ واقعی روی صرافی
+    می‌نشیند؛ پس پاسبان باید بگوید کدام سفارش دیگر پشتوانهٔ تحلیلی
+    ندارد. لیمیتی که ستاپش منقضی شده، سفارشِ بی‌صاحب است: اگر بعداً پر
+    شود، روی تحلیلی پر شده که دیگر وجود ندارد.
+
+    این‌جا هم چیزی لغو نمی‌شود — اعلام است، نه اجرا (قانون ۰۵).
+    """
+    now = now_ms or int(time.time() * 1000)
+    expired, waiting = [], []
+    seen = set()
+    for r in rows:
+        if r.get("filled"):
+            continue                                # پر شده — کار scan است
+        opened = r.get("opened")
+        if not opened:
+            continue
+        # نسخهٔ تکراریِ همان سفارش (میراث ادغام متنی) یک بار شمرده می‌شود
+        k = (r.get("sym"), opened, r.get("entry"),
+             (r.get("why") or {}).get("stage"))
+        if k in seen:
+            continue
+        seen.add(k)
+        age_min = (now - opened) / 60000
+        cap = _fill_cap_min(r.get("tf"))
+        stage = str((r.get("why") or {}).get("stage") or "")
+        rec = {"sym": r.get("sym"), "dir": r.get("dir"), "tf": r.get("tf"),
+               "entry": r.get("entry"), "sl": r.get("sl"), "stage": stage,
+               # فقط سفارشی که واقعاً به تلگرام حمید رفته ممکن است روی
+               # صرافی نشسته باشد؛ بقیه سفارش‌های داخلیِ دفتر کاغذی‌اند.
+               "sent_to_hamid": stage.startswith("sig-"),
+               "age_min": round(age_min), "valid_min": cap,
+               "over_by_min": round(age_min - cap)}
+        (expired if age_min > cap else waiting).append(rec)
+    expired.sort(key=lambda x: -x["over_by_min"])
+    return expired, waiting
 
 
 def load_open(path=None):
@@ -92,14 +161,23 @@ def load_open(path=None):
 
 
 def run(alert=False, quiet=False, path=None, now_ms=None):
-    stale, ok = scan(load_open(path), now_ms=now_ms)
+    rows = load_open(path)
+    stale, ok = scan(rows, now_ms=now_ms)
+    dead, waiting = scan_pending(rows, now_ms=now_ms)
+    verdicts = []
+    if stale:
+        verdicts.append(f"{len(stale)} پوزیشن بیش از سقفِ نگهداری باز مانده")
+    if dead:
+        verdicts.append(f"{len(dead)} سفارش لیمیتِ پرنشده منقضی شده")
     res = {"at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
            "open_total": len(stale) + len(ok),
            "stale": stale, "ok_count": len(ok),
-           "verdict": (f"{len(stale)} پوزیشن بیش از سقفِ نگهداری باز مانده"
-                       if stale else "هیچ پوزیشنی بیش از حد باز نمانده"),
-           "note": ("این پاسبان فقط اعلام می‌کند؛ بستن پوزیشن اجرای زنده "
-                    "است و بیرون از مرز این بسته (قانون ۰۵).")}
+           "pending_total": len(dead) + len(waiting),
+           "expired_pending": dead, "pending_ok_count": len(waiting),
+           "verdict": ("؛ ".join(verdicts) if verdicts else
+                       "هیچ پوزیشنِ مانده و هیچ لیمیتِ منقضی‌ای نداریم"),
+           "note": ("این پاسبان فقط اعلام می‌کند؛ بستن پوزیشن یا لغو سفارش "
+                    "اجرای زنده است و بیرون از مرز این بسته (قانون ۰۵).")}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1))
     if not quiet:
@@ -108,6 +186,10 @@ def run(alert=False, quiet=False, path=None, now_ms=None):
             print(f"  ⏰ {s_['sym']} {s_['dir']} {s_['tf']}: "
                   f"{s_['age_min']}د باز (سقف {s_['max_hold_min']}د، "
                   f"{s_['over_by_min']}د اضافه)")
+        for d_ in dead[:10]:
+            print(f"  📋 {d_['sym']} {d_['dir']} {d_['tf']}: لیمیت "
+                  f"{d_['age_min']}د منتظر (اعتبار {d_['valid_min']}د، "
+                  f"{d_['over_by_min']}د گذشته)")
     if alert:
         # دروازهٔ مشترک آلارم (۲۳ اوت): تا امروز این پیام هر چرخه — یعنی
         # ۲۴ بار در روز — تکرار می‌شد، چون دفتر باز روزها همان است.
@@ -127,6 +209,24 @@ def run(alert=False, quiet=False, path=None, now_ms=None):
             "⏰ لیام تریدر ۹ — پوزیشنِ مانده:\n" + "\n".join(lines) + more
             + "\nستاپش منقضی شده — بستن/بازبینی دستی لازم است.",
             recovered_text="✅ لیام تریدر ۹ — دیگر پوزیشنِ ماندهٔ بیش از سقف نداریم.")
+        # سفارش‌های لیمیتِ منقضی — فقط آن‌هایی که واقعاً برای حمید فرستاده
+        # شده‌اند (sig-*) پیام می‌گیرند: فقط آن‌ها ممکن است روی صرافی‌اش
+        # نشسته باشند. سفارش‌های داخلی دفتر کاغذی (تمرین/آزمایش/...) را
+        # تعمیرکارِ خودِ دفتر (paper.mark) در همان چرخه expired می‌کند —
+        # پیام دادن درباره‌شان همان «پیام بی‌معنی» ۲۴ اوت بود: سیل ۱۲۴
+        # سفارشِ تمرینی روی تلگرام حمید.
+        mine = [d_ for d_ in dead if d_.get("sent_to_hamid")]
+        dead_lines = [f"📋 {d_['sym']} {d_['dir']} ({d_['tf']}): لیمیت "
+                      f"{d_['over_by_min']}د از اعتبارش گذشته"
+                      for d_ in mine[:6]]
+        dead_more = f"\n… و {len(mine) - 6} سفارش دیگر" if len(mine) > 6 else ""
+        alert_gate.send(
+            "pending_limits", stale_bucket(len(mine)).replace("stale:", "limit:"),
+            "📋 لیام تریدر ۹ — سفارش لیمیتِ منقضیِ سیگنال:\n"
+            + "\n".join(dead_lines)
+            + dead_more + "\nستاپِ تحلیلی‌اش منقضی شده — اگر روی صرافی "
+            "گذاشته‌ای، لغوش کن؛ پر شدنش یعنی ورود روی تحلیلی که دیگر نیست.",
+            recovered_text="✅ لیام تریدر ۹ — دیگر سفارش لیمیتِ منقضیِ سیگنال نداریم.")
     return res
 
 

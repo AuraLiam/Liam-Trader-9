@@ -92,6 +92,25 @@ check("الگوی توکن تلگرام شناسایی می‌شود",
 check("متن معمولی توکن حساب نمی‌شود",
       not any(p.search("این فقط یک جملهٔ فارسی است") for p, _ in S.SECRET_PAT))
 
+# ── صاحب ریپو خودی است (رفع ۲۴ اوت) ────────────────────────────────────
+# merge از دکمه/API گیت‌هاب کامیتی با هویت حساب حمید می‌سازد. نبودن این
+# هویت در فهرست، اولین merge را «ناشناس» گرفت و چون sentinel در دروازهٔ
+# سخت است، همهٔ چرخه‌های بعد قرمز شدند و سیگنال از کار افتاد — آلارم
+# کاذبی که خودش شد منبعِ «پیام‌های خرابی».
+check("کامیتِ merge حساب حمید (AuraLiam9) خودی است",
+      S._known("AuraLiam9", "18r.liam@gmail.com"))
+check("و با هر بزرگی/کوچکی حروف",
+      S._known("auraliam9", "18R.LIAM@GMAIL.COM"))
+check("ولی جیمیلِ غریبه هنوز غریبه است (فهرست دقیق است، نه پسوند gmail)",
+      not S._known("Someone", "someone.else@gmail.com"))
+# رفعِ اول فقط author را دید و روی رانر دوباره افتاد: بررسی، committer را
+# هم می‌سنجد و committer هر merge سرورساید «GitHub <noreply@github.com>» است.
+check("committerِ merge سرورساید گیت‌هاب هم خودی است",
+      S._known("GitHub", "noreply@github.com"))
+check("جفتِ کاملِ کامیتِ merge (author+committer) هر دو خودی‌اند",
+      S._known("AuraLiam9", "18r.liam@gmail.com")
+      and S._known("GitHub", "noreply@github.com"))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

@@ -55,7 +55,10 @@ def run():
         check("ساخت کلاس بدون شبکه خطا نمی‌دهد", s.meta["version"])
         check("sync_all بی‌شبکه امن برمی‌گردد",
               st.sync_all() == {"params": None, "experience_pairs": 0,
-                                "top_liquidity": 0})
+                                "top_liquidity": 0, "edge_rules": 0})
+        check("و قفسهٔ لبه بی‌شبکه stale می‌ماند (بی‌اثر)",
+              st.EDGE.get("stale", True) is True
+              or st.edge_boost("ibs", {"dir": "LONG", "btc_up": True})[0] == 0)
     finally:
         st._get = old_get
 
@@ -72,8 +75,13 @@ def run():
         lev = st.suggest_leverage(stop, 100, mode="scalp")
         check(f"اهرم اسکلپ با استاپ {stop}٪ داخل محافظ",
               lev is None or lev <= int(50.0 / stop))
-    check("اهرم سوینگ محافظه‌کار می‌ماند (≤۱۰)",
-          st.suggest_leverage(0.5, 100) <= 10)
+    # نسخ ۲۳ اوت: باند سوینگ ۳–۱۰ جای خودش را به نگاشت واحد ۱۵–۳۹ داد
+    # («ضرایب بر اساس میزان اطمینان از ۱۵ تا ۳۹»)؛ این بررسی با قانونِ
+    # حاکم همتراز شد — محافظ لیکویید همچنان حاکم مطلق است.
+    check("اهرم سوینگ = نگاشت واحد ۲۳ اوت (کیفیت ۱۰۰ → ۳۹)",
+          st.suggest_leverage(0.5, 100) == 39)
+    check("و محافظ لیکویید از نگاشت قوی‌تر است",
+          st.suggest_leverage(2.0, 100) == 25)
 
     # ۵) ممیزی تداخل — سه سناریوی واقعی
     a = st.audit_environment({"max_leverage": 20, "min_stop_pct": 2.5,
