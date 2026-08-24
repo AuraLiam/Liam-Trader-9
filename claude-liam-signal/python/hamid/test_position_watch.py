@@ -153,6 +153,35 @@ check("آلارم لیمیت کلیدِ جدا دارد (رفعِ یکی، سل�
 check("و مثل بقیه از دروازهٔ alert_gate رد می‌شود",
       src.count("alert_gate.send") == 2, str(src.count("alert_gate.send")))
 
+# ── سیل ۱۲۴پیامیِ ۲۴ اوت — کلاسِ عیب: پیامِ بی‌مخاطب ───────────────────
+print("\n— فقط سفارشِ فرستاده‌شده برای حمید پیام می‌گیرد:")
+
+
+def pend2(stage, sym="X", age_min=5000):
+    return {"sym": sym, "dir": "LONG", "tf": "1m", "entry": 1.0, "sl": 0.9,
+            "opened": NOW - age_min * MIN, "filled": None,
+            "why": {"stage": stage}}
+
+
+exp, _ = PW.scan_pending([pend2("sig-ibs", "A"), pend2("practice", "B"),
+                          pend2("first", "C"), pend2("vetoed", "D")],
+                         now_ms=NOW)
+check("همه در خروجی JSON شمرده می‌شوند (پنهان‌کاری نه)", len(exp) == 4)
+check("ولی فقط sig-* برچسب «فرستاده برای حمید» دارد",
+      [e["sym"] for e in exp if e["sent_to_hamid"]] == ["A"], str(exp))
+check("و آلارم فقط همان‌ها را می‌فرستد (فیلتر در کد)",
+      'd_.get("sent_to_hamid")' in src)
+dup_rows = [pend2("practice", "E"), pend2("practice", "E")]
+check("نسخهٔ تکراریِ همان سفارش یک بار شمرده می‌شود",
+      len(PW.scan_pending(dup_rows, now_ms=NOW)[0]) == 1)
+f1 = pend2("practice", "F")
+f1["filled"] = NOW - 5000 * MIN
+check("پوزیشنِ پرشدهٔ تکراری هم در scan یک بار می‌آید",
+      len(PW.scan([f1, dict(f1)], now_ms=NOW)[0]) == 1)
+check("مهلت لیمیت همان قاعدهٔ خودِ دفتر است (paper.pending_valid_min)",
+      all(PW._fill_cap_min(tf) == P.pending_valid_min(tf)
+          for tf in ("1m", "5m", "15m", "1h", None)))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
