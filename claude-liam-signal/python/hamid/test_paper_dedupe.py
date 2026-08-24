@@ -101,9 +101,24 @@ check("زودترین تسویه برنده است، صریح در کد",
 print("\n— لایهٔ دوم: تسویهٔ دوباره اصلاً ثبت نمی‌شود:")
 psrc = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
 check("mark() قبل از تسویه، دفتر بسته را می‌پرسد", "closed_keys()" in psrc)
-check("و پوزیشنِ از-قبل-بسته را رد می‌کند", "if trade_key(p) in done" in psrc)
+check("و پوزیشنِ از-قبل-بسته را رد می‌کند", "if k in done" in psrc)
 check("و بی‌صدا نیست — تعدادش چاپ می‌شود",
       "دوباره ثبت نشد" in psrc)
+
+print("\n— دفترِ خود-درمان‌گر (رفعِ سیل ۱۲۴پیامی، ۲۴ اوت):")
+check("مهلت لیمیتِ ۱د = ۴۵ دقیقه (قانون ۱۰)", P.pending_valid_min("1m") == 45)
+check("ردیفِ بی‌تایم (قدیمی) سقف پیش‌فرض می‌گیرد، نه ۲۴ ساعت",
+      P.pending_valid_min(None) == 720)
+check("و سقف مطلق FILL_HOURS حاکم است",
+      P.pending_valid_min("1h") == P.FILL_HOURS * 60)
+check("تسویه سفارشِ منقضی را با همین قاعده می‌بندد (نه ۲۴ساعتِ سراسری)",
+      "pending_valid_min(p.get(\"tf\"))" in psrc.replace("'", '"')
+      or "pending_valid_min(p.get('tf'))" in psrc
+      or 'pending_valid_min(p.get("tf"))' in psrc)
+check("mark تکرارِ داخل دفترِ باز را جمع می‌کند (SPCXBUSDT×۳ یک پوزیشن است)",
+      "open_dups" in psrc and "uniq" in psrc)
+check("و هویتِ تسویه‌شده همان لحظه به done اضافه می‌شود (نه فقط اولِ اجرا)",
+      "done.add(k)" in psrc)
 
 print("\n— اثرِ عددیِ همین رفع (چرا مهم بود):")
 dup = [row(R=1.0, closed=2000)] * 3 + [row(sym="L", R=-1.0, opened=9, closed=2100)]

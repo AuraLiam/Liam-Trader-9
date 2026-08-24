@@ -48,11 +48,20 @@ OUT = ROOT / "signals" / "sentinel.json"
 ALLOWED_AUTHORS = {
     "claude", "hamid signal agent", "auraliam", "github-actions[bot]",
     "github-actions", "hamid", "conformance",
+    # حساب گیت‌هاب خودِ حمید (صاحب ریپو). merge از روی دکمه/API گیت‌هاب
+    # کامیتی با همین هویت می‌سازد؛ ۲۴ اوت نبودنش در فهرست، اولین merge
+    # را «نویسندهٔ ناشناس» گرفت و چون این آزمون در دروازهٔ سخت است، همهٔ
+    # چرخه‌های بعدش قرمز شدند و سیگنال از کار افتاد. صاحبِ ریپو بنا به
+    # تعریف خودی است — غریبه گرفتنش آلارم کاذب از جنسِ «پیام بی‌معنی» است.
+    "auraliam9",
 }
 ALLOWED_EMAILS_SUFFIX = (
     "@users.noreply.github.com", "@anthropic.com", "@privaterelay.appleid.com",
     "@liam9.ai",          # ورک‌فلوهای خودِ ریپو (conformance و هم‌خانواده)
 )
+# ایمیل‌های دقیقِ خودی — نه پسوندی. ایمیلِ کامیتِ حساب حمید در کل تاریخچهٔ
+# عمومی ریپو هست؛ فهرست‌کردنش این‌جا افشای چیزی نیست، شناساندنِ صاحب است.
+ALLOWED_EMAILS_EXACT = {"18r.liam@gmail.com"}
 
 SECRET_PAT = [
     (re.compile(r"\b\d{8,12}:[A-Za-z0-9_-]{30,}\b"), "توکن ربات تلگرام"),
@@ -94,6 +103,8 @@ def recent_authors(n=80):
 
 def _known(name, email):
     if (name or "").strip().lower() in ALLOWED_AUTHORS:
+        return True
+    if (email or "").strip().lower() in ALLOWED_EMAILS_EXACT:
         return True
     return any((email or "").lower().endswith(s) for s in ALLOWED_EMAILS_SUFFIX)
 
