@@ -1,0 +1,53 @@
+{
+  "_purpose": "دادهٔ خام گرافیفای (دستور حمید ۲۴ اوت) — نقشهٔ زندهٔ پنل: هر گره یک انجین/اتاق/منبع/مخزن، هر یال یک جریان داده. طرح بصری فردا با عکسِ حمید ساخته می‌شود؛ این فایل عمداً جدا از ظاهر است تا تغییر محتوا بدون دست‌زدن به گرافیک ممکن باشد.",
+  "version": 1,
+  "updated": "2026-08-24",
+  "external_sources": [
+    {"id": "exchanges", "label": "صرافی‌ها (کندل/تیکر)", "detail": "Binance·MEXC·OKX·Gate·Bitget·KuCoin — اولین که جواب داد", "feeds": ["live-scan", "hamid-cycle", "scalp", "dominance", "backtests"]},
+    {"id": "bitunix", "label": "بیت‌یونیکس (صرافی اجرا)", "detail": "فقط نماد قابل‌معامله سیگنال می‌گیرد + دفتر عمق ۶ ارز", "feeds": ["signal-gate", "depth-collect"]},
+    {"id": "polymarket", "label": "پالی‌مارکت (بازار پیش‌بینی)", "detail": "احتمالِ ضمنی پول واقعی + ردِ پول بزرگ (≥$5k) در برابر خرد — از ۲۴ اوت", "feeds": ["hamid-cycle"], "proof": "brain/research/polymarket/visits.jsonl"},
+    {"id": "news", "label": "خبر و تقویم", "detail": "Tavily·CMC·تقویم اقتصادی — روز آرام", "feeds": ["hamid-cycle", "news-hunt"]},
+    {"id": "books", "label": "کتابخانهٔ درسی", "detail": "Murphy·Nison·Brooks·Harris·Pardo… — حلقهٔ مطالعهٔ ۳ساعته", "feeds": ["reading-loop"], "proof": "brain/library/index.jsonl + brain/research/Exx/reading.jsonl"}
+  ],
+  "rooms": [
+    {"id": "signal-chain", "label": "زنجیرهٔ سیگنال", "cron": "پیوسته (~۳د)", "does": "اسکن استراتژی ۶۰ ارز برتر + اتاق دامیننس + الگوهای BTC", "writes": ["signals/latest.json", "signals/dominance.json"]},
+    {"id": "hamid-cycle", "label": "چرخهٔ حمید", "cron": "هر ۳۰ دقیقه (:17/:47)", "does": "۴۵ پاسبان → اسکن ۲۰۰ ارز → سیگنال تلگرام → پاک‌سازی دفتر → اثر تجربه → پالی‌مارکت → قفسهٔ لبه → گزارش کار", "writes": ["signals/*", "brain/*"]},
+    {"id": "live-scan", "label": "اسکن زنده", "cron": "هر ۱۵ دقیقه (:07/:37)", "does": "سیگنال فوری per-symbol + پاسبان سیو سود (پله‌های تریل روی پوزیشن زنده)", "writes": ["signals/live.json", "signals/trail-alert.json"]},
+    {"id": "scalp", "label": "میز ۱ دقیقه (مجزا)", "cron": "هر ۱۵ دقیقه (:03/:33)", "does": "ریپلی ۱د + ماشین حکم (PROMOTE/REJECT/UNDECIDED) — حکم فعلی: REJECT هندسهٔ فعلی", "writes": ["signals/scalp1m.json", "signals/scalp-verdict.json"]},
+    {"id": "pump-review", "label": "مرور پامپ", "cron": "۵ نوبت در روز تهران", "does": "رادار پامپ + لید-لگ + MFE/MAE نامزدها", "writes": ["signals/pump.json"]},
+    {"id": "nightly-backtest", "label": "بک‌تست شبانه", "cron": "روزی یک بار", "does": "بازسنجی همهٔ قانون‌ها روی کندل واقعی با CI", "writes": ["brain/backtests/latest.json"]},
+    {"id": "medic", "label": "تعمیرکار (عیب‌یاب)", "cron": "ساعتی", "does": "ورک‌فلوهای قرمز را ریشه‌یابی و کلاس‌های شناخته را خودکار رفع می‌کند", "writes": ["brain/medic.json"]},
+    {"id": "reading-loop", "label": "حلقهٔ مطالعه", "cron": "هر ۳ ساعت", "does": "یک کتاب از برنامهٔ درسی یک انجین (چرخشی) + راستی‌آزمایی قبل از قفسه", "writes": ["brain/research/Exx/reading.jsonl", "brain/library/queue.jsonl"]}
+  ],
+  "engines_operational": [
+    {"id": "market-structure", "label": "ساختار بازار", "when": "«قیمت کجاست؟» / اعتبار ستاپ"},
+    {"id": "liquidity", "label": "نقدینگی", "when": "قبل از سیگنال اصلی، ویک بزرگ"},
+    {"id": "macro-dominance", "label": "کلان/دامیننس", "when": "حرکت ناگهانی BTC، سیگنال پراطمینان"},
+    {"id": "lead-lag", "label": "لید-لگ", "when": "پامپ/دامپ معنادار"},
+    {"id": "order-block", "label": "اردر بلاک", "when": "قبل از ستاپ، استاپ روی سطح، OB_APPROACHING"},
+    {"id": "execution", "label": "اجرای ۵د", "when": "تأیید لحظهٔ ورود"},
+    {"id": "post-trade-learning", "label": "درس پس از معامله", "when": "تسویه، استاپ، شکست تکرارشونده"},
+    {"id": "research", "label": "تحقیق", "when": "۳+ شکستِ همان الگو — فقط پرسش‌محور"},
+    {"id": "data-quality", "label": "کیفیت داده", "when": "دادهٔ مشکوک/ناسازگار"}
+  ],
+  "engines_specialist": {"range": "E00..E26", "role": "ممیزِ read-only — فقط ENGINE_REVIEW_PACKET برمی‌گردانند؛ نوشتن فقط با ایجنت اصلی", "highlights": [
+    {"id": "E17", "label": "کمیتهٔ سیگنال", "score": "پرکارترین (n=۹۶۷ ردپا)"},
+    {"id": "E21", "label": "نگهدار حافظه", "score": "بهترین امتیاز بر معامله (۲.۰)"},
+    {"id": "E26", "label": "ناظر کل", "score": "دستور تمرکز هر چرخه → signals/overseer.json"}
+  ]},
+  "memory": [
+    {"id": "rules", "label": "قوانین هسته", "path": ".claude/rules/", "note": "تغییر فقط با دستور صریح حمید"},
+    {"id": "lessons", "label": "درس‌های تجربی", "path": "brain/memory/lessons.json", "note": "درس فقط بعد از تکرار + شواهد"},
+    {"id": "cases", "label": "پروندهٔ معامله‌ها", "path": "brain/cases/", "note": "هر معاملهٔ بسته در همان چرخه هضم می‌شود"},
+    {"id": "research", "label": "تحقیق (ایزوله)", "path": "brain/research/", "note": "با اثبات بازدید و retrieved_at"},
+    {"id": "library", "label": "قفسهٔ کتاب", "path": "brain/library/", "note": "ورود فقط پس از راستی‌آزمایی"},
+    {"id": "paper", "label": "دفترهای پیپر", "path": "brain/paper/", "note": "سیگنال/اسکلپ/تمرین/آزمایش‌ها جدا — خود-درمان‌گر از ۲۴ اوت"}
+  ],
+  "gates_before_send": ["ضدتکرار ۱۲س", "سقف ۱۶/۱۲س", "هم‌زمانی ۵د", "بازجویی premortem", "دروازهٔ USDT.D", "دروازهٔ روند ۴س+۱س", "نقشهٔ نقدینگی اجباری", "لایهٔ top60", "دوام بعد از کارمزد"],
+  "outputs": [
+    {"id": "telegram", "label": "@LiamTrader9_Bot (تنها بات)", "gets": "سیگنال+چارت+بلوک سفارش لیمیت · آلارم‌های عمل‌پذیر (سیو سود، پوزیشن مانده) · گزارش اتاق‌ها"},
+    {"id": "panel", "label": "پنل (gh-pages)", "gets": "همهٔ signals/*.json هر چند دقیقه"},
+    {"id": "dashboard", "label": "داشبورد حمید (liam9_strategy v2.8)", "gets": "sync_all: پارامتر + تجربه + top60 + قفسهٔ لبه (۷ قانون CI-گذشته)"}
+  ],
+  "learning_cycle": "معاملهٔ بسته → پروندهٔ علت (cases) → درس اگر تکرارشونده (lessons) → بک‌تست شبانه با CI → فقط CI-گذشته‌ها: رانر (apply_learned_rules) + داشبورد (edge.json) → ردپای edge_used/exp_used روی هر خروجی → سنجش شبانهٔ سهمِ هر لایه — هیچ ادعایی بدون CI"
+}
