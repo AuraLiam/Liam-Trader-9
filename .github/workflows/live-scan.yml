@@ -107,6 +107,19 @@ jobs:
             --telegram \
             | tee scan-output.txt
 
+      # پاسبان سیو سود (دستور حمید ۲۴ اوت: «TRUMP خیلی توی سود بود اما
+      # سیو سود نشد اصلاً») — پوزیشن‌های پرشدهٔ سیگنالِ ارسالی را با قیمت
+      # لحظه می‌سنجد و عبور از هر پلهٔ قانون تریل را همان نوبت اعلام
+      # می‌کند: «استاپ را بیاور به X». اعلام است، نه اجرا (قانون ۰۵).
+      - if: steps.fresh.outputs.skip != '1'
+        name: پاسبان سیو سود
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          cd claude-liam-signal/python
+          python3 -m hamid.trail_alert --alert || true
+
       # always() لازم است تا خلاصهٔ اسکنِ **شکست‌خورده** هم نوشته شود — ولی
       # وقتی گاردِ تازگی کل اسکن را رد کرده، فایلی وجود ندارد و tail خودش
       # کل job را قرمز می‌کرد. هر دو شرط با هم، و tail هم بی‌خطر شد.
