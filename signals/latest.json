@@ -1,6 +1,6 @@
 {
- "generated": 1787548088226,
- "generatedText": "2026-08-24 05:08 UTC",
+ "generated": 1787548282259,
+ "generatedText": "2026-08-24 05:11 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -516,7 +516,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": 0.614
+  "btcChange": 0.885
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -692,50 +692,7 @@
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 60) · پایین در -0.3٪ (شدت 43)",
-   "sync": {
-    "price": 0.009534,
-    "dist_pct": 0.39
-   },
-   "premortem": {
-    "pro": [
-     "RSI ۱۵د سالم (49)",
-     "اردر بلاک 15m (داخل، 2 واکنش) — هم‌جهت، سوخت حرکت",
-     "خوشهٔ لیکویید هم‌جهت — سوخت حرکت",
-     "قانون تأییدشدهٔ تاریخی «داخل اردر بلاک» (+0.18R، n=629، CI ردشده از صفر)"
-    ],
-    "con": [
-     "استاپ 0.86٪ داخل نویز ۱۵د است (ATR 1.52٪) — ویک می‌خورد"
-    ],
-    "pro_w": 5,
-    "con_w": 2,
-    "issue": false,
-    "note": "⚖️ بازجویی ۱۵د (وزنی): 5 امتیاز تارگت / 2 امتیاز استاپ — صادر شد · ⛔ استاپ داخل نویز — وتوی سخت",
-    "price": 0.009545,
-    "patterns": {
-     "by_tf": {},
-     "align": null,
-     "note": null,
-     "best": null
-    },
-    "noise_stop": true,
-    "ob_ctx": {
-     "align": "with",
-     "tf": "15m",
-     "reactions": 2,
-     "hunts": 0,
-     "fresh": false,
-     "note": "اردر بلاک 15m (داخل، 2 واکنش)",
-     "low": 0.009274,
-     "high": 0.009553
-    },
-    "fib": 0.391,
-    "tv": {
-     "ema200_align": null,
-     "supertrend_align": "against",
-     "ict_align": "with"
-    }
-   }
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 60) · پایین در -0.3٪ (شدت 43)"
   },
   {
    "strategy": "ibs",
@@ -5507,6 +5464,104 @@
    "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 90) · پایین در -0.7٪ (شدت 59)"
   },
   {
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
+   "sym": "HBARUSDT",
+   "tf": "15m",
+   "stage": "ARMED",
+   "dir": "LONG",
+   "entry": 0.07918,
+   "sl": 0.07851211428571428,
+   "tp1": 0.0806,
+   "tp2": 0.081736,
+   "rr": 2.13,
+   "price": 0.07918,
+   "conf": 40,
+   "ev": 0.2460440664297633,
+   "quality": 100,
+   "visits": 2,
+   "depth": 62,
+   "exited": true,
+   "inside": false,
+   "fvg": true,
+   "level": {
+    "type": "R",
+    "touches": 12
+   },
+   "channel": {
+    "dir": "صعودی",
+    "drift": 3.5,
+    "posPct": 32
+   },
+   "adx": 21.5,
+   "room": {
+    "r": 1.77,
+    "blocker": "FVG مقابل"
+   },
+   "swept": {
+    "n": 2
+   },
+   "thin": {
+    "insideRatio": 0.1,
+    "volRatio": 0.89
+   },
+   "goOnFirst": true,
+   "waitReason": null,
+   "skip": "ADX 21.5 زیر حد 25 — بازار روند ندارد",
+   "lastClose": 1787546700000,
+   "ob": {
+    "low": 0.07858,
+    "high": 0.079
+   },
+   "learned": {
+    "boost": 0.169,
+    "rules": [
+     {
+      "rule": "جای حرکت بیش از ۱.۵ برابر",
+      "delta": 0.169
+     }
+    ]
+   },
+   "elite": true,
+   "learning": {
+    "verdict": "good",
+    "n": 104,
+    "hit": 44.2,
+    "ev": 0.651
+   },
+   "trend4": "up",
+   "trend1": "range",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.07941754,
+      "pct_away": 0.3,
+      "score": 41
+     },
+     {
+      "price": 0.0795759,
+      "pct_away": 0.5,
+      "score": 52
+     }
+    ],
+    "below": [
+     {
+      "price": 0.07894246,
+      "pct_away": -0.3,
+      "score": 40
+     },
+     {
+      "price": 0.0787841,
+      "pct_away": -0.5,
+      "score": 51
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 41) · پایین در -0.3٪ (شدت 40)"
+  },
+  {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "sym": "BTCUSDT",
@@ -5705,84 +5760,6 @@
    "trend4": "up",
    "trend1": "down",
    "trend_mode": "counter-blocked"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "TUTUSDT",
-   "tf": "15m",
-   "stage": "ARMED",
-   "dir": "LONG",
-   "entry": 0.057655,
-   "sl": 0.05636041,
-   "tp1": 0.059596884999999995,
-   "tp2": 0.060891474999999994,
-   "rr": 1.5,
-   "price": 0.06683,
-   "conf": null,
-   "ev": null,
-   "quality": 74,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1787546700000,
-   "ob": {
-    "low": 0.05653,
-    "high": 0.05878
-   },
-   "choch": 1,
-   "barsAgo": 31,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "bad",
-    "n": 330,
-    "hit": 30.0,
-    "ev": -0.086
-   },
-   "trend4": "up",
-   "trend1": "up",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 0.06716415,
-      "pct_away": 0.5,
-      "score": 37
-     },
-     {
-      "price": 0.06729781,
-      "pct_away": 0.7,
-      "score": 89
-     }
-    ],
-    "below": [
-     {
-      "price": 0.06649585,
-      "pct_away": -0.5,
-      "score": 37
-     },
-     {
-      "price": 0.06636219,
-      "pct_away": -0.7,
-      "score": 39
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 37) · پایین در -0.5٪ (شدت 37)"
   }
  ],
  "learned_rules": [
