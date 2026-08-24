@@ -259,6 +259,28 @@ check(f"هر حلقهٔ پوش دست‌کم ۸ تلاش دارد (بی‌بود
 check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم‌گام تلاش نکنند "
       f"(بی‌jitter: {_no_jitter[:4]})", not _no_jitter)
 
+
+# ── میزهای خاموش‌شده با دستور صریح حمید ───────────────────────────────
+# خاموشی باید **چسبنده** باشد. یک ویرایشِ بی‌دقت که کرون را برگرداند،
+# میزی را که سنجش ردش کرده دوباره وارد چرخه می‌کند و هیچ‌کس نمی‌فهمد.
+# پس کرونِ برگشته = چرخهٔ سرخ، و دلیلِ خاموشی باید روی خودِ فایل بماند.
+#   fname → (تاریخِ خاموشی، رشته‌ای که باید عددِ حکم را روی فایل ثابت کند)
+OFF = {"shock-desk.yml": ("۲۴ اوت", "−۰.۰۳۱R")}
+for fname, (when, why) in OFF.items():
+    p = WF / fname
+    check(f"{fname} هنوز وجود دارد (خاموش شد، حذف نشد)", p.exists())
+    if not p.exists():
+        continue
+    txt = p.read_text(encoding="utf-8")
+    body = yaml.safe_load(txt)
+    trig = body.get(True) or body.get("on") or {}
+    check(f"{fname} کرون ندارد — خاموشیِ {when} برنگشته",
+          "schedule" not in trig)
+    check(f"{fname} هنوز workflow_dispatch دارد (اجرای دستی ممکن بماند)",
+          "workflow_dispatch" in trig)
+    check(f"{fname} دلیلِ عددیِ خاموشی را روی خودش دارد",
+          "خاموش شد" in txt and why in txt)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
