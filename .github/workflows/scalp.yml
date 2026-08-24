@@ -26,6 +26,10 @@ jobs:
       - name: Self-test
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.test_scalp
+        # پاسبانِ ماشینِ حکم — همراه اجباریِ scalp_verdict
+      - name: Self-test (حکم)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_scalp_verdict
       - name: Run scalp desk
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.scalp
@@ -37,6 +41,17 @@ jobs:
         env:
           LIAM9_LINK_SECRET: ${{ secrets.LIAM9_LINK_SECRET }}
         run: python3 -m hamid.scalp_exec --mode demo || true
+
+      # ماشینِ حکم (دستور حمید ۲۴ اوت: «این سیستم یک دقیقه‌ای باید به
+      # صورت مجزا برویم جلو تا به نتیجه برسد»). هر نوبت می‌گوید
+      # PROMOTE / REJECT / UNDECIDED و چقدر تا تصمیم‌پذیری مانده.
+      # آلارم فقط روی **تغییر حکم** می‌رود، نه هر ۱۵ دقیقه.
+      - name: حکم میز ۱ دقیقه
+        working-directory: claude-liam-signal/python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 -m hamid.scalp_verdict --alert || true
       - name: Publish
         run: |
           git config user.name "Hamid Signal Agent"
