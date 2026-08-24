@@ -110,6 +110,9 @@ jobs:
           python3 -m hamid.test_skill_injection
           python3 -m hamid.test_alert_gate
           python3 -m hamid.test_experience_effect
+          python3 -m hamid.test_order_ticket
+          python3 -m hamid.test_work_report
+          python3 -m hamid.test_paper_dedupe
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -168,9 +171,25 @@ jobs:
 
       # اثر تجربه روی نتیجه، با CI (دستور حمید ۲۳ اوت: «یادگیری و تجربه
       # چقدر تأثیر داشت؟»). عددی که راه بازتولید ندارد گزارش نمی‌شود.
+      # پاک‌سازی تسویه‌های تکراری، **قبل از** هر آماری (رفع ۲۴ اوت).
+      # ریشه بسته شد (ادغام بر هویت معامله + ردِ تسویهٔ دوباره در mark)،
+      # ولی هر ردیفِ تکراریِ باقی‌مانده هنوز عدد را باد می‌کند. پشتیبان
+      # کنار فایل ساخته می‌شود و gitignore جلوی کامیت شدنش را می‌گیرد.
+      - name: پاک‌سازی تکرارِ دفتر بسته
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.dedupe_closed --apply || true
+
       - name: سنجهٔ اثر تجربه
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.experience_effect --days 7 || true
+
+      # گزارش کار (دستور حمید ۲۴ اوت: «تا گفتم گزارش کار را بده، نتایج را
+      # با جزئیات و خلاصه و دقیق بهم بگو» → مهارت work-report). این‌جا هر
+      # چرخه ساخته می‌شود تا وقتی حمید می‌پرسد، عددِ تازه از قبل روی
+      # signals/work-report.json باشد و منتظر یک اجرای دستی نماند.
+      - name: گزارش کار
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.work_report --hours 24 || true
 
       # لایهٔ نقدشوندگی برتر ۶۰ (دستور حمید، ۲۱ اوت: «همینو استراتژی کن»).
       # سنجیده روی dash-backtest واقعی: top60 CI[+0.199,+0.669] کاملاً بالای
