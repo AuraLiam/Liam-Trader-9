@@ -61,6 +61,21 @@ RISK_FRACTION = 0.01          # 1% of balance per trade
 FILL_HOURS = 24               # a limit untouched this long is cancelled
 HOLD_HOURS = 24               # then closed at market
 
+# مهلتِ اعتبار یک لیمیتِ پرنشده، به دقیقه، بر اساس تایم‌فریم ستاپ.
+# قانون ۱۰: سفارش دقیقاً به اندازهٔ ستاپی که ساختش معتبر است؛ ستاپ ۱د
+# بعد از ۴۵ دقیقه مرده، پس لیمیتش هم مرده. ردیفِ بی‌تایم (قدیمی) سقف
+# پیش‌فرض می‌گیرد. تعمیرکارِ این قاعده خودِ mark است — سفارشِ منقضی در
+# همان چرخه expired می‌شود، نه اینکه هفته‌ها بماند و پاسبان دربارهٔ آن
+# به حمید پیام بدهد (ریشهٔ سیل ۱۲۴پیامیِ ۲۴ اوت).
+PENDING_VALID_MIN = {"1m": 45, "3m": 90, "5m": 240, "15m": 720, "1h": 2880}
+PENDING_DEFAULT_MIN = 720
+
+
+def pending_valid_min(tf):
+    """دقیقه‌های اعتبار لیمیتِ پرنشده — سقف مطلق همان FILL_HOURS."""
+    return min(PENDING_VALID_MIN.get(tf, PENDING_DEFAULT_MIN),
+               FILL_HOURS * 60)
+
 
 def _read(p):
     if not p.exists():
@@ -276,7 +291,11 @@ def _settle_one(p, now, still, box):
                     p["late_fill"] = True
                 break
         if p["filled"] is None:
-            if now - p["opened"] > FILL_HOURS * 3600_000:
+            # اعتبار بر اساس تایم‌فریم ستاپ (قانون ۱۰)، نه یک ۲۴ساعتِ
+            # سراسری — لیمیتِ ستاپِ مرده، سفارشِ بی‌صاحب است و همین‌جا
+            # بسته می‌شود؛ دفترِ خود-درمان‌گر چیزی برای آلارم باقی
+            # نمی‌گذارد.
+            if now - p["opened"] > pending_valid_min(p.get("tf")) * 60_000:
                 # never touched: not a trade, and must not be scored as one
                 p["outcome"] = "expired"
                 p["R"] = None
@@ -413,18 +432,32 @@ def mark():
     dedup = 0
     box = [0]
     errors = 0
+    # تکرار داخل خودِ دفتر باز (میراث ادغام متنی — SPCXBUSDT سه بار):
+    # از هر هویت فقط یکی می‌ماند، با ترجیح نسخهٔ پرشده که تاریخچهٔ
+    # واقعی‌تری دارد. دو نسخهٔ یک سفارش دو معامله نیستند.
+    uniq = {}
     for p in positions:
-        if trade_key(p) in done:
+        k = trade_key(p)
+        if k not in uniq or (p.get("filled") and not uniq[k].get("filled")):
+            uniq[k] = p
+    open_dups = len(positions) - len(uniq)
+    positions = list(uniq.values())
+    for p in positions:
+        k = trade_key(p)
+        if k in done:
             dedup += 1
             continue
         try:
             _settle_one(p, now, still, box)
+            done.add(k)          # همین اجرا هم دوباره تسویه‌اش نکند
         except Exception as e:                   # noqa: BLE001
             # ردیفِ خراب باز می‌ماند و برچسب می‌خورد؛ بقیهٔ دفتر تسویه می‌شود.
             p["mark_error"] = type(e).__name__
             still.append(p)
             errors += 1
     closed = box[0]
+    if open_dups:
+        print(f"↺ {open_dups} ردیف تکراری از دفتر باز جمع شد")
     if dedup:
         print(f"↺ {dedup} پوزیشن از قبل در دفتر بسته بود — دوباره ثبت نشد")
     if errors:
