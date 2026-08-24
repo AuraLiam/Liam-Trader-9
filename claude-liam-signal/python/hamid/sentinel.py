@@ -61,7 +61,11 @@ ALLOWED_EMAILS_SUFFIX = (
 )
 # ایمیل‌های دقیقِ خودی — نه پسوندی. ایمیلِ کامیتِ حساب حمید در کل تاریخچهٔ
 # عمومی ریپو هست؛ فهرست‌کردنش این‌جا افشای چیزی نیست، شناساندنِ صاحب است.
-ALLOWED_EMAILS_EXACT = {"18r.liam@gmail.com"}
+# «noreply@github.com» هویتِ committer در هر merge سرورسایدِ گیت‌هاب است
+# (author = حساب کاربر، committer = خودِ GitHub) — بررسی نویسنده روی هر
+# دو می‌نشیند، پس بدون این، هر merge از دکمه/API «ناشناس» می‌شد؛ رفعِ
+# اولِ ۲۴ اوت فقط author را دید و همان بررسی دوباره افتاد.
+ALLOWED_EMAILS_EXACT = {"18r.liam@gmail.com", "noreply@github.com"}
 
 SECRET_PAT = [
     (re.compile(r"\b\d{8,12}:[A-Za-z0-9_-]{30,}\b"), "توکن ربات تلگرام"),
