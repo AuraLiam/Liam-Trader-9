@@ -28,14 +28,41 @@ NOISE = 0.02          # واحد دامیننس؛ زیر این، حرکت نی�
 FRESH_MS = 10 * 60000  # دادهٔ کهنه‌تر از ۱۰ دقیقه = پیش‌بینی ممنوع
 KEEP_GRADED = 400      # دنبالهٔ کارنامه، برای عیب‌یابی
 
+# ── حلقهٔ تجربه (سؤال حمید، ۲۵ اوت: «مگر حافظه ندارد که کمتر اشتباه
+# کند؟») — تا امروز کارنامه فقط نوشته می‌شد و make_forecast هرگز
+# نمی‌خواندش؛ BTC.D|120m با ۱۷.۹٪ اصابت از ۸۴ نمونه همان ادعا را هر
+# نوبت تکرار می‌کرد. قاعدهٔ پیش‌ثبت‌شده (الگوی دروازهٔ تجربهٔ قانون ۰۳):
+# ادعای جهت‌داری که در پنجرهٔ اخیرِ کارنامه سابقهٔ بدِ نمونه‌دار دارد
+# پس گرفته می‌شود (FLAT با دلیل صریح)؛ و هر REPROBE_EVERY بارِ متوالی،
+# یک بار ادعای اصلی عمداً صادر می‌شود تا نمونه‌گیری نمیرد و اگر رژیم
+# عوض شد، کارنامه بتواند دوباره خوب شود.
+HIST_WINDOW = 60       # فقط nِ آخر هر سطل — گناه قدیمی ابدی نیست
+BAD_N = 20             # زیر این نمونه، حکم نمی‌دهیم (نمونهٔ کم دروغ می‌گوید)
+BAD_HIT_PCT = 30.0     # بدتر از کف شانس سه‌حالته (~۳۳٪) = سیستماتیک خطا
+REPROBE_EVERY = 5      # هر ۵ سرکوبِ متوالی، یک بازآزمایی
+
+
+def bucket_stats(st, metric, horizon, path, window=HIST_WINDOW):
+    """کارنامهٔ شمرده‌شدهٔ همین ادعا (متریک|افق|جهت) در پنجرهٔ اخیر.
+    عدد ساخته نمی‌شود — فقط شمارش ردیف‌های نمره‌خورده."""
+    rows = [g for g in (st or {}).get("graded", [])
+            if g.get("metric") == metric and g.get("horizon_min") == horizon
+            and g.get("path") == path and g.get("result") in ("HIT", "MISS")]
+    rows = rows[-window:]
+    n = len(rows)
+    if not n:
+        return {"n": 0, "hit_pct": None}
+    hit = sum(1 for g in rows if g["result"] == "HIT")
+    return {"n": n, "hit_pct": round(100 * hit / n, 1)}
+
 
 def _load():
     try:
         d = json.loads(LEDGER.read_text())
         return {"open": d.get("open") or [], "graded": d.get("graded") or [],
-                "score": d.get("score") or {}}
+                "score": d.get("score") or {}, "probe": d.get("probe") or {}}
     except Exception:                                # noqa: BLE001
-        return {"open": [], "graded": [], "score": {}}
+        return {"open": [], "graded": [], "score": {}, "probe": {}}
 
 
 def _save(st):
@@ -62,8 +89,11 @@ def _evidence(metric, chg1, chg4, trend1, trend4):
     return ev
 
 
-def make_forecast(points, struct, now_ms=None):
-    """پیش‌بینی این نوبت؛ دلیل اجباری است. برمی‌گرداند لیست (شاید خالی)."""
+def make_forecast(points, struct, now_ms=None, st=None):
+    """پیش‌بینی این نوبت؛ دلیل اجباری است. برمی‌گرداند لیست (شاید خالی).
+
+    st (دفتر کارنامه) اگر داده شود، حلقهٔ تجربه فعال است: ادعای جهت‌دار
+    با سابقهٔ بدِ نمونه‌دار پس گرفته می‌شود (بالا، ثابت‌های HIST_*)."""
     if not points:
         return []
     now = now_ms or int(time.time() * 1000)
@@ -97,9 +127,31 @@ def make_forecast(points, struct, now_ms=None):
         else:
             path, reasons = "FLAT", ["هیچ شاهد جهت‌داری نیست"]
         for h in HORIZONS_MIN:
-            out.append({"made": now, "due": now + h * 60000, "metric": metric,
-                        "key": key, "horizon_min": h, "path": path,
-                        "base": points[-1][key], "reasons": reasons})
+            f = {"made": now, "due": now + h * 60000, "metric": metric,
+                 "key": key, "horizon_min": h, "path": path,
+                 "base": points[-1][key], "reasons": list(reasons)}
+            if st is not None and path in ("UP", "DOWN"):
+                hist = bucket_stats(st, metric, h, path)
+                f["hist"] = hist
+                if (hist["n"] >= BAD_N and hist["hit_pct"] is not None
+                        and hist["hit_pct"] < BAD_HIT_PCT):
+                    pk = f"{metric}|{h}|{path}"
+                    cnt = st.setdefault("probe", {}).get(pk, 0) + 1
+                    st["probe"][pk] = cnt
+                    if cnt % REPROBE_EVERY == 0:
+                        f["reprobe"] = True
+                        f["reasons"].append(
+                            f"بازآزمایی {cnt}: ادعا با وجود کارنامهٔ بد "
+                            "عمداً صادر شد تا نمونه‌گیری زنده بماند")
+                    else:
+                        f["demoted_from"] = path
+                        f["path"] = "FLAT"
+                        f["reasons"] = [
+                            f"ادعای {path} پس گرفته شد — کارنامهٔ همین ادعا "
+                            f"در {hist['n']} نوبت اخیر فقط {hist['hit_pct']}٪ "
+                            "اصابت داشت (اصل انباشت تجربه، قانون ۰۳)"
+                        ] + [f"شاهد اولیه: {r}" for r in reasons[:2]]
+            out.append(f)
     return out
 
 
@@ -146,12 +198,13 @@ def update(points, struct, now_ms=None):
     # نسخهٔ اول تازه را جایگزین می‌کرد و چون زنجیره هر ~۳ دقیقه می‌چرخد،
     # هیچ پیش‌بینی‌ای به سررسید نمی‌رسید و کارنامه ابدی خالی می‌ماند.
     open_slots = {(f["metric"], f["horizon_min"]) for f in st["open"]}
-    fresh = [f for f in make_forecast(points, struct, now_ms)
+    fresh = [f for f in make_forecast(points, struct, now_ms, st=st)
              if (f["metric"], f["horizon_min"]) not in open_slots]
     st["open"] += fresh
     _save(st)
     return {"made_now": [{k: f[k] for k in
-                          ("metric", "horizon_min", "path", "reasons")}
+                          ("metric", "horizon_min", "path", "reasons",
+                           "hist", "demoted_from", "reprobe") if k in f}
                          for f in fresh],
             "graded_now": graded_now,
             "scoreboard": scoreboard(st),
