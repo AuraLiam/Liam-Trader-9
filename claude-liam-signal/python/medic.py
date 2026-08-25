@@ -41,6 +41,9 @@ OUT = ROOT / "brain" / "medic.json"
 PAGES = "https://auraliam.github.io/Liam-Trader-9"
 HAMID_MAX_MIN = 45      # ضربان هر ۲۰ دقیقه می‌زند؛ دو چرخهٔ ازدست‌رفته یعنی مشکل
 SCAN_MAX_MIN = 60
+# قانون ۰۷: مرور پامپ ۵ نوبت در روز تهران (کرون UTC ساعت‌های ۲/۷/۱۲/۱۷/۲۱)؛
+# بزرگ‌ترین فاصلهٔ سالم ۵ ساعت است + جای اجرا/لغزش.
+PUMP_RADAR_MAX_MIN = 380
 
 
 def fetch(url, timeout=25):
@@ -55,9 +58,75 @@ def age_min(j):
     return None if not g else (time.time() * 1000 - g) / 60000
 
 
+def github_health(runs):
+    """وضعِ فعلی هر ورک‌فلو از فهرست اجراهای اخیر → (faults, infos, sick, wake).
+
+    قاعده (درس ۲۵ اوت): خرابی یعنی «الان قرمز است» — آخرین اجرای کاملِ
+    ورک‌فلو failure باشد. شکستی که بعدش سبز آمده رفع شده و فقط یک خط
+    خبرِ سلامتی می‌ارزد، نه آلارم. ≥۲ شکستِ پیاپی در انتها = sick
+    (یک قرمزِ تک می‌تواند نوسان زیرساخت باشد؛ دومی یعنی الگو).
+    cancelled/skipped نه سبزند نه قرمز — در شمارش پیاپی رد می‌شوند."""
+    from collections import defaultdict
+    by = defaultdict(list)
+    for x in runs or []:
+        if x.get("status") == "completed":
+            by[str(x.get("name") or "؟")].append(x)
+    faults, infos, wake, sick = [], [], [], False
+    # درس ۱۴ اوت: ورک‌فلوی نامعتبر (مثلاً کلید if تکراری) با صفر job
+    # می‌میرد و در API به‌جای نامش «مسیر فایل» می‌آید — اصلاً اجرا نشده.
+    broken = sorted(n for n in by if n.startswith(".github/workflows/"))
+    if broken:
+        sick = True
+        faults.append("⛔ ورک‌فلوی نامعتبر (اصلاً اجرا نشده — احتمالاً کلید "
+                      "تکراری در YAML): " + "، ".join(broken[:4]))
+    for name, rs in sorted(by.items()):
+        if name.startswith(".github/workflows/"):
+            continue
+        rs.sort(key=lambda x: x.get("created_at") or "", reverse=True)
+        n_fail = sum(1 for x in rs if x.get("conclusion") == "failure")
+        if not n_fail:
+            continue
+        consec = 0
+        for x in rs:
+            c = x.get("conclusion")
+            if c == "failure":
+                consec += 1
+            elif c == "success":
+                break
+        if consec:
+            faults.append(f"⚠️ «{name}» الان قرمز است — {consec} شکستِ "
+                          "پیاپی در انتهای ۶ ساعت اخیر")
+            if consec >= 2:
+                sick = True
+                if name.lower().startswith("hamid"):
+                    wake.append("heartbeat.yml")
+        else:
+            infos.append(f"گیت‌هاب: «{name}» در ۶ ساعت اخیر {n_fail} شکست "
+                         "داشت و برطرف شده — آخرین اجرا سبز")
+    if not faults and not infos:
+        infos.append("گیت‌هاب: هیچ اجرای قرمزی در ۶ ساعت اخیر")
+    return faults, infos, sick, wake
+
+
 def examine():
-    """برمی‌گرداند: (خراب؟، یافته‌ها، ورک‌فلوهایی که باید بیدار شوند)."""
-    finds, sick, wake = [], False, []
+    """برمی‌گرداند: (خراب؟، یافته‌ها، بیدارشونده‌ها، total، خرابی‌ها).
+
+    درس ۲۵ اوت: آلارم قبلاً خطِ خرابی را با کلمه‌گردی («ناموفق» در متن)
+    پیدا می‌کرد؛ نتیجه این شد که علتِ واقعیِ sick (رادار کهنه) در پیام
+    نبود و یک خبرِ تاریخیِ رفع‌شده به‌جایش نشسته بود. حالا هر یافته‌ای
+    که sick می‌کند همان لحظه در فهرست جداگانهٔ faults هم ثبت می‌شود و
+    پیام آلارم فقط از همین فهرست ساخته می‌شود — علت و پیام دیگر نمی‌توانند
+    از هم جدا بیفتند."""
+    finds, faults, sick, wake = [], [], False, []
+
+    def bad(msg, *wf):
+        nonlocal sick
+        sick = True
+        finds.append(msg)
+        faults.append(msg)
+        for w in wf:
+            if w not in wake:
+                wake.append(w)
 
     try:
         st, body = fetch(f"{PAGES}/signals/hamid-latest.json")
@@ -66,64 +135,57 @@ def examine():
         setups, paper, reads = j.get("setups"), j.get("paper"), j.get("reads", 0)
         quiet = j.get("mode") == "quiet"
         if a is None or a > HAMID_MAX_MIN:
-            sick = True
-            wake.append("heartbeat.yml")
-            finds.append(f"خط تولید سیگنال کهنه است — آخرین چرخه {round(a) if a else '؟'} دقیقه پیش (آستانه {HAMID_MAX_MIN})")
+            bad(f"خط تولید سیگنال کهنه است — آخرین چرخه {round(a) if a else '؟'} دقیقه پیش (آستانه {HAMID_MAX_MIN})",
+                "heartbeat.yml")
         elif quiet:
             # حالت سکوت طبق طرح خود حمید اسکن کامل نمی‌کند (بازار آرام یا تعطیل)
             # و reads=0 طبیعی آن است — یک بار همین‌جا هشدار الکی داده شد.
             finds.append(f"چرخه سالم (حالت سکوت): {round(a)} دقیقه پیش — {j.get('why', 'بازار آرام')}")
         elif not isinstance(setups, list) or not isinstance(paper, dict) or reads < 10:
-            sick = True
-            wake.append("heartbeat.yml")
-            finds.append(f"فایل چرخه شکل درست ندارد (reads={reads}) — چرخه می‌دود ولی چیزی که پنل لازم دارد نمی‌سازد")
+            bad(f"فایل چرخه شکل درست ندارد (reads={reads}) — چرخه می‌دود ولی چیزی که پنل لازم دارد نمی‌سازد",
+                "heartbeat.yml")
         else:
             ready = sum(1 for s in setups if not s.get("waiting"))
             finds.append(f"چرخه سالم: {round(a)} دقیقه پیش، {reads} ارز، {ready} سیگنال آماده، {len(setups) - ready} منتظر، دفتر {paper.get('balance')}$")
     except Exception as e:                            # noqa: BLE001 - unreachable is itself the finding
-        sick = True
-        wake.append("heartbeat.yml")
-        finds.append(f"hamid-latest.json در دسترس نیست: {type(e).__name__}")
+        bad(f"hamid-latest.json در دسترس نیست: {type(e).__name__}", "heartbeat.yml")
 
     try:
         st, body = fetch(f"{PAGES}/signals/latest.json")
         j = json.loads(body)
         a = age_min(j)
         if a is None or a > SCAN_MAX_MIN:
-            sick = True
-            wake.append("live-scan.yml")
-            finds.append(f"اسکن استراتژی‌های قبلی کهنه است — {round(a) if a else '؟'} دقیقه (آستانه {SCAN_MAX_MIN})")
+            bad(f"اسکن استراتژی‌های قبلی کهنه است — {round(a) if a else '؟'} دقیقه (آستانه {SCAN_MAX_MIN})",
+                "live-scan.yml")
         else:
             finds.append(f"اسکن قبلی سالم: {round(a)} دقیقه پیش، {len(j.get('signals', []))} سیگنال")
     except Exception as e:                            # noqa: BLE001
-        sick = True
-        wake.append("live-scan.yml")
-        finds.append(f"latest.json در دسترس نیست: {type(e).__name__}")
+        bad(f"latest.json در دسترس نیست: {type(e).__name__}", "live-scan.yml")
 
     try:
         st, body = fetch(f"{PAGES}/signals/pump-radar.json")
         j = json.loads(body)
         a = age_min(j)
-        if a is None or a > 50:                       # کرون ۱۵دقیقه‌ای + جای لغزش
-            sick = True
-            wake.append("pump-radar.yml")
-            finds.append(f"رادار پامپ کهنه است — {round(a) if a else '؟'} دقیقه پیش")
+        # قانون ۰۷ (۲۰ اوت): مرور پامپ ۵ نوبت در روز است، نه ۱۵دقیقه‌ای.
+        # آستانهٔ ۵۰ دقیقهٔ قدیمی یادگارِ دورهٔ قبل بود و ۹۰٪ روز «کهنه»
+        # می‌گفت — دکترین پاسبان باید با کادنس واقعی هم‌قدم بماند.
+        if a is None or a > PUMP_RADAR_MAX_MIN:
+            bad(f"رادار پامپ کهنه است — {round(a) if a else '؟'} دقیقه پیش "
+                f"(سقف {PUMP_RADAR_MAX_MIN}د — ۵ نوبت روزانه، قانون ۰۷)",
+                "pump-review.yml")
         else:
             picks = len(j.get("recommendation") or [])
             finds.append(f"رادار پامپ سالم: {round(a)} دقیقه پیش، {picks} پیشنهاد فعال")
     except Exception as e:                            # noqa: BLE001
-        sick = True
-        wake.append("pump-radar.yml")
-        finds.append(f"pump-radar.json در دسترس نیست: {type(e).__name__}")
+        bad(f"pump-radar.json در دسترس نیست: {type(e).__name__}", "pump-review.yml")
 
     try:
         st, body = fetch(f"{PAGES}/signals/news.json")
         j = json.loads(body)
         a = age_min(j)
         if a is None or a > 260:                      # کرون ۳ساعته + لغزش
-            sick = True
-            wake.append("news-hunt.yml")
-            finds.append(f"شکار خبر کهنه است — {round(a) if a else '؟'} دقیقه پیش")
+            bad(f"شکار خبر کهنه است — {round(a) if a else '؟'} دقیقه پیش",
+                "news-hunt.yml")
         else:
             finds.append(f"شکار خبر سالم: {round(a)} دقیقه پیش")
     except Exception:                                 # noqa: BLE001 - اولین اجرا هنوز نیامده
@@ -137,13 +199,11 @@ def examine():
         # نشانه‌های امروز: نام هر دو پنل + مهر نسخهٔ چرخه.
         if st != 200 or all(n.encode() not in body for n in
                             ("لیام تریدر ۹", "aura liam mAx", "cycle v")):
-            sick = True
-            finds.append(f"صفحهٔ پنل درست سرو نمی‌شود (HTTP {st})")
+            bad(f"صفحهٔ پنل درست سرو نمی‌شود (HTTP {st})")
         else:
             finds.append("صفحهٔ پنل بالا است")
     except Exception as e:                            # noqa: BLE001
-        sick = True
-        finds.append(f"صفحهٔ پنل در دسترس نیست: {type(e).__name__}")
+        bad(f"صفحهٔ پنل در دسترس نیست: {type(e).__name__}")
 
     if os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"):
         finds.append("تلگرام آماده است")
@@ -152,8 +212,10 @@ def examine():
 
     # ── سرزدن به گیت‌هاب (دستور حمید، ۱۴ اوت): «هر از گاهی سر به گیت‌هاب
     # هم بزنه که گیت‌هاب مشکلی نداشته باشه» ────────────────────────────────
-    # اجراهای ناموفق ۶ ساعت اخیر شمرده می‌شوند؛ ۳ شکستِ یک ورک‌فلو یعنی عیب
-    # واقعی نه نوسان — همان ایمیل‌های Run failed که حمید می‌گیرد.
+    # درس ۲۵ اوت: «۲ اجرای ناموفق در ۶ ساعت اخیر» تا ۶ ساعت بعد از رفعِ
+    # ریشه‌ای هم پیام می‌شد، چون پنجرهٔ گذشته‌نگر بود. ملاکِ درست وضعِ
+    # فعلی است: آخرین اجرای کاملِ هر ورک‌فلو. قرمزِ رفع‌شده تاریخ است،
+    # نه خرابی — فقط یک خط خبرِ «برطرف شده» می‌ارزد.
     try:
         tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
         hdr = {"User-Agent": "medic/2",
@@ -162,31 +224,19 @@ def examine():
                               time.gmtime(time.time() - 6 * 3600))
         req = urllib.request.Request(
             "https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/runs"
-            f"?status=failure&per_page=40&created=%3E{since}", headers=hdr)
+            f"?per_page=80&created=%3E{since}", headers=hdr)
         with urllib.request.urlopen(req, timeout=25) as r:
             runs = json.load(r).get("workflow_runs", [])
-        from collections import Counter
-        bad = Counter(x["name"] for x in runs if x.get("created_at", "") >= since)
-        # درس ۱۴ اوت: ورک‌فلوی نامعتبر (مثلاً کلید if تکراری) با صفر job و
-        # وضعیت failure می‌میرد و در API به‌جای نامش «مسیر فایل» می‌آید —
-        # یعنی آن خط تولید اصلاً اجرا نشده. جدا و بلند اعلام شود.
-        broken = sorted({x["name"] for x in runs
-                         if str(x.get("name", "")).startswith(".github/workflows/")})
-        if broken:
+        gh_faults, gh_infos, gh_sick, gh_wake = github_health(runs)
+        for f_ in gh_faults:
+            finds.append(f_)
+            faults.append(f_)
+        finds.extend(gh_infos)
+        if gh_sick:
             sick = True
-            finds.append("⛔ ورک‌فلوی نامعتبر (اصلاً اجرا نشده — احتمالاً کلید "
-                         "تکراری در YAML): " + "، ".join(broken[:4]))
-        if bad:
-            finds.append(f"گیت‌هاب: {sum(bad.values())} اجرای ناموفق در ۶ ساعت اخیر — "
-                         + "، ".join(f"{n}×{c}" for n, c in bad.most_common(4)))
-            top_name, top_n = bad.most_common(1)[0]
-            if top_n >= 3:
-                sick = True
-                finds.append(f"⚠️ «{top_name}» {top_n} بار شکست خورده — عیب واقعی است")
-                if top_name.lower().startswith("hamid"):
-                    wake.append("heartbeat.yml")
-        else:
-            finds.append("گیت‌هاب: هیچ اجرای ناموفقی در ۶ ساعت اخیر")
+        for w in gh_wake:
+            if w not in wake:
+                wake.append(w)
         with urllib.request.urlopen(urllib.request.Request(
                 "https://api.github.com/repos/Auraliam/Liam-Trader-9",
                 headers=hdr), timeout=20) as r:
@@ -224,12 +274,14 @@ def examine():
                 stale_rooms.append(d.name)
             questions.append(q)
         if stale_rooms:
-            finds.append("گشت ایجنت‌ها: این اتاق‌ها ۶+ ساعت است کار نکرده‌اند یا "
-                         "جواب نمی‌دهند: " + "، ".join(stale_rooms[:6]))
             # اتاق خوابیده معمولاً یعنی چرخهٔ مادرش خوابیده — همان درمان
-            if len(stale_rooms) >= 3 and "heartbeat.yml" not in wake:
-                wake.append("heartbeat.yml")
-                sick = True
+            if len(stale_rooms) >= 3:
+                bad("گشت ایجنت‌ها: این اتاق‌ها ۶+ ساعت است کار نکرده‌اند یا "
+                    "جواب نمی‌دهند: " + "، ".join(stale_rooms[:6]),
+                    "heartbeat.yml")
+            else:
+                finds.append("گشت ایجنت‌ها: این اتاق‌ها ۶+ ساعت است کار نکرده‌اند یا "
+                             "جواب نمی‌دهند: " + "، ".join(stale_rooms[:6]))
         elif questions:
             finds.append(f"گشت ایجنت‌ها: هر {len(questions)} اتاق در ۶ ساعت اخیر کار کرده‌اند")
         # دفتر پرسش‌های عیب‌یاب — append، برای بازخوانی خودش و حمید
@@ -254,16 +306,15 @@ def examine():
             prev_total = (json.loads(OUT.read_text()) or {}).get("total_closed")
         if total is not None:
             if prev_total is not None and total < prev_total:
-                sick = True
-                finds.append(f"⚠️ حافظهٔ انباشته کوچک شد: {prev_total} → {total} — "
-                             "این دیگر خطای نمایش نیست، دفتر واقعاً از دست رفته")
+                bad(f"⚠️ حافظهٔ انباشته کوچک شد: {prev_total} → {total} — "
+                    "این دیگر خطای نمایش نیست، دفتر واقعاً از دست رفته")
             else:
                 finds.append(f"حافظهٔ انباشته سالم: {total} معاملهٔ بسته"
                              + (f" (قبلی {prev_total})" if prev_total else ""))
     except Exception:                                 # noqa: BLE001 - قبل از استقرار فیلد، ساکت
         pass
 
-    return sick, finds, wake, total
+    return sick, finds, wake, total, faults
 
 
 def _runs(workflow, tok, status):
@@ -350,9 +401,16 @@ def alert_decision(state, prev, now_ms=None):
 
 
 def alert_text(state, reason):
-    """پیام کوتاه و خبرمحور — خرابی اول، سالم‌ها فقط شمرده."""
+    """پیام کوتاه و خبرمحور — خرابی اول، سالم‌ها فقط شمرده.
+
+    منبع خطوط خرابی از ۲۵ اوت ساختاری است (state["faults"] — همان
+    یافته‌هایی که sick را روشن کردند)، نه کلمه‌گردی در متن؛ کلمه‌گردی
+    یک بار علتِ واقعی را از پیام انداخت و یک خبرِ تاریخی را جایش گذاشت.
+    fault_lines فقط برای وضعیت‌های قدیمیِ روی دیسک مانده است."""
     finds = state.get("findings") or []
-    faults = fault_lines(finds)
+    faults = state.get("faults")
+    if faults is None:
+        faults = fault_lines(finds)
     if reason == "recovered":
         return ("✅ لیام تریدر ۹ — خرابی رفع شد.\n"
                 f"همهٔ {len(finds)} بررسی سالم است.")
@@ -367,12 +425,12 @@ def alert_text(state, reason):
 
 
 def main():
-    sick, finds, wake, total = examine()
+    sick, finds, wake, total, faults = examine()
     treated = "؛ ".join(revive(w) for w in dict.fromkeys(wake)) or None
     state = {"at": int(time.time() * 1000),
              "atText": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
-             "sick": sick, "findings": finds, "treated": treated,
-             "total_closed": total}
+             "sick": sick, "findings": finds, "faults": faults,
+             "treated": treated, "total_closed": total}
 
     prev = {}
     if OUT.exists():

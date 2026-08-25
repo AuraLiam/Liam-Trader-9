@@ -994,8 +994,25 @@ def reapply(backup_dir):
     for name in ("pump-radar.json", "bubbles.json"):
         src = bk / name
         if src.exists():
-            OUT.parent.mkdir(exist_ok=True)
-            shutil.copy(src, OUT.parent / name)
+            dst = OUT.parent / name
+            # درس ۲۵ اوت: زنجیرهٔ سیگنال نسخهٔ کهنهٔ چک‌اوتِ خودش را از
+            # ساعت ۰۸:۰۳ تا شب روی خروجی تازهٔ مرور پامپ می‌کوبید — سه
+            # نوبتِ تازه پشت‌سرهم پاک شد و پاسبان‌ها همه «کهنه» می‌دیدند.
+            # عکس‌فوری فقط وقتی از بکاپ برمی‌گردد که از نسخهٔ درخت
+            # تازه‌تر باشد: «generated تازه‌تر برنده است».
+            try:
+                b_gen = json.loads(src.read_text()).get("generated") or 0
+            except Exception:                        # noqa: BLE001
+                b_gen = 0
+            try:
+                t_gen = json.loads(dst.read_text()).get("generated") or 0
+            except Exception:                        # noqa: BLE001
+                t_gen = -1                           # درخت ندارد/خراب → بکاپ بنشیند
+            if b_gen >= t_gen:
+                OUT.parent.mkdir(exist_ok=True)
+                shutil.copy(src, dst)
+            else:
+                print(f"reapply: {name} بکاپ کهنه‌تر از درخت است — دست نمی‌خورد")
     if (bk / "pump-radar-sent.json").exists():
         SENT.parent.mkdir(exist_ok=True)
         shutil.copy(bk / "pump-radar-sent.json", SENT)

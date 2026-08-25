@@ -32,7 +32,7 @@ OUT = ROOT / "signals" / "conformance.json"
 
 # سقف تازگی هر خروجی (دقیقه) — قانون ۵: دیر رسیدن داده = رویداد
 FRESHNESS_MAX_MIN = {
-    "signals/pump-radar.json": 20,       # هر ~۳د می‌دود؛ ۲۰د یعنی مرده
+    "signals/pump-radar.json": 380,      # قانون ۰۷: ۵ نوبت روزانه — بزرگ‌ترین فاصلهٔ سالم ~۵ ساعت + لغزش
     "signals/latest.json": 45,           # اسکن کامل
     "signals/hamid-latest.json": 45,
     "signals/dominance.json": 90,
