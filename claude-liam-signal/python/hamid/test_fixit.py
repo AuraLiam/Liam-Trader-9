@@ -51,7 +51,7 @@ def fetch_shrunk(url, timeout=25):
 
 
 medic.fetch = fetch_shrunk
-sick, finds, wake, total = medic.examine()
+sick, finds, wake, total, faults = medic.examine()
 check("کوچک شدن حافظه (۲۰۳۱→۱۵۰۰) عیب جدی است",
       sick and any("کوچک شد" in f for f in finds))
 check("total برگردانده می‌شود", total == 1500)
@@ -66,7 +66,7 @@ def fetch_grown(url, timeout=25):
 
 
 medic.fetch = fetch_grown
-sick2, finds2, _, total2 = medic.examine()
+sick2, finds2, _, total2, _f2 = medic.examine()
 check("حافظهٔ بزرگ‌شده سالم است", any("حافظهٔ انباشته سالم" in f for f in finds2))
 
 print("── علت‌یابی مرور دوساعتهٔ خالی ──")

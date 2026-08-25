@@ -111,13 +111,15 @@ jobs:
             # رادار پامپ این‌جا اجرا نمی‌شود (قانون ۰۷ — پنج نوبت روزانه در
             # pump-review.yml). reapply پایین می‌ماند چون دفترهای مشترک
             # (telegram-log، حافظه) را در پوش ضدتصادم اجتماع می‌کند.
+            # درس ۲۵ اوت: عکس‌فوری‌هایی که این زنجیره خودش نمی‌سازد
+            # (pump-radar.json، bubbles.json، pump-radar-sent.json) دیگر
+            # بکاپ/بازنشانی نمی‌شوند — بکاپِ چک‌اوتِ کهنه ۱۳ ساعت خروجی
+            # تازهٔ مرور پامپ را در هر کامیت زنجیره پس می‌زد (generated
+            # ساعت ۰۸:۰۳ تا شب برمی‌گشت). فقط تولیدکننده بازنشانی می‌کند.
 
             # ثبت روی main (ضدتصادم)
             BK=/tmp/pump-radar-backup; mkdir -p "$BK"
-            cp signals/pump-radar.json "$BK/" 2>/dev/null || true
-            cp signals/bubbles.json "$BK/" 2>/dev/null || true
             cp signals/telegram-log.json "$BK/" 2>/dev/null || true
-            cp brain/pump-radar-sent.json "$BK/" 2>/dev/null || true
             cp brain/pump-history.json "$BK/" 2>/dev/null || true
             cp brain/memory/lessons.json "$BK/" 2>/dev/null || true
             # دفتر انتظار پامپ — ۱۶ اوت، تشخیص پاسبان C3.
