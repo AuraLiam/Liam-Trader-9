@@ -39,12 +39,31 @@ def _get(url, timeout=60):
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def list_folder(folder_id):
-    with _get("https://drive.google.com/embeddedfolderview?id=" + folder_id) as r:
-        body = r.read().decode("utf-8", "replace")
-    if "ServiceLogin" in body or "You need access" in body:
-        raise PermissionError("ACCESS_DENIED")
-    return parse_listing(body)
+def list_folder(folder_id, tries=6):
+    """فهرست پوشه؛ ۵xxِ گوگل روی این endpoint قدیمی گذراست — با فاصله
+    دوباره تلاش می‌کنیم (اجرای ۲۶ اوت: بعد از باز شدن اشتراک، 500 داد).
+    401/403 یعنی واقعاً بسته است — آن retry نمی‌خورد."""
+    last = None
+    for attempt in range(tries):
+        try:
+            with _get("https://drive.google.com/embeddedfolderview?id="
+                      + folder_id) as r:
+                body = r.read().decode("utf-8", "replace")
+            if "ServiceLogin" in body or "You need access" in body:
+                raise PermissionError("ACCESS_DENIED")
+            return parse_listing(body)
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise PermissionError("ACCESS_DENIED") from e
+            last = e
+            print(f"  فهرست {folder_id[:8]}…: HTTP {e.code} — "
+                  f"تلاش {attempt + 1}/{tries}", flush=True)
+        except PermissionError:
+            raise
+        except Exception as e:                       # noqa: BLE001
+            last = e
+        time.sleep(8 * (attempt + 1))
+    raise last
 
 
 def download_file(file_id, dest, tries=3):
