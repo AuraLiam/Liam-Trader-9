@@ -115,6 +115,82 @@ check("یادآوری با «تازه» فرق دارد (تکرارِ کورکو
       M.alert_text(SICK, "still") != M.alert_text(SICK, "new")
       and "پابرجا" in M.alert_text(SICK, "still"))
 
+# ── درس ۲۵ اوت: ملاک گیت‌هاب وضعِ فعلی است، نه پنجرهٔ گذشته ────────────
+# «۲ اجرای ناموفق در ۶ ساعت اخیر» تا نیمه‌شب پیام می‌شد در حالی که همان
+# خرابی ساعت ۱۹:۲۴ ریشه‌ای رفع شده و ۸ اجرای پیاپی سبز بود.
+
+
+def _run(name, concl, t):
+    return {"name": name, "status": "completed", "conclusion": concl,
+            "created_at": f"2026-08-24T{t}:00Z"}
+
+
+runs = ([_run("Hamid cycle", "success", f"{h:02d}:04") for h in range(20, 24)]
+        + [_run("Hamid cycle", "failure", "19:18"),
+           _run("Hamid cycle", "failure", "18:59"),
+           _run("Hamid cycle", "success", "17:47")])
+f_, i_, s_, w_ = M.github_health(runs)
+check("شکستِ رفع‌شده دیگر خرابی نیست (عین سناریوی پیام ۲۴ اوت)",
+      f_ == [] and not s_, str(f_))
+check("ولی پنهان هم نمی‌شود — یک خط خبرِ برطرف‌شدن",
+      any("برطرف شده" in x and "Hamid cycle" in x for x in i_), str(i_))
+check("و آن خط آلارم‌ساز نیست (کلیدواژهٔ ماشه ندارد)",
+      M.fault_lines(i_) == [], str(i_))
+
+f2, i2, s2, w2 = M.github_health(
+    [_run("Hamid cycle", "failure", "22:30"),
+     _run("Hamid cycle", "failure", "22:00"),
+     _run("Hamid cycle", "success", "21:00")])
+check("۲ شکستِ پیاپی در انتها = «الان قرمز» + sick",
+      len(f2) == 1 and s2 and "الان قرمز" in f2[0], str(f2))
+check("و چرخهٔ حمید heartbeat را بیدار می‌کند", "heartbeat.yml" in w2)
+f3, _, s3, _ = M.github_health(
+    [_run("X", "failure", "22:30"), _run("X", "success", "21:00")])
+check("یک قرمزِ تک: اعلام می‌شود ولی sick نمی‌کند (نوسان ممکن است)",
+      len(f3) == 1 and not s3)
+fb, _, sb, _ = M.github_health([_run(".github/workflows/x.yml", "failure", "22:00")])
+check("ورک‌فلوی نامعتبر همچنان بلند و sick است",
+      sb and any("نامعتبر" in x for x in fb))
+check("cancelled شمارش پیاپی را نمی‌شکند",
+      M.github_health([_run("Y", "failure", "23:00"),
+                       _run("Y", "cancelled", "22:30"),
+                       _run("Y", "failure", "22:00"),
+                       _run("Y", "success", "21:00")])[2])
+check("فهرست خالی/None خطا نمی‌دهد و سالم است",
+      M.github_health(None)[0] == [] and not M.github_health([])[2])
+
+# ── خرابیِ ساختاری: علتِ sick باید همان بولت پیام باشد ──────────────────
+# کلاس عیب ۲۴ اوت: «رادار پامپ کهنه» sick کرده بود ولی چون کلیدواژهٔ
+# ماشه نداشت در پیام نبود؛ به‌جایش خبر تاریخی گیت‌هاب نشسته بود.
+st_pump = {"sick": True, "at": 1, "treated": None,
+           "findings": ["چرخه سالم: ۱۰ دقیقه پیش",
+                        "رادار پامپ کهنه است — ۸۹۹ دقیقه پیش (سقف ۳۸۰د)"],
+           "faults": ["رادار پامپ کهنه است — ۸۹۹ دقیقه پیش (سقف ۳۸۰د)"]}
+txt2 = M.alert_text(st_pump, "new")
+check("علتِ واقعی sick در پیام می‌آید حتی بدون کلیدواژهٔ ماشه",
+      "رادار پامپ کهنه" in txt2.splitlines()[1], txt2)
+check("وضعیت قدیمیِ بدون faults همچنان پیام درست می‌سازد (سازگاری)",
+      "Signal chain" in M.alert_text(SICK, "new"))
+
+# ── دکترین کادنس پامپ (قانون ۰۷) — پاسبان‌ها با کادنس واقعی هم‌قدم ──────
+check("آستانهٔ رادار پامپِ عیب‌یاب با کادنس ۵نوبته می‌خواند (≥۳۶۰د)",
+      M.PUMP_RADAR_MAX_MIN >= 360, str(M.PUMP_RADAR_MAX_MIN))
+from hamid import conformance as _CF                 # noqa: E402
+check("پاسبان C5 هم هم‌قدم است (نه ۲۰ دقیقهٔ دورهٔ قبل)",
+      _CF.FRESHNESS_MAX_MIN["signals/pump-radar.json"] >= 360)
+_msrc = Path(M.__file__).read_text(encoding="utf-8")
+check("درمانِ رادارِ کهنه خودِ تولیدکننده است (pump-review.yml)",
+      '"pump-review.yml")' in _msrc)
+REPO = Path(__file__).resolve().parents[3]
+_chain = (REPO / ".github" / "workflows" / "pump-radar.yml").read_text(encoding="utf-8")
+for _f in ("signals/pump-radar.json", "signals/bubbles.json",
+           "brain/pump-radar-sent.json"):
+    check(f"زنجیرهٔ سیگنال دیگر {_f.split('/')[-1]} را بکاپ/بازنشانی نمی‌کند "
+          "(فقط تولیدکننده)", f'cp {_f} "$BK/"' not in _chain)
+_review = (REPO / ".github" / "workflows" / "pump-review.yml").read_text(encoding="utf-8")
+check("و تولیدکننده (pump-review) بازنشانی خودش را نگه داشته",
+      'cp signals/pump-radar.json "$BK/"' in _review)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
