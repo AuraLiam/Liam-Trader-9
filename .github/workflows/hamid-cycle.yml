@@ -116,6 +116,7 @@ jobs:
           python3 -m hamid.test_edge_export
           python3 -m hamid.test_trail_alert
           python3 -m hamid.test_polymarket
+          python3 -m hamid.test_escalation
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -192,6 +193,17 @@ jobs:
       - name: پیش‌بینی‌های پالی‌مارکت
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.polymarket || true
+
+      # ماشین آستانه و ارجاع خودکار (دستور حمید ۲۵ اوت): استاپ پیاپی /
+      # الگوی تکراری بین‌ارزی / کف نرخ برد → دستور کار مکتوب برای
+      # اتاق‌های مسئول در signals/escalation.json + یک خبر کوتاه گیت‌دار.
+      # فقط ارجاع می‌دهد؛ تصمیم و تغییر از مسیر یک-تغییر-در-چرخه.
+      - name: ماشین آستانه (ارجاع خودکار)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.escalation || true
 
       # انتقال مهارت به داشبورد (دستور حمید ۲۴ اوت): قانون‌های CI-گذشتهٔ
       # بک‌تست شبانه → signals/edge.json → داشبورد با sync_all می‌کشد و
