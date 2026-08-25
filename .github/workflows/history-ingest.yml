@@ -1,0 +1,77 @@
+# تحویل دادهٔ ۳ سالهٔ ارزها از گوگل‌درایو به اتاق تاریخچه (دستور حمید ۲۶ اوت)
+#
+# کانتینر کلود و WebFetch به drive.google.com بسته‌اند؛ این رانر شبکهٔ آزاد
+# دارد. پوشهٔ اشتراکی دانلود، با hamid.history_ingest بررسی و شناسنامه‌اش
+# (نه خودِ داده — بزرگ است) روی main ثبت می‌شود. دادهٔ خام به‌عنوان
+# artifact هفت‌روزه نگه داشته می‌شود تا بک‌تست‌های بعدی همین را بردارند.
+name: History ingest (Drive)
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder_id:
+        description: "شناسهٔ پوشهٔ اشتراکی درایو"
+        default: "1OER2iVjQ0R9FFMB-vpKpP9NMT9S5HuNo"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: history-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_history_ingest
+
+      - name: دانلود پوشهٔ اشتراکی
+        run: |
+          python3 scripts/gdrive_fetch.py \
+            "${{ github.event.inputs.folder_id || '1OER2iVjQ0R9FFMB-vpKpP9NMT9S5HuNo' }}" \
+            /tmp/aura-history
+          echo "--- ساختار ---"; find /tmp/aura-history -maxdepth 3 -type d | head -20
+          du -sh /tmp/aura-history
+
+      - name: بررسی و شناسنامه (اتاق تاریخچه)
+        working-directory: claude-liam-signal/python
+        run: |
+          SRC=/tmp/aura-history
+          # اگر research/klines در عمق پایین‌تر است، همان را پیدا کن
+          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1)
+          [ -n "$K" ] && SRC=$(dirname "$K")
+          echo "ریشهٔ داده: $SRC"
+          python3 -m hamid.history_ingest --src "$SRC"
+
+      - name: نگهداری دادهٔ خام برای بک‌تست‌ها (۷ روز)
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          retention-days: 7
+          compression-level: 0
+
+      - name: ثبت شناسنامه روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp brain/research/history/inventory.json /tmp/inv.json
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            cp /tmp/inv.json brain/research/history/inventory.json
+            git add brain/research/history
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "شناسنامهٔ دادهٔ ۳ سالهٔ ارزها از درایو — اتاق تاریخچه"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
