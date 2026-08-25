@@ -12,6 +12,10 @@ on:
       folder_id:
         description: "شناسهٔ پوشهٔ اشتراکی درایو"
         default: "1OER2iVjQ0R9FFMB-vpKpP9NMT9S5HuNo"
+  schedule:
+    # تا وقتی حمید اشتراک پوشه را باز کند، ساعتی یک تلاش آرام؛ بعد از
+    # موفقیت اولین بایگانی، اجراهای زمان‌بندی بی‌صدا رد می‌شوند.
+    - cron: "41 * * * *"
 
 permissions:
   contents: write
@@ -33,25 +37,46 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.test_history_ingest
 
+      - name: از قبل بایگانی شده؟
+        id: done
+        run: |
+          OK=$(python3 -c "import json;print((json.load(open('brain/research/history/inventory.json')).get('summary') or {}).get('klines_ok',0))" 2>/dev/null || echo 0)
+          echo "klines_ok=$OK" >> "$GITHUB_OUTPUT"
+          [ "$OK" -gt 0 ] && echo "بایگانی از قبل کامل است ($OK فایل سالم) — کاری نیست" || true
+
       - name: دانلود پوشهٔ اشتراکی
+        id: dl
+        if: steps.done.outputs.klines_ok == '0'
+        continue-on-error: true
         run: |
           python3 scripts/gdrive_fetch.py \
             "${{ github.event.inputs.folder_id || '1OER2iVjQ0R9FFMB-vpKpP9NMT9S5HuNo' }}" \
             /tmp/aura-history
-          echo "--- ساختار ---"; find /tmp/aura-history -maxdepth 3 -type d | head -20
+          echo "--- ساختار ---"; find /tmp/aura-history -maxdepth 3 -type d | head -20 || true
           du -sh /tmp/aura-history
 
+      # اجرای زمان‌بندی که هنوز به پوشهٔ بسته می‌خورد، آرام تمام می‌شود
+      # (ایمیل خرابی برای حمید نسازد)؛ اجرای دستی بلند شکست می‌خورد.
+      - name: هنوز باز نیست (تلاش بعدی ساعت بعد)
+        if: steps.dl.outcome == 'failure' && github.event_name == 'schedule'
+        run: echo "پوشهٔ درایو هنوز برای «هر کس با لینک» باز نیست."
+      - name: شکست دانلود (اجرای دستی)
+        if: steps.dl.outcome == 'failure' && github.event_name != 'schedule'
+        run: exit 1
+
       - name: بررسی و شناسنامه (اتاق تاریخچه)
+        if: steps.dl.outcome == 'success'
         working-directory: claude-liam-signal/python
         run: |
           SRC=/tmp/aura-history
           # اگر research/klines در عمق پایین‌تر است، همان را پیدا کن
-          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1)
+          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
           [ -n "$K" ] && SRC=$(dirname "$K")
           echo "ریشهٔ داده: $SRC"
           python3 -m hamid.history_ingest --src "$SRC"
 
       - name: نگهداری دادهٔ خام برای بک‌تست‌ها (۷ روز)
+        if: steps.dl.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: aura-history
@@ -60,6 +85,7 @@ jobs:
           compression-level: 0
 
       - name: ثبت شناسنامه روی main (ضدتصادم)
+        if: steps.dl.outcome == 'success'
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
