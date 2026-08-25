@@ -281,6 +281,25 @@ for fname, (when, why) in OFF.items():
     check(f"{fname} دلیلِ عددیِ خاموشی را روی خودش دارد",
           "خاموش شد" in txt and why in txt)
 
+# ── میز ۱ دقیقه سیگنال تلگرام ندارد (دستور حمید، ۲۵ اوت) ────────────────
+# «از ترید یک دقیقه نیازی به ارسال سیگنال نیست — فقط برای داشبورد است که
+# مرتب پیپرمود کار کند و تجربه کسب کند.» تنها پیام مجاز میز ۱د، آلارمِ
+# «تغییر حکم» (scalp_verdict --alert) است — سیگنال معامله هرگز.
+_scalp_srcs = ""
+for _n in ("scalp.py", "scalp1m.py", "scalp_verdict.py", "scalp_exec.py"):
+    _p = ROOT / "claude-liam-signal" / "python" / "hamid" / _n
+    if _p.exists():
+        _scalp_srcs += _p.read_text(encoding="utf-8")
+check("هیچ ماژول میز ۱د سیگنال تلگرام نمی‌فرستد (فقط پیپر + حکم)",
+      "send_signals" not in _scalp_srcs
+      and "from hamid import telegram" not in _scalp_srcs
+      and "import telegram" not in _scalp_srcs)
+_scalp_yml = (ROOT / ".github" / "workflows" / "scalp.yml").read_text(
+    encoding="utf-8")
+check("ورک‌فلوی اسکلپ تلگرام را فقط به ماشین حکم می‌دهد (آلارم تغییر حکم)",
+      _scalp_yml.count("TELEGRAM_BOT_TOKEN:") == 1
+      and "scalp_verdict --alert" in _scalp_yml)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
