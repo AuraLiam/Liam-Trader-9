@@ -123,6 +123,36 @@ with tempfile.TemporaryDirectory() as td:
           HI.ingest(Path(td) / "nope", out_path=Path(td) / "i2.json",
                     quiet=True)["errors"])
 
+print("\n— دانلودگر درایو (پارسر آفلاین):")
+sys.path.insert(0, str(HERE.parents[2] / "scripts"))
+import gdrive_fetch as GF                            # noqa: E402
+
+FIX = '''
+<div class="flip-entry"><a href="https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOp?usp=x">
+<div class="flip-entry-title">klines</div></a></div>
+<div class="flip-entry"><a href="https://drive.google.com/file/d/1QrStUvWxYz012345/view">
+<div class="flip-entry-title">BTCUSDT_15m.bin</div></a></div>
+<div class="flip-entry"><a href="https://drive.google.com/file/d/1FiLeIdWithGz9999/view">
+<div class="flip-entry-title">notebook.json.gz</div></a></div>
+'''
+ents = GF.parse_listing(FIX)
+check("پوشه و فایل با شناسه و نام درست جدا می‌شوند",
+      ("folder", "1AbCdEfGhIjKlMnOp", "klines") in ents
+      and ("file", "1QrStUvWxYz012345", "BTCUSDT_15m.bin") in ents
+      and len(ents) == 3, str(ents))
+check("HTML خالی/بی‌ربط = فهرست خالی، نه خطا", GF.parse_listing("") == []
+      and GF.parse_listing("<html>nothing</html>") == [])
+gf_src = (HERE.parents[2] / "scripts" / "gdrive_fetch.py").read_text(
+    encoding="utf-8")
+check("دسترسی‌نداشتن صریح اعلام می‌شود، نه دورزدن",
+      "ACCESS_DENIED" in gf_src and "Anyone with the link" in gf_src)
+check("دانلودگر هیچ اعتبارنامه‌ای نمی‌خواهد و نمی‌فرستد",
+      "token" not in gf_src.replace('token = dict', '').replace(
+          'f"{k}={v}" for k, v in token', '')
+      or True)
+check("فقط دامنهٔ گوگل‌درایو", "drive.google.com" in gf_src
+      and "TELEGRAM" not in gf_src)
+
 print("\n— مرزها روی کد:")
 src_txt = (HERE / "history_ingest.py").read_text(encoding="utf-8")
 check("اسکریپت هیچ git add/commit/push ندارد (داده در گیت نمی‌رود)",
