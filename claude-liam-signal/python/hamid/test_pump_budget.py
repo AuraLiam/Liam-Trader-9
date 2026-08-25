@@ -111,6 +111,15 @@ check("هر ۴ اسکیمای بسته JSON سالم‌اند",
       not schema_bad and len(list((ROOT / "schemas").glob("*.json"))) >= 4,
       "؛ ".join(schema_bad))
 
+# حلقهٔ زندهٔ لپ‌تاپ هم زیر همین بودجه است (هم‌قدمی ۲۵ اوت): رادار کامل
+# فقط ۵ نوبت روزانه در Actions — سرویس محلی حق اجرای pump_radar.run ندارد؛
+# سهمش فقط شلیکِ دفتر انتظار (سیستم جایگزین ۱۷ اوت) است.
+_live = (ROOT / "claude-liam-signal" / "python" / "hamid" /
+         "live_service.py").read_text(encoding="utf-8")
+check("سرویس محلی رادار کامل پامپ را اجرا نمی‌کند (قانون ۰۷)",
+      "pump_radar.run()" not in _live)
+check("ولی شلیک دفتر انتظار (🧠) سر جایش است", "send_ignitions" in _live)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
