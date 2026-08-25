@@ -418,6 +418,39 @@ msg_h = pr.tg_message("تست", picks[:1], blocks + hist_blocks)
 check("سابقهٔ سردسته با تاریخ و واکنش در پیام است",
       "📜" in msg_h and "پامپ +" in msg_h and "س بعد" in msg_h)
 
+# ── reapply: «generated تازه‌تر برنده است» (درس ۲۵ اوت) ────────────────────
+# زنجیرهٔ سیگنال با بکاپِ چک‌اوتِ کهنه، خروجی تازهٔ مرور پامپ را از ۰۸:۰۳
+# تا شب در هر کامیت پس می‌زد. عکس‌فوری فقط وقتی از بکاپ برمی‌گردد که از
+# نسخهٔ درخت تازه‌تر باشد.
+import json as _json                                   # noqa: E402
+
+_td = Path(tempfile.mkdtemp())
+_out_prev = pr.OUT
+pr.OUT = _td / "tree" / "pump-radar.json"
+pr.OUT.parent.mkdir(parents=True)
+_bk = _td / "bk"
+_bk.mkdir()
+try:
+    pr.OUT.write_text(_json.dumps({"generated": 2000, "who": "تازه"}))
+    (_bk / "pump-radar.json").write_text(_json.dumps({"generated": 1000, "who": "کهنه"}))
+    pr.reapply(_bk)
+    check("بکاپِ کهنه‌تر، فایل تازهٔ درخت را پس نمی‌زند",
+          _json.loads(pr.OUT.read_text())["who"] == "تازه")
+    (_bk / "pump-radar.json").write_text(_json.dumps({"generated": 3000, "who": "تازه‌تر"}))
+    pr.reapply(_bk)
+    check("بکاپِ تازه‌تر می‌نشیند (مسیر عادی مرور پامپ سالم است)",
+          _json.loads(pr.OUT.read_text())["who"] == "تازه‌تر")
+    pr.OUT.write_text("{خراب")
+    pr.reapply(_bk)
+    check("درختِ خراب/ناخوانا مانع بازنشانی نمی‌شود",
+          _json.loads(pr.OUT.read_text())["who"] == "تازه‌تر")
+    pr.OUT.unlink()
+    pr.reapply(_bk)
+    check("درختِ بی‌فایل هم از بکاپ پر می‌شود",
+          _json.loads(pr.OUT.read_text())["who"] == "تازه‌تر")
+finally:
+    pr.OUT = _out_prev
+
 print()
 if FAIL:
     print(f"✗ {FAIL} آزمون شکست")
