@@ -102,6 +102,63 @@ def run():
     check("۱س USDT: روند و سطح دارد (یا INSUFFICIENT صادق)",
           ("trend" in u1 and "px" in u1) or "note" in u1, str(u1)[:120])
 
+    # ── حلقهٔ تجربه (سؤال حمید ۲۵ اوت: «مگر حافظه ندارد؟») ────────────────
+    # سناریوی واقعی: BTC.D|120m با ~۱۸٪ اصابت. دفتر جعلی با همان کارنامه
+    # می‌سازیم و می‌بینیم ادعای UP دیگر کورکورانه تکرار نمی‌شود.
+    def _graded(path, result, n):
+        return [{"metric": "BTC.D", "horizon_min": 120, "path": path,
+                 "result": result} for _ in range(n)]
+
+    bad_st = {"open": [], "graded": _graded("UP", "MISS", 25)
+              + _graded("UP", "HIT", 5), "score": {}, "probe": {}}
+    hs = df.bucket_stats(bad_st, "BTC.D", 120, "UP")
+    check("کارنامهٔ سطل شمرده می‌شود، نه حدس", hs["n"] == 30
+          and abs(hs["hit_pct"] - 16.7) < 0.1, str(hs))
+
+    # شواهدی که UP قوی می‌سازند (دلتای مثبت ۱س و ۴س برای BTC.D)
+    up_pts = [{"t": now - m * 60000, "u": 5.0, "b": 60.0 - 0.002 * m}
+              for m in range(300, -1, -3)]
+    fs_nofb = df.make_forecast(up_pts, {}, now)
+    b120 = [f for f in fs_nofb if f["metric"] == "BTC.D"
+            and f["horizon_min"] == 120]
+    check("بدون دفتر، ادعای UP صادر می‌شود (رفتار قدیم)",
+          b120 and b120[0]["path"] == "UP", str(b120))
+    fs_fb = df.make_forecast(up_pts, {}, now, st=bad_st)
+    d120 = [f for f in fs_fb if f["metric"] == "BTC.D"
+            and f["horizon_min"] == 120][0]
+    check("با کارنامهٔ بدِ نمونه‌دار، همان ادعا پس گرفته می‌شود (FLAT)",
+          d120["path"] == "FLAT" and d120.get("demoted_from") == "UP",
+          str(d120))
+    check("و دلیلِ پس‌گرفتن، خودِ عدد کارنامه است",
+          any("16.7" in r for r in d120["reasons"]), str(d120["reasons"]))
+    check("کارنامهٔ سطل روی خود پیش‌بینی ثبت می‌شود", d120.get("hist") == hs)
+
+    # بازآزمایی: سرکوب ابدی نیست — پنجمین بار ادعا عمداً صادر می‌شود
+    bad_st["probe"] = {}                  # شمارنده از صفر برای همین سنجش
+    paths = []
+    for _ in range(df.REPROBE_EVERY):
+        f = [x for x in df.make_forecast(up_pts, {}, now, st=bad_st)
+             if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
+        paths.append(f["path"])
+    check(f"هر {df.REPROBE_EVERY} سرکوب یک بازآزمایی دارد (نمونه‌گیری نمی‌میرد)",
+          paths.count("UP") == 1 and paths[-1] == "UP", str(paths))
+
+    # نمونهٔ کم حکم نمی‌گیرد — ۱۰ ردیف زیر BAD_N است
+    small_st = {"open": [], "graded": _graded("UP", "MISS", 10),
+                "score": {}, "probe": {}}
+    f_small = [x for x in df.make_forecast(up_pts, {}, now, st=small_st)
+               if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
+    check("زیر حداقل نمونه، ادعا سرکوب نمی‌شود (نمونهٔ کم دروغ می‌گوید)",
+          f_small["path"] == "UP" and "demoted_from" not in f_small)
+
+    # سطل خوب دست نمی‌خورد
+    good_st = {"open": [], "graded": _graded("UP", "HIT", 20)
+               + _graded("UP", "MISS", 5), "score": {}, "probe": {}}
+    f_good = [x for x in df.make_forecast(up_pts, {}, now, st=good_st)
+              if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
+    check("کارنامهٔ خوب = ادعا سر جایش (سرکوب فقط برای خطای سیستماتیک)",
+          f_good["path"] == "UP" and f_good.get("hist", {}).get("n") == 25)
+
     print(f"\n✓ همهٔ {OK} آزمون ناظر پیش‌بینی دامیننس گذشت")
 
 
