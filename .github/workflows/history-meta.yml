@@ -1,0 +1,67 @@
+# استخراج فایل‌های متای دادهٔ درایو به ریپو (دستور حمید، شب ۲۶ اوت:
+# «همه اینارو بررسی کن و اضافه کن به دانش ایجنتها» — از جمله استراتژی ۳)
+#
+# متاهای سطح بالا جمعاً ~۴.۳MB هستند (notebook، ob_trades_3y، ob_results،
+# dominance، funding، universe، …) — برخلاف کندل‌ها آن‌قدر کوچک‌اند که در
+# گیت جا می‌شوند و کلود ابری (که به درایو بسته است) بتواند تحلیلشان کند.
+# venue/ فقط اگر جمعش زیر ۲۵MB بود می‌آید.
+name: History meta (Drive→repo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شمارهٔ اجرای history-ingest که artifact دارد"
+        default: "32913652429"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: history-meta
+  cancel-in-progress: false
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: دریافت دادهٔ خام
+        uses: actions/download-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          run-id: ${{ github.event.inputs.run_id || '32913652429' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: جداکردن متاها
+        run: |
+          M=$(find /tmp/aura-history -maxdepth 4 -type d -name meta | head -1 || true)
+          [ -z "$M" ] && { echo "پوشهٔ meta پیدا نشد"; exit 1; }
+          DEST=brain/research/history/meta
+          mkdir -p "$DEST"
+          find "$M" -maxdepth 1 -type f -exec cp {} "$DEST"/ \;
+          if [ -d "$M/venue" ]; then
+            VB=$(du -sm "$M/venue" | cut -f1)
+            echo "venue: ${VB}MB"
+            [ "$VB" -le 25 ] && cp -r "$M/venue" "$DEST"/ || echo "venue بزرگ است — نیامد"
+          fi
+          du -sh "$DEST"; ls "$DEST"
+      - name: ثبت روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp -r brain/research/history/meta /tmp/meta-keep
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            rm -rf brain/research/history/meta
+            cp -r /tmp/meta-keep brain/research/history/meta
+            git add brain/research/history/meta
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "متاهای دادهٔ ۳ ساله (استراتژی ۳، دفتر OB، دامیننس، فاندینگ) — برای تحلیل ایجنت‌ها"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
