@@ -133,6 +133,12 @@ jobs:
             # (هر دو خط تولید مستقل به همین تشخیص رسیدند — اجتماعِ mergeِ ۱۷ اوت.)
             cp brain/pump-watchlist.json "$BK/" 2>/dev/null || true
             cp brain/pump-weakness-seen.json "$BK/" 2>/dev/null || true
+            # کلاس عیب ۲۶ اوت شب (PAXG×۵): حافظهٔ ضدتکرار و دفترهای پیپر هم
+            # باید از reset جان به در ببرند — وگرنه شکستِ push یعنی سیگنال
+            # تکراری و پوزیشنِ گم‌شده (نتیجه/ریپلای هرگز نمی‌آید)
+            cp signals/sent.json "$BK/" 2>/dev/null || true
+            cp brain/paper/open.jsonl "$BK/" 2>/dev/null || true
+            cp brain/paper/closed.jsonl "$BK/" 2>/dev/null || true
             for i in 1 2 3 4 5 6 7 8; do
               git fetch origin main -q
               git reset --hard origin/main -q

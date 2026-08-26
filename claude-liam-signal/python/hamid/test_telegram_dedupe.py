@@ -120,5 +120,67 @@ try:
 finally:
     TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = old
 
+# ── ۶) reapply زنجیره: sent.json و دفترهای پیپر از reset جان به در می‌برند ──
+from hamid import pump_radar as PR                   # noqa: E402
+from hamid import paper as PAPER                     # noqa: E402
+
+ROOT2 = Path(tempfile.mkdtemp(prefix="reapply-"))
+BK = ROOT2 / "bk"
+BK.mkdir()
+(ROOT2 / "signals").mkdir()
+(ROOT2 / "brain" / "paper").mkdir(parents=True)
+(BK / "sent.json").write_text(json.dumps({"ibs|PAXGUSDT|5m|SHORT": now}))
+(ROOT2 / "signals" / "sent.json").write_text(json.dumps({"k0": now - 9}))
+open_row = {"sym": "PAXGUSDT", "dir": "SHORT", "tf": "5m", "entry": 4592.02,
+            "opened": now - 100, "why": {"stage": "sig-ibs", "tg_msg_id": 77}}
+closed_row = {"sym": "AUSDT", "dir": "LONG", "entry": 1.0, "opened": now - 500,
+              "outcome": "stop", "R": -1.0, "why": {"stage": "sig-ibs"}}
+gone_row = {"sym": "BUSDT", "dir": "LONG", "entry": 2.0, "opened": now - 900,
+            "why": {"stage": "sig-ibs"}}
+(BK / "open.jsonl").write_text(json.dumps(open_row) + "\n"
+                               + json.dumps(gone_row) + "\n")
+(BK / "closed.jsonl").write_text(json.dumps(closed_row) + "\n")
+# BUSDT قبلاً در درخت بسته شده — نباید به دفتر باز برگردد
+(ROOT2 / "brain" / "paper" / "closed.jsonl").write_text(
+    json.dumps({**gone_row, "outcome": "target", "R": 3.0}) + "\n")
+old_root = PR.ROOT
+PR.ROOT = ROOT2
+try:
+    PR.reapply(BK)
+finally:
+    PR.ROOT = old_root
+snt2 = json.loads((ROOT2 / "signals" / "sent.json").read_text())
+check("reapply: کلید ضدتکرار بکاپ به درخت برمی‌گردد (اجتماع، نه بازنویسی)",
+      "ibs|PAXGUSDT|5m|SHORT" in snt2 and "k0" in snt2, str(snt2))
+op2 = [json.loads(x) for x in
+       (ROOT2 / "brain" / "paper" / "open.jsonl").read_text().splitlines()]
+check("reapply: پوزیسیون بازِ گم‌شده به دفتر برمی‌گردد (ریپلای نتیجه زنده می‌ماند)",
+      any(r["sym"] == "PAXGUSDT" for r in op2), str(op2))
+check("reapply: ردیفی که قبلاً بسته شده به دفتر باز برنمی‌گردد",
+      not any(r["sym"] == "BUSDT" for r in op2))
+cl2 = [json.loads(x) for x in
+       (ROOT2 / "brain" / "paper" / "closed.jsonl").read_text().splitlines()]
+check("reapply: تسویهٔ گم‌شدهٔ بکاپ به دفتر بسته اضافه می‌شود",
+      any(r["sym"] == "AUSDT" for r in cl2))
+# دوباره — نباید تکرار بسازد (هویت، نه متن)
+PR.ROOT = ROOT2
+try:
+    PR.reapply(BK)
+finally:
+    PR.ROOT = old_root
+op3 = [json.loads(x) for x in
+       (ROOT2 / "brain" / "paper" / "open.jsonl").read_text().splitlines()]
+cl3 = [json.loads(x) for x in
+       (ROOT2 / "brain" / "paper" / "closed.jsonl").read_text().splitlines()]
+check("reapply دوباره → هیچ ردیف تکراری (اجتماع بر هویت معامله)",
+      len(op3) == len(op2) and len(cl3) == len(cl2),
+      f"op {len(op2)}→{len(op3)} cl {len(cl2)}→{len(cl3)}")
+# ورک‌فلو باید این سه را در بکاپ بین‌دوری بگیرد
+wf = (PY.parents[1] / ".github" / "workflows" / "pump-radar.yml").read_text()
+check("زنجیره sent.json و دفترهای پیپر را در بکاپ بین‌دوری می‌گیرد",
+      'cp signals/sent.json "$BK/"' in wf
+      and 'cp brain/paper/open.jsonl "$BK/"' in wf
+      and 'cp brain/paper/closed.jsonl "$BK/"' in wf)
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
