@@ -206,6 +206,41 @@ def rewards(top=8):
             "note": "جایزه اثرِ علّی نیست؛ ردپای تأیید است. وتو/وزن ندارد."}
 
 
+# ── میز استراتژی‌های جدید (دستور حمید ۲۶ اوت: «استراتژی‌های جدید رو بگو») ──
+# فقط از فایل‌های حکمِ از-قبل-تولیدشده می‌خوانَد؛ خودش چیزی نمی‌سنجد.
+_EXP_FILES = [
+    ("موتور v2.8 روی ۳ سال", "brain/research/history/backtest3y.json"),
+    ("هندسهٔ گشاد (استاپ ۲×، rr3)", "brain/research/history/backtest3y_rr3wide.json"),
+    ("شکست سقف/کف ۴س (RR3، اهرم ۱۵)", "brain/research/history/strategy_break4h.json"),
+    ("اردر بلاک (RR3، اهرم ۱۵)", "brain/research/history/strategy_ob3.json"),
+]
+
+
+def experiments():
+    out = []
+    for name, rel in _EXP_FILES:
+        try:
+            j = json.loads((ROOT / rel).read_text(encoding="utf-8"))
+        except Exception:                            # noqa: BLE001
+            continue
+        o = j.get("overall") or {}
+        oos = j.get("oos_2026") or {}
+        if not o.get("n"):
+            continue
+        ci = o.get("ci95") or [None, None]
+        verdict = ("CI بالای صفر" if ci[0] is not None and ci[0] > 0 else
+                   "CI زیر صفر" if ci[1] is not None and ci[1] < 0 else
+                   "CI شامل صفر")
+        row = {"name": name, "n": o["n"], "mean_r_net": o.get("mean_r_net"),
+               "ci95": ci, "verdict": verdict}
+        if oos.get("n"):
+            row["oos_2026"] = {"n": oos["n"],
+                               "mean_r_net": oos.get("mean_r_net"),
+                               "ci95": oos.get("ci95")}
+        out.append(row)
+    return out
+
+
 def build(hours=None, since_ms=None, now_ms=None, path=None):
     now = now_ms or int(time.time() * 1000)
     if since_ms is None:
@@ -323,12 +358,26 @@ def text(rep):
                      f"(n={e['n']} · تارگت {e['target']} / استاپ {e['stop']})")
         L.append(f"  {rw['note']}")
 
+    ex = rep.get("experiments") or []
+    if ex:
+        L.append("\n🧪 میز استراتژی‌های جدید (حکم فقط با CI):")
+        for e in ex:
+            line = (f"  {e['name']}: n={e['n']} · خالص {_fa(e['mean_r_net'], 'R')} "
+                    f"· {e['verdict']}")
+            oos = e.get("oos_2026")
+            if oos:
+                line += (f" · برون‌نمونهٔ ۲۰۲۶: {_fa(oos['mean_r_net'], 'R')} "
+                         f"{oos.get('ci95')}")
+            L.append(line)
+        L.append("  هیچ‌کدام هنوز مجوز تولید ندارند مگر CI بالای صفر + تأیید حمید.")
+
     L.append(f"\n{rep['boundary']}")
     return "\n".join(L)
 
 
 def run(hours=None, as_json=False, quiet=False, write=True):
     rep = build(hours=hours)
+    rep["experiments"] = experiments()
     if write:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(rep, ensure_ascii=False, indent=1),
@@ -339,9 +388,30 @@ def run(hours=None, as_json=False, quiet=False, write=True):
     return rep
 
 
+def send_telegram(rep):
+    """گزارش نوبت‌دار به تلگرام — دستور صریح حمید (۲۶ اوت): «دائم ترید کن
+    و نتیجه و استراتژی‌های جدید را بگو». محصولِ خواسته‌شده است؛ هر نوبت
+    محتوای تازه دارد، پس دروازهٔ ضدتکرار لازم ندارد (ثبت در DIRECT_OK)."""
+    import telegram as tg
+    token, chat = tg.creds()
+    if not token:
+        print("تلگرام: توکن نیست — گزارش فقط چاپ شد")
+        return False
+    body = text(rep)
+    tg._post(token, "sendMessage",
+             {"chat_id": chat, "text": body[:4000],
+              "disable_web_page_preview": "true"})
+    print("گزارش کار به تلگرام رفت")
+    return True
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=float, default=None)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--send", action="store_true",
+                    help="ارسال گزارش به تلگرام (کادنس مصوب حمید)")
     a = ap.parse_args()
-    run(hours=a.hours, as_json=a.json)
+    rep = run(hours=a.hours, as_json=a.json, quiet=a.send)
+    if a.send:
+        send_telegram(rep)

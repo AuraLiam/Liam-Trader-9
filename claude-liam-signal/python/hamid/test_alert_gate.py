@@ -95,6 +95,7 @@ DIRECT_OK = {
     "watchdog.py": "حافظهٔ اختصاصی (brain/watchdog-alerted.json، پنجرهٔ ۶ ساعت)",
     "medic.py": "حافظهٔ اختصاصی (alert_decision: تغییر وضعیت)",
     "alert_gate.py": "خودِ دروازه",
+    "work_report.py": "گزارش نوبت‌دار نتیجه — دستور صریح حمید ۲۶ اوت: «دائم ترید کن و نتیجه و استراتژی‌های جدید را بگو»؛ هر نوبت محتوای تازه",
 }
 SEND_PAT = re.compile(r"send_text\s*\(|sendMessage|_post\s*\(\s*token")
 
