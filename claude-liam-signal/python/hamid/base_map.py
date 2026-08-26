@@ -194,3 +194,86 @@ def base_map(frames):
                              "lines": [f"{na}@{tfa}", f"{nb}@{tfb}"]})
     out["confluence"] = conf[:8]
     return out
+
+
+# ── حلقهٔ کاری حمید روی نقشه (توضیح ۲۶ اوت، پیام دوم) ────────────────
+# «قیمت هر جای کانال‌ها باشد بررسی می‌کنم و دلیل می‌آورم که اگر بالا برود
+# یا پایین بیاید چه اتفاقی می‌افتد؛ نقاط مهم را علامت می‌زنم؛ وقتی وسط
+# کانال‌هاست و تحلیلی برایش ندارم صبر می‌کنم قیمت به حمایت/مقاومت/OB/FVG
+# برسد و بعد از فعال‌شدن آلارم دوباره بررسی‌اش می‌کنم.»
+#
+# ترجمهٔ ماشینی: نقشه → نقاط واکنش علامت‌دار → اگر قیمت روی نقطه است
+# تحلیل کن، وگرنه WAIT با آلارمِ نزدیک‌ترین نقطهٔ بالا و پایین + درخت
+# سناریو. تحلیلِ زوری وسط نقشه ممنوع — WAIT تصمیم حرفه‌ای است (قانون
+# NO TRADE). آلارم که خورد، همین تابع دوباره صدا زده می‌شود.
+
+REACT_TOL_PCT = 0.35
+
+
+def reaction_points(m, tf_order=("4h", "1h", "15m", "5m")):
+    """همهٔ نقاط علامت‌خوردهٔ نقشه، با نوع و تایمشان — همان «هوریزانتال
+    ری‌ها و لبه‌های کانال و OBها» که حمید روی چارت می‌گذارد."""
+    pts = []
+    for tf in tf_order:
+        d = m.get(tf) or {}
+        if d.get("error"):
+            continue
+        for lv in d.get("levels") or []:
+            pts.append({"price": lv["level"],
+                        "kind": f"{'مقاومت' if lv['role']=='resistance' else 'حمایت'}@{tf}",
+                        "weight": lv["touches_wick"]})
+        ch = d.get("channel")
+        if ch:
+            for nm, fa in (("top", "سقف کانال"), ("bottom", "کف کانال"),
+                           ("mid", "میدلاین")):
+                pts.append({"price": ch[nm], "kind": f"{fa}@{tf}",
+                            "weight": ch.get(f"touches_{nm}", 1) or 1})
+        for side, fa in (("ob_above", "OB بالا"), ("ob_below", "OB پایین")):
+            ob = d.get(side)
+            if ob:
+                edge = ob["lo"] if side == "ob_above" else ob["hi"]
+                pts.append({"price": edge, "kind": f"{fa}@{tf}", "weight": 2})
+    for c in m.get("confluence") or []:
+        pts.append({"price": c["price"],
+                    "kind": "هم‌رسی " + "+".join(c["lines"][:2]), "weight": 4})
+    return pts
+
+
+def stance(m, px, tol_pct=REACT_TOL_PCT):
+    """حکم حلقهٔ حمید: AT_POINT (الان تحلیل کن، با دلیل) یا WAIT (آلارم
+    بگذار و تا فعال نشده تحلیل زوری نساز). سناریو در هر دو حالت هست."""
+    pts = reaction_points(m)
+    if not pts:
+        return {"mode": "NO_MAP", "why": "نقشه‌ای ساخته نشد — دادهٔ کافی نیست"}
+    at = sorted([p for p in pts if abs(p["price"] - px) / px * 100 <= tol_pct],
+                key=lambda p: -p["weight"])
+    above = sorted([p for p in pts if p["price"] > px * (1 + tol_pct / 100)],
+                   key=lambda p: p["price"])
+    below = sorted([p for p in pts if p["price"] < px * (1 - tol_pct / 100)],
+                   key=lambda p: -p["price"])
+    scen = []
+    if above:
+        s = (f"اگر بالا برود: اول واکنش در {above[0]['kind']} "
+             f"({above[0]['price']:g})")
+        if len(above) > 1:
+            s += f"؛ عبور از آن ⇒ مقصد بعدی {above[1]['kind']} ({above[1]['price']:g})"
+        scen.append(s)
+    if below:
+        s = (f"اگر پایین بیاید: اول واکنش در {below[0]['kind']} "
+             f"({below[0]['price']:g})")
+        if len(below) > 1:
+            s += f"؛ شکست آن ⇒ ادامه تا {below[1]['kind']} ({below[1]['price']:g})"
+        scen.append(s)
+    out = {"scenarios": scen,
+           "alarm_up": above[0] if above else None,
+           "alarm_down": below[0] if below else None}
+    if at:
+        out.update({"mode": "AT_POINT", "points": at[:4],
+                    "why": f"قیمت روی {at[0]['kind']} است — همین حالا تحلیل"})
+    else:
+        out.update({"mode": "WAIT",
+                    "why": ("قیمت وسط نقشه است و تحلیلی برایش نداریم — "
+                            "تحلیل زوری نمی‌سازیم (روش حمید)؛ آلارم روی "
+                            "نزدیک‌ترین نقطهٔ بالا و پایین، بعد از فعال‌شدن "
+                            "دوباره بررسی می‌شود")})
+    return out
