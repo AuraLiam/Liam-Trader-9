@@ -399,11 +399,83 @@ def edge_boost(strategy, flags):
                         "rules": hits, "untested": untested}
 
 
+# ── وزنِ اتاق‌های ایجنت (v2.9 — دستور حمید، ۲۷ اوت) ────────────────────
+#
+# «به ایجنت‌ها بر اساس عملکردشون در پیپر مود امتیاز می‌دی و بعد بر اساس
+# امتیازشون در تصمیم‌گیری نهاییِ سیگنال ۱۵ دقیقه وزن می‌دی.»
+#
+# وزن‌ها را `hamid/agent_scores.py` از دفتر پیپر می‌شمارد و به تفکیک
+# بسترِ بازار (ریزش/صعود/خنثی USDT.D) می‌نویسد. این‌جا فقط **سهمِ امتیازِ
+# همان اتاق** در کیفیت ضرب می‌شود:
+#   • هیچ اتاقی وتو ندارد؛ وزن نه دروازه باز می‌کند نه می‌بندد.
+#   • جمعِ اثرِ همهٔ وزن‌ها سقف ±۱۰ امتیاز دارد (ROOM_W_CAP).
+#   • قفسهٔ کهنه (بیش از ۴۸ ساعت) بی‌اثر است — همان قاعدهٔ قفسهٔ لبه.
+# ردپای `room_weights` روی هر خروجی می‌نشیند تا ماشین بونفرونی شبانه
+# بتواند سهمِ خودِ این لایه را از نتیجه جدا بسنجد (قانون یادگیریِ حمید:
+# انجینی که ردپای قابل‌سنجش نگذارد، ناقص تحویل شده).
+ROOM_W = {"weights": {}, "stale": True, "ctx": "unknown"}
+ROOM_W_PATH = "/signals/agent-weights.json"
+ROOM_W_CAP = 10.0
+
+
+def sync_room_weights(ctx=None):
+    """وزن اتاق‌ها را از قفسه بخوان. کهنه یا نبود = همه ۱.۰ (بی‌اثر)."""
+    for base in (REPO_RAW, PAGES):
+        try:
+            d = _get(base + ROOM_W_PATH)
+            if not isinstance(d, dict) or not d.get("rooms"):
+                continue
+            age_h = (time.time() * 1000 - (d.get("generated") or 0)) / 3_600_000
+            stale = age_h > 48
+            use_ctx = ctx or d.get("live_ctx") or "all"
+            w = {}
+            for room, rec in (d.get("rooms") or {}).items():
+                by = rec.get("by_context") or {}
+                pick = by.get(use_ctx) or by.get("all") or {}
+                w[room] = 1.0 if stale else float(pick.get("weight") or 1.0)
+            ROOM_W.clear()
+            ROOM_W.update({"weights": w, "stale": stale, "ctx": use_ctx,
+                           "age_h": round(age_h, 1)})
+            return 0 if stale else len(w)
+        except Exception:                            # noqa: BLE001
+            continue
+    return 0
+
+
+def room_weight(room):
+    """وزن یک اتاق — همیشه عددِ امن؛ نبودِ داده یعنی ۱.۰، نه صفر."""
+    if ROOM_W.get("stale"):
+        return 1.0
+    try:
+        return float((ROOM_W.get("weights") or {}).get(room) or 1.0)
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def apply_room_weights(parts):
+    """`parts`: [(اتاق، امتیازِ خام), …] → (امتیاز وزنی، دلتا، خطوط دلیل).
+
+    دلتا سقف‌خورده است؛ خودِ امتیازهای خام دست‌نخورده برمی‌گردند تا
+    مقایسهٔ «با وزن / بی‌وزن» در بک‌تست ممکن باشد."""
+    base = sum(p for _, p in parts)
+    weighted = sum(p * room_weight(r) for r, p in parts)
+    delta = max(-ROOM_W_CAP, min(ROOM_W_CAP, weighted - base))
+    lines, used = [], {}
+    for r, p in parts:
+        w = room_weight(r)
+        used[r] = w
+        if p and abs(w - 1.0) >= 0.05:
+            lines.append(f"⚖️ وزن اتاق {r}: ×{w:.2f} "
+                         f"(کارنامهٔ پیپر در بستر {ROOM_W.get('ctx')})")
+    return round(delta, 1), lines, used
+
+
 def sync_all():
-    """یک خط برای داشبورد: پارامتر + تجربه + نقدشوندگی + قفسهٔ لبه."""
+    """یک خط برای داشبورد: پارامتر + تجربه + نقدشوندگی + قفسهٔ لبه + وزن اتاق‌ها."""
     return {"params": sync_params(), "experience_pairs": sync_experience(),
             "top_liquidity": sync_top_liquidity(),
-            "edge_rules": sync_edge()}
+            "edge_rules": sync_edge(),
+            "room_weights": sync_room_weights()}
 
 
 def experience_of(symbol, direction):
@@ -809,8 +881,14 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
            f"IBS {i:.2f} تأیید ورود",
            f"استاپ بیرون نویز ({P['atr_noise_mult']}×ATR)",
            f"RR خالص از کارمزد {net_rr:.2f}"]
+    # سهمِ هر اتاق جدا نگه داشته می‌شود تا وزنِ کارنامه‌ایِ همان اتاق
+    # رویش بنشیند (v2.9). امتیاز خام دست‌نخورده می‌ماند؛ فقط دلتا اضافه
+    # می‌شود و آن هم سقف‌خورده.
+    room_parts = []
     if exp_used:
-        quality += 20 if exp["mean_r"] > 0 else 5
+        _p = 20 if exp["mean_r"] > 0 else 5
+        quality += _p
+        room_parts.append(("experience", _p))
         why.append(f"تجربه: {exp['n']} معاملهٔ بسته، برد {exp['win_pct']}٪، "
                    f"میانگین {exp['mean_r']:+.2f}R "
                    f"(عامل ۸۶.۹٪-برد دفتر ما)")
@@ -818,12 +896,15 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
         why.append(f"تاریخچهٔ نازک ({exp['n']} معامله) — گزارش، بدون وزن")
     if align == "with":
         quality += 10
+        room_parts.append(("candles", 10))
         why.append("کندل هم‌جهت: " + "، ".join(pat_names))
     elif align == "against":
         quality -= 5
+        room_parts.append(("candles", -5))
         why.append("کندل مخالف: " + "، ".join(pat_names))
     if 0.38 <= ratio <= 0.705:
         quality += 5
+        room_parts.append(("fib", 5))
         why.append("عمق پولبک در ناحیهٔ طلایی فیبوناچی (آزمایشی)")
     # قفسهٔ لبه (انتقال مهارت، ۲۴ اوت): همان قانون‌هایی که بک‌تست شبانه
     # با CI بالای صفر تأیید کرده، این‌جا هم وزن می‌گیرند — سقف ±۱۵ امتیاز،
@@ -836,7 +917,15 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
                       and _ob["lo"] <= k_last["c"] <= _ob["hi"])})
     quality += edge_pts
     why += edge_lines
-    quality = max(0, min(100, quality))
+    # وزنِ کارنامه‌ایِ اتاق‌ها (v2.9): سهمِ هر اتاق ضربِ وزنِ خودش؛ فقط
+    # دلتای سقف‌خورده اضافه می‌شود. اردر بلاک هم سهم دارد چون بخشی از
+    # امتیازِ لبه از شرطِ «داخل اردر بلاک» می‌آید.
+    if edge_pts:
+        room_parts.append(("smc", edge_pts))
+    room_delta, room_lines, room_used = apply_room_weights(room_parts)
+    quality += room_delta
+    why += room_lines
+    quality = max(0, min(100, round(quality)))
     if quality < P["min_quality"]:
         return no(f"امتیاز کیفیت {quality} زیر کف {P['min_quality']}")
 
@@ -879,6 +968,10 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
             # ردپای قفسهٔ لبه — تا ماشین بونفرونی شبانه سهم edge_used را
             # از نتیجه جدا بسنجد (قانون «انجین بی‌ردپا ناقص تحویل شده»).
             "edge": edge_rec, "edge_used": bool(edge_pts),
+            # ردپای وزنِ اتاق‌ها (v2.9) — همان قاعده: لایه‌ای که ردپای
+            # قابل‌سنجش نگذارد، سهمش از نتیجه اثبات‌پذیر نیست
+            "room_weights": room_used, "room_delta": room_delta,
+            "room_ctx": ROOM_W.get("ctx"),
             "experience": exp, "pattern_align": align, "patterns": pat_names,
             "leverage": suggest_leverage(stop_pct, quality, mode="swing"),
             "margin_pct": margin_pct_for(quality),

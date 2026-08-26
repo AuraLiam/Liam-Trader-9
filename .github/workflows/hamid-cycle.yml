@@ -115,6 +115,7 @@ jobs:
           python3 -m hamid.test_work_report
           python3 -m hamid.test_paper_dedupe
           python3 -m hamid.test_edge_export
+          python3 -m hamid.test_agent_scores
           python3 -m hamid.test_trail_alert
           python3 -m hamid.test_polymarket
           python3 -m hamid.test_escalation
@@ -213,6 +214,13 @@ jobs:
       - name: قفسهٔ لبه برای داشبورد
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.edge_export || true
+
+      # امتیاز و وزن اتاق‌های ایجنت از عملکرد پیپرمود (دستور حمید ۲۷ اوت).
+      # به تفکیک بسترِ بازار (ریزش/صعود USDT.D) شمرده می‌شود و داشبورد با
+      # sync_all می‌کشد؛ سقف اثر ±۱۰ امتیاز، بدون هیچ وتویی.
+      - name: وزن اتاق‌های ایجنت
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.agent_scores || true
 
       # گزارش کار (دستور حمید ۲۴ اوت: «تا گفتم گزارش کار را بده، نتایج را
       # با جزئیات و خلاصه و دقیق بهم بگو» → مهارت work-report). این‌جا هر

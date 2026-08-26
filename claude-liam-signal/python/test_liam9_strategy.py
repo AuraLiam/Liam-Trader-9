@@ -55,7 +55,11 @@ def run():
         check("ساخت کلاس بدون شبکه خطا نمی‌دهد", s.meta["version"])
         check("sync_all بی‌شبکه امن برمی‌گردد",
               st.sync_all() == {"params": None, "experience_pairs": 0,
-                                "top_liquidity": 0, "edge_rules": 0})
+                                "top_liquidity": 0, "edge_rules": 0,
+                                "room_weights": 0})
+        check("وزن اتاق‌ها بی‌شبکه بی‌اثر است (همه ۱.۰، بدون وتو)",
+              st.room_weight("candles") == 1.0
+              and st.apply_room_weights([("candles", 10)])[0] == 0.0)
         check("و قفسهٔ لبه بی‌شبکه stale می‌ماند (بی‌اثر)",
               st.EDGE.get("stale", True) is True
               or st.edge_boost("ibs", {"dir": "LONG", "btc_up": True})[0] == 0)
