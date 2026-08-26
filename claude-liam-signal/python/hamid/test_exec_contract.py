@@ -187,6 +187,35 @@ SC.gate_stages(s2, kget=_kget_boom)
 check("اسکن: دادهٔ روند ناموجود = انتشار ممنوع (قانون ۱)",
       s2[0]["stage"] == "WATCH", str(s2[0]))
 
+
+# ── درس ۲۶ اوت: گزارش/واچ‌لیست هرگز خودش را سیگنال جا نمی‌زند ────────────
+# حمید در تلگرام «سیگنال»های بی‌تارگت و بی‌روند از رادار پامپ می‌دید —
+# چون گزارش تحلیلی در دفتر سیگنال ثبت می‌شد و از همان‌جا به پل اجرا می‌رفت.
+import telegram as _tg
+
+_before = _tg.TGLOG.read_text() if _tg.TGLOG.exists() else None
+_tg._log_final({"sym": "FAKEUSDT", "dir": "LONG", "tf": "15m",
+                "entry": 1.0, "sl": 0.99, "tp1": None,
+                "strategyName": "گزارش بدلی"})
+_after = _tg.TGLOG.read_text() if _tg.TGLOG.exists() else None
+check("دفتر سیگنال: ردیف بی‌تارگت ثبت نمی‌شود (قرارداد اجرا)",
+      _before == _after)
+_tg._log_final({"sym": "FAKEUSDT", "dir": "SHORT", "tf": "15m",
+                "entry": 1.0, "sl": None, "tp1": 0.9,
+                "strategyName": "گزارش بدلی"})
+check("دفتر سیگنال: ردیف بی‌استاپ هم ثبت نمی‌شود",
+      _after == (_tg.TGLOG.read_text() if _tg.TGLOG.exists() else None))
+
+_HERE = Path(__file__).resolve().parent
+_pr_src = (_HERE / "pump_radar.py").read_text(encoding="utf-8")
+_pw_src = (_HERE / "pump_watchlist.py").read_text(encoding="utf-8")
+check("رادار پامپ دیگر در دفتر سیگنال نمی‌نویسد", "_log_final" not in _pr_src)
+check("دفتر انتظار پامپ دیگر در دفتر سیگنال نمی‌نویسد",
+      "_log_final" not in _pw_src)
+check("پیام رادار پامپ صریح می‌گوید «سیگنال ورود نیست»",
+      "سیگنال ورود نیست" in _pr_src)
+check("پیام دفتر انتظار صریح می‌گوید «سیگنال ورود نیست»",
+      "سیگنال ورود نیست" in _pw_src)
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
