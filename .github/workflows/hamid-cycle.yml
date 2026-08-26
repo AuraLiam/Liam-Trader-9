@@ -333,7 +333,7 @@ jobs:
             git push origin HEAD:gh-pages \
               && { echo "deployed=1" >> "$GITHUB_OUTPUT"; exit 0; }
             git fetch origin gh-pages || true
-            git rebase origin/gh-pages || { git rebase --abort; exit 1; }
+            git merge -X ours -m "ادغام gh-pages" origin/gh-pages || { git merge --abort 2>/dev/null || true; }
             sleep $((a * 4 + RANDOM % 7))
           done
           exit 1
