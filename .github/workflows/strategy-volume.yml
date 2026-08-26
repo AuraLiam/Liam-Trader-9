@@ -1,0 +1,151 @@
+# دو استراتژی جدای حمید + اثر حجم/ورود پول روی ۳ سال (دستور ۲۶ اوت صبح)
+#
+# سه کار در یک اجرا: (۱) بک‌تست جدای break4h (شکست سقف/کف ۴س) و ob3
+# (اردر بلاک) با روند ثابت ۴س→۱۵د، RR=۳، اهرم ۱۵؛ (۲) ادغام هر کدام با
+# داوری IS/OOS؛ (۳) وصل سنجه‌های حجم به دفتر ۱۵۴هزار معامله‌ای. فقط دستی.
+name: Strategy duo + volume (3y)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شمارهٔ اجرای history-ingest که artifact دارد"
+        default: "32913652429"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: strategy-volume
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_history_backtest
+          python3 -m hamid.test_volume_strategy
+
+  duo:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        strat: [break4h, ob3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: دریافت دادهٔ خام
+        uses: actions/download-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          run-id: ${{ github.event.inputs.run_id || '32913652429' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: اجرای تکه
+        working-directory: claude-liam-signal/python
+        run: |
+          SRC=/tmp/aura-history
+          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
+          [ -n "$K" ] && SRC=$(dirname "$K")
+          python3 -m hamid.strategy_duo --src "$SRC" \
+            --strategy ${{ matrix.strat }} \
+            --shard ${{ matrix.shard }} --shards 8 \
+            --out /tmp/duo/shard${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: duo-${{ matrix.strat }}-shard-${{ matrix.shard }}
+          path: /tmp/duo/shard${{ matrix.shard }}.json
+          retention-days: 7
+
+  duo-merge:
+    needs: duo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        strat: [break4h, ob3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: دریافت تکه‌ها
+        uses: actions/download-artifact@v4
+        with:
+          pattern: duo-${{ matrix.strat }}-shard-*
+          path: /tmp/duo
+          merge-multiple: true
+      - name: ادغام
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.history_backtest --merge /tmp/duo \
+            --out "$GITHUB_WORKSPACE/brain/research/history/strategy_${{ matrix.strat }}.json"
+      - name: ثبت روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp "brain/research/history/strategy_${{ matrix.strat }}.json" /tmp/final.json
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            cp /tmp/final.json "brain/research/history/strategy_${{ matrix.strat }}.json"
+            git add brain/research/history
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "بک‌تست ۳ سالهٔ استراتژی ${{ matrix.strat }} (RR=3، اهرم ۱۵)"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
+
+  volume:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: دریافت دادهٔ خام
+        uses: actions/download-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          run-id: ${{ github.event.inputs.run_id || '32913652429' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: سنجش اثر حجم روی دفتر ۳ ساله
+        working-directory: claude-liam-signal/python
+        run: |
+          SRC=/tmp/aura-history
+          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
+          [ -n "$K" ] && SRC=$(dirname "$K")
+          python3 -m hamid.volume_impact --src "$SRC" \
+            --trades "$GITHUB_WORKSPACE/brain/research/history/backtest3y_trades.json.gz" \
+            --out "$GITHUB_WORKSPACE/brain/research/history/volume_impact.json"
+      - name: ثبت روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp brain/research/history/volume_impact.json /tmp/vol.json
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            cp /tmp/vol.json brain/research/history/volume_impact.json
+            git add brain/research/history
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "اثر حجم و ورود پول بر دفتر بک‌تست ۳ ساله"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
