@@ -65,8 +65,18 @@ check("مرزِ یادآوری دقیقاً روی ESCALATE_MS است، نه ت�
       M.alert_decision(SICK, {"sick": True,
                               "alerted_at": SICK["at"] - M.ESCALATE_MS},
                        now_ms=SICK["at"])[0] is True)
-check("خراب → سالم: بهبود هم خبر است",
-      M.alert_decision(WELL, {"sick": True}) == (True, "recovered"))
+check("خراب → سالم: دیگر پیام نمی‌رود — فقط لاگ/پنل (دستور ۲۶ اوت)",
+      M.alert_decision(WELL, {"sick": True}) == (False, "recovered_quiet"))
+# خرابی غیربحرانی (محصول سالم است) → عیب‌یاب ساکت خودش تعمیر می‌کند
+SICK_SOFT = {"sick": True, "at": 10_000_000,
+             "faults": ["⚠️ «Deep symbol» ۲ بار شکست خورده — عیب واقعی است"],
+             "findings": ["⚠️ «Deep symbol» ۲ بار شکست خورده — عیب واقعی است"]}
+check("خرابی غیربحرانی: تلگرام ساکت، تعمیر خاموش",
+      M.alert_decision(SICK_SOFT, {}) == (False, "quiet_selfheal"))
+check("خرابی بحرانی (زنجیرهٔ سیگنال) همچنان آلارم دارد",
+      M.product_critical(["⚠️ «Signal chain» ۲ بار شکست خورده"]) is True)
+check("خرابی تلگرام هم بحرانی است",
+      M.product_critical(["تلگرام آماده نیست"]) is True)
 check("سالم → سالم: هیچ پیامی نمی‌رود",
       M.alert_decision(WELL, {"sick": False}) == (False, "healthy"))
 # شبیه‌سازی همان شب: ۸ ساعت خرابی پیوسته، عیب‌یاب هر ۱۵ دقیقه
