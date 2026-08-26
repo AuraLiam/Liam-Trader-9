@@ -179,6 +179,19 @@ with tempfile.TemporaryDirectory() as td:
           str(res["trade_span"]))
     check("ادغام: n<30 → CI ندارد (بی‌ادعا)",
           res["per_direction"]["SHORT"].get("ci95") is None)
+    check("ادغام: تفکیک درون/برون‌نمونه (IS≤2025 / OOS=2026)",
+          res["is_2023_2025"]["n"] == 35 and res["oos_2026"]["n"] == 0)
+    # تکه‌های ناهم‌پیکربندی ادغام نمی‌شوند — ادغامشان دروغ است
+    (td / "s2.json").write_text(json.dumps(
+        {"shard": 2, "symbols": 1, "skipped": 0, "engine": "e",
+         "overrides": {"rr_target": 3.0}, "hold": 192,
+         "trades": tr1[:5], "rejections": {}}), encoding="utf-8")
+    mixed_refused = False
+    try:
+        HB.merge(td, out=td / "m2.json")
+    except SystemExit:
+        mixed_refused = True
+    check("ادغام: پیکربندی قاطی → رد صریح", mixed_refused)
 
 # ── ۴. دود: موتور واقعی روی دادهٔ کوتاه مصنوعی (فقط مسیر، نه لبه) ────
 def mkbin(path, n, t0=T0):
@@ -209,6 +222,23 @@ with tempfile.TemporaryDirectory() as td:
           sum(res["rejections"].values()) > 0, str(res["rejections"])[:120])
     check("دود: خروجی تکه روی دیسک", (td / "shard0.json").is_file())
     check("دود: سرعت قابل برنامه‌ریزی (<180ث)", time.time() - t0 < 180)
+    # sweep هندسه: override اعمال و ثبت می‌شود، بعدش برمی‌گردد
+    import liam9_strategy as ST
+    rr0 = ST.PARAMS["rr_target"]
+    res2 = HB.run(src, shard=0, shards=1, out=td / "shard0b.json",
+                  overrides={"rr_target": 3.0}, hold=192, quiet=True)
+    check("sweep: اثرانگشت پیکربندی روی خروجی تکه",
+          res2["overrides"] == {"rr_target": 3.0} and res2["hold"] == 192)
+    check("sweep: override واقعاً روی موتور نشست",
+          ST.PARAMS["rr_target"] == 3.0)
+    ST.PARAMS["rr_target"] = rr0
+    bad_refused = False
+    try:
+        HB.run(src, shard=0, shards=1, out=td / "shard0c.json",
+               overrides={"no_such_param": 1.0}, quiet=True)
+    except SystemExit:
+        bad_refused = True
+    check("sweep: پارامتر ناشناخته رد می‌شود", bad_refused)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

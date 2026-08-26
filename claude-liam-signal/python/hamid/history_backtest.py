@@ -73,8 +73,13 @@ def resample(c15, minutes):
     return out
 
 
-def replay_windowed(sym, c15, c1h, c4h, btc1h=None, btc4h=None, step=1):
-    """عین dash_backtest.replay_symbol با پنجرهٔ لغزان روی سری چندساله."""
+def replay_windowed(sym, c15, c1h, c4h, btc1h=None, btc4h=None, step=1,
+                    hold=None):
+    """عین dash_backtest.replay_symbol با پنجرهٔ لغزان روی سری چندساله.
+
+    hold: سقف نگهداری به کندل ۱۵د — تارگتِ دورتر زمان بیشتری می‌خواهد
+    (درس sweep اسکلپ ۲۳ اوت: هولد کوتاه + تارگت دور = کارمزد بی‌تارگت)."""
+    hold = hold or MAX_HOLD
     trades, reasons = [], {}
     p1 = p4 = pb1 = pb4 = 0
     i = WARMUP
@@ -102,7 +107,7 @@ def replay_windowed(sym, c15, c1h, c4h, btc1h=None, btc4h=None, step=1):
             continue
         res = exit_px = None
         bars = 0
-        for j in range(i + 1, min(i + 1 + MAX_HOLD, len(c15))):
+        for j in range(i + 1, min(i + 1 + hold, len(c15))):
             k = c15[j]
             bars = j - i
             if sig["action"] == "LONG":
@@ -121,7 +126,7 @@ def replay_windowed(sym, c15, c1h, c4h, btc1h=None, btc4h=None, step=1):
                     break
         if res is None:
             res = "timeout"
-            exit_px = c15[min(i + MAX_HOLD, len(c15) - 1)]["c"]
+            exit_px = c15[min(i + hold, len(c15) - 1)]["c"]
         risk = abs(sig["entry"] - sig["sl"])
         if risk <= 0:
             i += step
@@ -156,7 +161,10 @@ def ok_symbols(inv):
 
 
 def run(src, shard=0, shards=1, out=None, step=1, max_symbols=None,
-        quiet=False):
+        overrides=None, hold=None, quiet=False):
+    """overrides: dict روی ST.PARAMS (مثلاً rr_target) — sweep هندسه.
+    اثرانگشت پیکربندی روی خروجی ثبت می‌شود؛ هر پیکربندی دفترِ خودش است
+    (درس ماشین حکم اسکلپ: حکم به هندسه گره می‌خورد، نه به ایده)."""
     out = Path(out) if out else OUT
     inv_path = out.parent / f"inventory_shard{shard}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -168,6 +176,11 @@ def run(src, shard=0, shards=1, out=None, step=1, max_symbols=None,
     if max_symbols:
         mine = mine[:max_symbols]
     _prep_engine(syms)
+    if overrides:
+        bad = set(overrides) - set(ST.PARAMS)
+        if bad:
+            raise SystemExit(f"پارامتر ناشناخته: {sorted(bad)}")
+        ST.PARAMS.update(overrides)
     btc15 = history_ingest.load_klines("BTCUSDT", "15m", inv_path)
     btc1 = resample(btc15, 60) if btc15 else None
     btc4 = resample(btc15, 240) if btc15 else None
@@ -185,7 +198,7 @@ def run(src, shard=0, shards=1, out=None, step=1, max_symbols=None,
             drops["تایم بالا کوتاه"] = drops.get("تایم بالا کوتاه", 0) + 1
             continue
         tr, rs = replay_windowed(s, c15, c1, c4, btc1h=btc1, btc4h=btc4,
-                                 step=step)
+                                 step=step, hold=hold)
         all_trades += tr
         for k, v in rs.items():
             all_reasons[k] = all_reasons.get(k, 0) + v
@@ -197,6 +210,7 @@ def run(src, shard=0, shards=1, out=None, step=1, max_symbols=None,
     res = {"generated": int(time.time() * 1000),
            "engine": ST.PARAMS["version"], "shard": shard, "shards": shards,
            "step": step, "w15": W15, "whtf": WHTF,
+           "overrides": overrides or {}, "hold": hold or MAX_HOLD,
            "symbols": done, "skipped": sum(drops.values()),
            "drop_reasons": drops, "trades": all_trades,
            "rejections": all_reasons}
@@ -216,6 +230,7 @@ def merge(shards_dir, out=None):
     trades, reasons = [], {}
     n_sym = n_skip = 0
     engines, files = set(), 0
+    configs = set()
     for p in sorted(Path(shards_dir).rglob("*.json")):
         try:
             j = json.loads(p.read_text(encoding="utf-8"))
@@ -228,8 +243,13 @@ def merge(shards_dir, out=None):
         n_sym += j.get("symbols", 0)
         n_skip += j.get("skipped", 0)
         engines.add(j.get("engine"))
+        configs.add(json.dumps({"overrides": j.get("overrides", {}),
+                                "hold": j.get("hold")}, sort_keys=True))
         for k, v in j.get("rejections", {}).items():
             reasons[k] = reasons.get(k, 0) + v
+    if len(configs) > 1:
+        raise SystemExit("تکه‌ها پیکربندی یکسان ندارند — ادغامشان دروغ است: "
+                         + " | ".join(sorted(configs)))
     if not files:
         raise SystemExit(f"هیچ تکه‌ای در {shards_dir} نیست")
     years = sorted({_year(t["opened"]) for t in trades})
@@ -250,6 +270,12 @@ def merge(shards_dir, out=None):
            "per_year": {str(y): _agg([t for t in trades
                                       if _year(t["opened"]) == y])
                         for y in years},
+           # داوری sweep: انتخاب فقط با درون‌نمونه، حکم نهایی با برون‌نمونه
+           "is_2023_2025": _agg([t for t in trades
+                                 if _year(t["opened"]) <= 2025]),
+           "oos_2026": _agg([t for t in trades
+                             if _year(t["opened"]) >= 2026]),
+           "config": (json.loads(sorted(configs)[0]) if configs else {}),
            "rejection_funnel": dict(sorted(reasons.items(),
                                            key=lambda x: -x[1])[:12]),
            "note": ("کندل واقعی ۳ ساله، ۱س/۴س بازسازی‌شده از ۱۵د با برچسبِ "
@@ -276,11 +302,19 @@ if __name__ == "__main__":
     ap.add_argument("--step", type=int, default=1)
     ap.add_argument("--max-symbols", type=int, default=None)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--set", action="append", default=[],
+                    help="override پارامتر موتور: name=value (قابل تکرار)")
+    ap.add_argument("--hold", type=int, default=None,
+                    help="سقف نگهداری (کندل ۱۵د)؛ پیش‌فرض ۹۶")
     a = ap.parse_args()
+    ov = {}
+    for s in a.set:
+        k, _, v = s.partition("=")
+        ov[k.strip()] = float(v)
     if a.merge:
         merge(a.merge, out=a.out)
     elif a.src:
         run(a.src, shard=a.shard, shards=a.shards, out=a.out, step=a.step,
-            max_symbols=a.max_symbols)
+            max_symbols=a.max_symbols, overrides=ov or None, hold=a.hold)
     else:
         ap.error("--src یا --merge لازم است")

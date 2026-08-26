@@ -16,13 +16,22 @@ on:
       step:
         description: "گام کندل (۱=کامل؛ عدد بزرگ‌تر=سریع‌تر و کم‌نمونه‌تر)"
         default: "1"
+      label:
+        description: "برچسب پیکربندی (base = تولید فعلی)"
+        default: "base"
+      overrides:
+        description: "override پارامترها: k=v با کاما (مثلاً rr_target=3.0,atr_noise_mult=2.0)"
+        default: ""
+      hold:
+        description: "سقف نگهداری به کندل ۱۵د (خالی = ۹۶)"
+        default: ""
 
 permissions:
   contents: write
   actions: read
 
 concurrency:
-  group: history-backtest
+  group: history-backtest-${{ github.event.inputs.label || 'base' }}
   cancel-in-progress: false
 
 jobs:
@@ -65,13 +74,19 @@ jobs:
           K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
           [ -n "$K" ] && SRC=$(dirname "$K")
           echo "ریشهٔ داده: $SRC"
+          EXTRA=""
+          OV="${{ github.event.inputs.overrides || '' }}"
+          for kv in $(echo "$OV" | tr ',' ' '); do EXTRA="$EXTRA --set $kv"; done
+          H="${{ github.event.inputs.hold || '' }}"
+          [ -n "$H" ] && EXTRA="$EXTRA --hold $H"
+          echo "پیکربندی: label=${{ github.event.inputs.label || 'base' }} $EXTRA"
           python3 -m hamid.history_backtest --src "$SRC" \
             --shard ${{ matrix.shard }} --shards 8 \
             --step "${{ github.event.inputs.step || '1' }}" \
-            --out /tmp/bt3y/shard${{ matrix.shard }}.json
+            --out /tmp/bt3y/shard${{ matrix.shard }}.json $EXTRA
       - uses: actions/upload-artifact@v4
         with:
-          name: bt3y-shard-${{ matrix.shard }}
+          name: bt3y-${{ github.event.inputs.label || 'base' }}-shard-${{ matrix.shard }}
           path: /tmp/bt3y/shard${{ matrix.shard }}.json
           retention-days: 7
 
@@ -86,27 +101,31 @@ jobs:
       - name: دریافت تکه‌ها
         uses: actions/download-artifact@v4
         with:
-          pattern: bt3y-shard-*
+          pattern: bt3y-${{ github.event.inputs.label || 'base' }}-shard-*
           path: /tmp/bt3y
           merge-multiple: true
       - name: ادغام و گزارش
         working-directory: claude-liam-signal/python
         run: |
+          L="${{ github.event.inputs.label || 'base' }}"
+          NAME=backtest3y.json
+          [ "$L" != "base" ] && NAME="backtest3y_${L}.json"
+          echo "name=$NAME" >> "$GITHUB_ENV"
           python3 -m hamid.history_backtest --merge /tmp/bt3y \
-            --out "$GITHUB_WORKSPACE/brain/research/history/backtest3y.json"
+            --out "$GITHUB_WORKSPACE/brain/research/history/$NAME"
       - name: ثبت گزارش روی main (ضدتصادم)
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          cp brain/research/history/backtest3y.json /tmp/bt3y-final.json
+          cp "brain/research/history/$name" /tmp/bt3y-final.json
           for i in 1 2 3 4 5 6 7 8; do
             git fetch origin main -q
             git reset --hard origin/main -q
             mkdir -p brain/research/history
-            cp /tmp/bt3y-final.json brain/research/history/backtest3y.json
+            cp /tmp/bt3y-final.json "brain/research/history/$name"
             git add brain/research/history
             git diff --cached --quiet && { echo "بدون تغییر"; break; }
-            git commit -q -m "بک‌تست ۳ سالهٔ موتور داشبورد روی دادهٔ درایو"
+            git commit -q -m "بک‌تست ۳ ساله (${{ github.event.inputs.label || 'base' }}) روی دادهٔ درایو"
             git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
             sleep $((i * 4 + RANDOM % 7))
           done
