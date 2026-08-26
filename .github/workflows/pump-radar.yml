@@ -185,7 +185,7 @@ jobs:
                       git push origin HEAD:gh-pages -q \
                         && { echo "deployed=1" >> "$GITHUB_OUTPUT"; break; }
                       git fetch origin gh-pages -q || true
-                      git rebase origin/gh-pages -q || { git rebase --abort; break; }
+                      git merge -X ours -m "ادغام gh-pages" origin/gh-pages -q || { git merge --abort 2>/dev/null || true; }
                     done
                   fi )
                 git worktree remove --force /tmp/ghp 2>/dev/null || true
