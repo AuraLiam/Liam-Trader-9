@@ -159,7 +159,7 @@ jobs:
                   for a in 1 2 3 4 5 6 7 8; do
                     git push origin HEAD:gh-pages -q && break
                     git fetch origin gh-pages -q || true
-                    git rebase origin/gh-pages -q || { git rebase --abort; break; }
+                    git merge -X ours -m "ادغام gh-pages" origin/gh-pages -q || { git merge --abort 2>/dev/null || true; }
                   done
                 fi )
               git worktree remove /tmp/ghp --force 2>/dev/null || true
