@@ -12,6 +12,12 @@ on:
       run_id:
         description: "شمارهٔ اجرای history-backtest که تکه‌ها را دارد"
         default: "32918529308"
+      pattern:
+        description: "الگوی نام تکه‌ها (برچسب sweep را داخلش بگذار)"
+        default: "bt3y-shard-*"
+      label:
+        description: "برچسب خروجی (خالی = پایه)"
+        default: ""
 
 permissions:
   contents: write
@@ -35,7 +41,7 @@ jobs:
       - name: دریافت تکه‌ها
         uses: actions/download-artifact@v4
         with:
-          pattern: bt3y-shard-*
+          pattern: ${{ github.event.inputs.pattern || 'bt3y-shard-*' }}
           path: /tmp/bt3y
           merge-multiple: true
           run-id: ${{ github.event.inputs.run_id || '32918529308' }}
@@ -43,22 +49,25 @@ jobs:
       - name: تحلیل
         working-directory: claude-liam-signal/python
         run: |
+          L="${{ github.event.inputs.label || '' }}"
+          SUF=""; [ -n "$L" ] && SUF="_${L}"
+          echo "suf=$SUF" >> "$GITHUB_ENV"
           python3 -m hamid.history_analysis --shards /tmp/bt3y \
-            --out "$GITHUB_WORKSPACE/brain/research/history/backtest3y_analysis.json" \
-            --trades-out "$GITHUB_WORKSPACE/brain/research/history/backtest3y_trades.json.gz" \
+            --out "$GITHUB_WORKSPACE/brain/research/history/backtest3y${SUF}_analysis.json" \
+            --trades-out "$GITHUB_WORKSPACE/brain/research/history/backtest3y${SUF}_trades.json.gz" \
             --universe "$GITHUB_WORKSPACE/brain/research/history/meta/universe.json"
       - name: ثبت روی main (ضدتصادم)
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          cp brain/research/history/backtest3y_analysis.json /tmp/an.json
-          cp brain/research/history/backtest3y_trades.json.gz /tmp/tr.json.gz
+          cp "brain/research/history/backtest3y${suf}_analysis.json" /tmp/an.json
+          cp "brain/research/history/backtest3y${suf}_trades.json.gz" /tmp/tr.json.gz
           for i in 1 2 3 4 5 6 7 8; do
             git fetch origin main -q
             git reset --hard origin/main -q
             mkdir -p brain/research/history
-            cp /tmp/an.json brain/research/history/backtest3y_analysis.json
-            cp /tmp/tr.json.gz brain/research/history/backtest3y_trades.json.gz
+            cp /tmp/an.json "brain/research/history/backtest3y${suf}_analysis.json"
+            cp /tmp/tr.json.gz "brain/research/history/backtest3y${suf}_trades.json.gz"
             git add brain/research/history
             git diff --cached --quiet && { echo "بدون تغییر"; break; }
             git commit -q -m "تحلیل عمیق دفتر بک‌تست ۳ ساله + دفتر فشردهٔ کامل"
