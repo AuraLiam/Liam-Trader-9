@@ -120,5 +120,38 @@ check("نقشه: هر تایم بسته‌اش را دارد",
 check("نقشه: هم‌رسی خطوط دو تایم (سری یکسان → هم‌رسی حتمی)",
       len(m["confluence"]) > 0, str(m["confluence"][:2]))
 
+# ── حلقهٔ کاری حمید: علامت‌گذاری، سناریو، صبر تا آلارم ────────────────
+mm = BM.base_map({"4h": flat})                # flat سطح ۱۰۲ معتبر دارد
+pts = BM.reaction_points(mm)
+check("نقاط واکنش: سطح‌ها و کانال و OB جمع می‌شوند", len(pts) >= 3,
+      str(pts[:3]))
+# قیمت دقیقاً روی سطح ۱۰۲ → همین حالا تحلیل
+st_at = BM.stance(mm, 102.0)
+check("روی نقطهٔ علامت‌خورده → AT_POINT با دلیل",
+      st_at["mode"] == "AT_POINT" and "۱۰۲" not in "", str(st_at["why"]))
+# قیمت وسط نقشه، دور از همهٔ خطوط → WAIT با آلارم دو طرف و سناریو
+far = sorted({round(p["price"], 4) for p in pts})
+gap_px = None
+for a, b in zip(far, far[1:]):
+    if (b - a) / a * 100 > 3 * BM.REACT_TOL_PCT:
+        gap_px = (a + b) / 2
+        break
+if gap_px:
+    st_w = BM.stance(mm, gap_px)
+    check("وسط نقشه → WAIT (تحلیل زوری ممنوع — روش حمید)",
+          st_w["mode"] == "WAIT" and "زوری" in st_w["why"], str(st_w["why"]))
+    check("WAIT آلارم بالا و پایین دارد",
+          st_w["alarm_up"] and st_w["alarm_down"],
+          str((st_w["alarm_up"], st_w["alarm_down"])))
+    check("سناریو در هر دو جهت با «مقصد بعدی» نوشته می‌شود",
+          len(st_w["scenarios"]) == 2
+          and any("اگر بالا" in s for s in st_w["scenarios"])
+          and any("اگر پایین" in s for s in st_w["scenarios"]),
+          str(st_w["scenarios"]))
+else:
+    check("فیکسچر شکاف بین خطوط داشت", False, str(far))
+check("نقشهٔ خالی → NO_MAP بی‌ادعا",
+      BM.stance({"4h": {"error": "سری کوتاه"}}, 100.0)["mode"] == "NO_MAP")
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

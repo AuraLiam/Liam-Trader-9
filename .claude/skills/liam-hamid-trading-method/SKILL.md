@@ -24,3 +24,18 @@ Before accepting a signal path, verify:
 6. Risk, snapshot, Signal ID, immediate per-symbol delivery.
 
 Return `missing_requirements` rather than guessing. Never treat an internal CHoCH as a standalone reversal.
+
+## The watch-alarm loop on the base map (Hamid, 26 Aug — verbatim intent)
+
+Wherever price sits inside the channels, always hold a scenario tree with
+reasons: "if it goes up, first reaction at X, past X the target is Y; if it
+goes down, first reaction at A, breaking A continues to B." Mark every
+important point (S/R, channel top/bottom/midline, OB, FVG, confluences).
+When price is mid-map and there is no analysis for it, DO NOT invent one —
+WAIT is the professional decision. Arm alarms on the nearest marked point
+above and below; when an alarm fires, re-analyze at that moment.
+
+Deterministic implementation: `hamid/base_map.py` — `reaction_points()` +
+`stance()` returns AT_POINT (analyze now, with the point and reasons) or
+WAIT (alarm_up/alarm_down + scenarios). Forced analysis mid-map violates
+this method.
