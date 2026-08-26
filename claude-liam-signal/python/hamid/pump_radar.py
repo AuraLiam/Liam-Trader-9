@@ -834,7 +834,9 @@ def _load_sent():
 def tg_message(source, picks, blocks):
     import telegram as tg
     L = [f"🏷 <b>{tg.PANEL_NAME}</b>",
-         "🚀 <b>گزینه‌های پامپ — رادار خوشه‌ای</b>",
+         "🚀 <b>گزارش پامپ — رادار خوشه‌ای</b>",
+         "🚫 <i>سیگنال ورود نیست — واچ‌لیست تحلیلی؛ ورود فقط با سیگنال "
+         "استراتژی (بی‌تارگت و بی‌دروازهٔ روند)</i>",
          f"<i>منبع تاپ گینرز: {source}</i>", ""]
     bmap = {b["symbol"]: b for b in blocks}
 
@@ -975,11 +977,9 @@ def send_telegram(source, picks, blocks, kc=None):
     sent[key] = time.time() * 1000
     SENT.parent.mkdir(exist_ok=True)
     SENT.write_text(json.dumps(sent, indent=1))
-    for p in picks:
-        tg._log_final({"sym": p["symbol"], "dir": "LONG", "tf": "15m",
-                       "entry": p["entry"], "sl": p["sl"], "tp1": None,
-                       "strategyName": "پامپ رادار خوشه‌ای"})
-    print(f"تلگرام: گزینه‌های پامپ ({len(picks)} انتخاب) فرستاده شد")
+    # درس ۲۶ اوت: این گزارش تحلیلی است نه سیگنال — تارگت و دروازهٔ روند
+    # ندارد؛ در دفتر سیگنال ثبت نمی‌شود تا با سیگنال واقعی قاطی نشود.
+    print(f"تلگرام: گزارش پامپ ({len(picks)} گزینه) فرستاده شد — سیگنال نیست")
     return True
 
 
