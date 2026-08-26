@@ -1,0 +1,112 @@
+# بک‌تست ۳ ساله روی دادهٔ درایو (دستور حمید، شب ۲۶ اوت: «هی بک‌تست بگیر»)
+#
+# دادهٔ خام در artifact هفت‌روزهٔ aura-history است (اجرای موفق
+# history-ingest). این ورک‌فلو همان را برمی‌دارد، ۲۹۸ نماد را به ۸ تکهٔ
+# موازی می‌دهد (هر تکه ~۳۷ نماد × ~۱۰۵هزار کندل ۱۵د ≈ ۹۰ دقیقه) و در
+# پایان تکه‌ها را به یک گزارش با CI کل/جهت/سال ادغام و روی main ثبت
+# می‌کند. سنگین است و فقط دستی اجرا می‌شود — کرون ندارد.
+name: History backtest (3y)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شمارهٔ اجرای history-ingest که artifact دارد"
+        default: "32913652429"
+      step:
+        description: "گام کندل (۱=کامل؛ عدد بزرگ‌تر=سریع‌تر و کم‌نمونه‌تر)"
+        default: "1"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: history-backtest
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_history_ingest
+          python3 -m hamid.test_history_backtest
+
+  backtest:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 320
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: دریافت دادهٔ خام (artifact هفت‌روزه)
+        uses: actions/download-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          run-id: ${{ github.event.inputs.run_id || '32913652429' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: اجرای تکه
+        working-directory: claude-liam-signal/python
+        run: |
+          SRC=/tmp/aura-history
+          K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
+          [ -n "$K" ] && SRC=$(dirname "$K")
+          echo "ریشهٔ داده: $SRC"
+          python3 -m hamid.history_backtest --src "$SRC" \
+            --shard ${{ matrix.shard }} --shards 8 \
+            --step "${{ github.event.inputs.step || '1' }}" \
+            --out /tmp/bt3y/shard${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bt3y-shard-${{ matrix.shard }}
+          path: /tmp/bt3y/shard${{ matrix.shard }}.json
+          retention-days: 7
+
+  merge:
+    needs: backtest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: دریافت تکه‌ها
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bt3y-shard-*
+          path: /tmp/bt3y
+          merge-multiple: true
+      - name: ادغام و گزارش
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.history_backtest --merge /tmp/bt3y \
+            --out "$GITHUB_WORKSPACE/brain/research/history/backtest3y.json"
+      - name: ثبت گزارش روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp brain/research/history/backtest3y.json /tmp/bt3y-final.json
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            cp /tmp/bt3y-final.json brain/research/history/backtest3y.json
+            git add brain/research/history
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "بک‌تست ۳ سالهٔ موتور داشبورد روی دادهٔ درایو"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
