@@ -1,0 +1,56 @@
+# گزارش ساعتی دامیننس (دستور صریح حمید، ۲۶ اوت شب:
+# «هر یک ساعت نظریهٔ ایجنت و انجین دامیننس‌ها رو برام بفرسته با چارت یک ساعته»)
+#
+# هر ساعت: چارت کندلی ۱ساعتهٔ USDT.D/BTC.D از سری اتاق دامیننس + نظریهٔ
+# ساختاری با سناریوی دو جهت + کارنامهٔ پیش‌بینی. ضدتکرار ۵۰دقیقه‌ای
+# داخل خود ماژول است.
+name: Dominance report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "19 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dominance-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: وابستگی چارت
+        run: pip install -q matplotlib
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_dom_report
+      - name: گزارش و ارسال
+        working-directory: claude-liam-signal/python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 -m hamid.dominance_report --send
+      - name: ثبت حافظهٔ ضدتکرار (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp signals/dominance-report.json /tmp/dr.json 2>/dev/null || exit 0
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git checkout -q -B run origin/main
+            cp /tmp/dr.json signals/dominance-report.json
+            rm -f signals/dominance-report.png   # عکس هر ساعت عوض می‌شود؛ در گیت نمی‌نشیند
+            git add signals
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "گزارش دامیننس $(date -u +%H:%M) UTC"
+            git push origin HEAD:main -q && break
+            sleep $((i * 4 + RANDOM % 7))
+          done
