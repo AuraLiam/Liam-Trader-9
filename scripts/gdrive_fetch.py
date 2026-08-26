@@ -94,25 +94,41 @@ def download_file(file_id, dest, tries=3):
     return 0
 
 
-def fetch_tree(folder_id, dest, depth=0, stats=None):
-    stats = stats if stats is not None else {"files": 0, "bytes": 0, "errors": []}
+def collect_entries(folder_id, dest, depth=0, out=None):
+    """فهرست کامل درخت → [(file_id, مسیر مقصد)]؛ پوشه‌ها همان لحظه ساخته."""
+    out = out if out is not None else []
     if depth > 6:
-        return stats
+        return out
     dest.mkdir(parents=True, exist_ok=True)
     for kind, fid, name in list_folder(folder_id):
         safe = name.replace("/", "_")
         if kind == "folder":
-            fetch_tree(fid, dest / safe, depth + 1, stats)
+            collect_entries(fid, dest / safe, depth + 1, out)
         else:
+            out.append((fid, dest / safe, name))
+    return out
+
+
+def fetch_tree(folder_id, dest, workers=8):
+    """دانلود موازی — اجرای ۲۶ اوت نشان داد تک‌رشته ۲۱۲۵ فایل را در ۶۰
+    دقیقه تمام نکرد و به سقف زمان خورد؛ ۸ رشته همان کار را چند برابر
+    سریع‌تر می‌کند بدون فشار غیرعادی به گوگل."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    entries = collect_entries(folder_id, dest)
+    print(f"فهرست کامل: {len(entries)} فایل", flush=True)
+    stats = {"files": 0, "bytes": 0, "errors": []}
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = {ex.submit(download_file, fid, path): name
+                for fid, path, name in entries}
+        for fut in as_completed(futs):
             try:
-                n = download_file(fid, dest / safe)
+                stats["bytes"] += fut.result() or 0
                 stats["files"] += 1
-                stats["bytes"] += n
-                if stats["files"] % 25 == 0:
-                    print(f"  {stats['files']} فایل، "
+                if stats["files"] % 100 == 0:
+                    print(f"  {stats['files']}/{len(entries)} فایل، "
                           f"{stats['bytes'] // 1_000_000}MB", flush=True)
             except Exception as e:                   # noqa: BLE001
-                stats["errors"].append(f"{name}: {type(e).__name__}")
+                stats["errors"].append(f"{futs[fut]}: {type(e).__name__}")
     return stats
 
 
