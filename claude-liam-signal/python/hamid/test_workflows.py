@@ -300,6 +300,24 @@ check("ورک‌فلوی اسکلپ تلگرام را فقط به ماشین ح�
       _scalp_yml.count("TELEGRAM_BOT_TOKEN:") == 1
       and "scalp_verdict --alert" in _scalp_yml)
 
+# ── درس ۲۶ اوت عصر: انتشار gh-pages هرگز با rebase نمی‌جنگد ────────────
+# پنل حمید ۴۹ دقیقه عقب ماند چون انتشارِ چرخه سرِ تعارض rebase با
+# نوشته‌های هم‌زمانِ زنجیره «تسلیم» می‌شد (سه ورک‌فلو با exit 1، بقیه با
+# break بی‌صدا). قاعدهٔ کلاس: روی gh-pages فقط merge -X ours — نتیجه‌اش
+# همان rebaseِ موفق است ولی روی تعارض نمی‌میرد و حلقهٔ تلاش ادامه دارد.
+_bad_rebase = [f.name for f in files
+               if "git rebase origin/gh-pages" in f.read_text(encoding="utf-8")]
+check(f"هیچ ورک‌فلویی روی gh-pages با rebase نمی‌جنگد {_bad_rebase or ''}",
+      not _bad_rebase)
+_no_merge = []
+for f in files:
+    t = f.read_text(encoding="utf-8")
+    if "git fetch origin gh-pages" in t and "HEAD:gh-pages" in t \
+            and "-X ours" not in t:
+        _no_merge.append(f.name)
+check(f"هر حلقهٔ پوش gh-pages ادغام ضدتعارض -X ours دارد {_no_merge or ''}",
+      not _no_merge)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
