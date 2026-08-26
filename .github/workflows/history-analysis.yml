@@ -1,0 +1,67 @@
+# تحلیل عمیق دفتر بک‌تست ۳ ساله (دستور حمید، شب ۲۶ اوت: «زیر و رو کن»)
+#
+# تکه‌های خام بک‌تست (bt3y-shard-*) را از اجرای history-backtest برمی‌دارد،
+# برش‌های ناخالص/خالص، کیفیت، پهنای استاپ، نقدشوندگی، سال×جهت و ماهانه را
+# می‌سازد و همراه دفتر فشردهٔ کامل روی main ثبت می‌کند — تا تحلیل‌های بعدی
+# بدون رانر و بدون artifact هفت‌روزه محلی انجام شوند. فقط دستی، بی‌کرون.
+name: History analysis (3y)
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شمارهٔ اجرای history-backtest که تکه‌ها را دارد"
+        default: "32918529308"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: history-analysis
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_history_analysis
+      - name: دریافت تکه‌ها
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bt3y-shard-*
+          path: /tmp/bt3y
+          merge-multiple: true
+          run-id: ${{ github.event.inputs.run_id || '32918529308' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: تحلیل
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.history_analysis --shards /tmp/bt3y \
+            --out "$GITHUB_WORKSPACE/brain/research/history/backtest3y_analysis.json" \
+            --trades-out "$GITHUB_WORKSPACE/brain/research/history/backtest3y_trades.json.gz" \
+            --universe "$GITHUB_WORKSPACE/brain/research/history/meta/universe.json"
+      - name: ثبت روی main (ضدتصادم)
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          cp brain/research/history/backtest3y_analysis.json /tmp/an.json
+          cp brain/research/history/backtest3y_trades.json.gz /tmp/tr.json.gz
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main -q
+            git reset --hard origin/main -q
+            mkdir -p brain/research/history
+            cp /tmp/an.json brain/research/history/backtest3y_analysis.json
+            cp /tmp/tr.json.gz brain/research/history/backtest3y_trades.json.gz
+            git add brain/research/history
+            git diff --cached --quiet && { echo "بدون تغییر"; break; }
+            git commit -q -m "تحلیل عمیق دفتر بک‌تست ۳ ساله + دفتر فشردهٔ کامل"
+            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+            sleep $((i * 4 + RANDOM % 7))
+          done
