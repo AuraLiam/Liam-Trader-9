@@ -158,7 +158,9 @@ def tg_ignition(ig):
     """پیام سیگنال شلیک — با علامت یادگیری و دلیل، قانون ۲ حمید."""
     why = ("؛ ".join(ig["reasons"]) if ig["reasons"] else
            f"دنباله‌روی تاریخی {ig['leader'] or '؟'}")
-    lines = [f"🧠⚡ <b>سیگنال از یادگیری — {ig['symbol']}</b>",
+    lines = [f"🧠⚡ <b>هشدار دفتر انتظار — {ig['symbol']}</b>",
+             "🚫 <i>سیگنال ورود نیست (تارگت ندارد) — فقط خبرِ شروع حرکتِ "
+             "منتظَر؛ ورود فقط با سیگنال استراتژی</i>",
              f"در دفتر انتظار بود ({ig['waited_h']}س) چون: {why}",
              f"الان حجم خورد (×{ig['vol_x']}) و حرکت شروع شد "
              f"({ig['move_pct']:+}٪) — همان لحظه‌ای که قرار بود بگیریم.",
@@ -209,10 +211,8 @@ def send_ignitions(ignited, kc=None):
                 tg._post(token, "sendMessage",
                          {"chat_id": chat, "text": msg, "parse_mode": "HTML",
                           "disable_web_page_preview": "true"})
-                tg._log_final({"sym": ig["symbol"], "dir": "LONG", "tf": "15m",
-                               "entry": ig.get("entry") or ig["price"],
-                               "sl": ig.get("sl"), "tp1": None,
-                               "strategyName": "دفتر انتظار پامپ 🧠"})
+                # درس ۲۶ اوت: شلیک دفتر انتظار تارگت ندارد → سیگنال نیست
+                # و در دفتر سیگنال ثبت نمی‌شود (قرارداد اجرا).
                 n += 1
             except Exception as e:                   # noqa: BLE001
                 print(f"تلگرام شلیک {ig['symbol']}: {type(e).__name__}")
