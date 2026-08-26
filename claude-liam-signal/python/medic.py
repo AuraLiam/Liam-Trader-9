@@ -379,6 +379,19 @@ def fault_lines(findings):
             or ("ناموفق" in f or "شکست خورده" in f)]
 
 
+# دستور حمید (۲۶ اوت): «پیامِ "فلان جا مشکل داشت برطرف شد" نباید برای من
+# بیاید.» تلگرام فقط برای محصول است — عیب‌یاب خودش تعمیر می‌کند و در
+# brain/medic.json و پنل گزارش می‌دهد. تنها استثنا: خرابی‌ای که خودِ
+# رسیدن سیگنال را می‌بُرد؛ آن هم فقط تا وقتی برقرار است.
+CRITICAL_MARKERS = ("Signal chain", "زنجیرهٔ سیگنال", "Hamid cycle",
+                    "Live scan", "تلگرام")
+
+
+def product_critical(faults):
+    """آیا خرابی، خودِ محصول (رسیدن سیگنال) را می‌بُرد؟"""
+    return any(any(m in f for m in CRITICAL_MARKERS) for f in (faults or []))
+
+
 def alert_decision(state, prev, now_ms=None):
     """→ (بفرست؟, دلیل). سه حالت می‌ارزد به پیام، بقیه سکوت.
 
@@ -388,11 +401,18 @@ def alert_decision(state, prev, now_ms=None):
     """
     now = now_ms or int(time.time() * 1000)
     was, is_ = bool(prev.get("sick")), bool(state.get("sick"))
+    faults = state.get("faults")
+    if faults is None:                     # وضعیت قدیمی روی دیسک
+        faults = fault_lines(state.get("findings"))
+    critical = product_critical(faults)
     if is_ and not was:
-        return True, "new"
+        return (True, "new") if critical else (False, "quiet_selfheal")
     if not is_ and was:
-        return True, "recovered"
+        # «برطرف شد» دیگر هرگز پیام نیست (دستور ۲۶ اوت) — فقط لاگ/پنل.
+        return False, "recovered_quiet"
     if is_ and was:
+        if not critical:
+            return False, "quiet_selfheal"
         last = prev.get("alerted_at") or 0
         if now - last >= ESCALATE_MS:
             return True, "still"
