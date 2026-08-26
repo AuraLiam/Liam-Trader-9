@@ -28,6 +28,20 @@ TGLOG = Path(__file__).resolve().parent.parent.parent / "signals" / "telegram-lo
 TTL_MS = 12 * 3600 * 1000
 # ردِ موقت ≠ ممنوعیت نیم‌روزه (عیب ۲۰ اوت — توضیح در _load_sent)
 SKIP_TTL_MS = 30 * 60 * 1000
+# حافظهٔ کناری ضدتکرار — مستقل از گیت (عیب ۲۶ اوت: PAXG پنج بار در ۲۱
+# دقیقه رفت چون sent.json فقط با push روی main دوام می‌آورد؛ از ۲۰:۱۲ تا
+# ۲۱:۰۱ هیچ push ای ننشست و هر دورِ زنجیره با reset به حافظهٔ کهنه
+# برمی‌گشت). /tmp روی رانر بین همهٔ دورهای یک اجرا زنده می‌ماند، پس
+# ارسال‌شده حتی با شکستِ کامل push دوباره نمی‌رود. قابل‌جابه‌جایی با env
+# برای سرویس محلی.
+SIDECAR = Path(os.environ.get("LIAM9_SENT_SIDECAR", "/tmp/liam9-sent-sidecar.json"))
+# آرشیو شماره‌دار append-only — دستور حمید (۲۶ اوت شب): «اطلاعات را یکی
+# نکن؛ کنار هم نگه دار و شماره‌گذاری کن.» هر ارسال یک ردیف با شمارهٔ
+# پیاپی؛ هیچ ادغام/بازنویسی‌ای روی این فایل‌ها انجام نمی‌شود.
+ARCHIVE_DIR = Path(__file__).resolve().parent.parent.parent / "signals" / "archive"
+# دستور صریح حمید (۲۶ اوت شب): «ارسال سیگنال فقط توی تایم‌فریم‌های ۱۵ و
+# ۵ دقیقه باشه.» هر tf دیگری در گلوگاه ارسال بلند رد می‌شود.
+ALLOWED_TFS = {"5m", "15m"}
 
 
 def _counter_note(s):
@@ -113,14 +127,72 @@ def _load_sent():
     یعنی یک شرطِ گذرا به ممنوعیت نیم‌روزه تبدیل می‌شد: ۱۳۹ skip در برابر
     ۳۶ ارسال در ۲۴ ساعت. حالا ردِ موقت بعد از ۳۰ دقیقه (≈ دو کندل ۱۵د)
     دوباره بررسی می‌شود و باید **همهٔ** دروازه‌ها را از نو پاس کند —
-    هیچ دروازه‌ای شل نشده، فقط حکمِ لحظه‌ای دیگر ابدی نیست."""
+    هیچ دروازه‌ای شل نشده، فقط حکمِ لحظه‌ای دیگر ابدی نیست.
+
+    ضدتکرار سه‌منبعی (رفع ریشه‌ای ۲۶ اوت — PAXG×۵): اجتماعِ دیسک +
+    حافظهٔ کناری /tmp + بازسازی از خود لاگ ارسال. حافظه فقط وقتی خالی
+    است که هر سه منبع خالی باشند — گم‌شدنِ push دیگر به معنی فراموشی
+    نیست."""
+    merged = {}
+    for p in (SENT, SIDECAR):
+        try:
+            for k, v in json.loads(p.read_text()).items():
+                if isinstance(v, (int, float)) and v > merged.get(k, 0):
+                    merged[k] = v
+        except Exception:                            # noqa: BLE001 - a missing or torn file is an empty memory
+            pass
+    # منبع سوم: هر ردیفی که واقعاً به تلگرام رفته (telegram-log) دست‌کم
+    # کلید بین‌استراتژی any| را بازمی‌سازد — حتی اگر sent.json کامل گم شود.
     try:
-        d = json.loads(SENT.read_text())
-        now = time.time() * 1000
-        return {k: v for k, v in d.items()
-                if now - v < (SKIP_TTL_MS if k.startswith("skip|") else TTL_MS)}
-    except Exception:                                # noqa: BLE001 - a missing or torn file is an empty memory
-        return {}
+        for r in (json.loads(TGLOG.read_text()).get("sent") or []):
+            if r.get("sym") and r.get("tf") and r.get("dir") and r.get("at"):
+                k = f"any|{r['sym']}|{r['tf']}|{r['dir']}"
+                if float(r["at"]) > merged.get(k, 0):
+                    merged[k] = float(r["at"])
+    except Exception:                                # noqa: BLE001
+        pass
+    now = time.time() * 1000
+    return {k: v for k, v in merged.items()
+            if now - v < (SKIP_TTL_MS if k.startswith("skip|") else TTL_MS)}
+
+
+def _save_sent(sent):
+    """ذخیرهٔ فوری در هر دو خانه — دیسک (گیت) و کناری (/tmp).
+
+    قبلاً فقط در انتهای send_signals یک بار نوشته می‌شد؛ سقوط وسط حلقه یا
+    شکست push یعنی فراموشیِ ارسال‌های همان حلقه. حالا بعد از هر ارسال
+    صدا زده می‌شود."""
+    try:
+        SENT.parent.mkdir(parents=True, exist_ok=True)
+        SENT.write_text(json.dumps(sent, indent=1))
+    except Exception as e:                           # noqa: BLE001
+        print(f"telegram: ذخیرهٔ sent.json نشد ({type(e).__name__})", flush=True)
+    try:
+        SIDECAR.parent.mkdir(parents=True, exist_ok=True)
+        SIDECAR.write_text(json.dumps(sent, indent=1))
+    except Exception as e:                           # noqa: BLE001
+        print(f"telegram: ذخیرهٔ حافظهٔ کناری نشد ({type(e).__name__})", flush=True)
+
+
+def _archive_sent(s):
+    """آرشیو شماره‌دار append-only — هر ارسال یک ردیف، هرگز ادغام/بازنویسی.
+
+    دستور حمید (۲۶ اوت شب): اطلاعات کنار هم و شماره‌گذاری‌شده نگه داشته
+    شود. شمارهٔ ردیف = شمار ردیف‌های موجودِ همان روز + ۱."""
+    try:
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        day = time.strftime("%Y%m%d", time.gmtime())
+        f = ARCHIVE_DIR / f"telegram-sent-{day}.jsonl"
+        n = sum(1 for _ in f.open()) if f.exists() else 0
+        row = {"n": n + 1, "at": int(time.time() * 1000),
+               "sym": s.get("sym"), "tf": s.get("tf"), "dir": s.get("dir"),
+               "entry": s.get("entry"), "sl": s.get("sl"),
+               "tp1": s.get("tp1"), "strategy": s.get("strategy"),
+               "tg_msg_id": s.get("tg_msg_id")}
+        with f.open("a") as fh:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except Exception as e:                           # noqa: BLE001 - آرشیو نباید ارسال را بکشد
+        print(f"telegram: آرشیو ثبت نشد ({type(e).__name__})", flush=True)
 
 
 def _key(s):
@@ -442,6 +514,12 @@ def send_signals(signals, render_chart, limit=8):
             return base in STABLES or base in WRAPPED
         except Exception:                            # noqa: BLE001
             return False
+    # دروازهٔ تایم‌فریم — دستور صریح حمید (۲۶ اوت شب): فقط ۱۵د و ۵د.
+    off_tf = [s for s in signals if s.get("tf") not in ALLOWED_TFS]
+    for s in off_tf:
+        print(f"  دروازهٔ تایم‌فریم: {s.get('sym')} {s.get('tf')} رد شد — "
+              f"ارسال فقط در ۵د/۱۵د (دستور ۲۶ اوت)", flush=True)
+    signals = [s for s in signals if s.get("tf") in ALLOWED_TFS]
     fresh = [s for s in signals
              if _key(s) not in sent and f"skip|{_key(s)}" not in sent
              and not _dup_any(s) and not _sym_worn(s) and not _stable(s)][:limit]
@@ -587,6 +665,10 @@ def send_signals(signals, render_chart, limit=8):
             s["tg_msg_id"] = tg_mid
             sent[_key(s)] = time.time() * 1000
             sent[f"any|{s['sym']}|{s['tf']}|{s['dir']}"] = time.time() * 1000
+            # ذخیرهٔ فوری — قبل از هر کار دیگری، تا سقوط/شکست push حافظهٔ
+            # همین ارسال را نبرد (رفع ریشه‌ای PAXG×۵، ۲۶ اوت)
+            _save_sent(sent)
+            _archive_sent(s)
             ok += 1
             print(f"  sent {s['sym']} {s['tf']} {s['dir']}{'' if png else ' (text only)'}", flush=True)
             _log_final(s)
@@ -621,7 +703,6 @@ def send_signals(signals, render_chart, limit=8):
         except Exception as e:                        # noqa: BLE001 - one failure must not stop the rest
             print(f"  telegram failed for {s['sym']}: {scrub(e)}", flush=True)
 
-    SENT.parent.mkdir(parents=True, exist_ok=True)
-    SENT.write_text(json.dumps(sent, indent=1))
+    _save_sent(sent)
     print(f"telegram: {ok} of {len(fresh)} new signals delivered", flush=True)
     return ok

@@ -1103,6 +1103,55 @@ def reapply(backup_dir):
                                          "sent": union[:40]}, ensure_ascii=False, indent=1))
         except Exception as e:                       # noqa: BLE001
             print(f"اجتماع لاگ تلگرام نشد: {type(e).__name__}")
+    # دفتر ضدتکرار ارسال + دفترهای پیپر — کلاس عیب ۲۶ اوت شب (PAXG×۵):
+    # این سه در فهرست بازنشانی نبودند؛ وقتی همهٔ pushهای یک دور شکست
+    # می‌خورد، دور بعد reset --hard حافظهٔ «فرستادم» و ردیفِ بازشدهٔ
+    # همان سیگنال را می‌کشت → سیگنال تکراری می‌رفت و نتیجه/ریپلای هرگز
+    # نمی‌آمد (پوزیشنی در دفتر نبود که بسته شود). اجتماع بر هویت، نه متن.
+    try:
+        from hamid import merge_sent as _ms
+        snt_bk = bk / "sent.json"
+        if snt_bk.exists():
+            _ms.merge(snt_bk, ROOT / "signals" / "sent.json")
+    except Exception as e:                           # noqa: BLE001
+        print(f"اجتماع دفتر ضدتکرار نشد: {type(e).__name__}")
+    try:
+        from hamid import paper as _paper
+
+        def _okey(r):
+            return (r.get("sym"), r.get("opened"), r.get("entry"),
+                    (r.get("why") or {}).get("stage"))
+        op_bk, op = bk / "open.jsonl", ROOT / "brain" / "paper" / "open.jsonl"
+        cl_bk, cl = bk / "closed.jsonl", ROOT / "brain" / "paper" / "closed.jsonl"
+        tree_cl = ([json.loads(x) for x in cl.read_text().splitlines() if x.strip()]
+                   if cl.exists() else [])
+        closed_ids = {_paper.trade_key(r) for r in tree_cl}
+        if cl_bk.exists():
+            ours_cl = [json.loads(x) for x in cl_bk.read_text().splitlines() if x.strip()]
+            new_cl = [r for r in ours_cl if _paper.trade_key(r) not in closed_ids]
+            if new_cl:
+                cl.parent.mkdir(parents=True, exist_ok=True)
+                with cl.open("a") as fh:
+                    for r in new_cl:
+                        fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+                closed_ids |= {_paper.trade_key(r) for r in new_cl}
+                print(f"reapply: {len(new_cl)} تسویهٔ گم‌شده به دفتر بسته برگشت")
+        if op_bk.exists():
+            ours_op = [json.loads(x) for x in op_bk.read_text().splitlines() if x.strip()]
+            tree_op = ([json.loads(x) for x in op.read_text().splitlines() if x.strip()]
+                       if op.exists() else [])
+            have = {_okey(r) for r in tree_op}
+            # ردیفِ بازِ بکاپ فقط اگر نه در دفتر باز هست نه قبلاً بسته شده
+            new_op = [r for r in ours_op if _okey(r) not in have
+                      and _paper.trade_key(r) not in closed_ids]
+            if new_op:
+                op.parent.mkdir(parents=True, exist_ok=True)
+                with op.open("a") as fh:
+                    for r in new_op:
+                        fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+                print(f"reapply: {len(new_op)} پوزیشن بازِ گم‌شده به دفتر برگشت")
+    except Exception as e:                           # noqa: BLE001
+        print(f"اجتماع دفترهای پیپر نشد: {type(e).__name__}")
     try:
         picks = (json.loads(OUT.read_text()).get("recommendation") or [])[:2]
         merge_alarms(picks)
