@@ -763,12 +763,31 @@ def send_signals(signals, render_chart, limit=8):
                              {"chat_id": chat, "caption": head, "parse_mode": "HTML"},
                              {"photo": (f"{s['sym']}.png", blob)})
                 _mid = ((resp or {}).get("result") or {}).get("message_id")
+                # مهرِ ضدتکرار **همین‌جا** زده می‌شود، نه بعد از دنباله.
+                # وگرنه: عکس در کانال نشسته ولی اگر ارسالِ دنباله بیفتد،
+                # استثنا به except بیرونی می‌پرد، کلید نوشته نمی‌شود و
+                # چرخهٔ بعد همان سیگنال را دوباره می‌فرستد — عیناً همان
+                # کلاسِ PAXG×۵ (یافتهٔ ممیزی ساختار، ۲۷ اوت).
+                if _mid:
+                    s["tg_msg_id"] = _mid
+                    _t = time.time() * 1000
+                    sent[_key(s)] = _t
+                    sent[f"any|{s['sym']}|{s['tf']}|{s['dir']}"] = _t
+                    _save_sent(sent)
                 if tail and _mid:
-                    _post(token, "sendMessage",
-                          {"chat_id": chat, "text": tail, "parse_mode": "HTML",
-                           "reply_to_message_id": _mid,
-                           "allow_sending_without_reply": "true",
-                           "disable_web_page_preview": "true"})
+                    try:
+                        _post(token, "sendMessage",
+                              {"chat_id": chat, "text": tail, "parse_mode": "HTML",
+                               "reply_to_message_id": _mid,
+                               "allow_sending_without_reply": "true",
+                               "disable_web_page_preview": "true"})
+                    except Exception as _e:          # noqa: BLE001
+                        # دنباله نرفت ≠ سیگنال نرفت. عکس با اعداد ورود/
+                        # استاپ/تارگت از قبل رسیده؛ فقط توضیح‌ها کم است.
+                        print(f"  دنبالهٔ کپشن {s['sym']} نرفت "
+                              f"({type(_e).__name__}) — سیگنال رفته است",
+                              flush=True)
+                        _log_delivery_fail(s, f"tail {type(_e).__name__}")
             else:
                 resp = _post(token, "sendMessage",
                              {"chat_id": chat, "text": cap_full[:TEXT_LIMIT],

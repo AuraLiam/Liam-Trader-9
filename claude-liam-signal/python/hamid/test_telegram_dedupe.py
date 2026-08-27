@@ -110,7 +110,8 @@ try:
 
     # ── ۵) کلاس عیب: ذخیرهٔ فوری داخل حلقه، نه فقط انتها ───────────────
     src = (PY / "telegram.py").read_text(encoding="utf-8")
-    loop_after_send = src.split('sent[f"any|', 1)[1][:400]
+    # از اولین مهرِ ضدتکرار تا انتهای حلقهٔ ارسال
+    loop_after_send = src.split('sent[f"any|', 1)[1].split("_save_sent(sent)\n    print", 1)[0]
     check("بعد از هر ارسال، همان لحظه ذخیره می‌شود (_save_sent داخل حلقه)",
           "_save_sent(sent)" in loop_after_send, loop_after_send[:120])
     check("هیچ نوشتن مستقیم SENT.write_text بیرون از _save_sent نیست",
@@ -158,9 +159,21 @@ _rows = [json.loads(x) for x in _ff.read_text().splitlines()]
 check("شکست تحویل در آرشیو شماره‌دار ثبت می‌شود",
       _rows and _rows[0]["sym"] == "SOLUSDT" and _rows[0]["n"] == 1
       and "400" in _rows[0]["why"], str(_rows))
-check("هر دو مسیر خطا (HTTP و غیر HTTP) ثبت می‌کنند",
-      src_c.count("            _log_delivery_fail(s,") == 2,
-      str(src_c.count("            _log_delivery_fail(s,")))
+n_fail = sum(1 for ln in src_c.splitlines()
+             if "_log_delivery_fail(s," in ln and not ln.startswith("def "))
+check("هر سه مسیر خطا (HTTP، غیر HTTP، دنباله) ثبت می‌کنند",
+      n_fail == 3, str(n_fail))
+# شکستِ دنباله نباید سیگنالِ رفته را «نرفته» جا بزند — وگرنه دور بعد
+# دوباره می‌رود (همان کلاسِ PAXG×۵). مهر ضدتکرار باید قبل از ارسال
+# دنباله زده شود.
+_i_mid = src_c.index("_mid = ((resp or {}).get(\"result\")")
+_i_commit = src_c.index("sent[_key(s)] = _t")
+_i_tail = src_c.index('"text": tail')
+check("مهر ضدتکرار قبل از ارسال دنباله زده می‌شود",
+      _i_mid < _i_commit < _i_tail,
+      f"mid={_i_mid} commit={_i_commit} tail={_i_tail}")
+check("شکست دنباله، سیگنال را نمی‌کشد (استثنا داخل خودش گرفته می‌شود)",
+      "دنبالهٔ کپشن" in src_c and '_log_delivery_fail(s, f"tail' in src_c)
 TG.ARCHIVE_DIR = old[3]
 
 # ── ۵.۵) نردبان سخت‌گیری بعد از سیگنال پنجم (دستور حمید، ۲۷ اوت) ──────────

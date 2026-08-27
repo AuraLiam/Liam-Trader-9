@@ -96,6 +96,7 @@ jobs:
           python3 -m hamid.test_scalp_dash_backtest
           python3 -m hamid.test_signal_flow
           python3 -m hamid.test_telegram_dedupe
+          python3 -m hamid.test_panel_contract
           python3 -m hamid.test_big_money
           python3 -m hamid.test_big_money_backtest
           python3 -m hamid.test_microstructure
@@ -326,6 +327,15 @@ jobs:
           cp index.html /tmp/ghp/aura/index.html
           cp sw.js      /tmp/ghp/aura/sw.js
           cp manifest.webmanifest /tmp/ghp/aura/ 2>/dev/null || true
+          # کتابخانهٔ چارت و آیکون‌ها هم باید کنار پنل باشند (ممیزی ۲۷ اوت):
+          # index.html خط ۸ مسیر نسبی ./lightweight-charts.js را لود می‌کند و
+          # این فایل زیر /aura/ نبود → ۴۰۴. چون sw.js از addAll اتمی استفاده
+          # می‌کند، همان یک ۴۰۴ کل کش را رد می‌کرد (پس آفلاین هم مرده بود) و
+          # چارتِ پنل بی‌صدا رندر نمی‌شد.
+          cp lightweight-charts.js /tmp/ghp/aura/ 2>/dev/null || true
+          for ic in icon-192.png icon-512.png apple-touch-icon.png; do
+            cp "$ic" /tmp/ghp/aura/ 2>/dev/null || true
+          done
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \

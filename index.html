@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.36 · موتور داشبورد v2.6 · اهرم ۱۵–۳۹</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.37 · موتور داشبورد v2.9 · وزن اتاق‌ها</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -1975,7 +1975,7 @@ function smcCardHTML(r){
       ${s.swept?chip(`نقدینگی جمع شد (${s.swept.n} برخورد)`,true):chip("بدون جمع‌آوری نقدینگی",false)}
       ${s.thin?chip(`کندل داخلی ${Math.round(s.thin.insideRatio*100)}٪ · حجم ${s.thin.volRatio}×`,!s.thin.thin):""}
       ${chip(`اعتماد ${s.conf}٪${confReady()?"":" (در حال یادگیری)"}`,s.p>=0.45)}
-      ${chip(`انتظار ریاضی ${(s.ev||0).toFixed(2)}R`,(s.ev||0)>=evMin())}
+      ${s.ev==null?"":chip(`انتظار ریاضی ${s.ev.toFixed(2)}R`,s.ev>=evMin())}
       ${s.goOnFirst?chip("هم‌سویی قوی — نیازی به پولبک دوم نیست",true):""}
     </div>
     <div class="lvls">
@@ -3077,7 +3077,7 @@ function tgSignal(r,s){
     `تارگت۱ <code>${fmt(s.tp1)}</code>`,
     s.tp2?`تارگت۲ <code>${fmt(s.tp2)}</code>`:``,
     ``,
-    `ریسک/ریوارد <b>${s.rr}</b> · اعتماد <b>${s.conf}%</b> · انتظار <b>${(s.ev||0).toFixed(2)}R</b>`,
+    `ریسک/ریوارد <b>${s.rr}</b> · اعتماد <b>${s.conf}%</b> · انتظار <b>${s.ev==null?"—":s.ev.toFixed(2)+"R"}</b>`,
     s.ob?`اردر بلاک <code>${fmt(s.ob.low)} — ${fmt(s.ob.high)}</code>`:``,
     s.channel?`کانال ${s.channel.dir} (${s.channel.drift}%)`:``,
     s.fvg?`FVG هم‌جهت ✓`:``,
@@ -3525,10 +3525,10 @@ function relayCard(s){
     <h3>🚨 ${s.sym} — ${s.dir==="LONG"?"خرید":"فروش"} <span class="mono dim" style="font-size:11px">${s.tf}</span></h3>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px">
       ${chip(`ریسک به ریوارد ${s.rr}`,s.rr>=1.5)}
-      ${chip(`اعتماد ${s.conf}٪`,s.conf>=45)}
-      ${chip(`انتظار ریاضی ${(s.ev||0).toFixed(2)}R`,(s.ev||0)>0)}
+      ${s.conf==null?"":chip(`اعتماد ${s.conf}٪`,s.conf>=45)}
+      ${s.ev==null?"":chip(`انتظار ریاضی ${s.ev.toFixed(2)}R`,s.ev>0)}
       ${s.adx!=null?chip(`ADX ${s.adx}`,s.adx>=25):""}
-      ${chip(`پولبک ${s.visits} بار`,s.visits>=2)}
+      ${s.visits==null?"":chip(`پولبک ${s.visits} بار`,s.visits>=2)}
       ${s.fvg?chip("FVG هم‌جهت ✓",true):""}
       ${s.level?chip(`روی ${s.level.type==="R"?"مقاومت":"حمایت"} (${s.level.touches} برخورد)`,true):""}
       ${s.room?chip(s.room.r>=99?"مانعی تا تارگت نیست":`جای حرکت ${s.room.r}× تا ${s.room.blocker}`,s.room.r>=1.5):""}
@@ -5249,7 +5249,11 @@ $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)se
 (async()=>{try{
   try{(await (navigator.serviceWorker?.getRegistrations?.()||[])).forEach(r=>r.update());}catch(e){}
   const t=await (await fetch("sw.js?nc="+Date.now(),{cache:"no-store"})).text();
-  const server=(t.match(/hsa-shell-v([\d.]+)/)||[])[1];
+  // نام کش از hsa-shell به auraliam-shell عوض شده بود و این regex قدیمی
+  // مانده بود؛ یعنی server همیشه undefined می‌شد و محافظِ «پنل کهنه است»
+  // — همان که برای شکایت «کلیک می‌کنم هیچ اتفاقی نمی‌افتد» ساخته شده بود —
+  // کاملاً خاموش بود (ممیزی ۲۷ اوت).
+  const server=(t.match(/(?:hsa|auraliam)-shell-v([\d.]+)/)||[])[1];
   const here=(($("#ver")||{}).textContent||"").match(/v([\d.]+)/)?.[1];
   if(server&&here&&server!==here){
     if(!sessionStorage.getItem("vreload")){
