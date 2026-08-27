@@ -48,6 +48,35 @@ ARCHIVE_DIR = Path(__file__).resolve().parent.parent.parent / "signals" / "archi
 ALLOWED_TFS = {"5m", "15m"}
 
 
+# سقف‌های خودِ تلگرام — نه انتخاب ما (منبع: Bot API، فیلد caption/text)
+CAPTION_LIMIT = 1024
+TEXT_LIMIT = 4096
+
+
+def _split_caption(text, limit=None):
+    """کپشن بلند را به «سرِ زیر سقف» + «دنبالهٔ ریپلای» تقسیم می‌کند.
+
+    برش فقط روی مرز خط انجام می‌شود تا تگ HTML نصف نشود (کپشن‌های ما
+    خط‌به‌خط تگ‌بسته‌اند). اگر یک خط تنها از سقف بلندتر بود، همان خط
+    سخت بریده می‌شود — چون گم‌شدنِ کل سیگنال بدتر از یک خطِ بریده است.
+    """
+    limit = limit or CAPTION_LIMIT
+    if len(text) <= limit:
+        return text, ""
+    head, n = [], 0
+    lines = text.split("\n")
+    for i, ln in enumerate(lines):
+        add = len(ln) + (1 if head else 0)
+        if n + add > limit:
+            if not head:                      # حتی خط اول جا نمی‌شود
+                return text[:limit], text[limit:limit + TEXT_LIMIT]
+            tail = "\n".join(lines[i:])
+            return "\n".join(head), tail[:TEXT_LIMIT]
+        head.append(ln)
+        n += add
+    return text, ""
+
+
 def _counter_note(s):
     return ("\n" + s["counter_trend_note"]) if s.get("counter_trend_note") else ""
 
@@ -697,15 +726,32 @@ def send_signals(signals, render_chart, limit=8):
         except Exception as e:                        # noqa: BLE001 - a chart failure must not lose the signal
             print(f"  chart failed for {s['sym']}: {e}", flush=True)
         try:
+            cap_full = caption(s)
             if png:
+                # سقف کپشن عکس در تلگرام ۱۰۲۴ کاراکتر است. کپشن سیگنالِ
+                # پرمحتوا (اطمینان، انتظار، دلایل بازجویی، نردبان خروج،
+                # نقشهٔ نقدینگی) به ~۱۵۰۰ می‌رسد و تلگرام کل درخواست را
+                # ۴۰۰ می‌کرد — یعنی **باکیفیت‌ترین سیگنال‌ها اصلاً تحویل
+                # نمی‌شدند** (عیب اندازه‌گیری‌شدهٔ ۲۷ اوت: SOL و CRCLB در
+                # چند دور پیاپی). حالا سرِ کپشن با عکس می‌رود و بقیه‌اش
+                # ریپلای همان پیام می‌شود — هیچ خطی از سیگنال گم نمی‌شود.
+                head, tail = _split_caption(cap_full)
                 with open(png, "rb") as f:
                     blob = f.read()
                 resp = _post(token, "sendPhoto",
-                             {"chat_id": chat, "caption": caption(s), "parse_mode": "HTML"},
+                             {"chat_id": chat, "caption": head, "parse_mode": "HTML"},
                              {"photo": (f"{s['sym']}.png", blob)})
+                _mid = ((resp or {}).get("result") or {}).get("message_id")
+                if tail and _mid:
+                    _post(token, "sendMessage",
+                          {"chat_id": chat, "text": tail, "parse_mode": "HTML",
+                           "reply_to_message_id": _mid,
+                           "allow_sending_without_reply": "true",
+                           "disable_web_page_preview": "true"})
             else:
                 resp = _post(token, "sendMessage",
-                             {"chat_id": chat, "text": caption(s), "parse_mode": "HTML",
+                             {"chat_id": chat, "text": cap_full[:TEXT_LIMIT],
+                              "parse_mode": "HTML",
                               "disable_web_page_preview": "true"})
             # شناسهٔ پیام — خواست حمید: اعلام نتیجه باید «ریپلایِ» همین پیام
             # باشد تا با سیگنال دیگری اشتباه نشود. روی خود دیکشنری سیگنال هم
