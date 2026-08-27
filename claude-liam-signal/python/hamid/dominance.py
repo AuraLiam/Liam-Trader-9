@@ -216,9 +216,12 @@ def run():
     mac = macro_events()
     verdict = opinion(u1, b1, u4)
     if mac:
-        nearest = min(mac, key=lambda e: e.get("in_hours") or 99)
-        verdict += (f"؛ رویداد کلان پیش رو: {nearest['title']}"
-                    f" ({nearest.get('in_hours', '؟')} ساعت دیگر) — نزدیکش سایز کوچک")
+        # همهٔ رویدادها، نه فقط نزدیک‌ترین — سخنرانی فد نباید پشت GDP گم شود
+        # (درس ۲۷ اوت: وارش در داده بود ولی از رأی افتاده بود)
+        top = sorted(mac, key=lambda e: e.get("in_hours") or 99)[:3]
+        names = " + ".join(
+            f"{e['title']} ({e.get('in_hours', '؟')}س)" for e in top)
+        verdict += f"؛ رویدادهای کلان پیش رو: {names} — نزدیکشان سایز کوچک"
     try:
         struct = structural(series, mac)
     except Exception as e:                       # noqa: BLE001 - ساختار، سری را نمی‌کشد

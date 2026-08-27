@@ -107,6 +107,32 @@ def _scenario(name, st1):
     return f"{name} ({px}): " + " · ".join(lines) if lines else f"{name}: سطح معتبری ثبت نشده"
 
 
+def _calendar_lines(dom):
+    """تقویم رویدادهای پیش رو — همهٔ رویدادها با ساعت تهران (دستور ۲۷ اوت:
+    «خبرای مهم فردا رو دقیق بدونی کی هست»). درس همان شب: سخنرانی رئیس فد
+    در داده بود ولی گزارش فقط نزدیک‌ترین رویداد را چاپ می‌کرد."""
+    mac = dom.get("macro") or []
+    if not mac:
+        return []
+    gen = dom.get("generated") or time.time() * 1000
+    rows = []
+    for e in sorted(mac, key=lambda x: x.get("in_hours") or 99)[:5]:
+        hrs = e.get("in_hours")
+        when = _tehran(gen + hrs * 3600 * 1000) if isinstance(hrs, (int, float)) else "؟"
+        rows.append(f"{e.get('title')} ({e.get('country', '?')}) ساعت {when}")
+    out = ["📅 پیش رو: " + " · ".join(rows)]
+    # آنلاک‌های توکن — فقط اگر منبع راستی‌آزمایی‌شده جواب داده باشد
+    try:
+        from hamid import intel
+        ul = intel.unlocks()
+        if ul.get("status") == "OK" and ul["events"]:
+            toks = " · ".join(x["token"] for x in ul["events"][:4])
+            out.append(f"🔓 آنلاک هفتهٔ پیش رو: {toks}")
+    except Exception:                                # noqa: BLE001
+        pass
+    return out
+
+
 def build():
     try:
         dom = json.loads(DOM.read_text())
@@ -134,10 +160,17 @@ def build():
                    f"۱س {b1.get('trend','?')} · ۴س {b4.get('trend','?')}")
         if dom.get("verdict"):
             cap.append(f"💬 {dom['verdict']}")
+        cap += _calendar_lines(dom)
         cap.append("📐 " + _scenario("USDT.D", u1))
         cap.append("📐 " + _scenario("BTC.D", b1))
         if graded:
             cap.append("🎯 کارنامهٔ پیش‌بینی: " + " · ".join(graded[:4]))
+        inv = (dom.get("structure") or {}).get("invalidation")
+        if inv:
+            cap.append(f"⛔ {inv}")
+        # بستهٔ شواهد (قانون ۱۲): منابع + مرز صادقانه، روی هر گزارش
+        cap.append("🔗 منابع: سری خود اتاق · تقویم ForexFactory/TradingView")
+        cap.append("⚖️ مرز صادقانه: سناریو شاهد است نه دروازه — تصمیم فقط از دروازه‌های سخت")
     cap.append(f"🕐 <code>{_tehran(time.time()*1000)}</code> به وقت ایران")
     return "\n".join(cap)
 
@@ -179,15 +212,28 @@ def main(argv):
         print("dominance_report: بدون کلید تلگرام — نرفت")
         return 1
     try:
+        # کپشن بلندتر از سقف ۱۰۲۴ تلگرام دو تکه می‌شود: سر با عکس، دنباله
+        # ریپلای همان پیام — همان الگوی سیگنال‌ها (درس SOL/CRCLB)
+        head, tail = tg._split_caption(cap)
         if png:
             with open(png, "rb") as f:
                 r = tg._post(token, "sendPhoto",
                              {"chat_id": chat, "parse_mode": "HTML",
-                              "caption": cap[:1024]},
+                              "caption": head},
                              {"photo": ("dominance.png", f.read())})
         else:
             r = tg._post(token, "sendMessage",
-                         {"chat_id": chat, "parse_mode": "HTML", "text": cap})
+                         {"chat_id": chat, "parse_mode": "HTML", "text": head})
+        if r and tail:
+            mid = ((r.get("result") or {}).get("message_id")
+                   if isinstance(r, dict) else None)
+            try:
+                tg._post(token, "sendMessage",
+                         {"chat_id": chat, "parse_mode": "HTML", "text": tail,
+                          **({"reply_to_message_id": mid,
+                              "allow_sending_without_reply": True} if mid else {})})
+            except Exception:                        # noqa: BLE001 - دنباله گزارش را نمی‌کشد
+                pass
         if r:
             mark_sent()
             print("dominance_report: رفت ✓")

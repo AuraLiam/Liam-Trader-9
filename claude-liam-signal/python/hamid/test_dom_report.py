@@ -48,10 +48,21 @@ try:
                                            "levels_above": [59.4],
                                            "levels_below": [59.0]},
                                     "4h": {"trend": "range"}}},
+             "macro": [{"title": "GDP m/m", "in_hours": 17.9, "country": "CAD"},
+                       {"title": "Fed Chairman Speaks", "in_hours": 19.4,
+                        "country": "USD"},
+                       {"title": "Payrolls Revision", "in_hours": 19.4,
+                        "country": "USD"}],
              "forecast": {"scoreboard": {"USDT.D|30m": {"n": 10, "hit": 6}}}}
     DR.DOM.write_text(json.dumps(fresh))
     cap = DR.build()
     check("گزارش امضای پنل دارد", "لیام تریدر ۹" in cap)
+    # تقویم کامل (درس ۲۷ اوت: سخنرانی فد نباید پشت GDP گم شود)
+    check("هر سه رویداد تقویم در گزارش‌اند، نه فقط نزدیک‌ترین",
+          all(t in cap for t in ("GDP m/m", "Fed Chairman", "Payrolls")), cap)
+    check("رویداد تقویم ساعت تهران دارد", "📅" in cap and "ساعت" in cap)
+    check("منابع و مرز صادقانه روی گزارش است (قانون ۱۲)",
+          "🔗 منابع" in cap and "⚖️" in cap)
     check("روند ۱س و ۴س هر دو نماد در گزارش است",
           "USDT.D" in cap and "BTC.D" in cap and "۴س" in cap)
     check("سناریوی هر دو جهت نوشته می‌شود (قانون ۱۱)",
