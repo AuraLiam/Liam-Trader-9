@@ -31,7 +31,9 @@ jobs:
         run: pip install -q matplotlib
       - name: آزمون آفلاین
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.test_dom_report
+        run: |
+          python3 -m hamid.test_dom_report
+          python3 -m hamid.test_evidence_packet
       - name: گزارش و ارسال
         working-directory: claude-liam-signal/python
         env:
