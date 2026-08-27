@@ -121,6 +121,61 @@ try:
 finally:
     TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = old
 
+# ── ۵.۳) ضدتکرار بین‌تایم‌فریمی — «یه سیگنال رو داری چندین بار میفرستی» ──
+#
+# عیب اندازه‌گیری‌شده (آرشیو ۲۷ اوت): TRX شورت ۵د ساعت ۰۵:۱۸ و همان TRX
+# شورت ۱۵د سه دقیقه بعد؛ ZEC لانگ ۵د ۱۷:۲۰ و ۱۵د ۲۸ دقیقه بعد. کلیدهای
+# قبلی همه tf داشتند، پس «همان معامله روی تایم دیگر» تازه حساب می‌شد.
+old2 = (TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR)
+TG.SENT = TMP / "sent-pair.json"
+TG.SIDECAR = TMP / "sidecar-pair.json"
+TG.TGLOG = TMP / "tglog-pair.json"
+TG.ARCHIVE_DIR = TMP / "archive-pair"
+try:
+    # TRX شورت ۱۵د همین الان رفته — همان TRX شورت روی ۵د نباید برود
+    TG.SENT.write_text(json.dumps({
+        "ibs|TRXUSDT|15m|SHORT": now,
+        "any|TRXUSDT|15m|SHORT": now,
+        "pair|TRXUSDT|SHORT": now}))
+    calls2 = []
+    op2, oc2 = TG._post, TG.creds
+    TG._post = lambda *a, **k: calls2.append(a) or {"result": {"message_id": 9}}
+    TG.creds = lambda: ("tok", "chat")
+    try:
+        n2 = TG.send_signals(
+            [{"sym": "TRXUSDT", "tf": "5m", "dir": "SHORT", "strategy": "ibs",
+              "entry": 0.336, "sl": 0.339, "tp1": 0.331}],
+            lambda s, p: None)
+    finally:
+        TG._post, TG.creds = op2, oc2
+    check("همان (ارز، جهت) روی تایم‌فریم دیگر تا ۳ ساعت نمی‌رود",
+          n2 == 0 and not calls2, f"n={n2} calls={len(calls2)}")
+    # جهتِ مخالف همان ارز مستقل است — نباید قربانی این کلید شود
+    TG.SENT.write_text(json.dumps({"pair|TRXUSDT|SHORT": now}))
+    s_long = {"sym": "TRXUSDT", "tf": "5m", "dir": "LONG", "strategy": "ibs"}
+    loaded2 = TG._load_sent()
+    check("جهت مخالف همان ارز با کلید جفت بسته نمی‌شود",
+          now - loaded2.get("pair|TRXUSDT|LONG", 0) >= 3 * 3600 * 1000)
+    src_p = (PY / "telegram.py").read_text(encoding="utf-8")
+    check("کلید جفت در هر دو نقطهٔ ثبتِ ارسال نوشته می‌شود",
+          src_p.count('sent[f"pair|{s[\'sym\']}|{s[\'dir\']}"]') == 2,
+          str(src_p.count('sent[f"pair|{s[\'sym\']}|{s[\'dir\']}"]')))
+    check("سقف هر ارز به ۲ برگشت (سقف ۳ همان بود که PAXG دوم را رد کرد)",
+          ">= 2" in src_p.split("def _sym_worn", 1)[1][:600])
+finally:
+    TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = old2
+
+# ── ۵.۳۵) میز ۱ دقیقه: هیچ پیامی به تلگرام نمی‌فرستد (دستور ۲۷ اوت) ─────
+_scalp_dir = PY / "hamid"
+_offend = []
+for _f in _scalp_dir.glob("scalp*.py"):
+    _s = _f.read_text(encoding="utf-8")
+    if ("alert_gate.send(" in _s or "send_text(" in _s
+            or "_post(token" in _s or "sendMessage" in _s):
+        _offend.append(_f.name)
+check("هیچ ماژول اسکلپ/۱دقیقه‌ای به تلگرام نمی‌فرستد — فقط پیپرمود",
+      not _offend, str(_offend))
+
 # ── ۵.۴) سقف کپشن تلگرام — عیب اندازه‌گیری‌شدهٔ ۲۷ اوت ────────────────────
 #
 # «telegram rejected SOLUSDT: 400» و همان برای CRCLB، چند دور پیاپی.

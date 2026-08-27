@@ -57,13 +57,34 @@ try:
     del fake[dropped]
     tmp_base.write_text(json.dumps({"accepted_at": int(time.time() * 1000),
                                     "workflows": fake}, ensure_ascii=False))
+    # ── حالت نفوذ: آخرین دستِ روی ورک‌فلو قابل‌تأیید/خودی نیست ─────────
+    old_ltk, old_sa = S._last_touch_known, S.strangers_absent
+    S._last_touch_known = lambda wf: False
+    S.strangers_absent = lambda: False
     r = S.check(accept=False)
+    S._last_touch_known, S.strangers_absent = old_ltk, old_sa
     kinds = {f["kind"] for f in r["findings"]}
-    check("ورک‌فلوی تازهٔ ثبت‌نشده high گرفته می‌شود",
+    check("ورک‌فلوی تازه با نویسندهٔ ناشناس high گرفته می‌شود",
           any(f["kind"] == "workflow_added" and f["level"] == "high"
               for f in r["findings"]), str(sorted(kinds)))
     check("ورک‌فلوی عوض‌شده تشخیص داده می‌شود", "workflow_changed" in kinds)
     check("خروجی نگهبان نوشته می‌شود", tmp_out.exists())
+    check("تغییرِ ناشناس هرگز خودکار پذیرفته نمی‌شود",
+          json.loads(tmp_base.read_text())["workflows"] == fake)
+
+    # ── حالت خودی (درس ۲۷ اوت: ۸ ورک‌فلوی خودم به حمید آلارم داد) ──────
+    S._last_touch_known = lambda wf: True
+    S.strangers_absent = lambda: True
+    r15 = S.check(accept=False)
+    S._last_touch_known, S.strangers_absent = old_ltk, old_sa
+    added_self = [f for f in r15["findings"] if f["kind"] == "workflow_added"]
+    check("ورک‌فلوی تازه با کامیت خودی فقط info است — تلگرام نمی‌رود",
+          added_self and all(f["level"] == "info" for f in added_self),
+          str(added_self[:2]))
+    check("حکم با یافته‌های فقط-info «پاک» می‌ماند",
+          r15["verdict"] == "پاک", r15["verdict"])
+    check("تغییر خودی خودکار در مرجع پذیرفته می‌شود (پیام دور بعد نمی‌سازد)",
+          json.loads(tmp_base.read_text())["workflows"] == now)
 
     # حالت پاک: مرجع = وضعیت فعلی → هیچ یافته‌ای از جنس ورک‌فلو
     tmp_base.write_text(json.dumps({"accepted_at": int(time.time() * 1000),
@@ -107,6 +128,11 @@ check("ولی جیمیلِ غریبه هنوز غریبه است (فهرست د�
 # هم می‌سنجد و committer هر merge سرورساید «GitHub <noreply@github.com>» است.
 check("committerِ merge سرورساید گیت‌هاب هم خودی است",
       S._known("GitHub", "noreply@github.com"))
+# «پیام برطرف شد» به تلگرام ممنوع (دستور ۲۶ اوت) — منبع نباید ارسالش کند
+_src = (HERE / "sentinel.py").read_text(encoding="utf-8")
+check("خبر سلامتیِ نگهبان دیگر به تلگرام نمی‌رود",
+      "برطرف شد؛ ریپو پاک است" not in _src
+      and "بدون تلگرام" in _src)
 check("جفتِ کاملِ کامیتِ merge (author+committer) هر دو خودی‌اند",
       S._known("AuraLiam9", "18r.liam@gmail.com")
       and S._known("GitHub", "noreply@github.com"))

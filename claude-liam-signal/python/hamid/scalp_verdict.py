@@ -239,18 +239,14 @@ def run(alert=False, quiet=False, path=None):
             print(f"  ≈ {res['more_trades_needed']} معاملهٔ دیگر تا تصمیم‌پذیری")
         if res.get("diagnosis"):
             print(f"  🔍 {res['diagnosis']}")
-    if alert:
-        # فقط **تغییر حکم** خبر دارد. «هنوز بلاتکلیف» هر ۱۵ دقیقه پیام
-        # نمی‌دهد — همان اسپمی که ۲۳ اوت بسته شد.
-        # کلید شاملِ اثرانگشتِ هندسه است: همان حکم روی هندسهٔ **جدید**
-        # خبرِ تازه‌ای است، ولی همان حکم روی همان هندسه نیست.
-        from hamid import alert_gate
-        fp = json.dumps(res.get("config") or {}, sort_keys=True)
-        alert_gate.send(
-            "scalp_verdict", f"verdict:{res['verdict']}:{hash(fp) & 0xFFFF:04x}",
-            f"🔬 لیام تریدر ۹ — میز ۱ دقیقه: <b>{res['verdict']}</b>\n"
-            f"n={res['n']} · خالص {res.get('mean_net')}R "
-            f"CI {res.get('ci95_net')}\n{res['why']}")
+    # تلگرام برای میز ۱ دقیقه **کاملاً بسته است** (دستور صریح حمید،
+    # ۲۷ اوت: «اصلاً قرار نبود هیچ پیامی از ترید در تایم یک دقیقه بیاد؛
+    # ترید یک دقیقه فقط در پیپرمود است و وقتی عملکردش بهتر شد از آن
+    # استفاده می‌کنیم»). حکم فقط در signals/scalp-verdict.json و پنل
+    # می‌نشیند؛ اگر روزی PROMOTE شد، خودِ حمید در گزارش کار می‌بیندش.
+    # پارامتر alert عمداً نگه داشته شده تا فراخوان‌های قدیمی نشکنند —
+    # ولی دیگر هیچ پیامی نمی‌فرستد.
+    del alert
     return res
 
 

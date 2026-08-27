@@ -592,12 +592,20 @@ def send_signals(signals, render_chart, limit=8):
     def _dup_any(s):
         return now_ms - sent.get(f"any|{s['sym']}|{s['tf']}|{s['dir']}", 0) < 3 * 3600 * 1000
 
+    def _dup_pair(s):
+        # ضدتکرارِ بین‌تایم‌فریمی — عیب اندازه‌گیری‌شدهٔ ۲۷ اوت: TRX شورت
+        # ۵د ساعت ۰۵:۱۸ و همان TRX شورت ۱۵د سه دقیقه بعد؛ ZEC لانگ ۵د و
+        # ۲۸ دقیقه بعد ۱۵د. کلیدهای قبلی همه tf را داخل خود داشتند، پس
+        # «همان معامله روی تایم دیگر» سیگنال تازه حساب می‌شد و حمید یک
+        # ستاپ را دو بار می‌گرفت. حالا همان (ارز، جهت) — با هر تایم و هر
+        # استراتژی — تا ۳ ساعت فقط یک بار می‌رود.
+        return now_ms - sent.get(f"pair|{s['sym']}|{s['dir']}", 0) < 3 * 3600 * 1000
+
     def _sym_worn(s):
-        # تنوع (شکایت حمید): کانال باید بازار را بگردد، نه دور یک ارز
-        # بچرخد. سقف ۳ در پنجرهٔ ۶ ساعته (۲۷ اوت — از ۲ بالا آمد تا
-        # ستاپ واقعیِ همان ارز قربانیِ سقف نشود؛ نردبان تنظیم‌کنندهٔ
-        # اصلیِ حجم است، نه این سقف).
-        return sum(1 for k in sent if k.startswith(f"any|{s['sym']}|")) >= 3
+        # تنوع (شکایت حمید): یک ارز حداکثر ۲ بار در پنجره — کانال باید
+        # بازار را بگردد، نه دور یک ارز بچرخد. (سقف ۳ که امروز صبح
+        # امتحان شد همان چیزی بود که PAXGِ دوم را رد کرد — برگشت به ۲.)
+        return sum(1 for k in sent if k.startswith(f"any|{s['sym']}|")) >= 2
     def _stable(s):
         # استیبل/رپد سیگنال نمی‌شود — کشف ۱۲ اوت: RLUSD دو جای سهمیهٔ ۱۶تایی
         # را سوزاند. حرکت استیبل چند صدم درصد است؛ «سیگنال» رویش یعنی سهمیهٔ
@@ -616,7 +624,8 @@ def send_signals(signals, render_chart, limit=8):
     signals = [s for s in signals if s.get("tf") in ALLOWED_TFS]
     fresh = [s for s in signals
              if _key(s) not in sent and f"skip|{_key(s)}" not in sent
-             and not _dup_any(s) and not _sym_worn(s) and not _stable(s)][:limit]
+             and not _dup_any(s) and not _dup_pair(s)
+             and not _sym_worn(s) and not _stable(s)][:limit]
     if not fresh:
         print(f"telegram: {len(signals)} signals, all already sent", flush=True)
         return 0
@@ -773,6 +782,7 @@ def send_signals(signals, render_chart, limit=8):
                     _t = time.time() * 1000
                     sent[_key(s)] = _t
                     sent[f"any|{s['sym']}|{s['tf']}|{s['dir']}"] = _t
+                    sent[f"pair|{s['sym']}|{s['dir']}"] = _t
                     _save_sent(sent)
                 if tail and _mid:
                     try:
@@ -799,8 +809,10 @@ def send_signals(signals, render_chart, limit=8):
             # کند — درس TAO: دفتر آلارم شناسه نداشت و نتیجه ریپلای نشد.
             tg_mid = ((resp or {}).get("result") or {}).get("message_id")
             s["tg_msg_id"] = tg_mid
-            sent[_key(s)] = time.time() * 1000
-            sent[f"any|{s['sym']}|{s['tf']}|{s['dir']}"] = time.time() * 1000
+            _t2 = time.time() * 1000
+            sent[_key(s)] = _t2
+            sent[f"any|{s['sym']}|{s['tf']}|{s['dir']}"] = _t2
+            sent[f"pair|{s['sym']}|{s['dir']}"] = _t2
             # ذخیرهٔ فوری — قبل از هر کار دیگری، تا سقوط/شکست push حافظهٔ
             # همین ارسال را نبرد (رفع ریشه‌ای PAXG×۵، ۲۶ اوت)
             _save_sent(sent)
