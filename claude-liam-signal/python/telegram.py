@@ -207,6 +207,27 @@ def _save_sent(sent):
         print(f"telegram: ذخیرهٔ حافظهٔ کناری نشد ({type(e).__name__})", flush=True)
 
 
+def _log_delivery_fail(s, why):
+    """شکستِ تحویل باید ردِ دائمی بگذارد، نه فقط یک خط چاپ.
+
+    درسِ ۲۷ اوت: SOL و CRCLB از همهٔ دروازه‌ها رد شده بودند و بعد تلگرام
+    ۴۰۰ داد؛ تنها ردش یک خط در لاگ رانر بود که با پایان اجرا محو می‌شد.
+    از بیرون، «سیگنالِ گم‌شده» عیناً شبیه «ستاپی نبود» دیده می‌شد. حالا
+    هر شکست در آرشیو شماره‌دار می‌نشیند تا قابل شمارش باشد."""
+    try:
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        f = ARCHIVE_DIR / f"delivery-failures-{time.strftime('%Y%m%d', time.gmtime())}.jsonl"
+        n = sum(1 for _ in f.open()) if f.exists() else 0
+        with f.open("a") as fh:
+            fh.write(json.dumps({
+                "n": n + 1, "at": int(time.time() * 1000),
+                "sym": s.get("sym"), "tf": s.get("tf"), "dir": s.get("dir"),
+                "entry": s.get("entry"), "strategy": s.get("strategy"),
+                "why": str(why)[:300]}, ensure_ascii=False) + "\n")
+    except Exception as e:                           # noqa: BLE001
+        print(f"telegram: ثبت شکست تحویل نشد ({type(e).__name__})", flush=True)
+
+
 def _archive_sent(s):
     """آرشیو شماره‌دار append-only — هر ارسال یک ردیف، هرگز ادغام/بازنویسی.
 
@@ -795,9 +816,12 @@ def send_signals(signals, render_chart, limit=8):
             except Exception as e:                    # noqa: BLE001 - ثبت نشدن، ارسال را نمی‌کشد
                 print(f"  paper log failed for {s['sym']}: {type(e).__name__}", flush=True)
         except urllib.error.HTTPError as e:
-            print(f"  telegram rejected {s['sym']}: {e.code} {scrub(e.read()[:200])}", flush=True)
+            body = scrub(e.read()[:200])
+            print(f"  telegram rejected {s['sym']}: {e.code} {body}", flush=True)
+            _log_delivery_fail(s, f"HTTP {e.code} {body}")
         except Exception as e:                        # noqa: BLE001 - one failure must not stop the rest
             print(f"  telegram failed for {s['sym']}: {scrub(e)}", flush=True)
+            _log_delivery_fail(s, f"{type(e).__name__}: {scrub(e)}")
 
     _save_sent(sent)
     print(f"telegram: {ok} of {len(fresh)} new signals delivered", flush=True)

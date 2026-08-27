@@ -148,6 +148,20 @@ check("مسیر عکس، کپشن بریده می‌فرستد نه کپشن ک�
       '"caption": head' in src_c and '"caption": caption(s)' not in src_c)
 check("دنبالهٔ کپشن ریپلایِ همان پیام سیگنال می‌شود",
       '"reply_to_message_id": _mid' in src_c)
+# شکستِ تحویل باید ردِ دائمی بگذارد — وگرنه «سیگنالِ گم‌شده» عیناً شبیه
+# «ستاپی نبود» دیده می‌شود (همان چیزی که ۲۷ اوت پنهانش کرد)
+TG.ARCHIVE_DIR = TMP / "archive2"
+TG._log_delivery_fail({"sym": "SOLUSDT", "tf": "15m", "dir": "LONG",
+                       "entry": 107.45, "strategy": "ibs"}, "HTTP 400")
+_ff = TG.ARCHIVE_DIR / f"delivery-failures-{time.strftime('%Y%m%d', time.gmtime())}.jsonl"
+_rows = [json.loads(x) for x in _ff.read_text().splitlines()]
+check("شکست تحویل در آرشیو شماره‌دار ثبت می‌شود",
+      _rows and _rows[0]["sym"] == "SOLUSDT" and _rows[0]["n"] == 1
+      and "400" in _rows[0]["why"], str(_rows))
+check("هر دو مسیر خطا (HTTP و غیر HTTP) ثبت می‌کنند",
+      src_c.count("            _log_delivery_fail(s,") == 2,
+      str(src_c.count("            _log_delivery_fail(s,")))
+TG.ARCHIVE_DIR = old[3]
 
 # ── ۵.۵) نردبان سخت‌گیری بعد از سیگنال پنجم (دستور حمید، ۲۷ اوت) ──────────
 #
