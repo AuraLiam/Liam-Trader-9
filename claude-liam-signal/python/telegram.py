@@ -25,7 +25,11 @@ from pathlib import Path
 API = "https://api.telegram.org"
 SENT = Path(__file__).resolve().parent.parent.parent / "signals" / "sent.json"
 TGLOG = Path(__file__).resolve().parent.parent.parent / "signals" / "telegram-log.json"
-TTL_MS = 12 * 3600 * 1000
+# ضدتکرار: همان ستاپ دوباره نرود — ولی «ستاپِ تازهٔ همان جفت» بعد از
+# چند ساعت، سیگنالِ تازه است. دستور ۲۷ اوت («تا سیگنال هست باید بدهد»)
+# پنجره را از ۱۲ به ۶ ساعت آورد؛ تکرارِ دقیقه‌ایِ PAXG با حافظهٔ
+# سه‌منبعی و ذخیرهٔ فوری بسته شده، نه با طولِ این پنجره.
+TTL_MS = 6 * 3600 * 1000
 # ردِ موقت ≠ ممنوعیت نیم‌روزه (عیب ۲۰ اوت — توضیح در _load_sent)
 SKIP_TTL_MS = 30 * 60 * 1000
 # حافظهٔ کناری ضدتکرار — مستقل از گیت (عیب ۲۶ اوت: PAXG پنج بار در ۲۱
@@ -487,6 +491,44 @@ def send_text(text, quiet=True):
     return bool(r)
 
 
+# ── نردبان سخت‌گیری بعد از سیگنال پنجم (دستور حمید، ۲۷ اوت) ─────────────
+#
+# پنج سیگنال اول: هیچ آستانهٔ اضافه‌ای — همان دروازه‌های سخت همیشگی
+# (روند، بازجویی، هم‌زمانی، ضدتکرار، کارمزد) کافی‌اند.
+# از ششم به بعد هر ارسال یک پله: اطمینان و انتظارِ لازم بالا می‌رود.
+LADDER_FREE = 5          # تا این تعداد، بی‌آستانهٔ اضافه
+LADDER_CONF_STEP = 6     # هر پله چند درصد به کف اطمینان اضافه کند
+LADDER_EV_STEP = 0.08    # هر پله چند R به کف انتظار اضافه کند
+LADDER_CONF_MAX = 72     # سقف کف اطمینان — در بسته نمی‌شود
+LADDER_EV_MAX = 0.80
+
+
+def ladder_bar(n_sent):
+    """آستانهٔ لازم برای سیگنال بعدی، بر پایهٔ تعداد ارسالِ پنجرهٔ ۱۲ ساعته."""
+    step = max(0, int(n_sent) - LADDER_FREE + 1) if n_sent >= LADDER_FREE else 0
+    return {"step": step,
+            "min_conf": min(LADDER_CONF_MAX, step * LADDER_CONF_STEP),
+            "min_ev": min(LADDER_EV_MAX, round(step * LADDER_EV_STEP, 3))}
+
+
+def passes_ladder(s, bar):
+    """آیا این سیگنال از پلهٔ فعلی رد می‌شود؟
+
+    نکتهٔ صداقت: سیگنالی که اصلاً `conf`/`ev` ندارد (مسیر آلارم/رادار)
+    عددی برای سنجش ندارد؛ از پلهٔ سوم به بعد چنین سیگنالی نگه داشته
+    می‌شود، چون در ازدحام، «نمی‌دانم» به‌اندازهٔ «ضعیف» است."""
+    if bar["step"] <= 0:
+        return True
+    conf, ev = s.get("conf"), s.get("ev")
+    if conf is None and ev is None:
+        return bar["step"] < 3
+    if conf is not None and conf < bar["min_conf"]:
+        return False
+    if ev is not None and ev < bar["min_ev"]:
+        return False
+    return True
+
+
 def send_signals(signals, render_chart, limit=8):
     """render_chart(setup, path) -> path, or None when a chart cannot be drawn."""
     token, chat = creds()
@@ -501,9 +543,11 @@ def send_signals(signals, render_chart, limit=8):
         return now_ms - sent.get(f"any|{s['sym']}|{s['tf']}|{s['dir']}", 0) < 3 * 3600 * 1000
 
     def _sym_worn(s):
-        # تنوع (شکایت حمید): یک ارز حداکثر ۲ بار در پنجرهٔ ۱۲ ساعته —
-        # کانال باید بازار را بگردد، نه دور یک ارز بچرخد.
-        return sum(1 for k in sent if k.startswith(f"any|{s['sym']}|")) >= 2
+        # تنوع (شکایت حمید): کانال باید بازار را بگردد، نه دور یک ارز
+        # بچرخد. سقف ۳ در پنجرهٔ ۶ ساعته (۲۷ اوت — از ۲ بالا آمد تا
+        # ستاپ واقعیِ همان ارز قربانیِ سقف نشود؛ نردبان تنظیم‌کنندهٔ
+        # اصلیِ حجم است، نه این سقف).
+        return sum(1 for k in sent if k.startswith(f"any|{s['sym']}|")) >= 3
     def _stable(s):
         # استیبل/رپد سیگنال نمی‌شود — کشف ۱۲ اوت: RLUSD دو جای سهمیهٔ ۱۶تایی
         # را سوزاند. حرکت استیبل چند صدم درصد است؛ «سیگنال» رویش یعنی سهمیهٔ
@@ -526,20 +570,26 @@ def send_signals(signals, render_chart, limit=8):
     if not fresh:
         print(f"telegram: {len(signals)} signals, all already sent", flush=True)
         return 0
-    # سهمیه — دستور حمید (۱۲ اوت): «۱۶ را برای مثال گفتم؛ تا وقتی سیگنال هست
-    # باید پیدا کنی و ارسالش کنی.» پس سقف، سهمیه نیست: ۴۰ فقط تور ایمنی در
-    # برابر خطای نرم‌افزاری (حلقهٔ خراب) است. کیفیت را دروازه‌ها نگه می‌دارند:
-    # هم‌زمانی، بازجویی وزنی، ضدتکرار، سقف ۲/ارز، و دروازهٔ استاپ-در-نویز.
+    # نردبان سخت‌گیری — دستور صریح حمید (۲۷ اوت):
+    #
+    #   «کاری به نرخ عادی ندارم. تا زمانی که سیگنال هست باید سیگنال بده،
+    #    ولی بعد از ارسال سیگنال پنجم یک‌کمی ایجنت‌ها شرایط را برای
+    #    سیگنال‌های بعدی سخت‌تر می‌کنند.»
+    #
+    # پس دیگر «سهمیهٔ روز» و «تور ایمنی ۴۰» وجود ندارد — هیچ سقف عددی
+    # جلوی سیگنالِ واجدشرایط را نمی‌گیرد. به جایش از سیگنال ششم به بعد،
+    # هر سیگنالِ اضافه آستانه را یک پله بالا می‌برد: اطمینان و انتظار
+    # (ev) بیشتری لازم می‌شود. پله‌ها خطی‌اند و سقف دارند تا از یک جایی
+    # به بعد عملاً فقط ستاپ‌های عالی رد شوند — نه اینکه در بسته شود.
     n_sent_real = len([k for k in sent if not k.startswith(("any|", "skip|"))])
-    if n_sent_real >= 40:
-        print(f"telegram: تور ایمنی ({n_sent_real} در ۱۲ ساعت) — احتمال حلقهٔ خراب، هیچ ارسالی", flush=True)
-        return 0
-    if n_sent_real >= 24:
-        keep = [s for s in fresh
-                if s.get("elite") or s.get("strategy") in ("alarm", "pump-radar")]
+    bar = ladder_bar(n_sent_real)
+    if bar["step"] > 0:
+        keep = [s for s in fresh if passes_ladder(s, bar)]
         if len(keep) < len(fresh):
-            print(f"telegram: سهمیهٔ روز پر است ({n_sent_real} در ۱۲ ساعت) — "
-                  f"{len(fresh) - len(keep)} سیگنال غیرالیت نگه داشته شد", flush=True)
+            print(f"telegram: نردبان سخت‌گیری پلهٔ {bar['step']} "
+                  f"({n_sent_real} ارسال در ۱۲ ساعت · اطمینان ≥{bar['min_conf']}٪ "
+                  f"· انتظار ≥{bar['min_ev']:.2f}R) — "
+                  f"{len(fresh) - len(keep)} سیگنالِ ضعیف‌تر نگه داشته شد", flush=True)
         fresh = keep
         if not fresh:
             return 0

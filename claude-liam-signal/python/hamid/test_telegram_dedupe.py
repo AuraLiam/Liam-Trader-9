@@ -120,6 +120,38 @@ try:
 finally:
     TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = old
 
+# ── ۵.۵) نردبان سخت‌گیری بعد از سیگنال پنجم (دستور حمید، ۲۷ اوت) ──────────
+#
+# «کاری به نرخ عادی ندارم؛ تا سیگنال هست باید بدهد، ولی بعد از پنجمی
+#  ایجنت‌ها شرایط را سخت‌تر کنند.» یعنی: هیچ سقف عددی نباشد، ولی آستانه
+#  پله‌پله بالا برود.
+check("پنج سیگنال اول هیچ آستانهٔ اضافه‌ای ندارند",
+      all(TG.ladder_bar(n)["step"] == 0 for n in range(0, 5)),
+      str([TG.ladder_bar(n)["step"] for n in range(0, 6)]))
+check("از ششمی به بعد پله شروع می‌شود", TG.ladder_bar(5)["step"] == 1
+      and TG.ladder_bar(6)["step"] == 2)
+check("هر پله آستانه را بالاتر می‌برد (اطمینان و انتظار)",
+      TG.ladder_bar(8)["min_conf"] > TG.ladder_bar(6)["min_conf"]
+      and TG.ladder_bar(8)["min_ev"] > TG.ladder_bar(6)["min_ev"])
+check("آستانه سقف دارد — در هیچ پله‌ای کاملاً بسته نمی‌شود",
+      TG.ladder_bar(999)["min_conf"] == TG.LADDER_CONF_MAX
+      and TG.ladder_bar(999)["min_ev"] == TG.LADDER_EV_MAX)
+_strong = {"conf": 80, "ev": 1.2}
+check("ستاپ عالی حتی در بالاترین پله هم رد می‌شود (سقف عددی نداریم)",
+      TG.passes_ladder(_strong, TG.ladder_bar(999)))
+_weak = {"conf": 20, "ev": 0.10}
+check("ستاپ ضعیف در پلهٔ صفر می‌رود ولی در پلهٔ بالا نگه داشته می‌شود",
+      TG.passes_ladder(_weak, TG.ladder_bar(0))
+      and not TG.passes_ladder(_weak, TG.ladder_bar(10)))
+check("سیگنال بی‌عدد تا پلهٔ ۲ می‌رود، از پلهٔ ۳ نگه داشته می‌شود",
+      TG.passes_ladder({}, TG.ladder_bar(6))
+      and not TG.passes_ladder({}, TG.ladder_bar(7)))
+src_t = (PY / "telegram.py").read_text(encoding="utf-8")
+check("سهمیهٔ ثابت و تور ایمنی عددی برداشته شده‌اند (دستور ۲۷ اوت)",
+      "n_sent_real >= 40" not in src_t and "n_sent_real >= 24" not in src_t)
+check("ضدتکرار همچنان هست (پنجرهٔ ۶ ساعته، نه صفر)",
+      3 * 3600 * 1000 <= TG.TTL_MS <= 12 * 3600 * 1000, str(TG.TTL_MS))
+
 # ── ۶) reapply زنجیره: sent.json و دفترهای پیپر از reset جان به در می‌برند ──
 from hamid import pump_radar as PR                   # noqa: E402
 from hamid import paper as PAPER                     # noqa: E402
