@@ -249,6 +249,46 @@ def _archive_sent(s):
         print(f"telegram: آرشیو ثبت نشد ({type(e).__name__})", flush=True)
 
 
+FEED = Path(__file__).resolve().parent.parent.parent / "signals" / "telegram-feed.json"
+FEED_CAP = 200
+
+
+def record_out(kind, title, extra=None, msg_id=None):
+    """دفترِ واحدِ «چه چیزی به تلگرام رفت» — برای پنل (دستور حمید، ۲۸ اوت).
+
+    تا امروز فقط سیگنال‌ها ثبت می‌شدند (telegram-log). گزارش دامیننس،
+    گزارش کار، گزارش پامپ و نتیجه‌ها هیچ ردی روی پنل نداشتند: حمید در
+    تلگرام می‌دیدشان و پنل از وجودشان بی‌خبر بود. حالا هر ارسال دو رد
+    می‌گذارد: حلقهٔ ۲۰۰تایی برای پنل + آرشیو شماره‌دار append-only
+    (قانون ضد-merge: کنار هم و شماره‌دار، نه ادغام).
+    """
+    row = {"at": int(time.time() * 1000), "kind": kind,
+           "title": str(title)[:200], "msg_id": msg_id}
+    if extra:
+        row["extra"] = extra
+    try:
+        cur = json.loads(FEED.read_text()).get("rows") or []
+    except Exception:                                # noqa: BLE001
+        cur = []
+    cur.append(row)
+    cur = cur[-FEED_CAP:]
+    try:
+        FEED.parent.mkdir(parents=True, exist_ok=True)
+        FEED.write_text(json.dumps(
+            {"generated": row["at"], "rows": cur}, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:                           # noqa: BLE001 - دفتر، ارسال را نمی‌کشد
+        print(f"telegram: دفتر پنل نوشته نشد ({type(e).__name__})", flush=True)
+    try:
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        f = ARCHIVE_DIR / f"telegram-feed-{time.strftime('%Y%m%d', time.gmtime())}.jsonl"
+        n = sum(1 for _ in f.open()) if f.exists() else 0
+        with f.open("a") as fh:
+            fh.write(json.dumps({"n": n + 1, **row}, ensure_ascii=False) + "\n")
+    except Exception as e:                           # noqa: BLE001
+        print(f"telegram: آرشیو دفتر پنل نشد ({type(e).__name__})", flush=True)
+    return row
+
+
 def _key(s):
     """بدون قیمت ورود. قیمت دقیق در کلید بود و بین دو چرخه چند دهم درصد
     جابه‌جا می‌شد (TAO: ‏205.3 → 206.6) — کلید عوض می‌شد و همان سیگنال دوباره
@@ -817,6 +857,11 @@ def send_signals(signals, render_chart, limit=8):
             # همین ارسال را نبرد (رفع ریشه‌ای PAXG×۵، ۲۶ اوت)
             _save_sent(sent)
             _archive_sent(s)
+            record_out("signal", f"{s['sym']} {s['tf']} {s['dir']}",
+                       {"entry": s.get("entry"), "sl": s.get("sl"),
+                        "tp1": s.get("tp1"), "strategy": s.get("strategy"),
+                        "sym": s.get("sym"), "dir": s.get("dir"),
+                        "tf": s.get("tf")}, s.get("tg_msg_id"))
             ok += 1
             print(f"  sent {s['sym']} {s['tf']} {s['dir']}{'' if png else ' (text only)'}", flush=True)
             _log_final(s)

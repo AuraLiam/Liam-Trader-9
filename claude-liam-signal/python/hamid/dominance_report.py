@@ -236,6 +236,8 @@ def main(argv):
                 pass
         if r:
             mark_sent()
+            tg.record_out("dom_report", "نظریهٔ ساعتی دامیننس",
+                          {"chart": bool(png)})
             print("dominance_report: رفت ✓")
             return 0
     except Exception as e:                           # noqa: BLE001

@@ -401,6 +401,8 @@ def send_telegram(rep):
     tg._post(token, "sendMessage",
              {"chat_id": chat, "text": body[:4000],
               "disable_web_page_preview": "true"})
+    tg.record_out("work_report", "گزارش کار",
+                  {"chars": len(body)})
     print("گزارش کار به تلگرام رفت")
     return True
 

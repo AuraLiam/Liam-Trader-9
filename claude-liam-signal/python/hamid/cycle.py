@@ -652,6 +652,11 @@ def settle_books(report):
                                            "reply_to_message_id": mid,
                                            "allow_sending_without_reply": "true",
                                            "text": cap})
+                            _tg.record_out("outcome",
+                                           f"{t['sym']} {t.get('outcome', '?')}",
+                                           {"sym": t.get("sym"),
+                                            "outcome": t.get("outcome"),
+                                            "r": t.get("r")}, mid)
                             continue
                         except Exception:            # noqa: BLE001 - ریپلای نشد → جمعی
                             pass
@@ -661,6 +666,9 @@ def settle_books(report):
                               {"chat_id": chat, "parse_mode": "HTML",
                                "text": (f"🏷 <b>{_tg.PANEL_NAME}</b>\n"
                                         f"📊 <b>نتیجهٔ معامله‌ها</b>\n\n" + "\n".join(rest))})
+                    _tg.record_out("outcome_batch",
+                                   f"نتیجهٔ {len(rest)} معامله (جمعی)",
+                                   {"n": len(rest)})
                 n_mid = len([t for t in dd if (t.get("why") or {}).get("tg_msg_id")])
                 act(f"نتیجهٔ {n_mid} سیگنال ارسالی به تلگرام رفت (ریپلای)؛ "
                     f"{len(just) - n_mid} بستهٔ دفتر داخلی فقط در حافظه/پنل ماند")

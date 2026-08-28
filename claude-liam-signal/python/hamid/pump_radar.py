@@ -971,6 +971,9 @@ def send_telegram(source, picks, blocks, kc=None):
                           "caption": (f"📈 چارت ۵ دقیقهٔ <b>{picks[0]['symbol']}</b> — "
                                       f"انتخاب اول رادار")},
                          {"photo": (f"{picks[0]['symbol']}.png", buf.read())})
+        tg.record_out("pump_report", f"گزارش پامپ — {len(picks)} نامزد",
+                      {"n": len(picks),
+                       "top": (picks[0].get("symbol") if picks else None)})
     except Exception as e:                           # noqa: BLE001
         print(f"تلگرام نفرستاد: {tg.scrub(e)}")
         return False

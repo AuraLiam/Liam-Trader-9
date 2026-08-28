@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.37 · موتور داشبورد v2.9 · وزن اتاق‌ها</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.38 · موتور داشبورد v2.9 · دفتر تلگرام روی پنل</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -291,6 +291,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <p class="muted" style="margin-top:-6px;max-width:760px">هر اتاق یک بخش از موتور است که مستقل کار می‌کند. اینجا لحظه‌به‌لحظه می‌بینی هرکدام الان مشغول چه کاری‌ست و چند ارز را پایش می‌کند.</p>
     <div id="opsRooms" class="grid" style="margin-top:12px"></div>
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
   </section>
@@ -3693,6 +3694,41 @@ async function domjFetch(){
 }
 setInterval(domjFetch,120000);setTimeout(domjFetch,5500);
 (()=>{const d=DB.get("domj_cache");if(d&&!DOMJ.data)DOMJ.data=d;})();
+/* دفتر تلگرام — همان چیزی که برای حمید فرستاده شده، روی پنل (۲۸ اوت) */
+const TGF={data:null};
+const TGF_LABEL={signal:"📣 سیگنال",outcome:"📊 نتیجه",outcome_batch:"📊 نتیجهٔ جمعی",
+  dom_report:"🧭 نظریهٔ دامیننس",work_report:"🗂 گزارش کار",pump_report:"🚀 گزارش پامپ"};
+async function tgfFetch(){
+  try{
+    const r=await fetch("./signals/telegram-feed.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.rows){TGF.data=j;DB.set("tgf_cache",j);renderTgFeed();}}
+  }catch(e){}
+}
+function renderTgFeed(){
+  const el=$("#tgFeedBox");if(!el)return;
+  const j=TGF.data;
+  if(!j||!(j.rows||[]).length){el.innerHTML=`<div class="dim" style="font-size:12px">
+    هنوز ردیفی ثبت نشده — دفتر از اولین ارسالِ بعدی پر می‌شود.</div>`;return;}
+  const rows=j.rows.slice().reverse().slice(0,60);
+  const cnt={};rows.forEach(r=>{cnt[r.kind]=(cnt[r.kind]||0)+1});
+  const meta=$("#tgFeedMeta");
+  if(meta)meta.textContent=Object.entries(cnt)
+    .map(([k,n])=>`${(TGF_LABEL[k]||k).replace(/^\S+\s/,"")} ${n}`).join(" · ");
+  el.innerHTML=rows.map(r=>{
+    const t=new Date(r.at).toLocaleString("fa-IR",{timeZone:"Asia/Tehran",
+      month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    const x=r.extra||{};
+    const nums=[x.entry!=null?`ورود ${x.entry}`:"",x.sl!=null?`استاپ ${x.sl}`:"",
+      x.tp1!=null?`تارگت ${x.tp1}`:"",x.r!=null?`${x.r}R`:""].filter(Boolean).join(" · ");
+    return `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span class="dim" style="font-size:11px;min-width:86px">${t}</span>
+      <span style="font-size:12px;min-width:104px">${TGF_LABEL[r.kind]||r.kind}</span>
+      <span style="font-size:12px;flex:1">${(r.title||"").replace(/</g,"&lt;")}
+        ${nums?`<span class="dim" style="font-size:11px"> — ${nums}</span>`:""}</span>
+    </div>`;}).join("");
+}
+setInterval(tgfFetch,120000);setTimeout(tgfFetch,5200);
+(()=>{const t=DB.get("tgf_cache");if(t&&!TGF.data){TGF.data=t;setTimeout(renderTgFeed,600);}})();
 /* شکار خبر ۳ساعته — خبر دسته‌بندی‌شده + رویدادها */
 const NEWSJ={data:null};
 async function newsjFetch(){
