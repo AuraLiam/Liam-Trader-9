@@ -133,7 +133,22 @@ def scan():
         b["ok" if r["status"] in ("ok", "absent_ok") else "bad"] += 1
     return {"generated": int(time.time() * 1000), "verdict": verdict,
             "n_files": len(rows), "n_faults": len(faults),
+            "where": _where(),
             "layers": by_layer, "rows": rows, "faults": faults}
+
+
+def _where():
+    """کجا داوری شد — CI یا چک‌اوت محلی.
+
+    درسِ همان شب (۲۸ اوت): اولین اجرای محلی حکم SICK داد با ۱۳ لایهٔ
+    «کهنه»، در حالی که سامانهٔ واقعی روی origin/main ۳ تا ۶ دقیقه سن
+    داشت. علت: نسخهٔ کاری من ساعت‌ها عقب بود. یعنی گذرگاه، سنِ **کپیِ
+    خودش** را با کادنسِ تولید مقایسه کرده بود.
+
+    حکمی که روی چک‌اوت محلی گرفته می‌شود دربارهٔ سامانه نیست، دربارهٔ
+    همان کپی است — و نباید به‌جای وضعیت واقعی منتشر شود."""
+    import os
+    return "ci" if os.environ.get("GITHUB_ACTIONS") == "true" else "local"
 
 
 def packet(st):
@@ -175,6 +190,12 @@ def main(argv):
                  if f.get("kind") == "stale" else "")
         print(f"  ✗ {f['kind']}: {f['file']}{extra}"
               + ("  [حیاتی]" if f.get("critical") else ""))
+    if "--write" in argv and st["where"] == "local" and "--force" not in argv:
+        print("\n⚠️ اجرای محلی: نوشته نشد. سنِ فایل‌های این چک‌اوت، وضعیتِ"
+              "\n   سامانه نیست — چک‌اوت می‌تواند ساعت‌ها عقب باشد و همان"
+              "\n   حکمِ SICKِ کاذب را بسازد. تولیدکنندهٔ رسمی، زنجیره است."
+              "\n   برای بازرسیِ همین کپی: --write --force")
+        return 0
     if "--write" in argv:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps({**st, "packet": pk}, ensure_ascii=False),

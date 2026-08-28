@@ -26,8 +26,9 @@
       "producer": "hamid/cycle.py",
       "max_age_min": 240,
       "consumer": "panel+telegram",
-      "critical": true,
-      "kind": "live"
+      "critical": false,
+      "kind": "live",
+      "cadence_note": "کرون ۳۰دقیقه‌ای اعلام شده ولی اجرای واقعی ۹-۱۲ ساعت فاصله دارد (گیت‌هاب زمان‌بندی را در ریپوی پرمصرف می‌اندازد؛ اندازه‌گیری ۲۸ اوت: ۱۲:۱۴ · ۰۰:۲۶ · ۲۷ اوت ۱۵:۱۵). سقف ۲۴۰ عمداً روی «کادنس موردنظر» می‌ماند تا این عقب‌ماندگی روی پنل دیده شود؛ ولی critical=false چون سیگنال از زنجیره می‌آید نه از این لایه. رفع واقعی: راه‌اندازی چرخه از خودِ زنجیره به‌جای اتکا به کرون."
     },
     "funnel.json": {
       "layer": "L4_decision",
@@ -373,12 +374,12 @@
       "layer": "L7_health",
       "owner": "E23",
       "producer": "hamid/live_service.py",
-      "max_age_min": 10,
+      "max_age_min": null,
       "consumer": "panel",
       "critical": false,
       "optional": true,
-      "kind": "live",
-      "cadence_note": "سرویس محلی Python؛ تا مستقر نشده optional است"
+      "kind": "snapshot",
+      "cadence_note": "سرویس محلی Python هنوز مستقر نیست، پس هیچ‌کس این فایل را تولید نمی‌کند؛ باقی‌ماندهٔ قدیمی است. سقف کهنگی برایش یعنی هشدارِ دائمیِ بی‌اثر. با استقرار سرویس (قانون ۰۲) به kind=live با سقف ۱۰ برمی‌گردد."
     },
     "sentinel.json": {
       "layer": "L7_health",
