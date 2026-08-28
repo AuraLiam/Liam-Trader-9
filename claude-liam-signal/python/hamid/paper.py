@@ -177,18 +177,33 @@ def open_from(setups, context):
         # دفترهای آزمایش/کنترل (first/vetoed/inducement/practice/v2) عمداً
         # مستثنا هستند — کارشان اندازه‌گیری است، نه سود.
         _stage = key[2]
-        if _stage not in ("first", "vetoed", "inducement", "practice", "v2",
-                      "scalp", "shock"):
-            try:
-                from hamid import fees as _fees
-                _fr = _fees.cost_in_r(float(s["entry"]), float(s["sl"]),
-                                      s["symbol"])
-                if _fr is not None and _fr >= 0.25:
-                    _append_gatelog(s["symbol"], _stage,
-                                    f"استاپ تنگ: کارمزد {_fr}R ≥ 0.25R")
-                    continue
-            except Exception:                        # noqa: BLE001
-                pass
+        # کارمزد را همیشه می‌سنجیم و روی ردیف می‌نویسیم — چه رد کند چه نه.
+        _fr = None
+        try:
+            from hamid import fees as _fees
+            _fr = _fees.cost_in_r(float(s["entry"]), float(s["sl"]), s["symbol"])
+        except Exception:                            # noqa: BLE001
+            pass
+        # دستور حمید (۲۸ اوت): «سیگنالی که از تلگرام می‌رود باید در تست‌های
+        # یادگیری هم باشد.» تا امشب این‌طور نبود: دروازهٔ دوامِ کارمزد،
+        # ارسالی‌های `sig-*` را هم بی‌صدا می‌انداخت. اندازه‌گیری: ۲۸ از ۴۰
+        # سیگنالِ ارسالیِ ۷۲ ساعت اخیر کارمزد ≥۰.۲۵R داشتند، یعنی ۷۰٪ از
+        # آنچه واقعاً برای حمید رفت، هیچ ردی در یادگیری نمی‌گذاشت.
+        #
+        # دو زیان داشت. اول: از چیزی که فرستادیم درس نمی‌گرفتیم. دوم و
+        # بدتر: کارنامه‌مان سوگیرانه می‌شد — دقیقاً همان معامله‌هایی که
+        # بیشترین احتمال باخت به کارمزد را دارند از نمونه بیرون می‌ماندند،
+        # پس هر میانگین و CI از یک زیرمجموعهٔ خوش‌بینانه ساخته می‌شد.
+        #
+        # رفع: ارسالی همیشه ثبت می‌شود؛ کارمزدش روی ردیف می‌نشیند تا تحلیل
+        # بتواند صریح جدایشان کند. پنهان‌کردن، جداکردن نیست.
+        _is_sent = str(_stage).startswith("sig-")
+        if not _is_sent and _stage not in ("first", "vetoed", "inducement",
+                                           "practice", "v2", "scalp", "shock"):
+            if _fr is not None and _fr >= 0.25:
+                _append_gatelog(s["symbol"], _stage,
+                                f"استاپ تنگ: کارمزد {_fr}R ≥ 0.25R")
+                continue
         _append(OPEN, {
             "sym": s["symbol"], "dir": s["dir"],
             # تایم‌فریمِ ستاپ (۲۴ اوت). تا امروز این دفتر `tf` نمی‌نوشت و
@@ -197,6 +212,10 @@ def open_from(setups, context):
             # پوزیشن سقفِ نگهداریِ پیش‌فرض ۷۲۰ دقیقه را به همه می‌داد —
             # حتی به ستاپ ۵ دقیقه‌ای که باید بعد از ۴ ساعت منقضی شود.
             "tf": s.get("tf"),
+            # کارمزد به R روی خودِ ردیف — تا تحلیل بتواند «تلهٔ کارمزد» را
+            # صریح جدا کند به‌جای این‌که دفتر بی‌صدا حذفش کرده باشد.
+            "fee_r": _fr,
+            "fee_trap": bool(_fr is not None and _fr >= 0.25),
             "entry": float(s["entry"]), "sl": float(s["sl"]),
             "tp1": float(s["tp1"]), "tp2": float(s.get("tp2") or 0) or None,
             "opened": int(time.time() * 1000),

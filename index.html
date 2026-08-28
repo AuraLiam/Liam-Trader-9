@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.39 · موتور داشبورد v2.9 · یکپارچگی سامانه</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.40 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -292,6 +292,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div id="opsRooms" class="grid" style="margin-top:12px"></div>
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
@@ -3743,6 +3744,45 @@ function renderSys(){
 }
 setInterval(sysFetch,120000);setTimeout(sysFetch,4800);
 (()=>{const s=DB.get("sys_cache");if(s&&!SYS.data){SYS.data=s;setTimeout(renderSys,600);}})();
+/* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
+   کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
+   یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی
+   ساخته نمی‌شد و کارنامه از زیرمجموعه‌ای خوش‌بینانه می‌آمد. */
+const LOOPA={data:null};
+async function loopFetch(){
+  try{
+    const r=await fetch("./signals/loop-audit.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){LOOPA.data=j;DB.set("loop_cache",j);renderLoop();}}
+  }catch(e){}
+}
+function renderLoop(){
+  const el=$("#loopBox");if(!el)return;
+  const j=LOOPA.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">
+    اولین ممیزی از زنجیره در راه است.</div>`;return;}
+  const tot=j.n_sent||0, ok=j.closed_loop||0;
+  const pct=tot?Math.round(100*ok/tot):null;
+  const dot=pct==null?"⚪":(pct>=95?"🟢":pct>=80?"🟡":"🔴");
+  const meta=$("#loopMeta");
+  if(meta)meta.textContent=`پنجرهٔ ${j.window_h||72} ساعت · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const bars=[["ارسال",j.n_sent],["روی پنل",j.n_feed],["در یادگیری",j.n_ledger_with_msgid],
+              ["نتیجه ثبت‌شده",j.n_digested]].map(([k,v])=>
+    `<div style="display:flex;gap:8px;font-size:12px;padding:2px 0">
+      <span class="dim" style="min-width:110px">${k}</span>
+      <span style="font-variant-numeric:tabular-nums">${v==null?"—":v}</span></div>`).join("");
+  const leaks=(j.leaks||[]).slice(0,8).map(l=>{
+    const t=new Date(l.at).toLocaleString("fa-IR",{timeZone:"Asia/Tehran",
+      month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    return `<div style="font-size:11px;padding:2px 0" class="warn">
+      ✗ ${t} ${l.sym} ${l.tf||""} ${l.dir||""} — بدون: ${(l.missing||[]).join("، ")}</div>`;}).join("");
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${dot}
+    <b>${pct==null?"—":pct+"٪"}</b> از سیگنال‌های ارسالی هر سه رد را دارند
+    <span class="dim">(${ok} از ${tot})</span></div>${bars}
+    ${leaks?`<div style="margin-top:6px">${leaks}</div>`:""}`;
+}
+setInterval(loopFetch,120000);setTimeout(loopFetch,5000);
+(()=>{const l=DB.get("loop_cache");if(l&&!LOOPA.data){LOOPA.data=l;setTimeout(renderLoop,600);}})();
 /* دفتر تلگرام — همان چیزی که برای حمید فرستاده شده، روی پنل (۲۸ اوت) */
 const TGF={data:null};
 const TGF_LABEL={signal:"📣 سیگنال",outcome:"📊 نتیجه",outcome_batch:"📊 نتیجهٔ جمعی",
