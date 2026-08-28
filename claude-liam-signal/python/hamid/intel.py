@@ -140,6 +140,59 @@ def calendar():
     return {"high_this_week": len(high), "next_48h": soon[:8]}
 
 
+UNLOCK_SHAPE_LOG = ROOT / "signals" / "unlocks-shape.json"
+
+
+def unlocks(days=7):
+    """آنلاک‌های توکن پیش رو — DefiLlama (بدون کلید). دستور ۲۷ اوت: منابع
+    خبریِ غایب به پنل اضافه شود.
+
+    صداقت قانون ۱: فقط ردیفی برمی‌گردد که شکلش دقیقاً شناخته‌شده باشد
+    (نام + مهر زمانی آیندهٔ معقول). اگر شکل پاسخ چیز دیگری بود، هیچ عددی
+    حدس زده نمی‌شود؛ کلیدهای دیده‌شده در signals/unlocks-shape.json ثبت
+    می‌شود تا نوبت بعد پارسر کامل شود، و خروجی UNVERIFIED می‌ماند."""
+    try:
+        raw = _json("https://api.llama.fi/emissions")
+    except Exception as e:                            # noqa: BLE001
+        return {"status": "UNAVAILABLE", "why": type(e).__name__, "events": []}
+    if not isinstance(raw, list) or not raw:
+        return {"status": "UNVERIFIED_SHAPE", "events": []}
+    now_s = time.time()
+    horizon = now_s + days * 86400
+    events = []
+    for it in raw:
+        if not isinstance(it, dict):
+            continue
+        name = it.get("token") or it.get("name")
+        ev = it.get("upcomingEvent")
+        cands = ev if isinstance(ev, list) else [ev] if isinstance(ev, dict) else []
+        for c in cands:
+            if not (isinstance(c, dict) and isinstance(name, str)):
+                continue
+            ts = c.get("timestamp")
+            if not isinstance(ts, (int, float)):
+                continue
+            if ts > 1e12:                             # میلی‌ثانیه → ثانیه
+                ts /= 1000
+            if now_s <= ts <= horizon:
+                amt = c.get("toUnlock") or c.get("amount")
+                events.append({"token": name, "at_s": int(ts),
+                               "amount": amt if isinstance(amt, (int, float, list)) else None})
+    if not events:
+        try:
+            sample = next((x for x in raw if isinstance(x, dict)), {})
+            UNLOCK_SHAPE_LOG.parent.mkdir(exist_ok=True)
+            UNLOCK_SHAPE_LOG.write_text(json.dumps(
+                {"seen_at": int(now_s * 1000), "n": len(raw),
+                 "first_item_keys": sorted(sample.keys())[:25]},
+                ensure_ascii=False))
+        except Exception:                             # noqa: BLE001
+            pass
+        return {"status": "UNVERIFIED_SHAPE", "events": []}
+    events.sort(key=lambda e: e["at_s"])
+    return {"status": "OK", "events": events[:10]}
+
+
 NEWS_FEEDS = [
     ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
     ("Cointelegraph", "https://cointelegraph.com/rss"),
