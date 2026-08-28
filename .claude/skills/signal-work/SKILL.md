@@ -269,3 +269,34 @@ Master Prompt کامل حمید در `claude-liam-signal/LIAM-CHARTER.md` کلم
 خود USDT.D + TOTAL2/3 (بند ۱۰–۱۱). از همین امروز اضافه شد: MFE/MAE و
 مدت نگهداری روی هر معاملهٔ بسته (بند ۲۲) و خط «⛔ باطل‌کننده» روی هر
 سیگنال (بند ۱۹).
+
+## Before any claim about system state, run the bus (Hamid, 28 Aug — rule 13)
+
+Hamid: *"Why should this disorder exist? … nothing should operate
+separately … connect the main agent to that same reason-and-proof part so
+this problem doesn't happen again."*
+
+The measured root cause: 54 state files in `signals/` aged 31 minutes to
+18 days, none of them declaring how stale it was allowed to be. Absence
+of a contract, not broken parts, produced the mess — and the same class
+had kept the Telegram ledger invisible for months.
+
+The contract now exists: `config/state_registry.json` (layer, owner
+engine, producer, consumer, kind, max age, critical) and
+`hamid/state_bus.py` judges it into `signals/system-state.json`.
+
+Three obligations, non-negotiable:
+
+1. **Never claim system health from memory.** Run
+   `python3 -m hamid.state_bus --packet` and quote its evidence packet.
+   "Everything looks fine" without the verdict is an unsourced claim.
+2. **Never cite a data layer without its age and its cap.** "Dominance is
+   fresh" means nothing; "dominance 12 min, cap 45" is a fact.
+3. **A new module that writes a state file is unfinished until it has a
+   registry row.** No "we'll register it later" — the guard
+   (`hamid/test_state_bus.py`) turns the cycle red on any orphan file,
+   which is exactly the point.
+
+Set a cap from the producer's *measured* cadence plus margin, never from
+what you wish it were. A cap that is always violated becomes noise, and
+noise gets ignored — worse than no cap at all.

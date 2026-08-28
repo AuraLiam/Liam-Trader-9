@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.38 · موتور داشبورد v2.9 · دفتر تلگرام روی پنل</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.39 · موتور داشبورد v2.9 · یکپارچگی سامانه</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -291,6 +291,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <p class="muted" style="margin-top:-6px;max-width:760px">هر اتاق یک بخش از موتور است که مستقل کار می‌کند. اینجا لحظه‌به‌لحظه می‌بینی هرکدام الان مشغول چه کاری‌ست و چند ارز را پایش می‌کند.</p>
     <div id="opsRooms" class="grid" style="margin-top:12px"></div>
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
@@ -3694,6 +3695,54 @@ async function domjFetch(){
 }
 setInterval(domjFetch,120000);setTimeout(domjFetch,5500);
 (()=>{const d=DB.get("domj_cache");if(d&&!DOMJ.data)DOMJ.data=d;})();
+/* یکپارچگی سامانه — هفت لایه، مالک هر کدام، و تازگی داده‌اش (۲۸ اوت).
+   ریشه‌ای که این را لازم کرد: ۵۴ فایل وضعیت با سنین ۳۱د تا ۱۸ روز، همه
+   با اعتبار ظاهراً برابر روی پنل. حالا هر لایه قرارداد کهنگی دارد و
+   پنل تخطی را نشان می‌دهد به‌جای اینکه پنهانش کند. */
+const SYS={data:null};
+async function sysFetch(){
+  try{
+    const r=await fetch("./signals/system-state.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.rows){SYS.data=j;DB.set("sys_cache",j);renderSys();}}
+  }catch(e){}
+}
+function renderSys(){
+  const el=$("#sysStateBox");if(!el)return;
+  const j=SYS.data;
+  if(!j||!(j.rows||[]).length){el.innerHTML=`<div class="dim" style="font-size:12px">
+    نقشهٔ وضعیت هنوز ساخته نشده — چرخهٔ بعدی می‌سازدش.</div>`;return;}
+  const V={HEALTHY:["🟢","همهٔ لایه‌ها داخل قرارداد"],
+           DEGRADED:["🟡","چند لایه از قرارداد بیرون‌اند"],
+           SICK:["🔴","یک لایهٔ حیاتی از قرارداد بیرون است"]}[j.verdict]||["⚪",j.verdict];
+  const meta=$("#sysStateMeta");
+  if(meta)meta.textContent=`${j.n_files} فایل · ${j.n_faults} عیب · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const groups={};
+  (j.rows||[]).forEach(r=>{(groups[r.layer]=groups[r.layer]||[]).push(r)});
+  const order=["L1_market","L2_context","L3_structure","L4_decision",
+               "L5_delivery","L6_learning","L7_health"];
+  const body=order.filter(k=>groups[k]).map(k=>{
+    const rows=groups[k];
+    const bad=rows.filter(r=>r.status!=="ok"&&r.status!=="absent_ok");
+    const dot=bad.length?(bad.some(b=>b.critical)?"🔴":"🟡"):"🟢";
+    const det=rows.map(r=>{
+      const age=r.age_min==null?"—":(r.age_min<90?Math.round(r.age_min)+"د":
+        Math.round(r.age_min/60)+"س");
+      const cap=r.max_age_min==null?"":` / سقف ${r.max_age_min}د`;
+      const ok=r.status==="ok"||r.status==="absent_ok";
+      return `<div style="display:flex;gap:8px;padding:2px 0;font-size:11px">
+        <span style="min-width:14px">${ok?"·":"✗"}</span>
+        <span style="min-width:180px" class="${ok?"":"warn"}">${r.file}</span>
+        <span class="dim" style="min-width:74px">${r.owner||"—"}</span>
+        <span class="dim" style="min-width:96px">${age}${cap}</span>
+        <span class="dim">${r.producer||""}</span></div>`;}).join("");
+    return `<details style="margin:6px 0"><summary style="cursor:pointer;font-size:12px">
+      ${dot} <b>${rows[0].layer_fa}</b> <span class="dim">— ${rows.length-bad.length}/${rows.length} داخل قرارداد</span>
+      </summary><div style="margin:4px 0 8px 0">${det}</div></details>`;}).join("");
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${V[0]} <b>${V[1]}</b></div>${body}`;
+}
+setInterval(sysFetch,120000);setTimeout(sysFetch,4800);
+(()=>{const s=DB.get("sys_cache");if(s&&!SYS.data){SYS.data=s;setTimeout(renderSys,600);}})();
 /* دفتر تلگرام — همان چیزی که برای حمید فرستاده شده، روی پنل (۲۸ اوت) */
 const TGF={data:null};
 const TGF_LABEL={signal:"📣 سیگنال",outcome:"📊 نتیجه",outcome_batch:"📊 نتیجهٔ جمعی",

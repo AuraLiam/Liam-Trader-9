@@ -1,0 +1,540 @@
+{
+  "_doc": "قرارداد واحد وضعیت — دستور حمید ۲۸ اوت: «هیچ چیز جدا فعالیت نکند». هر فایل وضعیتِ runtime باید این‌جا ثبت باشد: مالکِ لایه، تولیدکننده، سقف کهنگی، و مصرف‌کننده. فایل ثبت‌نشده = چرخه سرخ (hamid/test_state_bus.py). سقف کهنگی از روی کادنس واقعی تولیدکننده انتخاب می‌شود، نه آرزو. پرچم optional یعنی فایل فقط در صورت نیاز ساخته می‌شود؛ نبودنش عیب نیست. kind: live (فید زنده، سقف کهنگی اجباری) · ledger (دفتر append-only، تازگی معنا ندارد) · snapshot (عکس‌فوری بک‌تست/تشخیص).",
+  "_layers": {
+    "L1_market": "دادهٔ بازار و جهان نمادها",
+    "L2_context": "بستر: دامیننس، کلان، خبر",
+    "L3_structure": "ساختار، SMC، اردر بلاک",
+    "L4_decision": "کمیته، وزن، لبه، تصمیم",
+    "L5_delivery": "تحویل و دفترها",
+    "L6_learning": "یادگیری، کارنامه، بک‌تست",
+    "L7_health": "سلامت سامانه"
+  },
+  "files": {
+    "latest.json": {
+      "layer": "L4_decision",
+      "owner": "E17",
+      "producer": "scan.py",
+      "max_age_min": 45,
+      "consumer": "panel+telegram",
+      "critical": true,
+      "cadence_note": "زنجیره کرون */15؛ اجرا ~۱۵د → مشاهدهٔ واقعی ۳۰-۳۵د، سقف ۴۵ با حاشیه",
+      "kind": "live"
+    },
+    "hamid-latest.json": {
+      "layer": "L4_decision",
+      "owner": "E17",
+      "producer": "hamid/cycle.py",
+      "max_age_min": 240,
+      "consumer": "panel+telegram",
+      "critical": true,
+      "kind": "live"
+    },
+    "funnel.json": {
+      "layer": "L4_decision",
+      "owner": "E23",
+      "producer": "scan.py",
+      "max_age_min": 45,
+      "consumer": "panel",
+      "critical": true,
+      "cadence_note": "زنجیره کرون */15؛ اجرا ~۱۵د → مشاهدهٔ واقعی ۳۰-۳۵د، سقف ۴۵ با حاشیه",
+      "kind": "live"
+    },
+    "dominance.json": {
+      "layer": "L2_context",
+      "owner": "E03",
+      "producer": "hamid/dominance.py",
+      "max_age_min": 45,
+      "consumer": "panel+engine",
+      "critical": true,
+      "cadence_note": "زنجیره کرون */15؛ اجرا ~۱۵د → مشاهدهٔ واقعی ۳۰-۳۵د، سقف ۴۵ با حاشیه",
+      "kind": "live"
+    },
+    "dominance-report.json": {
+      "layer": "L2_context",
+      "owner": "E03",
+      "producer": "hamid/dominance_report.py",
+      "max_age_min": 130,
+      "consumer": "telegram",
+      "critical": false,
+      "cadence_note": "کرون ساعتی + ضدتکرار ۵۰د → سقف ۱۳۰",
+      "kind": "live"
+    },
+    "news.json": {
+      "layer": "L2_context",
+      "owner": "E14",
+      "producer": "hamid/intel.py",
+      "max_age_min": 240,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "polymarket.json": {
+      "layer": "L2_context",
+      "owner": "E14",
+      "producer": "hamid/polymarket.py",
+      "max_age_min": 720,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "unlocks-shape.json": {
+      "layer": "L2_context",
+      "owner": "E14",
+      "producer": "hamid/intel.py",
+      "max_age_min": null,
+      "consumer": "diagnostic",
+      "critical": false,
+      "optional": true,
+      "kind": "snapshot"
+    },
+    "btc-patterns.json": {
+      "layer": "L2_context",
+      "owner": "E06",
+      "producer": "hamid/btc_patterns.py",
+      "max_age_min": 120,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "watchlist.json": {
+      "layer": "L1_market",
+      "owner": "E01",
+      "producer": "hamid/scout.py",
+      "max_age_min": 360,
+      "consumer": "engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "top-liquidity.json": {
+      "layer": "L1_market",
+      "owner": "E10",
+      "producer": "hamid/cycle.py",
+      "max_age_min": 360,
+      "consumer": "engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "volatile-universe.json": {
+      "layer": "L1_market",
+      "owner": "E01",
+      "producer": "hamid/volatile_universe.py",
+      "max_age_min": null,
+      "consumer": "research",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "classify.json": {
+      "layer": "L1_market",
+      "owner": "E01",
+      "producer": "hamid/classify.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "depth-health.json": {
+      "layer": "L1_market",
+      "owner": "E02",
+      "producer": "hamid/depth_health.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "bubbles.json": {
+      "layer": "L1_market",
+      "owner": "E12",
+      "producer": "hamid/bubbles.py",
+      "max_age_min": 180,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "pump-radar.json": {
+      "layer": "L1_market",
+      "owner": "E12",
+      "producer": "hamid/pump_radar.py",
+      "max_age_min": 380,
+      "consumer": "panel+telegram",
+      "critical": false,
+      "kind": "live"
+    },
+    "pump-analysis.json": {
+      "layer": "L1_market",
+      "owner": "E12",
+      "producer": "hamid/pump_analysis.py",
+      "max_age_min": null,
+      "consumer": "research",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "ob-radar.json": {
+      "layer": "L3_structure",
+      "owner": "E08",
+      "producer": "hamid/ob_radar.py",
+      "max_age_min": 240,
+      "consumer": "panel+engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "agent-weights.json": {
+      "layer": "L4_decision",
+      "owner": "E22",
+      "producer": "hamid/agent_scores.py",
+      "max_age_min": 2880,
+      "consumer": "engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "edge.json": {
+      "layer": "L4_decision",
+      "owner": "E22",
+      "producer": "hamid/edge_export.py",
+      "max_age_min": 2880,
+      "consumer": "dashboard",
+      "critical": false,
+      "kind": "live"
+    },
+    "experience.json": {
+      "layer": "L6_learning",
+      "owner": "E21",
+      "producer": "hamid/experience.py",
+      "max_age_min": 360,
+      "consumer": "engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "experience-effect.json": {
+      "layer": "L6_learning",
+      "owner": "E22",
+      "producer": "hamid/experience_effect.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "rewards.json": {
+      "layer": "L6_learning",
+      "owner": "E22",
+      "producer": "hamid/rewards.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "loss-analysis.json": {
+      "layer": "L6_learning",
+      "owner": "E20",
+      "producer": "hamid/loss_analysis.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "improve.json": {
+      "layer": "L6_learning",
+      "owner": "E22",
+      "producer": "hamid/improve.py",
+      "max_age_min": 720,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "reading.json": {
+      "layer": "L6_learning",
+      "owner": "E22",
+      "producer": "research/reading_loop.py",
+      "max_age_min": 720,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "overseer.json": {
+      "layer": "L6_learning",
+      "owner": "E26",
+      "producer": "hamid/overseer.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "work-report.json": {
+      "layer": "L6_learning",
+      "owner": "E20",
+      "producer": "hamid/work_report.py",
+      "max_age_min": 600,
+      "consumer": "panel+telegram",
+      "critical": false,
+      "kind": "live"
+    },
+    "daily-report.json": {
+      "layer": "L6_learning",
+      "owner": "E20",
+      "producer": "hamid/daily_report.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "scalp.json": {
+      "layer": "L4_decision",
+      "owner": "E11",
+      "producer": "hamid/scalp.py",
+      "max_age_min": 180,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "scalp-exec.json": {
+      "layer": "L4_decision",
+      "owner": "E11",
+      "producer": "hamid/scalp1m.py",
+      "max_age_min": 180,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "scalp-verdict.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/scalp_verdict.py",
+      "max_age_min": 1440,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "shock.json": {
+      "layer": "L4_decision",
+      "owner": "E11",
+      "producer": "hamid/shock_desk.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "telegram-feed.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "telegram.py",
+      "max_age_min": null,
+      "consumer": "panel",
+      "critical": false,
+      "optional": true,
+      "kind": "ledger"
+    },
+    "telegram-log.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "telegram.py",
+      "max_age_min": null,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "ledger"
+    },
+    "sent.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "telegram.py",
+      "max_age_min": null,
+      "consumer": "telegram",
+      "critical": true,
+      "kind": "ledger"
+    },
+    "exec-outbox.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "liam9_link.py",
+      "max_age_min": null,
+      "consumer": "dashboard",
+      "critical": false,
+      "optional": true,
+      "kind": "ledger"
+    },
+    "live-link.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "liam9_link.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "link-commands.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "hamid/analysis_push.py",
+      "max_age_min": null,
+      "consumer": "engine",
+      "critical": false,
+      "optional": true,
+      "kind": "ledger"
+    },
+    "live-heartbeat.json": {
+      "layer": "L7_health",
+      "owner": "E23",
+      "producer": "hamid/live_service.py",
+      "max_age_min": 10,
+      "consumer": "panel",
+      "critical": false,
+      "optional": true,
+      "kind": "live",
+      "cadence_note": "سرویس محلی Python؛ تا مستقر نشده optional است"
+    },
+    "sentinel.json": {
+      "layer": "L7_health",
+      "owner": "E23",
+      "producer": "hamid/sentinel.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": true,
+      "kind": "live"
+    },
+    "conformance.json": {
+      "layer": "L7_health",
+      "owner": "E23",
+      "producer": "hamid/conformance.py",
+      "max_age_min": 720,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "escalation.json": {
+      "layer": "L7_health",
+      "owner": "E23",
+      "producer": "hamid/escalation.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "system-state.json": {
+      "layer": "L7_health",
+      "owner": "E00",
+      "producer": "hamid/state_bus.py",
+      "max_age_min": 45,
+      "consumer": "panel+agent",
+      "critical": true,
+      "optional": false,
+      "kind": "live",
+      "cadence_note": "در زنجیرهٔ ۵دقیقه‌ای + چرخه اجرا می‌شود؛ سقف ۴۵ مثل بقیهٔ خروجی‌های زنجیره"
+    },
+    "dash-backtest.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/dash_backtest.py",
+      "max_age_min": null,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "scalp-dash-backtest.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/scalp_dash_backtest.py",
+      "max_age_min": null,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "h1-backtest.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/h1_backtest.py",
+      "max_age_min": null,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "big-money-backtest.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/big_money_backtest.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "scenario-backtest.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/scenario_backtest.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "scenario-sweep.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/scenario_sweep.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "docs-probe.json": {
+      "layer": "L7_health",
+      "owner": "E23",
+      "producer": "hamid/docs_probe.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    },
+    "tradingview-in.json": {
+      "layer": "L5_delivery",
+      "owner": "E25",
+      "producer": "external:tradingview-alert",
+      "max_age_min": null,
+      "consumer": "telegram",
+      "critical": false,
+      "optional": true,
+      "kind": "ledger"
+    },
+    "position-watch.json": {
+      "layer": "L5_delivery",
+      "owner": "E19",
+      "producer": "hamid/position_watch.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "trail-alert.json": {
+      "layer": "L5_delivery",
+      "owner": "E19",
+      "producer": "hamid/trail_alert.py",
+      "max_age_min": 360,
+      "consumer": "panel",
+      "critical": false,
+      "kind": "live"
+    },
+    "viability-gate.json": {
+      "layer": "L4_decision",
+      "owner": "E16",
+      "producer": "hamid/paper.py",
+      "max_age_min": 360,
+      "consumer": "engine",
+      "critical": false,
+      "kind": "live"
+    },
+    "strategy-params.json": {
+      "layer": "L4_decision",
+      "owner": "E11",
+      "producer": "liam9_strategy.py",
+      "max_age_min": null,
+      "consumer": "dashboard",
+      "critical": false,
+      "kind": "ledger"
+    },
+    "scalp-sweep.json": {
+      "layer": "L6_learning",
+      "owner": "E18",
+      "producer": "hamid/scalp_sweep.py",
+      "max_age_min": null,
+      "consumer": "archive",
+      "critical": false,
+      "kind": "snapshot"
+    }
+  }
+}

@@ -97,6 +97,7 @@ jobs:
           python3 -m hamid.test_signal_flow
           python3 -m hamid.test_telegram_dedupe
           python3 -m hamid.test_telegram_feed
+          python3 -m hamid.test_state_bus
           python3 -m hamid.test_panel_contract
           python3 -m hamid.test_big_money
           python3 -m hamid.test_big_money_backtest
@@ -223,6 +224,9 @@ jobs:
       - name: وزن اتاق‌های ایجنت
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.agent_scores || true
+
+      - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
+        run: python3 -m hamid.state_bus --write || true
 
       # گزارش کار (دستور حمید ۲۴ اوت: «تا گفتم گزارش کار را بده، نتایج را
       # با جزئیات و خلاصه و دقیق بهم بگو» → مهارت work-report). این‌جا هر

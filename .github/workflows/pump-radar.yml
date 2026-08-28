@@ -86,6 +86,7 @@ jobs:
           python3 -m hamid.test_ob_intel
           python3 -m hamid.test_deep
           python3 -m hamid.test_single_bot
+          python3 -m hamid.test_state_bus
           python3 -m hamid.test_learning
           python3 -m hamid.test_pump_study
           python3 -m hamid.test_workflows
@@ -149,6 +150,10 @@ jobs:
               (cd claude-liam-signal/python && python3 -m hamid.dominance) || true
               # الگوهای BTC (۱س/۴س/۱روزه) و دامیننس — دستور حمید: پایش دائمی
               (cd claude-liam-signal/python && python3 -m hamid.btc_patterns) || true
+              # نقشهٔ یکپارچگی سامانه (قانون ۱۳) — این‌جا و نه فقط در چرخهٔ
+              # ۳۰دقیقه‌ای، چون خودِ نقشه سقف کهنگی ۴۵د دارد؛ اگر فقط جای
+              # کم‌کادنس اجرا می‌شد، خودش آلارم کاذب تولید می‌کرد.
+              (cd claude-liam-signal/python && python3 -m hamid.state_bus --write) || true
               # اسکن استراتژی‌ها هم سوار همین زنجیره — شکایت حمید (۱۲ اوت):
               # «همه سیگنال‌ها با هم می‌آیند». علت، اسکنِ دسته‌ایِ ~۲۰دقیقه‌ای
               # بود: هرچه در یک اجرا تأیید شده بود یک‌جا می‌رفت. حالا هر ۵
