@@ -5,7 +5,7 @@
 بدون کامنت و داک‌استرینگ، تا از سقف اندازهٔ جعبه رد نشود.
 نسخهٔ خوانا و مستند در ریپو است — این‌جا فقط اجرا.
 
-ساخت: 2026-08-29 13:26 UTC · کامیت 74ffa1e545
+ساخت: 2026-08-29 19:06 UTC · کامیت 38e1e43321
 منبع: claude-liam-signal/python/liam9_strategy.py
 ساخته‌شده با: python3 -m hamid.build_dashboard
 
@@ -76,6 +76,12 @@ EXPERIENCE ={}
 
 TOP_LIQUIDITY =set ()
 _TOP_LIQ_OK =False 
+
+_LAST_SYNC =0.0 
+_SYNC_RETRY_S =600 
+_SYNC_LAST ={}
+FUNNEL ={}
+FUNNEL_CAP =40 
 
 VENUES =[
 ("https://api.mexc.com/api/v3/klines?symbol={s}&interval={i}&limit={n}","mexc"),
@@ -349,6 +355,78 @@ def sync_all ():
     "room_weights":sync_room_weights (),
     "btc_sensitivity":sync_btc_sensitivity ()}
 
+def ensure_sync (force =False ):
+    ""
+    global _LAST_SYNC ,_SYNC_LAST 
+    now =time .time ()
+    if force or not _LAST_SYNC or (
+    not _TOP_LIQ_OK and now -_LAST_SYNC >=_SYNC_RETRY_S ):
+        _LAST_SYNC =now 
+        try :
+            _SYNC_LAST =dict (sync_all (),at =now )
+        except Exception as e :
+            _SYNC_LAST ={"error":f"{type(e).__name__}: {e}","at":now }
+    return _SYNC_LAST 
+
+def set_top_liquidity (symbols ):
+    ""
+    global _TOP_LIQ_OK ,_SYNC_LAST 
+    syms =[str (s ).upper ()for s in (symbols or [])if str (s ).strip ()]
+    if not syms :
+        _TOP_LIQ_OK =False 
+        return 0 
+    TOP_LIQUIDITY .clear ()
+    TOP_LIQUIDITY .update (syms )
+    _TOP_LIQ_OK =True 
+    _SYNC_LAST =dict (_SYNC_LAST or {},top_liquidity =len (syms ),
+    top_liquidity_source ="دستی (داشبورد)",at =time .time ())
+    return len (TOP_LIQUIDITY )
+
+def _funnel (why ):
+    ""
+    key =why .split ("—")[0 ].strip ()[:60 ]
+    if key not in FUNNEL and len (FUNNEL )>=FUNNEL_CAP :
+        key ="سایر"
+    FUNNEL [key ]=FUNNEL .get (key ,0 )+1 
+    return why 
+
+def diagnose ():
+    ""
+    tot =sum (FUNNEL .values ())
+    top =sorted (FUNNEL .items (),key =lambda kv :-kv [1 ])[:8 ]
+    blocked =not _TOP_LIQ_OK 
+    return {
+    "version":PARAMS ["version"],
+    "panel":"لیام تریدر ۹",
+    "liquidity_layer_ok":_TOP_LIQ_OK ,
+    "liquidity_symbols":len (TOP_LIQUIDITY ),
+    "params_synced":bool (_LAST_SYNC ),
+    "last_sync_age_s":round (time .time ()-_LAST_SYNC )if _LAST_SYNC else None ,
+    "last_sync":_SYNC_LAST ,
+    "decisions_seen":tot ,
+    "top_reasons":[{"reason":k ,"n":v ,
+    "pct":round (100 *v /tot ,1 )if tot else None }
+    for k ,v in top ],
+    "verdict":("موتور کور است: لایهٔ نقدشوندگی همگام نشده — هر آلتی "
+    "NO_SIGNAL می‌شود تا وقتی sync_all() موفق شود "
+    "(دسترسی به raw.githubusercontent.com یا صفحهٔ پنل)"
+    if blocked else 
+    "موتور بینا است؛ سکوت از نبودِ ستاپ است"if tot else 
+    "هنوز هیچ تصمیمی گرفته نشده — یک بار signal() را صدا بزن"),
+    "limit":("این تشخیص فقط همین پروسه را می‌بیند؛ شمارش با ری‌استارت "
+    "صفر می‌شود."),
+    }
+
+def print_diagnose ():
+    d =diagnose ()
+    print (f"🧪 تشخیص موتور {d['version']} — {d['verdict']}")
+    print (f"   لایهٔ نقدشوندگی: {'✅' if d['liquidity_layer_ok'] else '❌'} "
+    f"({d['liquidity_symbols']} نماد) · تصمیم‌های دیده‌شده: "
+    f"{d['decisions_seen']}")
+    for r in d ["top_reasons"]:
+        print (f"   • {r['pct']}٪ ({r['n']}) — {r['reason']}")
+    return d 
+
 def experience_of (symbol ,direction ):
     ""
     return EXPERIENCE .get (f"{symbol}|{direction}")
@@ -618,8 +696,10 @@ def analyze (symbol ,c4h ,c1h ,c15 ,btc4h =None ,btc1h =None ):
     ""
     P =PARAMS 
     def no (why ):
+        _funnel (why )
         return {"action":"NO_SIGNAL","symbol":symbol ,"why":why ,
-        "version":P ["version"],"panel":"لیام تریدر ۹"}
+        "version":P ["version"],"panel":"لیام تریدر ۹",
+        "diagnose":"liam9_strategy.print_diagnose()"}
 
     if not c4h or not c1h or not c15 or len (c15 )<60 :
         return no ("دادهٔ ناکافی — قانون ۱: حدس ممنوع")
@@ -909,6 +989,7 @@ def scalp_decide (c1m ,symbol ="?"):
 
 def signal (symbol ):
     ""
+    ensure_sync ()
     c15 =fetch_klines (symbol ,"15m",300 )
     c1h =fetch_klines (symbol ,"1h",260 )
     c4h =fetch_klines (symbol ,"4h",260 )
@@ -922,6 +1003,7 @@ def signal (symbol ):
     return analyze (symbol ,c4h ,c1h ,c15 ,btc4h =btc4h ,btc1h =btc1h )
 
 def scalp_signal (symbol ):
+    ensure_sync ()
     c1m =fetch_klines (symbol ,"1m",300 )
     if not c1m :
         return {"action":"NO_SIGNAL","symbol":symbol ,"mode":"scalp",
@@ -1284,13 +1366,14 @@ class Liam9Strategy (BaseStrategy ):
             super ().__init__ (*a ,**kw )
         except Exception :
             pass 
-        sync_all ()
+        ensure_sync ()
 
         if kw .get ("risk")is not None or kw .get ("dashboard")is not None :
             set_environment (kw .get ("risk"),kw .get ("dashboard"))
         self .meta ["version"]=PARAMS ["version"]
 
     def generate_signal (self ,symbol ,c4h =None ,c1h =None ,c15 =None ,**kw ):
+        ensure_sync ()
         if c4h and c1h and c15 :
             return analyze (symbol ,c4h ,c1h ,c15 ,
             btc4h =kw .get ("btc4h"),btc1h =kw .get ("btc1h"))
@@ -1336,9 +1419,10 @@ class Liam9ScalpStrategy (BaseStrategy ):
             super ().__init__ (*a ,**kw )
         except Exception :
             pass 
-        sync_all ()
+        ensure_sync ()
 
     def generate_signal (self ,symbol ,candles =None ,**kw ):
+        ensure_sync ()
         if candles and len (candles )>=90 :
             return scalp_decide (candles ,symbol )
         return scalp_signal (symbol )
@@ -1356,6 +1440,14 @@ if __name__ =="__main__":
     import sys 
     if "--selftest"in sys .argv :
         _selftest ()
+    elif "--diagnose"in sys .argv :
+
+        ensure_sync ()
+        args =[a for a in sys .argv [1 :]if not a .startswith ("--")]
+        for sym in (args or ["BTCUSDT"]):
+            out =signal (sym )
+            print (f"{sym}: {out['action']} — {out.get('why', '')}")
+        print_diagnose ()
     elif "--audit"in sys .argv :
         print_audit ()
         print ("\nبرای ممیزی واقعی، آبجکت ریسک داشبورد را بده:")

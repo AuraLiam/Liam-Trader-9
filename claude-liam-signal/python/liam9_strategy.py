@@ -167,6 +167,23 @@ EXPERIENCE = {}
 TOP_LIQUIDITY = set()
 _TOP_LIQ_OK = False
 
+# ── چرا داشبورد ساکت می‌ماند: همگام‌سازیِ یک‌بارهٔ شکست‌خورده ────────────────
+# سؤال حمید (۲۹ اوت): «چرا با استراتژی آخری هیچ پوزیشنی باز نمی‌شود؟»
+# ریشهٔ ساختاری: کلاس استراتژی فقط **یک بار در __init__** همگام می‌شد. اگر
+# همان یک بار شکست می‌خورد (شبکهٔ داشبورد بسته، خطای گذرا، ریپو در حال
+# دیپلوی)، `_TOP_LIQ_OK` تا پایان عمرِ پروسه False می‌ماند و analyze()
+# برای **هر آلتی** NO_SIGNAL برمی‌گرداند — درست و طبق قانون ۱، ولی
+# **برای همیشه و بی‌صدا**. از بیرون فرقی با «ستاپ نیست» ندارد.
+#
+# رفع، بدون شل‌کردنِ هیچ دروازه‌ای: تلاش دوباره با فاصله (زیر)، و
+# شمارشِ دلیلِ ردها + تابع diagnose() تا سکوت همیشه یک علتِ خوانا داشته
+# باشد. دروازه سرِ جایش است؛ فقط دیگر یک خطای گذرا آن را ابدی نمی‌کند.
+_LAST_SYNC = 0.0
+_SYNC_RETRY_S = 600     # همگام‌سازیِ ناموفق هر ۱۰ دقیقه دوباره تلاش می‌شود
+_SYNC_LAST = {}         # آخرین نتیجهٔ sync_all برای diagnose
+FUNNEL = {}             # شمارشِ دلیلِ ردها در همین پروسه — سکوتِ بی‌دلیل ممنوع
+FUNNEL_CAP = 40
+
 VENUES = [
     ("https://api.mexc.com/api/v3/klines?symbol={s}&interval={i}&limit={n}", "mexc"),
     ("https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair={g}&interval={i}&limit={n}", "gate"),
@@ -547,6 +564,96 @@ def sync_all():
             "btc_sensitivity": sync_btc_sensitivity()}
 
 
+def ensure_sync(force=False):
+    """همگام‌سازی وقتی لازم است — نه یک‌بار برای همیشه.
+
+    قاعده: اگر هرگز همگام نشده‌ایم، یا لایهٔ نقدشوندگی ناموفق مانده و از
+    آخرین تلاش بیش از `_SYNC_RETRY_S` گذشته، دوباره تلاش کن. همگامِ موفق
+    دوباره تکرار نمی‌شود (شبکه بی‌دلیل مصرف نمی‌شود)."""
+    global _LAST_SYNC, _SYNC_LAST
+    now = time.time()
+    if force or not _LAST_SYNC or (
+            not _TOP_LIQ_OK and now - _LAST_SYNC >= _SYNC_RETRY_S):
+        _LAST_SYNC = now
+        try:
+            _SYNC_LAST = dict(sync_all(), at=now)
+        except Exception as e:                       # noqa: BLE001
+            _SYNC_LAST = {"error": f"{type(e).__name__}: {e}", "at": now}
+    return _SYNC_LAST
+
+
+def set_top_liquidity(symbols):
+    """راهِ دستیِ دادنِ لایهٔ نقدشوندگی، وقتی داشبورد به اینترنت راه ندارد.
+
+    دروازه شل نمی‌شود — فهرست همچنان لازم است؛ فقط منبعش می‌تواند خودِ
+    داشبورد باشد به‌جای گیت‌هاب. بدون فهرستِ معتبر، هیچ آلتی سیگنال
+    نمی‌گیرد (قانون ۱).
+
+        liam9_strategy.set_top_liquidity(["BTCUSDT", "ETHUSDT", ...])"""
+    global _TOP_LIQ_OK, _SYNC_LAST
+    syms = [str(s).upper() for s in (symbols or []) if str(s).strip()]
+    if not syms:
+        _TOP_LIQ_OK = False
+        return 0
+    TOP_LIQUIDITY.clear()
+    TOP_LIQUIDITY.update(syms)
+    _TOP_LIQ_OK = True
+    _SYNC_LAST = dict(_SYNC_LAST or {}, top_liquidity=len(syms),
+                      top_liquidity_source="دستی (داشبورد)", at=time.time())
+    return len(TOP_LIQUIDITY)
+
+
+def _funnel(why):
+    """دلیلِ رد را در سطلِ پایدارش می‌شمارد (عدد و درصد از کلید حذف)."""
+    key = why.split("—")[0].strip()[:60]
+    if key not in FUNNEL and len(FUNNEL) >= FUNNEL_CAP:
+        key = "سایر"
+    FUNNEL[key] = FUNNEL.get(key, 0) + 1
+    return why
+
+
+def diagnose():
+    """چرا سیگنالی نمی‌آید — پاسخِ عددی، نه حدس (سؤال حمید، ۲۹ اوت).
+
+    داشبورد یا خودِ حمید این را صدا می‌زند و همان لحظه می‌بیند سکوت از
+    «ستاپ نیست» است یا از «موتور کور است»."""
+    tot = sum(FUNNEL.values())
+    top = sorted(FUNNEL.items(), key=lambda kv: -kv[1])[:8]
+    blocked = not _TOP_LIQ_OK
+    return {
+        "version": PARAMS["version"],
+        "panel": "لیام تریدر ۹",
+        "liquidity_layer_ok": _TOP_LIQ_OK,
+        "liquidity_symbols": len(TOP_LIQUIDITY),
+        "params_synced": bool(_LAST_SYNC),
+        "last_sync_age_s": round(time.time() - _LAST_SYNC) if _LAST_SYNC else None,
+        "last_sync": _SYNC_LAST,
+        "decisions_seen": tot,
+        "top_reasons": [{"reason": k, "n": v,
+                         "pct": round(100 * v / tot, 1) if tot else None}
+                        for k, v in top],
+        "verdict": ("موتور کور است: لایهٔ نقدشوندگی همگام نشده — هر آلتی "
+                    "NO_SIGNAL می‌شود تا وقتی sync_all() موفق شود "
+                    "(دسترسی به raw.githubusercontent.com یا صفحهٔ پنل)"
+                    if blocked else
+                    "موتور بینا است؛ سکوت از نبودِ ستاپ است" if tot else
+                    "هنوز هیچ تصمیمی گرفته نشده — یک بار signal() را صدا بزن"),
+        "limit": ("این تشخیص فقط همین پروسه را می‌بیند؛ شمارش با ری‌استارت "
+                  "صفر می‌شود."),
+    }
+
+
+def print_diagnose():
+    d = diagnose()
+    print(f"🧪 تشخیص موتور {d['version']} — {d['verdict']}")
+    print(f"   لایهٔ نقدشوندگی: {'✅' if d['liquidity_layer_ok'] else '❌'} "
+          f"({d['liquidity_symbols']} نماد) · تصمیم‌های دیده‌شده: "
+          f"{d['decisions_seen']}")
+    for r in d["top_reasons"]:
+        print(f"   • {r['pct']}٪ ({r['n']}) — {r['reason']}")
+    return d
+
+
 def experience_of(symbol, direction):
     """کارنامهٔ همان ارز و جهت، یا None. thin=True یعنی نمونه کم است."""
     return EXPERIENCE.get(f"{symbol}|{direction}")
@@ -876,8 +983,10 @@ def analyze(symbol, c4h, c1h, c15, btc4h=None, btc1h=None):
     ریشه: شورت ARB در بازار مثبت (۲۰ اوت) — این دروازه داخل داشبورد نبود."""
     P = PARAMS
     def no(why):
+        _funnel(why)
         return {"action": "NO_SIGNAL", "symbol": symbol, "why": why,
-                "version": P["version"], "panel": "لیام تریدر ۹"}
+                "version": P["version"], "panel": "لیام تریدر ۹",
+                "diagnose": "liam9_strategy.print_diagnose()"}
 
     if not c4h or not c1h or not c15 or len(c15) < 60:
         return no("دادهٔ ناکافی — قانون ۱: حدس ممنوع")
@@ -1208,6 +1317,7 @@ def scalp_decide(c1m, symbol="?"):
 
 def signal(symbol):
     """کندل می‌گیرد و تصمیم می‌دهد — برای داشبوردی که فقط نماد می‌دهد."""
+    ensure_sync()                       # همگامِ ناموفق، ابدی نمی‌ماند
     c15 = fetch_klines(symbol, "15m", 300)
     c1h = fetch_klines(symbol, "1h", 260)
     c4h = fetch_klines(symbol, "4h", 260)
@@ -1222,6 +1332,7 @@ def signal(symbol):
 
 
 def scalp_signal(symbol):
+    ensure_sync()
     c1m = fetch_klines(symbol, "1m", 300)
     if not c1m:
         return {"action": "NO_SIGNAL", "symbol": symbol, "mode": "scalp",
@@ -1623,13 +1734,14 @@ class Liam9Strategy(BaseStrategy):
             super().__init__(*a, **kw)
         except Exception:                             # noqa: BLE001
             pass
-        sync_all()
+        ensure_sync()
         # اگر داشبورد تنظیمات ریسکش را داد، همان لحظه ممیزی — کراس = قفل
         if kw.get("risk") is not None or kw.get("dashboard") is not None:
             set_environment(kw.get("risk"), kw.get("dashboard"))
         self.meta["version"] = PARAMS["version"]
 
     def generate_signal(self, symbol, c4h=None, c1h=None, c15=None, **kw):
+        ensure_sync()          # داشبوردی که کندل می‌دهد هم باید لایه را داشته باشد
         if c4h and c1h and c15:
             return analyze(symbol, c4h, c1h, c15,
                            btc4h=kw.get("btc4h"), btc1h=kw.get("btc1h"))
@@ -1677,9 +1789,10 @@ class Liam9ScalpStrategy(BaseStrategy):
             super().__init__(*a, **kw)
         except Exception:                             # noqa: BLE001
             pass
-        sync_all()
+        ensure_sync()
 
     def generate_signal(self, symbol, candles=None, **kw):
+        ensure_sync()
         if candles and len(candles) >= 90:
             return scalp_decide(candles, symbol)
         return scalp_signal(symbol)
@@ -1698,6 +1811,14 @@ if __name__ == "__main__":
     import sys
     if "--selftest" in sys.argv:
         _selftest()
+    elif "--diagnose" in sys.argv:
+        # «چرا هیچ پوزیشنی باز نمی‌شود؟» — همین‌جا جواب می‌گیرد
+        ensure_sync()
+        args = [a for a in sys.argv[1:] if not a.startswith("--")]
+        for sym in (args or ["BTCUSDT"]):
+            out = signal(sym)
+            print(f"{sym}: {out['action']} — {out.get('why', '')}")
+        print_diagnose()
     elif "--audit" in sys.argv:
         print_audit()
         print("\nبرای ممیزی واقعی، آبجکت ریسک داشبورد را بده:")
