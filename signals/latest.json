@@ -1,6 +1,6 @@
 {
- "generated": 1788015193478,
- "generatedText": "2026-08-29 14:53 UTC",
+ "generated": 1788015370790,
+ "generatedText": "2026-08-29 14:56 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -10,9 +10,9 @@
  ],
  "counts": {
   "SIGNAL": 16,
-  "ARMED": 37,
+  "ARMED": 36,
   "PULLBACK_1": 1,
-  "WATCH": 169
+  "WATCH": 170
  },
  "per_strategy": {
   "smc": {
@@ -24,8 +24,8 @@
   "ibs": {
    "name": "IBS + پولبک",
    "signals": 14,
-   "armed": 32,
-   "watching": 71
+   "armed": 31,
+   "watching": 72
   }
  },
  "alarms": [
@@ -270,18 +270,6 @@
    "stage": "ARMED"
   },
   {
-   "sym": "TUTUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.037425,
-   "now": 0.03629,
-   "distancePct": 3.0327321309285162,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
    "sym": "HEMIUSDT",
    "tf": "5m",
    "dir": "LONG",
@@ -492,7 +480,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": -1.862
+  "btcChange": -1.949
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -596,7 +584,60 @@
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 53) · پایین در -0.3٪ (شدت 40)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 53) · پایین در -0.3٪ (شدت 40)",
+   "sync": {
+    "price": 2.73,
+    "dist_pct": 0.22
+   },
+   "premortem": {
+    "pro": [
+     "استاپ 1.32٪ بیرون نویز ۱۵د (ATR 1.04٪)",
+     "RSI ۱۵د سالم (49)",
+     "جهش حجم هم‌جهت (z=2.4) — مشارکت واقعی"
+    ],
+    "con": [
+     "روند ۱۵د خلاف جهت (down)",
+     "الگوهای تایم‌فریم‌ها متضادند: مثلث صعودی در 15m، سر و شانه در 1h",
+     "آهن‌ربای نقدینگی خلاف جهت — استخر استاپ آن‌طرف است",
+     "اردر بلاک 15m (داخل، 2 واکنش) — خلاف جهت، دیوار جلوی راه",
+     "رژیم ساختاری دامیننس BEARISH — USDT.D ساختار ۱س up · ۴س range · BTC.D ۱س up"
+    ],
+    "pro_w": 4,
+    "con_w": 7,
+    "issue": false,
+    "note": "⚖️ بازجویی ۱۵د (وزنی): 4 امتیاز تارگت / 7 امتیاز استاپ — صادر نشد",
+    "price": 2.73,
+    "patterns": {
+     "by_tf": {
+      "15m": [
+       "مثلث صعودی"
+      ],
+      "1h": [
+       "سر و شانه"
+      ]
+     },
+     "align": null,
+     "note": "مثلث صعودی در 15m، سر و شانه در 1h",
+     "best": null
+    },
+    "noise_stop": false,
+    "ob_ctx": {
+     "align": "against",
+     "tf": "15m",
+     "reactions": 2,
+     "hunts": 0,
+     "fresh": false,
+     "note": "اردر بلاک 15m (داخل، 2 واکنش)",
+     "low": 2.706,
+     "high": 2.868
+    },
+    "fib": 0.897,
+    "tv": {
+     "ema200_align": null,
+     "supertrend_align": "against",
+     "ict_align": null
+    }
+   }
   },
   {
    "strategy": "smc",
@@ -5068,7 +5109,7 @@
    "strategyName": "IBS + پولبک",
    "sym": "TUTUSDT",
    "tf": "5m",
-   "stage": "ARMED",
+   "stage": "WATCH",
    "dir": "SHORT",
    "entry": 0.037425,
    "sl": 0.037762949999999997,
@@ -5092,7 +5133,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
+   "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
    "lastClose": 1788014700000,
    "ob": {
     "low": 0.0372,
@@ -5110,36 +5151,8 @@
     "ev": -0.02
    },
    "trend4": "range",
-   "trend1": "range",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 0.03639887,
-      "pct_away": 0.3,
-      "score": 54
-     },
-     {
-      "price": 0.03676177,
-      "pct_away": 1.3,
-      "score": 78
-     }
-    ],
-    "below": [
-     {
-      "price": 0.03603597,
-      "pct_away": -0.7,
-      "score": 40
-     },
-     {
-      "price": 0.03567307,
-      "pct_away": -1.7,
-      "score": 38
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 54) · پایین در -0.7٪ (شدت 40)"
+   "trend1": "up",
+   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "ibs",
