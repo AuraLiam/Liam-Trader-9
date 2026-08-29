@@ -145,11 +145,21 @@ def build():
     b1 = (mt.get("btc_d") or {}).get("1h") or {}
     b4 = (mt.get("btc_d") or {}).get("4h") or {}
     sb = ((dom.get("forecast") or {}).get("scoreboard") or {})
+    # کارنامه با بنچمارک — نه فقط درصدِ کل (اندازه‌گیری ۲۹ اوت: ۸۷.۶٪
+    # پیش‌بینی‌ها FLAT بودند، پس «۷۳.۵٪ اصابت» عمدتاً پاداشِ گفتنِ
+    # «تکان نمی‌خورد» بود نه تشخیص مسیر). عددی که بنچمارک ندارد،
+    # اعتبارنامه نیست — و روی گزارشِ حمید نباید مثل اعتبارنامه چاپ شود.
     graded = []
     for k in sorted(sb):
         r = sb[k]
-        if isinstance(r, dict) and r.get("n"):
-            graded.append(f"{k}: {r.get('hit', r.get('hits', 0))}/{r['n']}")
+        if not (isinstance(r, dict) and r.get("n")):
+            continue
+        line = f"{k}: {r.get('hit', r.get('hits', 0))}/{r['n']}"
+        if r.get("skill") is not None:
+            line += f" (مهارت {r['skill']:+g} در برابر «همیشه FLAT»)"
+        if r.get("dir_n"):
+            line += f" · جهت‌دار {r['dir_n']} نوبت {r.get('dir_hit_pct')}٪"
+        graded.append(line)
     cap = ["🏷 <b>لیام تریدر ۹</b> · 🧭 <b>نظریهٔ ساعتی دامیننس</b>"]
     if age_min > 90:
         cap.append(f"⚠️ دادهٔ اتاق {age_min:.0f} دقیقه کهنه است — نظریهٔ تازه صادر نمی‌شود (قانون ۱)")
@@ -164,7 +174,8 @@ def build():
         cap.append("📐 " + _scenario("USDT.D", u1))
         cap.append("📐 " + _scenario("BTC.D", b1))
         if graded:
-            cap.append("🎯 کارنامهٔ پیش‌بینی: " + " · ".join(graded[:4]))
+            cap.append("🎯 کارنامهٔ پیش‌بینی (با بنچمارک):")
+            cap += [f"   • {g}" for g in graded[:4]]
         inv = (dom.get("structure") or {}).get("invalidation")
         if inv:
             cap.append(f"⛔ {inv}")

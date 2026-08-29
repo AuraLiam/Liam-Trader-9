@@ -126,38 +126,92 @@ def run():
     fs_fb = df.make_forecast(up_pts, {}, now, st=bad_st)
     d120 = [f for f in fs_fb if f["metric"] == "BTC.D"
             and f["horizon_min"] == 120][0]
-    check("با کارنامهٔ بدِ نمونه‌دار، همان ادعا پس گرفته می‌شود (FLAT)",
-          d120["path"] == "FLAT" and d120.get("demoted_from") == "UP",
+    # بازنگری ۲۹ اوت (بند ۱): تنزل به FLAT، تلهٔ خودتقویت‌شونده بود —
+    # ادعا می‌ماند، وزنش کم می‌شود. اگر کسی تنزل را برگرداند، این می‌افتد.
+    check("با کارنامهٔ بد، ادعا **نمی‌میرد** بلکه کم‌اعتماد می‌شود",
+          d120["path"] == "UP" and d120.get("low_confidence") is True,
           str(d120))
-    check("و دلیلِ پس‌گرفتن، خودِ عدد کارنامه است",
+    check("وزن اعتماد عددی و صریح است", d120.get("confidence") == 0.25,
+          str(d120))
+    check("هیچ ادعایی بی‌صدا به FLAT تبدیل نمی‌شود (تلهٔ مارپیچ بسته است)",
+          "demoted_from" not in d120, str(d120))
+    check("و دلیلِ کم‌اعتمادی، خودِ عدد کارنامه است",
           any("16.7" in r for r in d120["reasons"]), str(d120["reasons"]))
     check("کارنامهٔ سطل روی خود پیش‌بینی ثبت می‌شود", d120.get("hist") == hs)
 
-    # بازآزمایی: سرکوب ابدی نیست — پنجمین بار ادعا عمداً صادر می‌شود
+    # بازآزمایی: کم‌اعتمادی ابدی نیست — پنجمین بار ادعا با اعتماد کامل می‌رود
     bad_st["probe"] = {}                  # شمارنده از صفر برای همین سنجش
-    paths = []
+    rows = []
     for _ in range(df.REPROBE_EVERY):
         f = [x for x in df.make_forecast(up_pts, {}, now, st=bad_st)
              if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
-        paths.append(f["path"])
-    check(f"هر {df.REPROBE_EVERY} سرکوب یک بازآزمایی دارد (نمونه‌گیری نمی‌میرد)",
-          paths.count("UP") == 1 and paths[-1] == "UP", str(paths))
+        rows.append(f)
+    check("همهٔ نوبت‌ها ادعای جهت‌دار می‌مانند (نمونه‌گیری زنده است)",
+          all(r["path"] == "UP" for r in rows), str([r["path"] for r in rows]))
+    check(f"هر {df.REPROBE_EVERY} نوبت یک بازآزمایی با اعتماد کامل دارد",
+          sum(1 for r in rows if r.get("reprobe")) == 1
+          and rows[-1].get("reprobe") is True
+          and "low_confidence" not in rows[-1],
+          str([bool(r.get("reprobe")) for r in rows]))
 
     # نمونهٔ کم حکم نمی‌گیرد — ۱۰ ردیف زیر BAD_N است
     small_st = {"open": [], "graded": _graded("UP", "MISS", 10),
                 "score": {}, "probe": {}}
     f_small = [x for x in df.make_forecast(up_pts, {}, now, st=small_st)
                if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
-    check("زیر حداقل نمونه، ادعا سرکوب نمی‌شود (نمونهٔ کم دروغ می‌گوید)",
-          f_small["path"] == "UP" and "demoted_from" not in f_small)
+    check("زیر حداقل نمونه، اعتماد کم نمی‌شود (نمونهٔ کم دروغ می‌گوید)",
+          f_small["path"] == "UP" and "low_confidence" not in f_small)
 
     # سطل خوب دست نمی‌خورد
     good_st = {"open": [], "graded": _graded("UP", "HIT", 20)
                + _graded("UP", "MISS", 5), "score": {}, "probe": {}}
     f_good = [x for x in df.make_forecast(up_pts, {}, now, st=good_st)
               if x["metric"] == "BTC.D" and x["horizon_min"] == 120][0]
-    check("کارنامهٔ خوب = ادعا سر جایش (سرکوب فقط برای خطای سیستماتیک)",
-          f_good["path"] == "UP" and f_good.get("hist", {}).get("n") == 25)
+    check("کارنامهٔ خوب = ادعا سر جایش (کم‌اعتمادی فقط برای خطای سیستماتیک)",
+          f_good["path"] == "UP" and f_good.get("hist", {}).get("n") == 25
+          and "low_confidence" not in f_good)
+
+    # ── بند ۴ (۲۹ اوت): افق و آستانه ────────────────────────────────────────
+    check("افق‌های بلند (۴س و ۲۴س) اضافه شده‌اند",
+          240 in df.HORIZONS_MIN and 1440 in df.HORIZONS_MIN,
+          str(df.HORIZONS_MIN))
+    check("افق‌های کوتاه حذف نشدند (بنچمارک لازم است)",
+          30 in df.HORIZONS_MIN and 120 in df.HORIZONS_MIN)
+    fs_all = df.make_forecast(pts, struct, now)
+    check("هر متریک برای همهٔ افق‌ها پیش‌بینی می‌گیرد",
+          len(fs_all) == 2 * len(df.HORIZONS_MIN), str(len(fs_all)))
+
+    # سری با نوسانِ شناخته‌شده: هر گام ۵ دقیقه‌ای دقیقاً ۰.۰۱ بالا می‌رود،
+    # پس حرکتِ ۳۰دقیقه‌ای = ۰.۰۶ و ۱۲۰دقیقه‌ای = ۰.۲۴ — عددِ دستی، نه حدس.
+    ramp = [{"t": now - (600 - i) * 5 * 60000, "u": round(8.0 + i * 0.01, 3),
+             "b": 56.0} for i in range(600)]
+    thr30, n30, med30 = df.horizon_noise(ramp, "u", 30)
+    thr120, _, med120 = df.horizon_noise(ramp, "u", 120)
+    check("نوسانِ افق از خودِ سری شمرده می‌شود، نه فرض",
+          abs(med30 - 0.06) < 0.011 and abs(med120 - 0.24) < 0.011,
+          f"med30={med30} med120={med120}")
+    check("آستانه با افق بزرگ می‌شود (۰.۰۲ ثابت، دو معنی داشت)",
+          thr120 > thr30 * 3, f"{thr30} vs {thr120}")
+    check("کفِ مطلق حفظ می‌شود — لرزشِ ذره‌ای «حرکت» نمی‌شود",
+          df.horizon_noise([{"t": now - i * 60000, "u": 8.0, "b": 56.0}
+                            for i in range(400, 0, -1)], "u", 30)[0] == df.NOISE)
+    check("نمونهٔ کم = کفِ مطلق، نه عددِ ساختگی (قانون ۱)",
+          df.horizon_noise(ramp[:5], "u", 30) == (df.NOISE, 0, None))
+
+    # اثرِ عملیاتی: حرکتی که با آستانهٔ ثابت «UP» بود، در افقِ بلند FLAT است
+    st_thr = {"open": [
+        {"made": now - 130 * 60000, "due": now - 60000, "metric": "USDT.D",
+         "key": "u", "horizon_min": 120, "path": "UP",
+         "base": round(ramp[-1]["u"] - 0.05, 3), "reasons": ["تست"]}],
+        "graded": [], "score": {}}
+    df.grade_due(st_thr, ramp, now)
+    row = st_thr["graded"][0]
+    check("حرکت ۰.۰۵ در افق ۱۲۰د با آستانهٔ نوسانی FLAT است (با ۰.۰۲ نبود)",
+          row["real_path"] == "FLAT" and abs(row["actual_delta"]) > df.NOISE,
+          str(row))
+    check("آستانهٔ به‌کاررفته روی ردیف ثبت می‌شود (نمره قابل بازتولید است)",
+          row.get("noise_used") == thr120 and row.get("noise_windows"),
+          str(row))
 
     print(f"\n✓ همهٔ {OK} آزمون ناظر پیش‌بینی دامیننس گذشت")
 
