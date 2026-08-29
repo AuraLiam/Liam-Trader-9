@@ -190,9 +190,75 @@ def split_line(sp):
             f"{sp['story']}")
 
 
+def alt_breadth(points, minutes=1440):
+    """TOTAL در برابر TOTAL2 و TOTAL3 — بند ۶ (دستور حمید، ۲۹ اوت).
+
+    چرا لازم است: «بازار بالا رفت» ممکن است فقط «بیت‌کوین بالا رفت»
+    باشد. TOTAL2 (بدون BTC) و TOTAL3 (بدون BTC و ETH) نشان می‌دهند رشد
+    عرضی بوده یا فقط چند سرِ بزرگ. برای پنلی که آلت معامله می‌کند، این
+    تفاوت مستقیماً به کار می‌آید.
+
+    هر سه عدد از همان فراخوانِ موجود ساخته می‌شوند (کل بازار × سهم‌ها) —
+    هیچ منبع تازه و هیچ عددِ ادعایی اضافه نشده."""
+    pts = [p for p in (points or [])
+           if p.get("m") and p.get("b") is not None and p.get("e") is not None]
+    if len(pts) < 2:
+        return {"status": "INSUFFICIENT",
+                "why": "سری هنوز سهم ETH یا کل بازار را ذخیره نکرده"}
+    now = pts[-1]
+    tol = max(minutes * 60000 * 0.25, 15 * 60000)
+    past = min(pts, key=lambda x: abs(x["t"] - (now["t"] - minutes * 60000)))
+    if abs(past["t"] - (now["t"] - minutes * 60000)) > tol or past["t"] >= now["t"]:
+        return {"status": "INSUFFICIENT",
+                "why": f"نقطهٔ {minutes} دقیقه قبل با سهم ETH در سری نیست"}
+
+    def caps(p):
+        t = float(p["m"])
+        return (t, t * (1 - p["b"] / 100.0),
+                t * max(0.0, 1 - (p["b"] + p["e"]) / 100.0))
+
+    t0, a0, b0 = caps(past)
+    t1, a1, b1 = caps(now)
+    if min(t0, a0, b0) <= 0:
+        return {"status": "INSUFFICIENT", "why": "عدد نامعتبر در سری"}
+    d_tot = 100 * (t1 / t0 - 1)
+    d_t2 = 100 * (a1 / a0 - 1)
+    d_t3 = 100 * (b1 / b0 - 1)
+    gap = d_t3 - d_tot
+    if abs(d_tot) < 0.2 and abs(d_t3) < 0.2:
+        label, story = "FLAT", "بازار در این بازه تکان معناداری نخورد"
+    elif gap >= 0.5:
+        label, story = "ALT_BREADTH", ("آلت‌ها از کل بازار جلوترند — رشد "
+                                       "عرضی است، نه فقط سرهای بزرگ")
+    elif gap <= -0.5:
+        label, story = "MEGA_CAP_LED", ("کل بازار از آلت‌ها جلوتر است — "
+                                        "حرکت عمدتاً BTC/ETH است، نه عرضی")
+    else:
+        label, story = "BROAD", "کل بازار و آلت‌ها تقریباً هم‌قدم‌اند"
+    return {"status": "OK", "minutes": minutes,
+            "total_pct": round(d_tot, 3), "total2_pct": round(d_t2, 3),
+            "total3_pct": round(d_t3, 3), "gap_t3_total": round(gap, 3),
+            "total_usd": round(t1), "total2_usd": round(a1),
+            "total3_usd": round(b1),
+            "label": label, "story": story,
+            "limit": ("توصیفی است، نه دروازه؛ از همان فراخوان جهانی ساخته "
+                      "شده و منبع تازه‌ای ادعا نمی‌کند.")}
+
+
+def breadth_line(ab):
+    if not ab or ab.get("status") != "OK" or ab["label"] == "FLAT":
+        return None
+    icon = {"ALT_BREADTH": "🌿", "MEGA_CAP_LED": "🐋",
+            "BROAD": "➖"}.get(ab["label"], "🔍")
+    return (f"{icon} پهنای بازار ({ab['minutes']}د): TOTAL "
+            f"{ab['total_pct']:+g}٪ · TOTAL2 {ab['total2_pct']:+g}٪ · "
+            f"TOTAL3 {ab['total3_pct']:+g}٪ — {ab['story']}")
+
+
 def summary(points):
     """تجزیه روی چند بازه — کوتاه و بلند، چون معنی‌شان یکی نیست."""
     out = {f"{m}m": decompose(points, m) for m in (60, 240, 1440)}
     out["stable_split"] = {f"{m}m": stable_split(points, m)
                            for m in (240, 1440)}
+    out["breadth"] = {f"{m}m": alt_breadth(points, m) for m in (240, 1440)}
     return out

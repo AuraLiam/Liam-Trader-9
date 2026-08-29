@@ -136,12 +136,43 @@ def run():
     rsrc = (HERE / "research.py").read_text(encoding="utf-8")
     check("منبع جهانی، USDC را جدا می‌خواند", '"usdc_dominance"' in rsrc)
 
+    # ── ۹.۵) پهنای بازار: TOTAL در برابر TOTAL2/TOTAL3 (بند ۶) ───────────
+    def bpts(rows, step_min=5):
+        n = len(rows)
+        return [{"t": (i - n + 1) * step_min * 60000 + 10**12,
+                 "u": 5.0, "c": 2.0, "b": b, "e": e, "m": m}
+                for i, (b, e, m) in enumerate(rows)]
+
+    # آلت‌سیزن: کل بازار +۵٪ ولی سهم BTC/ETH پایین → TOTAL3 خیلی جلوتر
+    alt = bpts([(56.0, 12.0, T)] * 288 + [(52.0, 11.0, T * 1.05)])
+    ab = D.alt_breadth(alt, 1440)
+    check("رشدِ عرضی = ALT_BREADTH", ab["label"] == "ALT_BREADTH", str(ab)[:220])
+    check("و TOTAL3 واقعاً از TOTAL جلوتر شمرده شده",
+          ab["total3_pct"] > ab["total_pct"], str(ab)[:200])
+    # حرکت بیت‌کوینی: کل بازار +۵٪ ولی همه‌اش از BTC
+    mega = bpts([(56.0, 12.0, T)] * 288 + [(60.0, 12.0, T * 1.05)])
+    check("حرکت سرهای بزرگ = MEGA_CAP_LED",
+          D.alt_breadth(mega, 1440)["label"] == "MEGA_CAP_LED",
+          str(D.alt_breadth(mega, 1440))[:220])
+    flat = bpts([(56.0, 12.0, T)] * 289)
+    check("بازارِ بی‌تکان = FLAT و بدون خط کپشن",
+          D.alt_breadth(flat, 1440)["label"] == "FLAT"
+          and D.breadth_line(D.alt_breadth(flat, 1440)) is None)
+    check("سری بدون سهم ETH = INSUFFICIENT (قانون ۱)",
+          D.alt_breadth(s, 1440)["status"] == "INSUFFICIENT")
+    check("خط کپشن هر سه عدد را می‌گوید",
+          all(k in (D.breadth_line(ab) or "")
+              for k in ("TOTAL", "TOTAL2", "TOTAL3")), str(D.breadth_line(ab)))
+    check("خلاصه، پهنای بازار را هم دارد", "breadth" in D.summary(alt))
+
     # ── ۱۰) اتاق دامیننس واقعاً مخرج را ذخیره می‌کند ─────────────────────
     src = (HERE / "dominance.py").read_text(encoding="utf-8")
     check("سری، کل ارزش بازار را ذخیره می‌کند (وگرنه تجزیه ابدی خالی است)",
           '_pt["m"] = mcap' in src)
     check("تجزیه به خروجی اتاق وصل است", '"decomposition": decomp' in src)
     check("سری، USDC.D را هم ذخیره می‌کند (بند ۳)", '_pt["c"] = usdc' in src)
+    check("سری، سهم ETH را هم ذخیره می‌کند (بند ۶ — TOTAL3)",
+          '_pt["e"] = ethd' in src)
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0

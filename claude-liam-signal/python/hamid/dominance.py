@@ -206,6 +206,7 @@ def run():
     # قابل تفکیک نیست به «تترِ تازه» و «بازارِ ریخته» (بند ۲، ۲۹ اوت).
     mcap = g.get("total_mcap_usd")
     usdc = g.get("usdc_dominance")            # بند ۳: استیبلِ دوم، جدا
+    ethd = g.get("eth_dominance")             # بند ۶: برای TOTAL3
     try:
         series = json.loads(SERIES.read_text()).get("points") or []
     except Exception:                            # noqa: BLE001
@@ -215,6 +216,8 @@ def run():
         _pt["m"] = mcap
     if usdc:
         _pt["c"] = usdc
+    if ethd:
+        _pt["e"] = ethd
     series.append(_pt)
     series = series[-CAP:]
     SERIES.parent.mkdir(parents=True, exist_ok=True)

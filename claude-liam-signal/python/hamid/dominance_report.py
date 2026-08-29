@@ -189,6 +189,11 @@ def build():
                 if sl:
                     cap.append(sl)
                     break
+            for span in ("1440m", "240m"):
+                bl = dom_decomp.breadth_line((dc.get("breadth") or {}).get(span))
+                if bl:
+                    cap.append(bl)
+                    break
         except Exception:                            # noqa: BLE001
             pass
         cap += _calendar_lines(dom)
