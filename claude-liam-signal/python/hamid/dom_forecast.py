@@ -3,7 +3,7 @@
 هر نوبتِ اتاق دامیننس (زنجیرهٔ رادار، گام مؤثر ~۳-۵ دقیقه) دو کار می‌کند:
 
 ۱. **صدور پیش‌بینی با دلیل** — تحلیلگر (کد قطعی، قانون ۰۶) برای USDT.D و
-   BTC.D مسیر احتمالی ۳۰ و ۱۲۰ دقیقهٔ بعد را می‌گوید (UP/DOWN/FLAT) و
+   BTC.D مسیر احتمالی افق‌های HORIZONS_MIN را می‌گوید (UP/DOWN/FLAT) و
    موظف است دلایلش را بنویسد. «ایجنت» تأییدکننده همین‌جاست: پیش‌بینی
    جهت‌دار فقط با ≥۲ شاهد هم‌جهت و دادهٔ تازه (≤۱۰ دقیقه) ثبت می‌شود؛
    دادهٔ کهنه یا شواهد متضاد = NO_FORECAST (قانون ۱ — حدس ممنوع).
@@ -13,7 +13,9 @@
    متریک و افق. خطا پنهان نمی‌شود — کارنامه روی signals/dominance.json
    می‌نشیند و پنل همان را نشان می‌دهد.
 
-آستانه‌ها: حرکت واقعی = |Δ| ≥ NOISE واحد دامیننس؛ زیر آن FLAT است.
+آستانه‌ها: حرکت واقعی = |Δ| ≥ آستانهٔ همان افق؛ زیر آن FLAT است. آستانه
+از **نوسانِ واقعیِ همان افق در سری** می‌آید (`horizon_noise`) با NOISE
+به‌عنوان کفِ مطلق — چون ۰.۰۲ واحد در ۳۰ دقیقه و در ۲۴ ساعت دو چیزند.
 دفتر: brain/dom-forecasts.json (open + دنبالهٔ graded + score تجمیعی).
 """
 import json
@@ -23,8 +25,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 LEDGER = ROOT / "brain" / "dom-forecasts.json"
 
-HORIZONS_MIN = (30, 120)
-NOISE = 0.02          # واحد دامیننس؛ زیر این، حرکت نیست — لرزش است
+# افق‌ها (بازنگری ۲۹ اوت، بند ۴ پرامپت). اندازه‌گیری همان روز: روی
+# ۳۰د و ۱۲۰د موتور در ۸۷.۶٪ نوبت‌ها مجبور بود FLAT بگوید، چون دامیننس
+# در آن بازه‌ها عمدتاً لرزش است نه حرکت. دامیننس روی ۴س و روزانه روند
+# دارد، پس دو افق بلند اضافه شد تا موتور جایی حرف بزند که حرفی هست.
+# افق‌های کوتاه حذف نشدند — مقایسه‌شان همان بنچمارکِ لازم را می‌سازد.
+HORIZONS_MIN = (30, 120, 240, 1440)
+
+# آستانهٔ «حرکت معنادار» — از این پس نسبت به نوسانِ واقعیِ همان افق،
+# نه عددِ ثابت. دلیل: ۰.۰۲ واحد در ۳۰ دقیقه یک چیز است و در ۲۴ ساعت
+# چیز دیگری؛ با آستانهٔ ثابت، افقِ بلند تقریباً همیشه «حرکت» می‌دید و
+# افقِ کوتاه تقریباً هیچ‌وقت. NOISE کفِ مطلق می‌ماند تا در بازارِ
+# بی‌نوسان، لرزشِ ذره‌ای «حرکت» شمرده نشود.
+NOISE = 0.02          # کفِ مطلق؛ زیر این، حرکت نیست — لرزش است
+NOISE_VOL_MULT = 0.5  # آستانه = بیشینهٔ(NOISE، این ضریب × نوسانِ افق)
+VOL_MIN_N = 12        # زیر این تعداد پنجره، نوسان را نمی‌سنجیم — کف می‌ماند
+VOL_MAX_WINDOWS = 240  # سقف نمونه‌گیری؛ سری ۴۰۰۰ نقطه‌ای را کند نکند
 FRESH_MS = 10 * 60000  # دادهٔ کهنه‌تر از ۱۰ دقیقه = پیش‌بینی ممنوع
 KEEP_GRADED = 400      # دنبالهٔ کارنامه، برای عیب‌یابی
 
@@ -54,6 +70,50 @@ def bucket_stats(st, metric, horizon, path, window=HIST_WINDOW):
         return {"n": 0, "hit_pct": None}
     hit = sum(1 for g in rows if g["result"] == "HIT")
     return {"n": n, "hit_pct": round(100 * hit / n, 1)}
+
+
+def horizon_noise(points, key, horizon_min):
+    """آستانهٔ «حرکت معنادار» برای همین متریک و همین افق — از خودِ سری.
+
+    چرا عدد ثابت غلط بود (اندازه‌گیری ۲۹ اوت): ۰.۰۲ واحد در ۳۰ دقیقه
+    حرکتی بزرگ است و در ۲۴ ساعت تقریباً هیچ. با آستانهٔ ثابت، افقِ بلند
+    عملاً هرگز FLAT نمی‌دید و افقِ کوتاه تقریباً همیشه — یعنی نمرهٔ دو
+    افق اصلاً یک چیز را نمی‌سنجید و مقایسه‌شان بی‌معنا بود.
+
+    روش: بزرگی حرکتِ واقعیِ همین افق در گذشتهٔ سری شمرده می‌شود و
+    میانه‌اش گرفته می‌شود (میانه، نه میانگین — یک جهشِ خبری نباید
+    آستانهٔ کل دوره را بالا ببرد). آستانه = بیشینهٔ(کفِ مطلق،
+    ضریب × میانه).
+
+    نمونهٔ کم = آستانه همان کفِ مطلق؛ عدد ساخته نمی‌شود (قانون ۱).
+    خروجی: (آستانه، تعداد پنجره، میانهٔ |Δ| یا None)."""
+    pts = [p for p in (points or []) if key in p]
+    if len(pts) < VOL_MIN_N + 1:
+        return NOISE, 0, None
+    span = horizon_min * 60000
+    tol = max(span * 0.2, 15 * 60000)
+    times = [p["t"] for p in pts]
+    step = max(1, len(pts) // VOL_MAX_WINDOWS)
+    deltas = []
+    j = 0
+    for i in range(0, len(pts), step):
+        target = times[i] - span
+        if target < times[0]:
+            continue
+        while j + 1 < len(pts) and abs(times[j + 1] - target) <= abs(times[j] - target):
+            j += 1
+        # j ممکن است از هدفِ این i جلو افتاده باشد وقتی step بزرگ است
+        best = min(range(max(0, j - 2), min(len(pts), j + 3)),
+                   key=lambda x: abs(times[x] - target))
+        if abs(times[best] - target) > tol:
+            continue
+        deltas.append(abs(pts[i][key] - pts[best][key]))
+    if len(deltas) < VOL_MIN_N:
+        return NOISE, len(deltas), None
+    deltas.sort()
+    m = len(deltas)
+    med = (deltas[m // 2] if m % 2 else (deltas[m // 2 - 1] + deltas[m // 2]) / 2)
+    return round(max(NOISE, NOISE_VOL_MULT * med), 4), m, round(med, 4)
 
 
 def _load():
@@ -144,13 +204,27 @@ def make_forecast(points, struct, now_ms=None, st=None):
                             f"بازآزمایی {cnt}: ادعا با وجود کارنامهٔ بد "
                             "عمداً صادر شد تا نمونه‌گیری زنده بماند")
                     else:
-                        f["demoted_from"] = path
-                        f["path"] = "FLAT"
+                        # بازنگری ۲۹ اوت (بند ۱ پرامپت) — تلهٔ خودتقویت‌شونده:
+                        # نسخهٔ قبل ادعای بدکارنامه را به FLAT تنزل می‌داد.
+                        # نتیجه‌اش مارپیچ بود: تنزل → FLAT بیشتر → کارنامهٔ
+                        # جهت‌دار نمونهٔ تازه نمی‌گرفت → همان کارنامهٔ بد
+                        # ابدی می‌شد. اندازه‌گیری: ۸۷.۶٪ همهٔ پیش‌بینی‌ها
+                        # FLAT شده بود و فقط ۴۹ ادعای جهت‌دار در کل دفتر
+                        # مانده بود.
+                        #
+                        # حالا ادعا **سرِ جایش می‌ماند** ولی با وزن اعتمادِ
+                        # کم و برچسب صریح. مصرف‌کننده می‌تواند نادیده‌اش
+                        # بگیرد؛ ولی کارنامه نمونهٔ تازه می‌گیرد و اگر رژیم
+                        # عوض شد، خودش خوب می‌شود. حکم عوض نمی‌شود، وزنش
+                        # عوض می‌شود — همان تفاوت «شاهد» و «دروازه».
+                        f["low_confidence"] = True
+                        f["confidence"] = 0.25
                         f["reasons"] = [
-                            f"ادعای {path} پس گرفته شد — کارنامهٔ همین ادعا "
-                            f"در {hist['n']} نوبت اخیر فقط {hist['hit_pct']}٪ "
-                            "اصابت داشت (اصل انباشت تجربه، قانون ۰۳)"
-                        ] + [f"شاهد اولیه: {r}" for r in reasons[:2]]
+                            f"ادعای {path} با اعتماد کم صادر شد — کارنامهٔ "
+                            f"همین ادعا در {hist['n']} نوبت اخیر فقط "
+                            f"{hist['hit_pct']}٪ اصابت داشت؛ حکم پس گرفته "
+                            "نشد تا نمونه‌گیری زنده بماند (بند ۱، ۲۹ اوت)"
+                        ] + [f"شاهد: {r}" for r in reasons[:2]]
             out.append(f)
     return out
 
@@ -169,7 +243,13 @@ def grade_due(st, points, now_ms=None):
             st["graded"].append(f)
             continue
         delta = round(actual[f["key"]] - f["base"], 3)
-        real = "FLAT" if abs(delta) < NOISE else ("UP" if delta > 0 else "DOWN")
+        # آستانه از نوسانِ همان افق می‌آید، نه از عددِ ثابت (بند ۴، ۲۹ اوت).
+        # روی خودِ ردیف ثبت می‌شود تا نمره بعداً قابل بازتولید باشد.
+        thr, vol_n, vol_med = horizon_noise(points, f["key"], f["horizon_min"])
+        f["noise_used"], f["noise_windows"] = thr, vol_n
+        if vol_med is not None:
+            f["noise_median_move"] = vol_med
+        real = "FLAT" if abs(delta) < thr else ("UP" if delta > 0 else "DOWN")
         f["actual_delta"], f["real_path"] = delta, real
         f["result"] = "HIT" if real == f["path"] else "MISS"
         st["graded"].append(f)
@@ -245,7 +325,8 @@ def update(points, struct, now_ms=None):
     _save(st)
     return {"made_now": [{k: f[k] for k in
                           ("metric", "horizon_min", "path", "reasons",
-                           "hist", "demoted_from", "reprobe") if k in f}
+                           "hist", "low_confidence", "confidence",
+                           "reprobe") if k in f}
                          for f in fresh],
             "graded_now": graded_now,
             "scoreboard": scoreboard(st),
