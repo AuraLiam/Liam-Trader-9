@@ -131,6 +131,68 @@ def line(dec):
             f"+ کل بازار {dec['mcap_effect_pct']:+g}٪ — {dec['story']}")
 
 
+def stable_split(points, minutes=240):
+    """USDT.D در برابر USDC.D — بند ۳ (دستور حمید، ۲۹ اوت).
+
+    چرا تفکیک لازم است: «پول به استیبل رفت» یک جمله است ولی دو جریانِ
+    متفاوت دارد. تتر عمدتاً آفشور و معاملاتی است؛ یواس‌دی‌سی بیشتر
+    آمریکایی/نهادی. اگر **هر دو** بالا بروند، یعنی واقعاً از ریسک
+    فرار شده. اگر فقط یکی بالا برود و دیگری پایین، احتمالاً **چرخش
+    بین خودِ استیبل‌ها** است — نه ترسِ بازار؛ و خواندنش به‌عنوان
+    ریسک‌آف، خطای تفسیر است.
+
+    خروجی شاهد است نه دروازه (قانون ۰۳)."""
+    pts = [p for p in (points or []) if p.get("u") and p.get("c")]
+    if len(pts) < 2:
+        return {"status": "INSUFFICIENT",
+                "why": "سری هنوز USDC.D را ذخیره نکرده — تفکیک ممکن نیست"}
+    now = pts[-1]
+    tol = max(minutes * 60000 * 0.25, 15 * 60000)
+    past = min(pts, key=lambda x: abs(x["t"] - (now["t"] - minutes * 60000)))
+    if abs(past["t"] - (now["t"] - minutes * 60000)) > tol or past["t"] >= now["t"]:
+        return {"status": "INSUFFICIENT",
+                "why": f"نقطهٔ {minutes} دقیقه قبل با USDC.D در سری نیست"}
+
+    du = round(now["u"] - past["u"], 3)
+    dc = round(now["c"] - past["c"], 3)
+    thr = 0.02                               # کفِ حرکت روی واحد دامیننس
+    su = 0 if abs(du) < thr else (1 if du > 0 else -1)
+    sc = 0 if abs(dc) < thr else (1 if dc > 0 else -1)
+    if su == sc == 0:
+        label, story = "FLAT", "هیچ‌کدام از دو استیبل تکان معناداری نخوردند"
+    elif su == sc == 1:
+        label, story = "RISK_OFF", ("هر دو استیبل بالا — فرار از ریسکِ "
+                                    "واقعی، نه چرخش بین استیبل‌ها")
+    elif su == sc == -1:
+        label, story = "RISK_ON", ("هر دو استیبل پایین — پول از حاشیه "
+                                   "به بازار برگشته")
+    elif su * sc == -1:
+        label, story = "STABLE_ROTATION", (
+            "یکی بالا و دیگری پایین — چرخش بین خودِ استیبل‌ها؛ "
+            "خواندنش به‌عنوان ریسک‌آف خطای تفسیر است")
+    else:
+        label, story = "PARTIAL", ("فقط یکی از دو استیبل حرکت کرده — "
+                                   "شاهدِ ضعیف، نه حکم")
+    return {"status": "OK", "minutes": minutes,
+            "usdt_d_delta": du, "usdc_d_delta": dc,
+            "usdt_d": round(now["u"], 3), "usdc_d": round(now["c"], 3),
+            "label": label, "story": story,
+            "limit": "شاهد است نه دروازه؛ منبع: CoinGecko global."}
+
+
+def split_line(sp):
+    if not sp or sp.get("status") != "OK" or sp["label"] == "FLAT":
+        return None
+    icon = {"RISK_OFF": "🛡", "RISK_ON": "🔥",
+            "STABLE_ROTATION": "🔁", "PARTIAL": "◐"}.get(sp["label"], "🔍")
+    return (f"{icon} استیبل‌ها ({sp['minutes']}د): USDT.D "
+            f"{sp['usdt_d_delta']:+g} · USDC.D {sp['usdc_d_delta']:+g} — "
+            f"{sp['story']}")
+
+
 def summary(points):
     """تجزیه روی چند بازه — کوتاه و بلند، چون معنی‌شان یکی نیست."""
-    return {f"{m}m": decompose(points, m) for m in (60, 240, 1440)}
+    out = {f"{m}m": decompose(points, m) for m in (60, 240, 1440)}
+    out["stable_split"] = {f"{m}m": stable_split(points, m)
+                           for m in (240, 1440)}
+    return out

@@ -205,6 +205,7 @@ def run():
     # کل ارزش بازار = مخرجِ دامیننس. بدون ذخیرهٔ آن، «USDT.D بالا رفت»
     # قابل تفکیک نیست به «تترِ تازه» و «بازارِ ریخته» (بند ۲، ۲۹ اوت).
     mcap = g.get("total_mcap_usd")
+    usdc = g.get("usdc_dominance")            # بند ۳: استیبلِ دوم، جدا
     try:
         series = json.loads(SERIES.read_text()).get("points") or []
     except Exception:                            # noqa: BLE001
@@ -212,6 +213,8 @@ def run():
     _pt = {"t": int(time.time() * 1000), "u": u, "b": b}
     if mcap:
         _pt["m"] = mcap
+    if usdc:
+        _pt["c"] = usdc
     series.append(_pt)
     series = series[-CAP:]
     SERIES.parent.mkdir(parents=True, exist_ok=True)

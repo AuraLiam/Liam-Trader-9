@@ -97,17 +97,51 @@ def run():
           ln and "عرضه" in ln and "کل بازار" in ln and "٪" in ln, str(ln))
     sm = D.summary(s)
     check("خلاصه روی سه بازه حساب می‌شود",
-          set(sm) == {"60m", "240m", "1440m"}, str(list(sm)))
+          {"60m", "240m", "1440m"} <= set(sm), str(list(sm)))
 
     # ── ۸) مرز صادقانه روی خودِ خروجی است (قانون ۱۲) ─────────────────────
     check("مرز صادقانه روی خروجی نوشته شده",
           "شاهد است نه دروازه" in d["limit"], d["limit"])
 
-    # ── ۹) اتاق دامیننس واقعاً مخرج را ذخیره می‌کند ──────────────────────
+    # ── ۹) تفکیک USDT.D از USDC.D (بند ۳) ────────────────────────────────
+    def spts(pairs, step_min=5):
+        n = len(pairs)
+        return [{"t": (i - n + 1) * step_min * 60000 + 10**12,
+                 "u": u, "c": c, "b": 56.0, "m": T}
+                for i, (u, c) in enumerate(pairs)]
+
+    both_up = spts([(5.0, 2.0)] * 48 + [(5.2, 2.2)])
+    sp = D.stable_split(both_up, 240)
+    check("هر دو استیبل بالا = RISK_OFF (فرارِ واقعی)",
+          sp["label"] == "RISK_OFF", str(sp)[:200])
+    rot = spts([(5.0, 2.0)] * 48 + [(5.2, 1.8)])
+    sp2 = D.stable_split(rot, 240)
+    check("یکی بالا یکی پایین = چرخش بین استیبل‌ها، نه ریسک‌آف",
+          sp2["label"] == "STABLE_ROTATION", str(sp2)[:200])
+    check("و صریح می‌گوید خواندنش به‌عنوان ریسک‌آف خطاست",
+          "خطای تفسیر" in sp2["story"], sp2["story"])
+    down = spts([(5.0, 2.0)] * 48 + [(4.8, 1.8)])
+    check("هر دو پایین = RISK_ON",
+          D.stable_split(down, 240)["label"] == "RISK_ON")
+    part = spts([(5.0, 2.0)] * 48 + [(5.2, 2.0)])
+    check("فقط یکی حرکت کرده = شاهد ضعیف، نه حکم",
+          D.stable_split(part, 240)["label"] == "PARTIAL")
+    check("بدون USDC در سری = INSUFFICIENT (قانون ۱)",
+          D.stable_split(s, 240)["status"] == "INSUFFICIENT")
+    check("خط کپشن تفکیک، هر دو عدد را می‌گوید",
+          "USDT.D" in (D.split_line(sp) or "")
+          and "USDC.D" in (D.split_line(sp) or ""), str(D.split_line(sp)))
+    check("خلاصه، تفکیک استیبل را هم دارد",
+          "stable_split" in D.summary(both_up))
+    rsrc = (HERE / "research.py").read_text(encoding="utf-8")
+    check("منبع جهانی، USDC را جدا می‌خواند", '"usdc_dominance"' in rsrc)
+
+    # ── ۱۰) اتاق دامیننس واقعاً مخرج را ذخیره می‌کند ─────────────────────
     src = (HERE / "dominance.py").read_text(encoding="utf-8")
     check("سری، کل ارزش بازار را ذخیره می‌کند (وگرنه تجزیه ابدی خالی است)",
           '_pt["m"] = mcap' in src)
     check("تجزیه به خروجی اتاق وصل است", '"decomposition": decomp' in src)
+    check("سری، USDC.D را هم ذخیره می‌کند (بند ۳)", '_pt["c"] = usdc' in src)
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0

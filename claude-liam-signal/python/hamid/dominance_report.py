@@ -155,6 +155,10 @@ def build():
         if not (isinstance(r, dict) and r.get("n")):
             continue
         line = f"{k}: {r.get('hit', r.get('hits', 0))}/{r['n']}"
+        if r.get("brier") is not None:
+            line += f" · برایر {r['brier']}"
+            if r.get("brier_climate") is not None:
+                line += f" (اقلیم {r['brier_climate']}؛ کمتر بهتر)"
         if r.get("skill") is not None:
             line += f" (مهارت {r['skill']:+g} در برابر «همیشه FLAT»)"
         if r.get("dir_n"):
@@ -174,10 +178,16 @@ def build():
         # ولی یک معنی ندارند (بند ۲، ۲۹ اوت)
         try:
             from hamid import dom_decomp
+            dc = dom.get("decomposition") or {}
             for span in ("240m", "1440m"):
-                ln = dom_decomp.line((dom.get("decomposition") or {}).get(span))
+                ln = dom_decomp.line(dc.get(span))
                 if ln:
                     cap.append(ln)
+                    break
+            for span in ("240m", "1440m"):
+                sl = dom_decomp.split_line((dc.get("stable_split") or {}).get(span))
+                if sl:
+                    cap.append(sl)
                     break
         except Exception:                            # noqa: BLE001
             pass

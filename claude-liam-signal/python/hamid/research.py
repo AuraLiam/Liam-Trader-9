@@ -236,6 +236,9 @@ def global_market():
         "btc_dominance": round(j["market_cap_percentage"].get("btc", 0), 2),
         "eth_dominance": round(j["market_cap_percentage"].get("eth", 0), 2),
         "usdt_dominance": round(j["market_cap_percentage"].get("usdt", 0), 3),
+        # USDC جدا شمرده می‌شود: جریانِ آفشور (تتر) و جریانِ آمریکایی/نهادی
+        # (یواس‌دی‌سی) یک چیز نیستند — بند ۳، ۲۹ اوت
+        "usdc_dominance": round(j["market_cap_percentage"].get("usdc", 0), 3),
         "total_mcap_usd": j["total_market_cap"].get("usd"),
         "mcap_change_24h": round(j.get("market_cap_change_percentage_24h_usd", 0), 2),
     }
