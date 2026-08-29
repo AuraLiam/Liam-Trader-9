@@ -88,6 +88,7 @@ jobs:
           python3 -m hamid.test_single_bot
           python3 -m hamid.test_state_bus
           python3 -m hamid.test_loop_audit
+          python3 -m hamid.test_daily_24
           python3 -m hamid.test_learning
           python3 -m hamid.test_pump_study
           python3 -m hamid.test_workflows
@@ -157,6 +158,11 @@ jobs:
               (cd claude-liam-signal/python && python3 -m hamid.state_bus --write) || true
               # ممیزِ حلقهٔ بسته: هر سیگنالِ رفته باید رد پنل/یادگیری/علت داشته باشد
               (cd claude-liam-signal/python && python3 -m hamid.loop_audit --write) || true
+              # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است
+              if [ ! -f signals/btc-sensitivity.json ] || \
+                 [ -n "$(find signals/btc-sensitivity.json -mmin +1200 2>/dev/null)" ]; then
+                (cd claude-liam-signal/python && python3 -m hamid.btc_sensitivity --write) || true
+              fi
               # اسکن استراتژی‌ها هم سوار همین زنجیره — شکایت حمید (۱۲ اوت):
               # «همه سیگنال‌ها با هم می‌آیند». علت، اسکنِ دسته‌ایِ ~۲۰دقیقه‌ای
               # بود: هرچه در یک اجرا تأیید شده بود یک‌جا می‌رفت. حالا هر ۵

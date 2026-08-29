@@ -77,6 +77,7 @@ PARAMS_PATH = "/signals/strategy-params.json"
 EXPERIENCE_PATH = "/signals/experience.json"
 TOP_LIQ_PATH = "/signals/top-liquidity.json"
 EDGE_PATH = "/signals/edge.json"
+BTC_SENS_PATH = "/signals/btc-sensitivity.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
 PARAMS = {
@@ -470,12 +471,67 @@ def apply_room_weights(parts):
     return round(delta, 1), lines, used
 
 
+# ── حساسیت تاریخی به بیت‌کوین (v3.0 — دستور حمید، ۲۹ اوت) ────────────────
+#
+# «اگر نسبت به رفتار بیت‌کوین بی‌تفاوت بوده، در امتیازی که برای سیگنال‌شدنش
+#  می‌دهی تجدید نظر کن… تاریخچه باید یکی از چندین پارامتری باشد که تحلیل را
+#  تأیید یا رد می‌کند.»
+#
+# قاعده — عمداً محافظه‌کارانه، چون همبستگی علیت نیست:
+#   COUPLED      → بسترِ BTC شاهد معتبر است؛ سهمش دست‌نخورده می‌ماند.
+#   INDEPENDENT  → بسترِ BTC برای این نماد شاهد ضعیفی است؛ سهمش **نصف**
+#                  می‌شود، چه موافق باشد چه مخالف. یعنی حکم از ساختار
+#                  خودِ نماد می‌آید — دقیقاً موردِ TRUMP که حمید گفت.
+#   UNKNOWN      → هیچ تغییری. «نمی‌دانم» هرگز «مستقل» تفسیر نمی‌شود.
+#
+# چیزی که این قاعده **نمی‌کند**: دروازه نیست و هیچ سیگنالی را وتو نمی‌کند؛
+# فقط وزنِ یک شاهد را تنظیم می‌کند. اثر عددی‌اش شبانه سنجیده می‌شود و
+# ماندنش به CI بالای صفر بسته است (قانون ۰۳).
+BTC_SENS = {"coins": {}, "generated": 0}
+BTC_SENS_STALE_H = 24
+BTC_CTX_DAMP = 0.5       # ضریب سهمِ بسترِ BTC برای نمادِ مستقل
+
+
+def sync_btc_sensitivity():
+    """کلاس حساسیت هر نماد را از خروجی موتور می‌خواند (قانون ۱۳: مصرف‌کننده)."""
+    global BTC_SENS
+    for base in (REPO_RAW, PAGES):
+        try:
+            j = _get(base + BTC_SENS_PATH)
+            if isinstance(j, dict) and isinstance(j.get("coins"), dict):
+                age_h = (time.time() * 1000 - (j.get("generated") or 0)) / 3600e3
+                BTC_SENS = j if age_h <= BTC_SENS_STALE_H else {"coins": {}, "generated": 0}
+                return len(BTC_SENS.get("coins") or {})
+        except Exception:                            # noqa: BLE001
+            continue
+    BTC_SENS = {"coins": {}, "generated": 0}
+    return 0
+
+
+def btc_klass(symbol):
+    """COUPLED / INDEPENDENT / UNKNOWN — نبودِ داده = UNKNOWN، نه حدس."""
+    row = (BTC_SENS.get("coins") or {}).get(symbol)
+    if not isinstance(row, dict):
+        return "UNKNOWN"
+    age_h = (time.time() * 1000 - (row.get("at") or 0)) / 3600e3
+    if age_h > BTC_SENS_STALE_H:
+        return "UNKNOWN"
+    return row.get("klass", "UNKNOWN")
+
+
+def btc_ctx_weight(symbol):
+    """ضریبی که سهمِ بسترِ BTC در امتیاز این نماد باید در آن ضرب شود."""
+    return BTC_CTX_DAMP if btc_klass(symbol) == "INDEPENDENT" else 1.0
+
+
 def sync_all():
-    """یک خط برای داشبورد: پارامتر + تجربه + نقدشوندگی + قفسهٔ لبه + وزن اتاق‌ها."""
+    """یک خط برای داشبورد: پارامتر + تجربه + نقدشوندگی + قفسهٔ لبه + وزن اتاق‌ها
+    + حساسیت تاریخی به بیت‌کوین."""
     return {"params": sync_params(), "experience_pairs": sync_experience(),
             "top_liquidity": sync_top_liquidity(),
             "edge_rules": sync_edge(),
-            "room_weights": sync_room_weights()}
+            "room_weights": sync_room_weights(),
+            "btc_sensitivity": sync_btc_sensitivity()}
 
 
 def experience_of(symbol, direction):
