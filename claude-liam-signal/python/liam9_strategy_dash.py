@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""لیام تریدر ۹ — استراتژی داشبورد ۲.۶ (نسخهٔ فشرده)
+"""لیام تریدر ۹ — استراتژی داشبورد ۳.۰ (نسخهٔ فشرده)
 
 این فایل برای جعبهٔ «استراتژی» داشبورد ساخته شده: همان کدِ کامل،
 بدون کامنت و داک‌استرینگ، تا از سقف اندازهٔ جعبه رد نشود.
 نسخهٔ خوانا و مستند در ریپو است — این‌جا فقط اجرا.
 
-ساخت: 2026-08-29 13:21 UTC · کامیت f33e414161
+ساخت: 2026-08-29 13:26 UTC · کامیت 74ffa1e545
 منبع: claude-liam-signal/python/liam9_strategy.py
 ساخته‌شده با: python3 -m hamid.build_dashboard
 
@@ -27,7 +27,7 @@ EDGE_PATH ="/signals/edge.json"
 BTC_SENS_PATH ="/signals/btc-sensitivity.json"
 
 PARAMS ={
-"version":"liam9-dash-2.8",
+"version":"liam9-dash-3.0",
 "ibs_long_max":0.30 ,
 "ibs_short_min":0.70 ,
 "min_net_rr":1.8 ,
@@ -1252,7 +1252,7 @@ def _selftest ():
     finally :
         EDGE .clear ()
         EDGE .update (_edge_bak )
-    print ("✓ خودآزمایی استراتژی ۲.۸ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، قفسهٔ لبه، ممیزی")
+    print ("✓ خودآزمایی استراتژی ۳.۰ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، قفسهٔ لبه، ممیزی")
 
 try :
     from strategy_base import BaseStrategy 
