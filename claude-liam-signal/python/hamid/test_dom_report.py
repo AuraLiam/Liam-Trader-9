@@ -53,7 +53,10 @@ try:
                         "country": "USD"},
                        {"title": "Payrolls Revision", "in_hours": 19.4,
                         "country": "USD"}],
-             "forecast": {"scoreboard": {"USDT.D|30m": {"n": 10, "hit": 6}}}}
+             "forecast": {"scoreboard": {
+                 "USDT.D|30m": {"n": 10, "hit": 6, "dir_n": 4,
+                                "dir_hit_pct": 25.0,
+                                "baseline_flat_pct": 70.0, "skill": -10.0}}}}
     DR.DOM.write_text(json.dumps(fresh))
     cap = DR.build()
     check("گزارش امضای پنل دارد", "لیام تریدر ۹" in cap)
@@ -68,6 +71,12 @@ try:
     check("سناریوی هر دو جهت نوشته می‌شود (قانون ۱۱)",
           "بالا برود" in cap and "پایین بیاید" in cap, cap)
     check("کارنامهٔ پیش‌بینی با شمارش می‌آید", "6/10" in cap)
+    # درس ۲۹ اوت: درصدِ کل بدون بنچمارک، اعتبارنامهٔ کاذب است — ۸۷.۶٪
+    # پیش‌بینی‌ها FLAT بودند و آن درصد عمدتاً پاداشِ سکوت بود.
+    check("کارنامه بدون بنچمارک چاپ نمی‌شود (مهارت کنارش می‌آید)",
+          "مهارت -10" in cap and "همیشه FLAT" in cap, cap)
+    check("سهم ادعای جهت‌دار جدا گزارش می‌شود",
+          "جهت‌دار 4 نوبت" in cap, cap)
 
     stale = dict(fresh, generated=now - 3 * 3600 * 1000)
     DR.DOM.write_text(json.dumps(stale))
