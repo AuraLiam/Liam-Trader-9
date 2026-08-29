@@ -170,6 +170,17 @@ def build():
                    f"۱س {b1.get('trend','?')} · ۴س {b4.get('trend','?')}")
         if dom.get("verdict"):
             cap.append(f"💬 {dom['verdict']}")
+        # تجزیهٔ صورت/مخرج — «تترِ تازه» و «بازارِ ریخته» یک عدد می‌سازند
+        # ولی یک معنی ندارند (بند ۲، ۲۹ اوت)
+        try:
+            from hamid import dom_decomp
+            for span in ("240m", "1440m"):
+                ln = dom_decomp.line((dom.get("decomposition") or {}).get(span))
+                if ln:
+                    cap.append(ln)
+                    break
+        except Exception:                            # noqa: BLE001
+            pass
         cap += _calendar_lines(dom)
         cap.append("📐 " + _scenario("USDT.D", u1))
         cap.append("📐 " + _scenario("BTC.D", b1))
