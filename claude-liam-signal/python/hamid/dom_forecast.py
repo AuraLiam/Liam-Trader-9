@@ -116,6 +116,60 @@ def horizon_noise(points, key, horizon_min):
     return round(max(NOISE, NOISE_VOL_MULT * med), 4), m, round(med, 4)
 
 
+MIN_P_N = 25          # زیر این نمونه، احتمال چاپ نمی‌شود (شمارش کم دروغ می‌گوید)
+
+
+def probabilities(st, metric, horizon, path, ev_n=None, window=HIST_WINDOW):
+    """احتمالِ سه‌حالته از **شمارشِ دفتر** — ساخته نمی‌شود (بند ۵، ۲۹ اوت).
+
+    چرا برچسب کافی نیست: «UP» و «UP» دو ادعای هم‌ارز به نظر می‌رسند، ولی
+    UP با چهار شاهد هم‌جهت و UP با دو شاهد، تاریخچهٔ متفاوتی دارند. عدد
+    کالیبره این تفاوت را نشان می‌دهد و — برخلاف برچسب — با نمرهٔ برایر
+    قابل سنجش است.
+
+    روش: ردیف‌های نمره‌خوردهٔ همان سطل شمرده می‌شوند و نسبتِ نتیجهٔ
+    واقعی (UP/DOWN/FLAT) برگردانده می‌شود. اول سطلِ دقیق (با شمار شواهد)؛
+    اگر نمونه‌اش کم بود، سطلِ درشت‌تر (بدون شمار شواهد). اگر باز هم کم
+    بود، None با دلیل — نه عددِ خوش‌بینانه."""
+    def _rows(with_ev):
+        out = []
+        for g in (st or {}).get("graded", []):
+            if (g.get("metric") != metric or g.get("horizon_min") != horizon
+                    or g.get("path") != path
+                    or g.get("real_path") not in ("UP", "DOWN", "FLAT")):
+                continue
+            if with_ev and g.get("ev_n") != ev_n:
+                continue
+            out.append(g)
+        return out[-window:]
+
+    rows = _rows(True) if ev_n is not None else []
+    bucket = "دقیق (با شمار شواهد)"
+    if len(rows) < MIN_P_N:
+        rows = _rows(False)
+        bucket = "درشت (بدون شمار شواهد)"
+    n = len(rows)
+    if n < MIN_P_N:
+        return {"p": None, "n": n,
+                "why": f"نمونه {n} < {MIN_P_N} — احتمال شمرده نمی‌شود (قانون ۱)"}
+    cnt = {"UP": 0, "DOWN": 0, "FLAT": 0}
+    for g in rows:
+        cnt[g["real_path"]] += 1
+    return {"p": {k: round(v / n, 3) for k, v in cnt.items()},
+            "n": n, "bucket": bucket}
+
+
+def brier(p, real):
+    """نمرهٔ برایر سه‌حالته: میانگین مربعِ خطای احتمال. کمتر = بهتر.
+
+    مرجعِ خواندنش: حدسِ کاملاً بی‌اطلاع (⅓ برای هر حالت) نمرهٔ ۰.۶۶۷
+    می‌گیرد. عددِ بدون این مرجع، معنا ندارد."""
+    if not p or real not in ("UP", "DOWN", "FLAT"):
+        return None
+    return round(sum((p.get(k, 0) - (1.0 if k == real else 0.0)) ** 2
+                     for k in ("UP", "DOWN", "FLAT")), 4)
+
+
 def _load():
     try:
         d = json.loads(LEDGER.read_text())
@@ -186,10 +240,23 @@ def make_forecast(points, struct, now_ms=None, st=None):
             reasons = [f"شواهد ناهم‌جهت یا ناکافی ({len(ups)}↑/{len(downs)}↓)"]
         else:
             path, reasons = "FLAT", ["هیچ شاهد جهت‌داری نیست"]
+        ev_n = len(ups) if path == "UP" else (
+            len(downs) if path == "DOWN" else len(ev))
         for h in HORIZONS_MIN:
             f = {"made": now, "due": now + h * 60000, "metric": metric,
                  "key": key, "horizon_min": h, "path": path,
-                 "base": points[-1][key], "reasons": list(reasons)}
+                 "base": points[-1][key], "reasons": list(reasons),
+                 "ev_n": ev_n}
+            # احتمال کالیبره کنارِ برچسب (بند ۵) — از شمارش دفتر، وگرنه None
+            if st is not None:
+                pr = probabilities(st, metric, h, path, ev_n)
+                f["p"] = pr.get("p")
+                f["p_n"] = pr.get("n")
+                if pr.get("p") is None:
+                    f["p_why"] = pr.get("why")
+                else:
+                    f["p_claim"] = pr["p"].get(path)
+                    f["p_bucket"] = pr.get("bucket")
             if st is not None and path in ("UP", "DOWN"):
                 hist = bucket_stats(st, metric, h, path)
                 f["hist"] = hist
@@ -252,11 +319,18 @@ def grade_due(st, points, now_ms=None):
         real = "FLAT" if abs(delta) < thr else ("UP" if delta > 0 else "DOWN")
         f["actual_delta"], f["real_path"] = delta, real
         f["result"] = "HIT" if real == f["path"] else "MISS"
+        # نمرهٔ برایر روی همان احتمالی که *قبل از* دیدن نتیجه چاپ شده بود
+        bs = brier(f.get("p"), real)
+        if bs is not None:
+            f["brier"] = bs
         st["graded"].append(f)
         k = f"{f['metric']}|{f['horizon_min']}m"
         sc = st["score"].setdefault(k, {"n": 0, "hit": 0})
         sc["n"] += 1
         sc["hit"] += 1 if f["result"] == "HIT" else 0
+        if bs is not None:
+            sc["brier_sum"] = round(sc.get("brier_sum", 0.0) + bs, 4)
+            sc["brier_n"] = sc.get("brier_n", 0) + 1
         graded_now += 1
     st["open"] = still
     return graded_now
@@ -307,6 +381,24 @@ def scoreboard(st):
             row["baseline_flat_pct"] = base
             hp = round(100 * v["hit"] / v["n"], 1) if v["n"] else None
             row["skill"] = round(hp - base, 1) if hp is not None else None
+        # برایر (بند ۵): عدد کالیبره، با مرجعِ «اقلیمِ همین سطل» تا معنا
+        # داشته باشد. برایرِ بی‌مرجع همان اشتباهِ درصدِ اصابتِ بی‌بنچمارک است.
+        if v.get("brier_n"):
+            row["brier"] = round(v["brier_sum"] / v["brier_n"], 4)
+            row["brier_n"] = v["brier_n"]
+            if b and b["graded"]:
+                q = b["flat_real"] / b["graded"]
+                # اقلیم: همیشه همان نرخ پایهٔ FLAT/غیرFLAT را بگو
+                clim = {"FLAT": q, "UP": (1 - q) / 2, "DOWN": (1 - q) / 2}
+                cs = [brier(clim, g.get("real_path"))
+                      for g in st.get("graded", [])
+                      if f"{g.get('metric')}|{g.get('horizon_min')}m" == k
+                      and g.get("real_path") in ("UP", "DOWN", "FLAT")]
+                cs = [c for c in cs if c is not None]
+                if cs:
+                    row["brier_climate"] = round(sum(cs) / len(cs), 4)
+                    row["brier_skill"] = round(row["brier_climate"]
+                                               - row["brier"], 4)
         out[k] = row
     return out
 
@@ -326,7 +418,8 @@ def update(points, struct, now_ms=None):
     return {"made_now": [{k: f[k] for k in
                           ("metric", "horizon_min", "path", "reasons",
                            "hist", "low_confidence", "confidence",
-                           "reprobe") if k in f}
+                           "reprobe", "p", "p_claim", "p_n", "p_why",
+                           "ev_n") if k in f}
                          for f in fresh],
             "graded_now": graded_now,
             "scoreboard": scoreboard(st),

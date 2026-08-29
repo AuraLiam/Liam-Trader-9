@@ -202,11 +202,23 @@ def macro_events():
 def run():
     g = research.global_market()
     u, b = round(g["usdt_dominance"], 3), round(g["btc_dominance"], 3)
+    # کل ارزش بازار = مخرجِ دامیننس. بدون ذخیرهٔ آن، «USDT.D بالا رفت»
+    # قابل تفکیک نیست به «تترِ تازه» و «بازارِ ریخته» (بند ۲، ۲۹ اوت).
+    mcap = g.get("total_mcap_usd")
+    usdc = g.get("usdc_dominance")            # بند ۳: استیبلِ دوم، جدا
+    ethd = g.get("eth_dominance")             # بند ۶: برای TOTAL3
     try:
         series = json.loads(SERIES.read_text()).get("points") or []
     except Exception:                            # noqa: BLE001
         series = []
-    series.append({"t": int(time.time() * 1000), "u": u, "b": b})
+    _pt = {"t": int(time.time() * 1000), "u": u, "b": b}
+    if mcap:
+        _pt["m"] = mcap
+    if usdc:
+        _pt["c"] = usdc
+    if ethd:
+        _pt["e"] = ethd
+    series.append(_pt)
     series = series[-CAP:]
     SERIES.parent.mkdir(parents=True, exist_ok=True)
     SERIES.write_text(json.dumps({"points": series}))
@@ -228,6 +240,15 @@ def run():
         struct = {"regime": "INSUFFICIENT", "note": f"خطای ساختار: {e}"}
     if struct.get("regime") not in (None, "INSUFFICIENT"):
         verdict += f"؛ رژیم ساختاری: {struct['regime']} ({struct.get('why', '')})"
+    # تجزیهٔ صورت/مخرج — شاهد، نه دروازه (بند ۲، ۲۹ اوت)
+    try:
+        from hamid import dom_decomp
+        decomp = dom_decomp.summary(series)
+        _dl = dom_decomp.line(decomp.get("240m"))
+        if _dl:
+            verdict += "؛ " + _dl.split("— ", 1)[-1]
+    except Exception as e:                       # noqa: BLE001
+        decomp = {"note": f"خطای تجزیه: {e}"}
     try:
         mtf = multi_tf(series)
     except Exception as e:                       # noqa: BLE001
@@ -250,6 +271,7 @@ def run():
         "chg_1h": {"usdt": u1, "btc": b1}, "chg_4h": {"usdt": u4, "btc": b4},
         "points": len(series), "verdict": verdict, "macro": mac,
         "structure": struct, "multi_tf": mtf, "forecast": fc,
+        "decomposition": decomp,
     }, ensure_ascii=False, indent=1))
     print(f"USDT.D {u} ({'+' if (u1 or 0) >= 0 else ''}{u1}/1h) · "
           f"BTC.D {b} · {verdict}")

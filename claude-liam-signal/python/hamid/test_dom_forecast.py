@@ -213,6 +213,61 @@ def run():
           row.get("noise_used") == thr120 and row.get("noise_windows"),
           str(row))
 
+    # ── بند ۵ (۲۹ اوت): احتمال کالیبره به‌جای برچسب + نمرهٔ برایر ──────────
+    def _g(path, real, n, ev_n=3, metric="USDT.D", h=120):
+        return [{"metric": metric, "horizon_min": h, "path": path,
+                 "real_path": real, "ev_n": ev_n,
+                 "result": "HIT" if real == path else "MISS"}
+                for _ in range(n)]
+
+    # سطلی با نتیجهٔ شمرده‌شده: از ۴۰ نوبتِ ادعای UP، ۱۰ تا واقعاً UP شد
+    pst = {"open": [], "graded": _g("UP", "UP", 10) + _g("UP", "FLAT", 24)
+           + _g("UP", "DOWN", 6), "score": {}, "probe": {}}
+    pr = df.probabilities(pst, "USDT.D", 120, "UP", 3)
+    check("احتمال از شمارشِ دفتر می‌آید، نه فرمول",
+          pr["p"]["UP"] == 0.25 and pr["p"]["FLAT"] == 0.6
+          and pr["p"]["DOWN"] == 0.15, str(pr))
+    check("تعداد نمونه کنار احتمال گزارش می‌شود", pr["n"] == 40, str(pr))
+    thin = {"open": [], "graded": _g("UP", "UP", 5), "score": {}, "probe": {}}
+    tp = df.probabilities(thin, "USDT.D", 120, "UP", 3)
+    check("نمونهٔ کم = احتمال چاپ نمی‌شود (قانون ۱)",
+          tp["p"] is None and "نمونه" in tp["why"], str(tp))
+
+    # برایر: کمتر بهتر؛ حدسِ بی‌اطلاع ⅓ = ۰.۶۶۷
+    check("برایرِ پیش‌بینی کامل صفر است",
+          df.brier({"UP": 1.0, "DOWN": 0.0, "FLAT": 0.0}, "UP") == 0.0)
+    check("برایرِ حدسِ بی‌اطلاع ~۰.۶۶۷ است",
+          abs(df.brier({"UP": 1 / 3, "DOWN": 1 / 3, "FLAT": 1 / 3}, "UP")
+              - 0.6667) < 0.001)
+    check("برایرِ پیش‌بینیِ کاملاً غلط ۲.۰ است",
+          df.brier({"UP": 0.0, "DOWN": 1.0, "FLAT": 0.0}, "UP") == 2.0)
+    check("بدون احتمال، برایر ساخته نمی‌شود", df.brier(None, "UP") is None)
+
+    # احتمال روی خودِ پیش‌بینی می‌نشیند و بعد از سررسید نمره می‌خورد
+    up_pts2 = [{"t": now - m * 60000, "u": 5.0 + 0.001 * (300 - m), "b": 60.0}
+               for m in range(300, -1, -3)]
+    f_p = [x for x in df.make_forecast(up_pts2, {}, now, st=pst)
+           if x["metric"] == "USDT.D" and x["horizon_min"] == 120][0]
+    check("شمار شواهد روی پیش‌بینی ثبت می‌شود (سطلِ احتمال)",
+          isinstance(f_p.get("ev_n"), int), str(f_p)[:200])
+    check("پیش‌بینی احتمالِ شمرده‌شده را حمل می‌کند",
+          f_p.get("p") is not None and f_p.get("p_n") == 40, str(f_p)[:260])
+
+    st_b = {"open": [dict(f_p, due=now - 60000,
+                          base=up_pts2[-1]["u"] - 0.5)],
+            "graded": [], "score": {}}
+    df.grade_due(st_b, up_pts2, now)
+    row = st_b["graded"][0]
+    check("بعد از سررسید، برایر روی همان احتمالِ قبلی حساب می‌شود",
+          isinstance(row.get("brier"), float), str(row)[:260])
+    sb2 = df.scoreboard(st_b)
+    key = "USDT.D|120m"
+    check("برایر در کارنامه تجمیع می‌شود", sb2[key].get("brier") is not None,
+          str(sb2))
+    check("و بدون مرجعِ اقلیم چاپ نمی‌شود (درسِ درصدِ بی‌بنچمارک)",
+          sb2[key].get("brier_climate") is not None
+          and sb2[key].get("brier_skill") is not None, str(sb2[key]))
+
     print(f"\n✓ همهٔ {OK} آزمون ناظر پیش‌بینی دامیننس گذشت")
 
 
