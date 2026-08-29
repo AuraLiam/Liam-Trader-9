@@ -183,10 +183,51 @@ def grade_due(st, points, now_ms=None):
 
 
 def scoreboard(st):
+    """کارنامه — با تفکیکِ اجباریِ «ادعای جهت‌دار» از «گفتم تکان نمی‌خورد».
+
+    اندازه‌گیری ۲۹ اوت که این تفکیک را لازم کرد: نرخ اصابتِ کل برای
+    USDT.D|30m ‏۷۳.۵٪ بود و همین عدد روی گزارش ساعتی به‌عنوان اعتبارنامه
+    چاپ می‌شد. ولی **۸۷.۶٪ همهٔ پیش‌بینی‌ها FLAT بودند** و دامیننس در
+    ۳۰ دقیقه معمولاً تکان معناداری نمی‌خورد؛ یعنی آن ۷۳.۵٪ عمدتاً پاداشِ
+    گفتنِ «تغییری نمی‌کند» بود، نه تشخیص مسیر.
+
+    دو عددی که واقعیت را نشان می‌دهند و از این پس کنار هم می‌آیند:
+
+      · `dir_*`  — فقط ادعاهای UP/DOWN. سنجش روی ۴۹ ادعا: ۳۰.۶٪ اصابت،
+        یعنی **زیر شانسِ تصادفیِ سه‌حالته (~۳۳٪)**.
+      · `skill`  — اصابت منهای بنچمارکِ «همیشه بگو FLAT». برای
+        USDT.D|30m این عدد **−۳.۹** بود: موتور از سکوتِ محض هم بدتر.
+
+    عددی که بنچمارک ندارد، مهارت را اثبات نمی‌کند — فقط توزیعِ بازار را
+    بازتاب می‌دهد."""
+    by_key = {}
+    for f in st.get("graded", []):
+        if f.get("result") not in ("HIT", "MISS"):
+            continue
+        k = f"{f['metric']}|{f['horizon_min']}m"
+        b = by_key.setdefault(k, {"dir_n": 0, "dir_hit": 0,
+                                  "flat_real": 0, "graded": 0})
+        b["graded"] += 1
+        if f.get("real_path") == "FLAT":
+            b["flat_real"] += 1
+        if f.get("path") in ("UP", "DOWN"):
+            b["dir_n"] += 1
+            b["dir_hit"] += 1 if f["result"] == "HIT" else 0
+
     out = {}
     for k, v in sorted(st["score"].items()):
-        out[k] = {"n": v["n"], "hit": v["hit"],
-                  "hit_pct": round(100 * v["hit"] / v["n"], 1) if v["n"] else None}
+        row = {"n": v["n"], "hit": v["hit"],
+               "hit_pct": round(100 * v["hit"] / v["n"], 1) if v["n"] else None}
+        b = by_key.get(k)
+        if b and b["graded"]:
+            row["dir_n"] = b["dir_n"]
+            row["dir_hit_pct"] = (round(100 * b["dir_hit"] / b["dir_n"], 1)
+                                  if b["dir_n"] else None)
+            base = round(100 * b["flat_real"] / b["graded"], 1)
+            row["baseline_flat_pct"] = base
+            hp = round(100 * v["hit"] / v["n"], 1) if v["n"] else None
+            row["skill"] = round(hp - base, 1) if hp is not None else None
+        out[k] = row
     return out
 
 
