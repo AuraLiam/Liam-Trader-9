@@ -71,21 +71,37 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: اگر زنجیره تازه است، کار تکراری نکن
+      # تورِ ایمنی فقط وقتی کنار می‌کشد که زنجیره **همین پهنا** را هم پوشانده
+      # باشد — نه فقط همین تازگی را (عیبِ اندازه‌گیری‌شدهٔ ۳۰ اوت).
+      #
+      # نسخهٔ قبل تنها سنِ latest.json را می‌دید. زنجیرهٔ اصلی هر ~۱۵ دقیقه
+      # همان فایل را با اسکنِ **۶۰ نمادی** تازه می‌کرد، پس این ورک‌فلو —
+      # تنها جایی که ۲۰۰ نماد را می‌گردد — همیشه «زنجیره زنده است» می‌دید و
+      # کنار می‌کشید. نتیجه: پهنای واقعیِ پایش ۶۰ ماند نه ۲۰۰، و در ۷ روز
+      # فقط ۳۱ نماد یکتا سیگنال گرفتند. تورِ ایمنی، همان چیزی را خفه کرده
+      # بود که برای محافظت از آن ساخته شده بود.
+      #
+      # حالا شرطِ کنارکشیدن دو تکه است: تازه **و** به‌اندازهٔ کافی پهن.
+      - name: اگر زنجیره هم تازه است هم به همین پهنا، کار تکراری نکن
         id: fresh
+        env:
+          WANT: ${{ github.event.inputs.symbols || '200' }}
         run: |
-          AGE=$(python3 - <<'PY'
+          read AGE COVERED <<<"$(python3 - <<'PY'
           import json, time
           try:
               j = json.load(open("signals/latest.json"))
-              print(int((time.time()*1000 - (j.get("generated") or 0)) / 60000))
+              age = int((time.time()*1000 - (j.get("generated") or 0)) / 60000)
+              n = j.get("symbols")
+              n = n if isinstance(n, int) else (len(n) if hasattr(n, "__len__") else 0)
           except Exception:
-              print(999)
+              age, n = 999, 0
+          print(age, n)
           PY
-          )
-          echo "عمر خروجی: ${AGE} دقیقه"
-          if [ "$AGE" -lt 12 ]; then
-            echo "زنجیرهٔ اصلی زنده است — این تور ایمنی کنار می‌کشد"
+          )"
+          echo "عمر خروجی: ${AGE} دقیقه · پهنای پوشش‌داده‌شده: ${COVERED} نماد (خواسته: ${WANT})"
+          if [ "$AGE" -lt 12 ] && [ "$COVERED" -ge "$WANT" ]; then
+            echo "زنجیره هم تازه است هم همین پهنا را پوشانده — تور ایمنی کنار می‌کشد"
             echo "skip=1" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.fresh.outputs.skip != '1'

@@ -28,6 +28,7 @@ CLAUDE.md: «یک یافته فقط وقتی عمل می‌شود که فاصل�
 from __future__ import annotations
 
 import json
+import time
 import random
 import sys
 from pathlib import Path
@@ -294,6 +295,10 @@ def fa_lines(j, limit=6):
 
 def main():
     j = build()
+    # مهر زمان اجباری است: بدون این، گذرگاه وضعیت (قانون ۱۳) کهنگی این
+    # فایل را اصلاً نمی‌سنجد و سقفِ ۳۶۰ دقیقه‌اش روی کاغذ می‌ماند.
+    # ممیزی ۳۰ اوت این را پیدا کرد — فایل بود، سنش نامعلوم بود.
+    j["generated"] = int(time.time() * 1000)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(j, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"دسته‌بندی از {j['n_trades']} معاملهٔ بسته‌شده · "
