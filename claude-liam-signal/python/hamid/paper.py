@@ -138,7 +138,8 @@ def experience_index(min_n=12):
         # منصفانه‌ای برای رد سیگنال واقعی همان ارز نیستند.
         if (t.get("why") or {}).get("stage") in ("practice", "first",
                                                  "inducement", "vetoed", "v2",
-                                                 "scalp", "shock"):
+                                                 "scalp", "shock",
+                                                 "exp-short-b1", "exp-short-b2"):
             continue
         idx.setdefault((t["sym"], t["dir"]), []).append(t["R"])
     out = {}
@@ -220,8 +221,11 @@ def open_from(setups, context):
         # رفع: ارسالی همیشه ثبت می‌شود؛ کارمزدش روی ردیف می‌نشیند تا تحلیل
         # بتواند صریح جدایشان کند. پنهان‌کردن، جداکردن نیست.
         _is_sent = str(_stage).startswith("sig-")
+        # exp-short-*: دفتر آزمایش هندسهٔ شورت (۳۰ اوت) — دروازهٔ کارمزد
+        # نباید نمونهٔ موضوعِ مطالعه را حذف کند؛ کارش اندازه‌گیری است.
         if not _is_sent and _stage not in ("first", "vetoed", "inducement",
-                                           "practice", "v2", "scalp", "shock"):
+                                           "practice", "v2", "scalp", "shock",
+                                           "exp-short-b1", "exp-short-b2"):
             if _fr is not None and _fr >= 0.25:
                 _append_gatelog(s["symbol"], _stage,
                                 f"استاپ تنگ: کارمزد {_fr}R ≥ 0.25R")
@@ -557,7 +561,8 @@ def _equity():
     # چهار دفتر جدا: سیگنال‌شده (رکورد اصلی)، دو آزمایش، میز تمرین (دروازهٔ
     # شل برای چندبرابر کردن نمونهٔ یادگیری) و سیگنال‌های آلارم. قاطی کردنشان
     # رکورد استراتژی سیگنال‌شده را ناخوانا می‌کند.
-    _aside = ("first", "inducement", "practice", "alarm", "vetoed", "scalp",
+    _aside = ("exp-short-b1", "exp-short-b2",
+              "first", "inducement", "practice", "alarm", "vetoed", "scalp",
               "shock")
 
     def _stage(t):
@@ -756,7 +761,7 @@ def reasons(verbose=True):
     Both numbers are printed, because the uncorrected one is what a naive
     version of this would have believed, and seeing the gap is the point.
     """
-    _siggrade = lambda st: (st not in ("practice", "first", "inducement", "vetoed", "v2", "scalp", "shock"))  # noqa: E731
+    _siggrade = lambda st: (st not in ("practice", "first", "inducement", "vetoed", "v2", "scalp", "shock") and not st.startswith("exp-"))  # noqa: E731
     trades = [t for t in _read(CLOSED)
               if t.get("R") is not None
               and _siggrade((t.get("why") or {}).get("stage") or "")]

@@ -103,7 +103,8 @@ def _books():
         st = (t.get("why") or {}).get("stage") or ""
         if st in PRACTICE_STAGES:
             prac.append(t)
-        elif st not in ("first", "inducement", "vetoed", "v2"):
+        elif st not in ("first", "inducement", "vetoed", "v2") \
+                and not st.startswith("exp-"):
             sig.append(t)
     return prac, sig
 

@@ -434,6 +434,20 @@ def main():
     demoted = gate_stages(setups)
     print(f"trend gate demoted {demoted} published-stage setups", flush=True)
 
+    # نمونه‌گیر شورت (دستور حمید ۳۰ اوت: «اون ۱۳۰ و ۱۵۰ شورت رو تو
+    # پیپرمود بگیر») — فقط دفترِ آزمایش می‌نویسد؛ به stage هیچ ستاپی دست
+    # نمی‌زند، پس چیزی وارد مسیر ارسال/پنل نمی‌شود. بودجه که پر شد، خودش
+    # می‌ایستد. جزئیات و مرزها: hamid/short_sampler.py.
+    try:
+        from hamid import short_sampler
+        _ss = short_sampler.sample(setups)
+        print(f"short sampler: opened={_ss.get('opened', 0)} "
+              f"left={_ss.get('left')} "
+              + (_ss.get("why") or ""), flush=True)
+    except Exception as _e:                          # noqa: BLE001
+        print(f"short sampler failed: {type(_e).__name__} — "
+              "نمونه‌گیری اختیاری است، اسکن ادامه دارد", flush=True)
+
     counts = {k: sum(1 for s in setups if s["stage"] == k) for k in STAGE_RANK}
     signals = [s for s in setups if s["stage"] == "SIGNAL"]
 

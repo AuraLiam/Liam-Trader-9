@@ -60,7 +60,8 @@ BOOKS = {
     "vetoed": "وتوشده (ضدواقع — اگر می‌رفت چه می‌شد)",
 }
 # دفترهایی که ادعای عملکرد نیستند: یا فرضیهٔ آزمایشی‌اند یا ضدواقع.
-NOT_PERFORMANCE = {"first", "second", "inducement", "vetoed", "alarm"}
+NOT_PERFORMANCE = {"first", "second", "inducement", "vetoed", "alarm",
+                   "exp-short-b1", "exp-short-b2"}
 
 
 def load(since_ms=None, path=None):

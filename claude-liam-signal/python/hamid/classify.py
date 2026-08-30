@@ -49,6 +49,8 @@ FA_SETUP = {"ob_pullback": "پولبک به اردر بلاک",
 FA_STAGE = {"practice": "میز تمرین", "first": "پولبک اول",
             "second": "پولبک دوم", "inducement": "ایندوسمنت/ویک",
             "alarm": "آلارم", "v2": "نسخهٔ ۲", "vetoed": "وتوشده",
+            "exp-short-b1": "آزمایش شورت ۰.۵–۰.۸٪",
+            "exp-short-b2": "آزمایش شورت ۰.۸–۱.۵٪",
             "sig-ibs": "سیگنال IBS", "sig-alarm": "سیگنال آلارم"}
 
 

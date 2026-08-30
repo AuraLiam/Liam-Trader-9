@@ -49,7 +49,9 @@ from hamid.direction_autopsy import (STOP_BANDS, band, ci95, load,
                                      two_sample, verdict)
 
 LEDGERS = (("sig-", "ارسالی"), ("vetoed", "وتوشده"), ("practice", "تمرین"),
-           ("first", "پولبک ۱"), ("second", "پولبک ۲"))
+           ("first", "پولبک ۱"), ("second", "پولبک ۲"),
+           # دفتر نمونه‌گیر باندی (دستور ۳۰ اوت) — hamid/short_sampler.py
+           ("exp-short", "آزمایش باندی"))
 
 # انحراف معیارِ اندازه‌گیری‌شدهٔ خالصِ شورت — برای برآورد n لازم
 TARGET_HALFWIDTH = 0.10
