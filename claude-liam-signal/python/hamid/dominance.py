@@ -253,6 +253,13 @@ def run():
         mtf = multi_tf(series)
     except Exception as e:                       # noqa: BLE001
         mtf = {"note": f"خطای مولتی‌تایم: {e}"}
+    # نقشهٔ هم‌ترازِ تایم‌فریم — دستور حمید ۳۰ اوت: ستاپ ۱۵د باید با خوانش
+    # ۱۵دقیقه‌ایِ دامیننس سنجیده شود، نه ۱ساعته. شاهد است نه دروازه.
+    try:
+        from hamid import dom_tf
+        tfm = dom_tf.map_all(series)
+    except Exception as e:                       # noqa: BLE001
+        tfm = {"note": f"خطای نقشهٔ تایم‌فریم: {e}"}
     # ناظر پیش‌بینی: نمرهٔ سررسیدها + پیش‌بینی مستدل این نوبت (دستور ۱۷ اوت)
     try:
         from hamid import dom_forecast
@@ -271,7 +278,7 @@ def run():
         "chg_1h": {"usdt": u1, "btc": b1}, "chg_4h": {"usdt": u4, "btc": b4},
         "points": len(series), "verdict": verdict, "macro": mac,
         "structure": struct, "multi_tf": mtf, "forecast": fc,
-        "decomposition": decomp,
+        "decomposition": decomp, "tf_map": tfm,
     }, ensure_ascii=False, indent=1))
     print(f"USDT.D {u} ({'+' if (u1 or 0) >= 0 else ''}{u1}/1h) · "
           f"BTC.D {b} · {verdict}")

@@ -331,6 +331,25 @@ check("زنجیره چرخه را در کهنگی بیدار می‌کند (رف
 check("بیدارکردن مشروط به کهنگی است، نه هر دور (ضد‌اسپمِ اجرا)",
       'AGE" -gt' in _chain or "AGE\" -gt" in _chain)
 
+# ── کلاسِ عیب: «کهنه بودن» با mtime سنجیده نمی‌شود (۳۰ اوت) ─────────────
+# هر اجرای Actions چک‌اوتِ تازه است، پس mtime هر فایل «همین الان» است و
+# شرطی مثل `find signals/x.json -mmin +1200` هرگز درست نمی‌شود. عیبِ
+# اندازه‌گیری‌شده: btc-sensitivity.json ۲۴۸۵ دقیقه کهنه ماند و گذرگاه
+# وضعیت DEGRADED می‌داد، در حالی که ورک‌فلو فکر می‌کرد تازه است. سنِ
+# فایلِ وضعیت فقط از مهرِ خودش (`generated`) خوانده می‌شود.
+_mtime_gates = []
+for f in files:
+    for line in f.read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if s.startswith("#"):
+            continue
+        if "-mmin" in s and ("signals/" in s or "brain/" in s):
+            _mtime_gates.append(f"{f.name}: {s[:70]}")
+check(f"هیچ دروازهٔ تازگی روی mtime دیسک نمی‌نشیند {_mtime_gates or ''}",
+      not _mtime_gates)
+check("سنِ btc-sensitivity از مهرِ خودِ فایل خوانده می‌شود",
+      "btc-sensitivity.json'))['generated']" in _chain)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

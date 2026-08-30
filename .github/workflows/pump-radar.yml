@@ -83,6 +83,7 @@ jobs:
           python3 -m hamid.test_dominance
           python3 -m hamid.test_dom_forecast
           python3 -m hamid.test_dom_decomp
+          python3 -m hamid.test_dom_tf
           python3 -m hamid.test_patterns
           python3 -m hamid.test_orderblocks
           python3 -m hamid.test_ob_intel
@@ -171,9 +172,15 @@ jobs:
               (cd claude-liam-signal/python && python3 -m hamid.state_bus --write) || true
               # ممیزِ حلقهٔ بسته: هر سیگنالِ رفته باید رد پنل/یادگیری/علت داشته باشد
               (cd claude-liam-signal/python && python3 -m hamid.loop_audit --write) || true
-              # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است
-              if [ ! -f signals/btc-sensitivity.json ] || \
-                 [ -n "$(find signals/btc-sensitivity.json -mmin +1200 2>/dev/null)" ]; then
+              # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
+              # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
+              # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و
+              # شرطِ `find -mmin +1200` هرگز درست نمی‌شد. اثرِ اندازه‌گیری‌شدهٔ
+              # ۳۰ اوت: فایل ۲۴۸۵ دقیقه کهنه ماند و گذرگاه وضعیت DEGRADED
+              # می‌داد. همان کلاسِ عیبِ live-scan — معیارِ غلط برای «کهنه».
+              AGE_BS=$(python3 -c "import json,time;print(int((time.time()*1000-json.load(open('signals/btc-sensitivity.json'))['generated'])/60000))" 2>/dev/null || echo 999999)
+              echo "btc-sensitivity age: ${AGE_BS}min"
+              if [ "$AGE_BS" -gt 1200 ]; then
                 (cd claude-liam-signal/python && python3 -m hamid.btc_sensitivity --write) || true
               fi
               # اسکن استراتژی‌ها هم سوار همین زنجیره — شکایت حمید (۱۲ اوت):

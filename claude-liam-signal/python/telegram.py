@@ -811,7 +811,11 @@ def send_signals(signals, render_chart, limit=8):
                     _paper.open_from([{"symbol": s["sym"], "dir": s["dir"],
                                        "entry": s["entry"], "sl": s["sl"],
                                        "tp1": s.get("tp1") or s["entry"],
-                                       "tp2": s.get("tp2"), "stage_tag": "vetoed"}],
+                                       "tp2": s.get("tp2"), "stage_tag": "vetoed",
+                                       # دفتر کنترل هم بی‌تایم‌فریم بود — گروه
+                                       # کنترلی که تایم‌فریمش را نداند، با گروه
+                                       # آزمایش قابل‌مقایسه نیست (۳۰ اوت)
+                                       "tf": s.get("tf")}],
                                      {"veto_why": "premortem", "pm_con": pm["con"][:3],
                                       "pm_pro": pm["pro"][:3],
                                       "pattern_align": (pm.get("patterns") or {}).get("align"),
@@ -909,6 +913,14 @@ def send_signals(signals, render_chart, limit=8):
                                    "entry": s["entry"], "sl": s["sl"],
                                    "tp1": s.get("tp1") or s["entry"], "tp2": s.get("tp2"),
                                    "stage_tag": f"sig-{s.get('strategy', '?')}",
+                                   # تایم‌فریم تا امشب اصلاً منتقل نمی‌شد: هر ۲۳۵
+                                   # سیگنالِ بستهٔ دفتر `tf: null` داشت. دو زیان
+                                   # اندازه‌گیری‌شده (۳۰ اوت): ۱) اعتبار لیمیت
+                                   # به‌جای ۲۴۰ دقیقهٔ ۵د، پیش‌فرض ۷۲۰ می‌گرفت —
+                                   # ۳۱ ردیف دیرتر از ۴ ساعت پر شدند (−۰.۲۶R در
+                                   # برابر −۰.۰۹R زودپرها). ۲) هیچ سنجشی
+                                   # نمی‌توانست تایم‌فریم را تفکیک کند.
+                                   "tf": s.get("tf"),
                                    "tg_msg_id": tg_mid}],
                                  {"sent_at": int(time.time() * 1000),
                                   "tg_msg_id": tg_mid,
@@ -917,6 +929,12 @@ def send_signals(signals, render_chart, limit=8):
                                   "ob_align": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("align"),
                                   "ob_hunts": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("hunts"),
                                   "fib_ratio": (s.get("premortem") or {}).get("fib"),
+                                  # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
+                                  # سنجش شبانه، نه دروازه (۳۰ اوت)
+                                  "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),
+                                  "dom_tf_regime": ((s.get("premortem") or {}).get("dom_tf") or {}).get("regime"),
+                                  "dom_tf_used": ((s.get("premortem") or {}).get("dom_tf") or {}).get("tf_used"),
+                                  "dom_tf_basis": ((s.get("premortem") or {}).get("dom_tf") or {}).get("basis"),
                                   **((s.get("premortem") or {}).get("tv") or {}),
                                   # دستور حمید: تی‌پی‌های تجربه‌محور باید قابل شمارش باشند —
                                   # دلایل صدور روی پرونده می‌ماند تا «با تجربه» اثبات‌پذیر باشد
