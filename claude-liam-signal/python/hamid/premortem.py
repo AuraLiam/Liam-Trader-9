@@ -364,7 +364,15 @@ def review(s, c15):
         tv_snap = _tv.snapshot(c15, d)
     except Exception:                                # noqa: BLE001
         tv_snap = {}
+    # دامیننس در تایم‌فریمِ خودِ ستاپ (دستور حمید ۳۰ اوت) — فقط **ثبت**؛
+    # در pro/con نمی‌نشیند و هیچ دروازه‌ای را تکان نمی‌دهد. سنجش اثرش با
+    # ماشین شبانه، ورودش به تصمیم فقط با CI بالای صفر (قانون ۰۳).
+    try:
+        from hamid import dom_tf as _dtf
+        dom_tf_ev = _dtf.for_signal(json.loads(DOM.read_text()), s.get("tf"), d)
+    except Exception:                                # noqa: BLE001
+        dom_tf_ev = None
     return {"pro": pro, "con": con, "pro_w": pro_w, "con_w": con_w,
             "issue": issue, "note": note, "price": px, "patterns": patterns_out,
             "noise_stop": noise_stop, "ob_ctx": ob_ctx,
-            "fib": fib_ratio(c15, d), "tv": tv_snap}
+            "fib": fib_ratio(c15, d), "tv": tv_snap, "dom_tf": dom_tf_ev}
