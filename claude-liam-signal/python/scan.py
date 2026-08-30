@@ -37,6 +37,40 @@ STAGE_RANK = {"SIGNAL": 3, "ARMED": 2, "PULLBACK_1": 1, "WATCH": 0}
 TF_RANK = {"5m": 1, "15m": 0}                       # measured, see the docstring
 STRATS = {"smc": "کانال + اردر بلاک", "ibs": "IBS + پولبک"}
 
+# ── ترجیح استراتژی، زمان‌دار و از فایل (دستور صریح حمید، ۳۰ اوت شب) ────────
+# «ارز یونی با smc|5m|LONG صادر شده بود — تا فردا همان مدل اولویت بگیرد.»
+#
+# سه قید که این را از «شل‌کردن دروازه» جدا می‌کند:
+#   ۱. فقط **ترتیبِ** نامزدها عوض می‌شود. هیچ آستانه‌ای جابه‌جا نمی‌شود و
+#      هیچ استراتژی‌ای خاموش نمی‌شود — ibs سرِ جایش است.
+#   ۲. جایش در کلیدِ مرتب‌سازی **بعد از** مرحله و تایم‌فریم است. تایم‌فریم
+#      یک سنجهٔ اثبات‌شده است (۵د روی کندل واقعی CI بالای صفر داشت، ۱۵د نه)
+#      و ترجیحِ بی‌سنجش حق ندارد سنجهٔ اثبات‌شده را کنار بزند.
+#   ۳. سررسید دارد. پشت این ترجیح CI نیست (smc −۰.۰۴۴R با n=۷۲ در برابر
+#      ibs −۰.۱۱۷R با n=۱۵۰ — بازه‌ها روی هم می‌افتند)، پس بعد از سررسید
+#      خودبه‌خود خنثی می‌شود، نه این‌که بی‌صدا ابدی بماند.
+PRIORITY_CFG = ROOT / "config" / "strategy_priority.json"
+
+
+def strategy_priority(now_ms=None):
+    """(استراتژیِ مرجَح یا None، بستهٔ توضیح) — از فایل، نه کدِ سخت."""
+    now = now_ms or int(time.time() * 1000)
+    try:
+        c = json.loads(PRIORITY_CFG.read_text(encoding="utf-8"))
+    except Exception:                                # noqa: BLE001
+        return None, {"active": False, "why": "فایل ترجیح نیست — حالت خنثی"}
+    pref, until = c.get("prefer"), c.get("until")
+    if pref not in STRATS:
+        return None, {"active": False, "why": f"استراتژی ناشناخته: {pref!r}"}
+    if not isinstance(until, (int, float)):
+        return None, {"active": False, "why": "ترجیحِ بی‌سررسید پذیرفته نمی‌شود"}
+    if now >= until:
+        return None, {"active": False, "prefer": pref, "expired": True,
+                      "why": f"سررسید ترجیح {pref} گذشته — حالت خنثی"}
+    return pref, {"active": True, "prefer": pref, "until": until,
+                  "until_text": c.get("until_text"),
+                  "set_by": c.get("set_by"), "scope": c.get("scope")}
+
 
 def klines_now(sym, tf, bars=BARS):
     rows = get(f"/api/v3/klines?symbol={sym}&interval={tf}&limit={bars}")
@@ -355,7 +389,12 @@ def main():
     applied = apply_learned_rules(setups, jobs, rules)
     print(f"confirmed backtest rules applied to {applied} setups", flush=True)
 
+    pref, pref_note = strategy_priority()
+    if pref:
+        print(f"ترجیح استراتژی فعال: {pref} تا {pref_note.get('until_text')} "
+              f"— فقط ترتیب، بدون بستن هیچ استراتژی", flush=True)
     setups.sort(key=lambda s: (STAGE_RANK.get(s["stage"], 0), TF_RANK.get(s["tf"], 0),
+                               1 if (pref and s.get("strategy") == pref) else 0,
                                (s.get("learned") or {}).get("boost", 0.0),
                                s["conf"] or 0, s["ev"] or 0), reverse=True)
 
@@ -448,6 +487,7 @@ def main():
         "symbols": len(syms), "series": len(jobs), "timeframes": tfs,
         "counts": counts,
         "per_strategy": per_strategy,
+        "strategy_priority": pref_note,   # ترجیح فعال — دیده شود، نه بی‌صدا
         "alarms": alarms[:40],
         "learning": {
             "experiences": len(brain.read(brain.LEARNING / "experiences.jsonl")),
