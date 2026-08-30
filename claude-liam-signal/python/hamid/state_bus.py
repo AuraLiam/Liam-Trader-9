@@ -70,7 +70,7 @@ def _age_min(path):
         j = None
     now = time.time() * 1000
     if isinstance(j, dict):
-        for k in ("generated", "at", "last_sent", "accepted_at"):
+        for k in ("generated", "at", "last_sent", "accepted_at", "updated"):
             v = j.get(k)
             if isinstance(v, (int, float)) and v > 1e12:
                 return round((now - v) / 60000, 1), "generated"
