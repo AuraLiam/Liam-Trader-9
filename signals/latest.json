@@ -1,6 +1,6 @@
 {
- "generated": 1788112669472,
- "generatedText": "2026-08-30 17:57 UTC",
+ "generated": 1788112880675,
+ "generatedText": "2026-08-30 18:01 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -524,7 +524,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": 1.273
+  "btcChange": 1.218
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -3067,7 +3067,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "هر دو تایم بالا خلاف SHORT است (۴س=up، ۱س=up) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
+   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB, swept, choch, fvg, quality>=70 → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
    "lastClose": 1788112200000,
    "ob": {
     "low": 0.883,
@@ -3085,8 +3085,8 @@
     "ev": 0.487
    },
    "trend4": "up",
-   "trend1": "up",
-   "trend_mode": "hard-veto"
+   "trend1": "range",
+   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "ibs",
@@ -3547,7 +3547,7 @@
     "ev": 0.369
    },
    "trend4": "down",
-   "trend1": "range",
+   "trend1": "up",
    "trend_mode": "counter-blocked"
   },
   {
@@ -3803,7 +3803,7 @@
     "ev": -0.151
    },
    "trend4": "up",
-   "trend1": "down",
+   "trend1": "range",
    "trend_mode": "counter-blocked"
   },
   {
@@ -4503,7 +4503,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها)",
+   "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
    "lastClose": 1788112200000,
    "ob": {
     "low": 0.03565,
@@ -4521,8 +4521,8 @@
     "ev": -0.106
    },
    "trend4": "down",
-   "trend1": "range",
-   "trend_mode": "counter-blocked"
+   "trend1": "down",
+   "trend_mode": "hard-veto"
   },
   {
    "strategy": "ibs",
