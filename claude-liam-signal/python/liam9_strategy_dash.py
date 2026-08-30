@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""لیام تریدر ۹ — استراتژی داشبورد ۳.۰ (نسخهٔ فشرده)
+"""لیام تریدر ۹ — استراتژی داشبورد ۳.۱ (نسخهٔ فشرده)
 
 این فایل برای جعبهٔ «استراتژی» داشبورد ساخته شده: همان کدِ کامل،
 بدون کامنت و داک‌استرینگ، تا از سقف اندازهٔ جعبه رد نشود.
 نسخهٔ خوانا و مستند در ریپو است — این‌جا فقط اجرا.
 
-ساخت: 2026-08-29 19:06 UTC · کامیت 38e1e43321
+ساخت: 2026-08-30 07:56 UTC · کامیت 27b87cbbb5
 منبع: claude-liam-signal/python/liam9_strategy.py
 ساخته‌شده با: python3 -m hamid.build_dashboard
 
@@ -25,9 +25,10 @@ EXPERIENCE_PATH ="/signals/experience.json"
 TOP_LIQ_PATH ="/signals/top-liquidity.json"
 EDGE_PATH ="/signals/edge.json"
 BTC_SENS_PATH ="/signals/btc-sensitivity.json"
+EXEC_OUTBOX_PATH ="/signals/exec-outbox.json"
 
 PARAMS ={
-"version":"liam9-dash-3.0",
+"version":"liam9-dash-3.1",
 "ibs_long_max":0.30 ,
 "ibs_short_min":0.70 ,
 "min_net_rr":1.8 ,
@@ -147,6 +148,8 @@ def _finalize (sig ):
         sig ["sl_tp_mandatory"]=True 
         sig ["stop_loss"]=sig ["sl"]
         sig ["take_profit"]=sig ["tp1"]
+
+        sig ["session"]=session_info ()
     return sig 
 
 def market_gate (direction ,btc4h ,btc1h ):
@@ -367,6 +370,75 @@ def ensure_sync (force =False ):
         except Exception as e :
             _SYNC_LAST ={"error":f"{type(e).__name__}: {e}","at":now }
     return _SYNC_LAST 
+
+EXEC_SEEN =set ()
+EXEC_DOM_MAX_AGE_MIN =90 
+
+def _exec_check (it ,now_ms ,require_dominance =True ):
+    ""
+    iid =it .get ("id")or "?"
+    if it .get ("status")!="PENDING":
+        return None ,f"{iid}: وضعیت {it.get('status')} — فقط PENDING اجرا می‌شود"
+    if iid in EXEC_SEEN :
+        return None ,f"{iid}: قبلاً تحویل شده (ضدتکرار)"
+    sl ,tp1 ,entry =it .get ("sl"),it .get ("tp1"),it .get ("entry")
+    if not (isinstance (sl ,(int ,float ))and sl >0 
+    and isinstance (tp1 ,(int ,float ))and tp1 >0 
+    and isinstance (entry ,(int ,float ))and entry >0 ):
+        return None ,f"{iid}: استاپ/تارگت/ورود ناقص — قرارداد اجرا (۲۰ اوت)"
+    if it .get ("margin_mode")!="isolated":
+        return None ,f"{iid}: مارجین ایزوله نیست — کراس ممنوع (قرارداد اجرا)"
+    exp =it .get ("expires_at")
+    if not exp :
+        exp =(it .get ("created_at")or 0 )+90 *60000 
+    if now_ms >exp :
+        return None ,f"{iid}: منقضی — تعقیب قیمت ممنوع (قانون ۱۰ بند ۴)"
+    if require_dominance :
+        dom =it .get ("dominance")or {}
+        if not dom .get ("fresh"):
+            return None ,(f"{iid}: مهر دامیننس تازه ندارد "
+            f"(سن {dom.get('age_min', '?')}د) — "
+            "«سیگنال با تأیید دامیننس» شرط اجراست (۳۰ اوت)")
+        if dom .get ("age_min")is not None and dom ["age_min"]>EXEC_DOM_MAX_AGE_MIN :
+            return None ,f"{iid}: مهر دامیننس {dom['age_min']}د کهنه است"
+    order =dict (it )
+    order ["delivered_at"]=now_ms 
+    order ["note"]=("داشبورد: قبل از سفارش قیمت لحظه باید داخل entry_zone "
+    "باشد؛ سایز با سرمایهٔ واقعی و قانون ریسک ۲٪")
+    return order ,None 
+
+def exec_orders (require_dominance =True ,now_ms =None ):
+    ""
+    now =now_ms or int (time .time ()*1000 )
+    box ,src =None ,None 
+    for base in (REPO_RAW ,PAGES ):
+        try :
+            d =_get (base +EXEC_OUTBOX_PATH )
+            if isinstance (d ,list ):
+                box ,src =d ,base 
+                break 
+        except Exception :
+            continue 
+    if box is None :
+        return {"orders":[],"skipped":[],"checked":0 ,"source":None ,
+        "why":"دفتر قصدها از هیچ منبعی نیامد — بدون داده سفارشی نیست"}
+    orders ,skipped =[],[]
+    for it in box :
+        o ,why =_exec_check (it ,now ,require_dominance )
+        if o :
+            orders .append (o )
+            EXEC_SEEN .add (o ["id"])
+        elif it .get ("status")=="PENDING":
+            skipped .append (why )
+    return {"orders":orders ,"skipped":skipped [:20 ],"checked":len (box ),
+    "source":src }
+
+def session_info (now_ms =None ):
+    ""
+    now =now_ms or int (time .time ()*1000 )
+    t =time .gmtime (now /1000 )
+    return {"name":session_of (now ),"utc_hour":t .tm_hour ,
+    "weekend":t .tm_wday >=5 }
 
 def set_top_liquidity (symbols ):
     ""
@@ -1334,7 +1406,7 @@ def _selftest ():
     finally :
         EDGE .clear ()
         EDGE .update (_edge_bak )
-    print ("✓ خودآزمایی استراتژی ۳.۰ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، نقشهٔ نقدینگی، قفسهٔ لبه، ممیزی")
+    print ("✓ خودآزمایی استراتژی ۳.۱ گذشت — سوینگ، نردبان خروج، تجربه، اسکلپ، موتور اجرا، نقشهٔ نقدینگی، قفسهٔ لبه، ممیزی")
 
 try :
     from strategy_base import BaseStrategy 
@@ -1371,6 +1443,10 @@ class Liam9Strategy (BaseStrategy ):
         if kw .get ("risk")is not None or kw .get ("dashboard")is not None :
             set_environment (kw .get ("risk"),kw .get ("dashboard"))
         self .meta ["version"]=PARAMS ["version"]
+
+    def pending_orders (self ,require_dominance =True ):
+        ""
+        return exec_orders (require_dominance =require_dominance )
 
     def generate_signal (self ,symbol ,c4h =None ,c1h =None ,c15 =None ,**kw ):
         ensure_sync ()
