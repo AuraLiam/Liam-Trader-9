@@ -96,6 +96,7 @@ jobs:
           python3 -m hamid.test_exec_feed
           python3 -m hamid.test_scan_breadth
           python3 -m hamid.test_strategy_priority
+          python3 -m hamid.test_receipts_guard
           python3 -m hamid.test_learning
           python3 -m hamid.test_pump_study
           python3 -m hamid.test_workflows
@@ -153,6 +154,11 @@ jobs:
               git fetch origin main -q
               git reset --hard origin/main -q
               (cd claude-liam-signal/python && python3 -m hamid.pump_radar --reapply "$BK")
+              # بقای رسیدهای ارسال (رفع «رسید گم‌شدهٔ یونی»، ۳۰ اوت).
+              # عکس‌فوریِ $BK قبل از اسکن گرفته می‌شود، پس رسیدهایی که خودِ
+              # اسکن می‌سازد هرگز در آن نیستند؛ reset پاکشان می‌کرد و سیگنالِ
+              # رفته بی‌پرونده می‌ماند. این‌جا با اجتماعِ هویت برمی‌گردند.
+              (cd claude-liam-signal/python && python3 -m hamid.receipts_guard --restore "$BK") || true
               # دامیننس سوار همین زنجیره — کرون dominance.yml قحطی‌زده بود
               # (اندازه‌گیری: ۳۲ نقطه در ۳۲.۷ ساعت یعنی عملاً ساعتی، نه ۵دقیقه‌ای).
               # روی درخت تازهٔ origin/main اجرا می‌شود تا نقطهٔ جدید بی‌تصادم بنشیند.
@@ -182,6 +188,10 @@ jobs:
                 touch "/tmp/scan-done-$k"
                 cp signals/latest.json /tmp/scan-latest.json 2>/dev/null || true
                 cp signals/sent.json /tmp/scan-sent.json 2>/dev/null || true
+                # رسیدهای همین اسکن را کنار بگذار — تلاش‌های بعدیِ پوش
+                # با reset پاکشان می‌کنند و بدون این، سیگنالِ رفته
+                # بی‌پرونده می‌ماند (یونی، ۳۰ اوت ۱۲:۰۸)
+                (cd claude-liam-signal/python && python3 -m hamid.receipts_guard --snapshot "$BK") || true
               else
                 cp /tmp/scan-latest.json signals/latest.json 2>/dev/null || true
                 (cd claude-liam-signal/python && python3 -m hamid.merge_sent /tmp/scan-sent.json ../../signals/sent.json) || true
