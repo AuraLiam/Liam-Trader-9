@@ -1,13 +1,13 @@
 {
- "generated": 1788160822849,
+ "generated": 1788177685668,
  "panel": "لیام تریدر ۹",
  "window_h": 24,
- "sig_rows": 20,
+ "sig_rows": 19,
  "escalations": [
   {
    "rule": "E2",
    "sev": "high",
-   "title": "استاپ LONG در 5 ارز مختلف در پنجره",
+   "title": "استاپ LONG در 7 ارز مختلف در پنجره",
    "rooms": [
     "order-block",
     "market-structure"
@@ -17,9 +17,43 @@
     "BTCUSDT LONG 08-30 19:46UTC stop",
     "AAVEUSDT LONG 08-30 21:05UTC stop",
     "LINKUSDT LONG 08-30 23:25UTC stop",
-    "XAUTUSDT LONG 08-31 00:12UTC stop"
+    "XAUTUSDT LONG 08-31 00:12UTC stop",
+    "UNIUSDT LONG 08-31 08:18UTC stop"
    ],
    "directive": "الگوی تکراری بین‌ارزی: کیفیت اردر بلاک‌ها و خطوط روند همین ستاپ‌ها بازبینی شود — همان مثال حمید (OB و ترندلاین دوباره وارد عمل)."
+  },
+  {
+   "rule": "E2",
+   "sev": "high",
+   "title": "استاپ SHORT در 3 ارز مختلف در پنجره",
+   "rooms": [
+    "order-block",
+    "market-structure"
+   ],
+   "evidence": [
+    "BTCUSDT SHORT 08-30 12:05UTC stop",
+    "SOLUSDT SHORT 08-30 12:54UTC stop",
+    "PAXGUSDT SHORT 08-31 07:31UTC stop"
+   ],
+   "directive": "الگوی تکراری بین‌ارزی: کیفیت اردر بلاک‌ها و خطوط روند همین ستاپ‌ها بازبینی شود — همان مثال حمید (OB و ترندلاین دوباره وارد عمل)."
+  },
+  {
+   "rule": "E3",
+   "sev": "high",
+   "title": "نرخ برد پنجره 33٪ (کف 35٪، n=15)",
+   "rooms": [
+    "signal-committee",
+    "improvement"
+   ],
+   "evidence": [
+    "BTWUSDT LONG 08-31 02:09UTC trail",
+    "CRCLBUSDT LONG 08-31 06:41UTC trail",
+    "PAXGUSDT SHORT 08-31 07:31UTC stop",
+    "UNIUSDT LONG 08-31 08:18UTC stop",
+    "BTCUSDT LONG 08-31 08:18UTC trail",
+    "TRXUSDT LONG 08-31 09:55UTC stop"
+   ],
+   "directive": "بازبینی دروازه‌ها و کیفیت ستاپ در همین پنجره؛ نتیجه با CI گزارش شود، نه با حس."
   }
  ],
  "note": "ماشین آستانه فقط ارجاع می‌دهد؛ تصمیم و تغییر از مسیر یک-تغییر-کنترل‌شده-در-چرخه می‌رود (قانون ۰۳)."
