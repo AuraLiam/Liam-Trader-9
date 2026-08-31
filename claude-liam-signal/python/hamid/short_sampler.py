@@ -61,6 +61,12 @@ BANDS = {
 }
 TAGS = tuple(BANDS)
 PER_CYCLE = 4          # سقف هر باند در هر اسکن — پخش در زمان، نه یک لحظه
+# فاز غلتان (دستور ۳۱ اوت: «مرتب پیپرمود ترید کنند») — بعد از پرشدن
+# بودجهٔ ثابت، بندیتِ تامسون هر چرخه سهم می‌دهد. سقف عمداً کوچک‌تر از
+# فاز اول است: بودجهٔ ثابتِ ۲۸۰تایی در ۸ ساعت پر شد و همه از یک رژیمِ
+# بازار آمدند — این ضعفِ اندازه‌گیری‌شدهٔ فاز اول بود؛ ۲ در چرخه یعنی
+# نمونه در چند روز و چند رژیم پخش می‌شود.
+ROLLING_PER_CYCLE = 2
 MIN_QUALITY = 45       # کف ARMED — ستاپی که موتور جدی نگرفته، نمونه نیست
 RR_MIN, RR_MAX = 1.2, 2.5
 
@@ -126,9 +132,24 @@ def sample(setups, opener=None):
     have = counts()
     left = {t: max(0, BANDS[t][3] - have.get(t, 0)) for t in TAGS}
     out = {"opened": 0, "have": have, "left": left}
+    per_cycle_cap = {t: min(left[t], PER_CYCLE) for t in TAGS}
     if not any(left.values()):
-        out["why"] = "بودجهٔ هر دو باند پر است — نمونه‌گیری تمام؛ نوبتِ حکم CI است"
-        return out
+        # فاز غلتان: بودجهٔ ثابت پر است؛ از این‌جا بندیتِ تامسون تقسیم
+        # می‌کند (hamid/bandit.py — دستور ۳۱ اوت). بازوی حکم‌گرفته
+        # (REJECT/PROMOTE_PROPOSED) خودکار سهم صفر می‌گیرد.
+        try:
+            from hamid import bandit
+            alloc, why = bandit.allocate(ROLLING_PER_CYCLE)
+        except Exception as e:                       # noqa: BLE001
+            out["why"] = f"بندیت اجرا نشد ({type(e).__name__}) — نمونهٔ کور گرفته نمی‌شود"
+            return out
+        out["mode"] = "rolling-bandit"
+        out["alloc_why"] = why
+        if not any(alloc.values()):
+            out["why"] = ("همهٔ بازوها حکم گرفته‌اند — نمونه‌گیری تمام؛ "
+                          "نوبتِ ماشین CI و تأیید حمید است")
+            return out
+        per_cycle_cap = {t: alloc.get(t, 0) for t in TAGS}
 
     cands = [s for s in setups
              if s.get("dir") == "SHORT"
@@ -146,7 +167,7 @@ def sample(setups, opener=None):
            "dominance": _dom_regime()}
     rows = []
     for tag in TAGS:
-        n = min(left[tag], PER_CYCLE)
+        n = per_cycle_cap[tag]
         for s in cands[:n]:
             arm = _arm(s, tag)
             if arm:
