@@ -184,7 +184,7 @@ def describe(name, trades):
         return {"name": name, "n": 0}
     rs = [t["r"] for t in trades]
     ci = boot(rs)
-    return {
+    out = {
         "name": name, "n": len(trades),
         "win": round(100 * sum(t["w"] for t in trades) / len(trades), 1),
         "exp": round(statistics.fmean(rs), 3),
@@ -193,6 +193,36 @@ def describe(name, trades):
         "by_exit": {w: sum(1 for t in trades if t["why"] == w)
                     for w in sorted({t["why"] for t in trades})},
     }
+    # خالص از کارمزد — درس ۳۰ اوت: لبهٔ ناخالصِ استاپ‌تنگ واقعی بود و
+    # کارمزد تمامش را می‌خورد؛ بک‌تستی که فقط ناخالص بدهد، همان دام را
+    # با اعتبارِ «کندل واقعی» تکرار می‌کند. ادعای عملکرد = خالص.
+    ns = [t["r_net"] for t in trades if t.get("r_net") is not None]
+    if ns:
+        nci = boot(ns)
+        out["exp_net"] = round(statistics.fmean(ns), 3)
+        out["ci_net"] = [round(nci[0], 3), round(nci[1], 3)] if nci else None
+        out["fee_r_mean"] = round(statistics.fmean(
+            [t["fee_r"] for t in trades if t.get("fee_r") is not None]), 3)
+    return out
+
+
+STOP_BANDS = ((0, 0.5), (0.5, 0.8), (0.8, 1.5), (1.5, 99.0))
+
+
+def by_geometry(trades):
+    """جهت × باند فاصلهٔ استاپ — تفکیکِ اجباری ممیزی ۳۰ اوت.
+
+    علتش اندازه‌گیری‌شده است: سهم کارمزد از R برابر `کارمزد٪ ÷ استاپ٪`
+    است، پس میانگین‌گیریِ بدون تفکیکِ هندسه، دو بیماریِ متضاد (کارمزدخوارِ
+    تنگ و لبه‌سوختهٔ گشاد) را با هم قاطی می‌کند و جوابِ بی‌معنا می‌دهد."""
+    out = {}
+    for d in ("LONG", "SHORT"):
+        for lo, hi in STOP_BANDS:
+            g = [t for t in trades if t["dir"] == d
+                 and t.get("stop_pct") is not None and lo <= t["stop_pct"] < hi]
+            if len(g) >= 5:
+                out[f"{d}|{lo:g}-{hi:g}"] = describe(f"{d} استاپ {lo:g}–{hi:g}٪", g)
+    return out
 
 
 def line(d):
@@ -246,7 +276,11 @@ def main():
     results = {}
     for variant, label in (("base", "استراتژی اصلی — کانال + اردر بلاک + پولبک"),
                            ("channel", "استراتژی کانالی — با سه قانون جدید"),
-                           ("widebuf", "آزمایش استاپ — حاشیهٔ شکار پهن (سؤال حمید)")):
+                           ("widebuf", "آزمایش استاپ — حاشیهٔ شکار پهن (سؤال حمید)"),
+                           # رفع D1 (ممیزی ۳۰ اوت): ibs تولیدکنندهٔ ۸۲٪
+                           # شورت‌های ارسالی بود و تا امروز هرگز در مرجعِ
+                           # ادعای عملکرد ریپلی نشده بود.
+                           ("ibs", "IBS + پولبک — استراتژی اصلی ارسال، اولین ریپلی")):
         print(f"replay: {variant} on {args.cores} cores", flush=True)
         results[variant] = run_variant(variant, jobs, args.cores, tmp)
         print(f"  {len(results[variant])} trades", flush=True)
@@ -259,11 +293,19 @@ def main():
     print("HISTORICAL BACKTEST — real candles, not simulated")
     print("=" * 78)
     for variant, label in (("base", "base — as shipped"), ("channel", "channel — three rules required"),
-                           ("widebuf", "widebuf — stop = edge ± max(box×0.30, atr×0.50)")):
+                           ("widebuf", "widebuf — stop = edge ± max(box×0.30, atr×0.50)"),
+                           ("ibs", "ibs — IBS+پولبک، اولین ریپلیِ استراتژی اصلی ارسال")):
         tr = results[variant]
         print(f"\n{label}")
         overall = describe("overall", tr)
         print(line(overall))
+        if overall.get("exp_net") is not None:
+            nci = overall.get("ci_net")
+            nm = ("✓ خالص بالای صفر" if nci and nci[0] > 0
+                  else "✗ خالص زیر صفر" if nci and nci[1] < 0 else "— خالص شامل صفر")
+            print(f"  {'net of 0.15% fee':<34} E={overall['exp_net']:+.3f}R  "
+                  + (f"[{nci[0]:+.3f}, {nci[1]:+.3f}]  " if nci else "")
+                  + f"fee≈{overall.get('fee_r_mean')}R  {nm}")
         per_tf = {}
         for tf in tfs:
             d = describe(f"{tf} only", [t for t in tr if t["tf"] == tf])
@@ -272,10 +314,14 @@ def main():
         longs = describe("long", [t for t in tr if t["dir"] == "LONG"])
         shorts = describe("short", [t for t in tr if t["dir"] == "SHORT"])
         print(line(longs)); print(line(shorts))
+        geo = by_geometry(tr)
+        for k in sorted(geo):
+            print(line(geo[k]))
         if overall["n"]:
             print(f"  exits: {overall['by_exit']}")
         report["strategies"][variant] = {"overall": overall, "by_tf": per_tf,
-                                         "long": longs, "short": shorts}
+                                         "long": longs, "short": shorts,
+                                         "by_geometry": geo}
 
     a = [t["r"] for t in results["base"]]
     b = [t["r"] for t in results["channel"]]
