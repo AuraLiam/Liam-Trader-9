@@ -76,7 +76,11 @@ def load_signals():
         if not stage.startswith("sig-"):
             continue
         # یکتاسازی بر هویتِ معامله (درس ۲۴ اوت: CI روی ردیف تکراری دروغ است)
-        k = (r.get("sym"), r.get("dir"), r.get("opened"), r.get("entry"))
+        # کلید از `direction_autopsy._identity` می‌آید تا `stage` را داشته
+        # باشد — درس ۳۱ اوت: کلیدِ بی‌stage دو بازوی A/B روی یک نامزد را
+        # «یک معامله» می‌بیند و یکی را دور می‌ریزد.
+        from hamid.direction_autopsy import _identity
+        k = _identity(r)
         if k in seen:
             continue
         seen.add(k)

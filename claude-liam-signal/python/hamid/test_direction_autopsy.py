@@ -133,8 +133,14 @@ def run():
     src = (PY / "hamid" / "direction_autopsy.py").read_text(encoding="utf-8")
     check("دفتر پیش از آمار یکتا می‌شود (درس ۲۴ اوت)",
           "seen.add(k)" in src and "if k in seen" in src)
+    # این بررسی تا ۳۱ اوت متنِ کلیدِ دست‌ساز را می‌سنجید — و چون خودِ آن
+    # کلید عیب‌دار بود، بررسی عیب را «تأیید» می‌کرد. حالا رفتار سنجیده
+    # می‌شود، نه متن: هیچ ماژول تحلیلی حق ندارد کلیدِ خودش را بسازد.
     check("یکتاسازی بر هویتِ معامله است نه متنِ خط",
-          '(r.get("sym"), r.get("dir"), r.get("opened"), r.get("entry"))' in src)
+          "_identity(r)" in src and "paper.trade_key" in src)
+    check("کلیدِ دست‌سازِ بی‌stage دیگر در ماژول نیست (کلاسِ عیب ۳۱ اوت)",
+          '(r.get("sym"), r.get("dir"), r.get("opened"), r.get("entry"))'
+          not in src)
 
     # ── ۵) کلاسِ خطا: ادعای دونمونه‌ای باید همیشه چاپ شود ───────────────
     import io
@@ -154,6 +160,28 @@ def run():
     check("خروجی، مرز صادقانه دارد (قانون ۱۲)", "مرز صادقانه" in out)
     check("خروجی، جدولِ کارمزد در برابر فاصلهٔ استاپ دارد",
           "کارمزد=" in out and "استاپ 0–0.5٪" in out)
+
+    # ── هویت معامله: دو بازوی A/B روی یک نامزد، یک معامله نیستند ───────
+    #
+    # عیب ۳۱ اوت: کلید یکتاسازی `stage` نداشت، پس بازوی دوم آزمایش
+    # (همان نماد/جهت/ورود/میلی‌ثانیه، فقط استاپِ فرق‌دار) دور ریخته
+    # می‌شد — ۷۳ ردیف از ۱۲۸ ردیفِ باند دوم.
+    base = {"sym": "AAAUSDT", "dir": "SHORT", "opened": 1_788_000_000_000,
+            "entry": 100.0, "R": -1.0, "R_net": -1.1}
+    arm1 = dict(base, sl=100.65, why={"stage": "exp-short-b1"})
+    arm2 = dict(base, sl=101.15, why={"stage": "exp-short-b2"})
+    same = dict(arm1)                    # همان بازو، تسویهٔ دوباره
+    same["closed"] = 1_788_000_900_000   # میدانی که کلید نباید ببیندش
+    check("دو بازوی A/B روی یک نامزد، دو هویت جدا دارند",
+          A._identity(arm1) != A._identity(arm2),
+          f"{A._identity(arm1)} در برابر {A._identity(arm2)}")
+    check("تسویهٔ دوبارهٔ همان بازو، همان هویت است (عیب ۲۴ اوت هنوز گرفته می‌شود)",
+          A._identity(arm1) == A._identity(same))
+    check("هویت از کلید قطعیِ دفتر می‌آید، نه نسخهٔ دست‌ساز",
+          A._identity(arm1)[0] == __import__(
+              "hamid.paper", fromlist=["paper"]).trade_key(arm1))
+    check("جهت هم در هویت هست",
+          A._identity(arm1) != A._identity(dict(arm1, dir="LONG")))
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
