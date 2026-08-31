@@ -1,0 +1,474 @@
+{
+ "generated": 1788213012069,
+ "panel": "لیام تریدر ۹",
+ "n": 27,
+ "n_scored": 21,
+ "n_no_metric": 6,
+ "cards": [
+  {
+   "id": "E00",
+   "family": "عملیاتی",
+   "metric": "نشتیِ حلقهٔ بسته",
+   "value": 1.46,
+   "unit": "٪ نقص",
+   "n": 274,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "FAULT",
+   "falsifier": "هر سیگنالی که رفت ولی ردپای هضم/پنل ندارد = نشتی",
+   "source": [
+    "signals/loop-audit.json"
+   ],
+   "note": "4 نقص از 274 · حلقه بسته"
+  },
+  {
+   "id": "E01",
+   "family": "تأمین‌کننده",
+   "metric": "پهنای اسکنِ آخر",
+   "value": 30.0,
+   "unit": "٪ از ۲۰۰",
+   "n": 60,
+   "ci": null,
+   "baseline": 100.0,
+   "verdict": "UNDER",
+   "falsifier": "اسکنِ باریک‌تر از ۲۰۰ یعنی میدان دید کوچک‌تر از سند — همان عیبِ ۳۰ اوت که اسکن پهن عملاً هرگز اجرا نمی‌شد",
+   "source": [
+    "signals/latest.json",
+    "signals/watchlist.json"
+   ],
+   "note": "60 نماد در اسکنِ آخر · گشت: 100 نامزد از 5 منبع سالم (1 خطا)"
+  },
+  {
+   "id": "E02",
+   "family": "عملیاتی",
+   "metric": "نرخ شکستِ دریافت سری",
+   "value": 0.0,
+   "unit": "٪ نقص",
+   "n": 120,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "CLEAN",
+   "falsifier": "سری ناموفق = تصمیم روی دادهٔ ناقص",
+   "source": [
+    "signals/funnel.json",
+    "signals/depth-health.json"
+   ],
+   "note": "0 نقص از 120 · عمق: 2 رد از 6 نماد"
+  },
+  {
+   "id": "E03",
+   "family": "پیش‌بین",
+   "metric": "مهارت پیش‌بینی (USDT.D|30m)",
+   "value": -12.7,
+   "unit": "واحد درصد",
+   "n": 565,
+   "ci": null,
+   "baseline": 80.1,
+   "verdict": "NEGATIVE",
+   "falsifier": "نرخ اصابت زیر پایهٔ «تخت‌ماندن» همان بازار — یعنی پیش‌بینی از حدسِ بی‌تغییر بدتر است",
+   "source": [
+    "signals/dominance.json"
+   ],
+   "note": "اصابت 67.4٪ در برابر پایهٔ 80.1٪ · افق‌های دیگر: 30m n=565، 120m n=153"
+  },
+  {
+   "id": "E04",
+   "family": "پیش‌بین",
+   "metric": "مهارت پیش‌بینی (BTC.D|30m)",
+   "value": -17.5,
+   "unit": "واحد درصد",
+   "n": 565,
+   "ci": null,
+   "baseline": 57.5,
+   "verdict": "NEGATIVE",
+   "falsifier": "نرخ اصابت زیر پایهٔ «تخت‌ماندن» همان بازار — یعنی پیش‌بینی از حدسِ بی‌تغییر بدتر است",
+   "source": [
+    "signals/dominance.json"
+   ],
+   "note": "اصابت 40.0٪ در برابر پایهٔ 57.5٪ · افق‌های دیگر: 30m n=565، 120m n=153"
+  },
+  {
+   "id": "E05",
+   "family": "پیش‌بین",
+   "metric": "اصابتِ حکمِ ریسک‌آن/آف",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/news.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: حکم کلان هیچ‌جا ثبت و سررسید نمی‌شود؛ لازم است دفتری مثل forecast دامیننس که حکم را با نتیجهٔ بعدیِ بازار نمره بدهد"
+  },
+  {
+   "id": "E06",
+   "family": "پیش‌بین",
+   "metric": "اصابتِ الگوی اعلام‌شده",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/btc-patterns.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: `btc-patterns.json` وضعیت الگو را دارد ولی نتیجه‌اش را دنبال نمی‌کند؛ لازم است هر الگوی forming با confirmed/failed بسته شود"
+  },
+  {
+   "id": "E07",
+   "family": "شاهد روی معامله",
+   "metric": "ارزش شاهدِ سوپرترند",
+   "value": -0.1803,
+   "unit": "R",
+   "n": 134,
+   "ci": [
+    -0.5285,
+    0.1679
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اختلاف صفر یا منفی = هم‌ترازیِ ساختار چیزی اضافه نکرد",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "با شاهد n=100 · بی‌شاهد n=34 · "
+  },
+  {
+   "id": "E08",
+   "family": "شاهد روی معامله",
+   "metric": "ارزش شاهدِ اردر بلاک",
+   "value": -0.1092,
+   "unit": "R",
+   "n": 60,
+   "ci": [
+    -0.5389,
+    0.3205
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اختلاف صفر یا منفی = هم‌ترازیِ OB چیزی اضافه نکرد",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "با شاهد n=33 · بی‌شاهد n=27 · "
+  },
+  {
+   "id": "E09",
+   "family": "شاهد روی معامله",
+   "metric": "ارزش شاهدِ الگوی کندلی",
+   "value": -0.1197,
+   "unit": "R",
+   "n": 61,
+   "ci": [
+    -0.5012,
+    0.2619
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اختلاف صفر یا منفی = الگوی کندلی تأیید بی‌اثر است (دقیقاً همان چیزی که قانون ۰۹ می‌خواهد سنجیده شود)",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "با شاهد n=34 · بی‌شاهد n=27 · "
+  },
+  {
+   "id": "E10",
+   "family": "شاهد روی معامله",
+   "metric": "نسبتِ تارگت به استاپِ تأییدِ نقدینگی",
+   "value": 0.69,
+   "unit": "تارگت به ازای هر استاپ",
+   "n": 1077,
+   "ci": null,
+   "baseline": 1.0,
+   "verdict": "FAULT",
+   "falsifier": "تارگت کمتر از استاپ = تأییدِ نقدینگی بیشتر روی بازنده‌ها بوده تا برنده‌ها",
+   "source": [
+    "signals/rewards.json"
+   ],
+   "note": "امتیاز 885 · تارگت 214 · تریل 553 · استاپ 310"
+  },
+  {
+   "id": "E11",
+   "family": "دروازه‌بان",
+   "metric": "برتریِ استراتژیِ برگزیده",
+   "value": 0.2117,
+   "unit": "R",
+   "n": 251,
+   "ci": [
+    -0.0155,
+    0.4389
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اگر بهترین استراتژی از بقیه جدا نشود، مسیریابی ارزشی اضافه نکرده",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "برگزیده «smc» n=76 · بقیه n=175"
+  },
+  {
+   "id": "E12",
+   "family": "پیش‌بین",
+   "metric": "چسبندگیِ پامپ (لیفت)",
+   "value": 1.04,
+   "unit": "×",
+   "n": 485,
+   "ci": null,
+   "baseline": 1.0,
+   "verdict": "NO_SKILL",
+   "falsifier": "لیفت ≈۱ یعنی پامپ قبلی هیچ خبری از پامپ بعدی نمی‌دهد",
+   "source": [
+    "brain/pump-history.json"
+   ],
+   "note": "P(پامپ بعدی|پامپ) 34% در برابر پایهٔ 32%"
+  },
+  {
+   "id": "E13",
+   "family": "شاهد روی معامله",
+   "metric": "نسبتِ تارگت به استاپِ قیاس تاریخی",
+   "value": 0.72,
+   "unit": "تارگت به ازای هر استاپ",
+   "n": 1357,
+   "ci": null,
+   "baseline": 1.0,
+   "verdict": "FAULT",
+   "falsifier": "تارگت کمتر از استاپ = قیاسِ تاریخی بیشتر روی بازنده‌ها ردپا گذاشته تا برنده‌ها",
+   "source": [
+    "signals/rewards.json"
+   ],
+   "note": "امتیاز 1115 · تارگت 323 · تریل 583 · استاپ 451"
+  },
+  {
+   "id": "E14",
+   "family": "پیش‌بین",
+   "metric": "اصابتِ کاتالیزور",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/news.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: خبرِ برچسب‌خورده به حرکتِ بعدیِ نماد وصل نمی‌شود؛ لازم است هر تیتر حساس با بازدهِ N ساعت بعد بسته شود"
+  },
+  {
+   "id": "E15",
+   "family": "عملیاتی",
+   "metric": "نرخ آلارمِ عمل‌شده",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/ob-radar.json",
+    "signals/trail-alert.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: آلارم‌ها فرستاده می‌شوند ولی «عمل شد/نشد» ثبت نمی‌شود؛ لازم است هر آلارم با نتیجهٔ همان نماد بسته شود"
+  },
+  {
+   "id": "E16",
+   "family": "دروازه‌بان",
+   "metric": "ارزشِ دروازهٔ کارمزد",
+   "value": 0.3129,
+   "unit": "R",
+   "n": 1629,
+   "ci": [
+    0.1207,
+    0.5052
+   ],
+   "baseline": null,
+   "verdict": "SKILL",
+   "falsifier": "اگر ستاپ‌های پرکارمزد بهتر از گذرانده‌ها باشند، دروازهٔ کارمزد دارد لبه را دور می‌ریزد",
+   "source": [
+    "signals/viability-gate.json",
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "گذرانده n=119 · ردشده n=1510 · مرزِ ۰.۲۵R کارمزد"
+  },
+  {
+   "id": "E17",
+   "family": "دروازه‌بان",
+   "metric": "ارزشِ کلِ دروازه‌ها (ارسال در برابر رد)",
+   "value": -0.0102,
+   "unit": "R",
+   "n": 2570,
+   "ci": [
+    -0.1333,
+    0.1128
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اگر ردشده‌ها بهتر یا هم‌سطح باشند، مجموعِ دروازه‌ها چیزی جز حذفِ تصادفی نیست",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "گذرانده n=251 · ردشده n=2319 · دلایل رد امروز: 10 دسته"
+  },
+  {
+   "id": "E18",
+   "family": "عملیاتی",
+   "metric": "عکس‌فوریِ بک‌تستِ کهنه",
+   "value": 40.0,
+   "unit": "٪ نقص",
+   "n": 5,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "FAULT",
+   "falsifier": "مرجعِ کهنه یعنی ادعاها به بازارِ امروز ربط ندارند",
+   "source": [
+    "signals/dash-backtest.json",
+    "signals/h1-backtest.json",
+    "signals/scenario-backtest.json",
+    "signals/big-money-backtest.json",
+    "signals/scalp-dash-backtest.json"
+   ],
+   "note": "2 نقص از 5 · میانهٔ سن 11س"
+  },
+  {
+   "id": "E19",
+   "family": "عملیاتی",
+   "metric": "بردهایی که تریل به صفر رساند",
+   "value": 84.2,
+   "unit": "٪ از تریل‌ها",
+   "n": 133,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "FAULT",
+   "falsifier": "تریل باید ضرر را کوتاه کند نه سود را؛ سهم بالای بردهای صفرشده یعنی نردبان تریل زودتر از لازم مسلح می‌شود",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "میانهٔ خالصِ تریل‌ها +0.000R"
+  },
+  {
+   "id": "E20",
+   "family": "عملیاتی",
+   "metric": "معاملهٔ بسته بدون پرونده",
+   "value": 0.0,
+   "unit": "٪ نقص",
+   "n": 274,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "CLEAN",
+   "falsifier": "هر معاملهٔ بسته باید پرونده/درس داشته باشد (قانون ۰۳ بند ۱)",
+   "source": [
+    "signals/loop-audit.json",
+    "brain/cases/"
+   ],
+   "note": "0 نقص از 274 · 274 هضم‌شده از 274"
+  },
+  {
+   "id": "E21",
+   "family": "شاهد روی معامله",
+   "metric": "ارزش لایهٔ تجربه",
+   "value": 0.0701,
+   "unit": "R",
+   "n": 224,
+   "ci": [
+    -0.15,
+    0.2901
+   ],
+   "baseline": null,
+   "verdict": "NO_SKILL",
+   "falsifier": "اختلاف شاملِ صفر = تجربه هنوز اثر اثبات‌شده ندارد (همان تصحیحِ ۲۴ اوت)",
+   "source": [
+    "brain/paper/closed.jsonl"
+   ],
+   "note": "با شاهد n=88 · بی‌شاهد n=136 · "
+  },
+  {
+   "id": "E22",
+   "family": "عملیاتی",
+   "metric": "قاعده‌های CI-گذشته روی قفسه",
+   "value": 10,
+   "unit": "قاعده",
+   "n": 9,
+   "ci": null,
+   "baseline": 0,
+   "verdict": "OK",
+   "falsifier": "قفسهٔ خالی یعنی هیچ پیشنهادی از بازهٔ اطمینان رد نشده؛ قفسهٔ آلوده از خالی بدتر است",
+   "source": [
+    "signals/edge.json",
+    "signals/improve.json"
+   ],
+   "note": "9 پیشنهاد باز · قفسه تازه"
+  },
+  {
+   "id": "E23",
+   "family": "عملیاتی",
+   "metric": "تخلفِ انطباق",
+   "value": 16.67,
+   "unit": "٪ نقص",
+   "n": 6,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "FAULT",
+   "falsifier": "تخلفِ باز یعنی زنجیره از قرارداد خودش بیرون است",
+   "source": [
+    "signals/conformance.json",
+    "signals/sentinel.json"
+   ],
+   "note": "1 نقص از 6 · پاسبان: پاک · 0 یافته"
+  },
+  {
+   "id": "E24",
+   "family": "عملیاتی",
+   "metric": "شکستِ قرارداد پنل",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/conformance.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: E24 فایل وضعیت مستقل ندارد؛ لازم است بررسیِ قرارداد پنل (هر فیلدی که پنل وعده داده واقعاً هست؟) خروجی خودش را بنویسد — نه این‌که از دفتر E23 قرض بگیرد"
+  },
+  {
+   "id": "E25",
+   "family": "عملیاتی",
+   "metric": "شکستِ قراردادِ ضدتکرار",
+   "value": 12.5,
+   "unit": "٪ نقص",
+   "n": 40,
+   "ci": null,
+   "baseline": 0.0,
+   "verdict": "FAULT",
+   "falsifier": "همان کلیدِ بی‌استراتژی زیر ۳ ساعت، یا همان استراتژی زیر ۱۲ ساعت، یا بیش از ۲ ارسال یک ارز در ۱۲ ساعت — قرارداد ۲۶ اوت، همان جایی که PAXG×۵ شکست",
+   "source": [
+    "signals/telegram-log.json"
+   ],
+   "note": "5 نقص از 40 · 40 ارسال · 34 ترکیبِ یکتا"
+  },
+  {
+   "id": "E26",
+   "family": "عملیاتی",
+   "metric": "اثرِ دستورِ تمرکز",
+   "value": null,
+   "unit": "",
+   "n": null,
+   "ci": null,
+   "baseline": null,
+   "verdict": "NO_METRIC",
+   "falsifier": "—",
+   "source": [
+    "signals/overseer.json"
+   ],
+   "note": "دفتر لازم ساخته نشده: دستورها صادر می‌شوند ولی «اجرا شد/نشد» و اثرش ثبت نمی‌شود؛ لازم است هر دستور با سنجهٔ همان چرخهٔ بعد بسته شود"
+  }
+ ],
+ "boundary": "کارنامه برای دیدن است، نه برای وزن‌دادن. هیچ عددی این‌جا دروازه‌ای را عوض نمی‌کند — ورود به تولید فقط از مسیر قانون ۰۳."
+}
