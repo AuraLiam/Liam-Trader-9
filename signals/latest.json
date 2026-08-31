@@ -1,6 +1,6 @@
 {
- "generated": 1788198491927,
- "generatedText": "2026-08-31 17:48 UTC",
+ "generated": 1788198674810,
+ "generatedText": "2026-08-31 17:51 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -10,9 +10,9 @@
  ],
  "counts": {
   "SIGNAL": 20,
-  "ARMED": 39,
+  "ARMED": 40,
   "PULLBACK_1": 1,
-  "WATCH": 167
+  "WATCH": 166
  },
  "per_strategy": {
   "smc": {
@@ -24,8 +24,8 @@
   "ibs": {
    "name": "IBS + پولبک",
    "signals": 19,
-   "armed": 37,
-   "watching": 59
+   "armed": 38,
+   "watching": 58
   }
  },
  "strategy_priority": {
@@ -131,6 +131,18 @@
    "now": 0.1498,
    "distancePct": 0.36581310276022283,
    "why": "اتاق یادگیری مخالف است — 495 مورد مشابه، برد 30.9٪، انتظار -0.10R",
+   "stage": "ARMED"
+  },
+  {
+   "sym": "ZKUSDT",
+   "tf": "5m",
+   "dir": "LONG",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.008885,
+   "now": 0.00894,
+   "distancePct": 0.6190208216094484,
+   "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
   {
@@ -504,18 +516,6 @@
    "distancePct": 15.214477211796249,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
-  },
-  {
-   "sym": "0GUSDT",
-   "tf": "15m",
-   "dir": "LONG",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.19035,
-   "now": 0.2316,
-   "distancePct": 21.67060677698976,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
   }
  ],
  "learning": {
@@ -524,7 +524,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": -0.212
+  "btcChange": -0.142
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -4688,7 +4688,7 @@
    "strategyName": "IBS + پولبک",
    "sym": "ZKUSDT",
    "tf": "5m",
-   "stage": "WATCH",
+   "stage": "ARMED",
    "dir": "LONG",
    "entry": 0.008885,
    "sl": 0.008853360000000001,
@@ -4712,7 +4712,7 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
+   "skip": null,
    "lastClose": 1788198000000,
    "ob": {
     "low": 0.00888,
@@ -4730,8 +4730,36 @@
     "ev": 0.55
    },
    "trend4": "up",
-   "trend1": "down",
-   "trend_mode": "counter-blocked"
+   "trend1": "range",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.00894894,
+      "pct_away": 0.1,
+      "score": 44
+     },
+     {
+      "price": 0.00903834,
+      "pct_away": 1.1,
+      "score": 69
+     }
+    ],
+    "below": [
+     {
+      "price": 0.0088059,
+      "pct_away": -1.5,
+      "score": 35
+     },
+     {
+      "price": 0.00878802,
+      "pct_away": -1.7,
+      "score": 65
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 44) · پایین در -1.5٪ (شدت 35)"
   },
   {
    "strategy": "ibs",
