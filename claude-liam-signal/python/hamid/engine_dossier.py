@@ -141,6 +141,13 @@ def build(now_ms=None):
                                        "n": ((v.get("by_context") or {})
                                              .get("all") or {}).get("n")})
     focus = json.loads(_read(SIG / "engine-focus.json") or "{}")
+    # کارنامهٔ سنجیده (دستور ۳۱ اوت) — از خودِ ماژول، نه از فایلِ ممکن است
+    # کهنه؛ پرونده و کارنامه باید همیشه یک چیز بگویند.
+    try:
+        from hamid.scorecard import build as _sc
+        grades = {c["id"]: c for c in _sc(now)["cards"]}
+    except Exception:                                # noqa: BLE001
+        grades = {}
 
     by_owner = collections.defaultdict(list)
     for fn, v in files.items():
@@ -231,6 +238,7 @@ def build(now_ms=None):
             "downstream": sorted(consumers),
             "files": out_files,
             "rewards": rew,
+            "grade": grades.get(eid),
             "rooms": rooms.get(eid, []),
             "focus": (focus.get("engines") or {}).get(eid),
             "research_findings": n_find,
@@ -238,8 +246,12 @@ def build(now_ms=None):
             "gaps": [g for g in (
                 "بی‌ردپا (فایل وضعیت مستقل ندارد)" if not rows else None,
                 "بی‌محافظ (آزمون اختصاصی ندارد)" if not tests and rows else None,
-                "بی‌کارنامه (امتیاز/اتاق ثبت‌شده ندارد)"
-                if not rew and not rooms.get(eid) else None,
+                # «بی‌کارنامه» حالا یعنی مترِ سنجیده ندارد — نه این‌که
+                # امتیاز جایزه ندارد. جایزه فقط برای انجینِ روی-معامله
+                # ساخته می‌شود و ۲۰ انجین ذاتاً از آن راه نمره نمی‌گیرند.
+                "بی‌کارنامه (مترِ سنجیده ندارد)"
+                if (grades.get(eid) or {}).get("verdict") == "NO_METRIC"
+                or eid not in grades else None,
                 "بی‌تحقیق (findings خالی)" if n_find == 0 else None,
                 "فایل کهنه از سقف قرارداد"
                 if any(f["stale"] for f in out_files) else None,

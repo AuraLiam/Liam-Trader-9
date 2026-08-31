@@ -66,12 +66,19 @@ def run():
     st = [e for e in eng if any(f["stale"] for f in e["files"])]
     check("فایلِ کهنه‌تر از سقفِ قرارداد صریح علامت می‌خورد",
           all(any("کهنه" in g for g in e["gaps"]) for e in st))
+    # «بی‌کارنامه» از ۳۱ اوت یعنی مترِ سنجیده ندارد (`scorecard`)، نه
+    # این‌که امتیاز جایزه ندارد — جایزه فقط برای انجینِ روی-معامله ساخته
+    # می‌شود و بیشتر انجین‌ها ذاتاً از آن راه نمره نمی‌گیرند.
     check("انجینِ بی‌شکاف، فهرست شکاف خالی دارد",
           all(e["gaps"] or (e["guards"] and not e["traceless"]
-                            and (e["rewards"] or e["rooms"])
+                            and (e.get("grade") or {}).get("verdict")
+                            not in (None, "NO_METRIC")
                             and e["research_findings"] > 0
                             and not any(f["stale"] for f in e["files"]))
               for e in eng))
+    check("هر انجین کارنامهٔ سنجیده‌اش را روی پرونده دارد",
+          all(e.get("grade") for e in eng),
+          str([e["id"] for e in eng if not e.get("grade")]))
 
     # ── ۳) گراف: یالِ بی‌پشتوانه ساخته نمی‌شود ─────────────────────────
     # هر مصرف‌کننده باید از راهِ یک فایلِ واقعی آمده باشد، نه از هوا.
