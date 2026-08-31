@@ -106,13 +106,43 @@ def run():
     check("نمونه‌گیر به خودِ ستاپ‌ها دست نمی‌زند (ضد نشتی به ارسال)",
           setups == before)
 
+    # فاز غلتان (دستور ۳۱ اوت): بودجهٔ ثابت که پر شد، بندیت تقسیم می‌کند
+    from hamid import bandit as _b
+    real_alloc = _b.allocate
     S.counts = lambda: {t: S.BANDS[t][3] for t in S.TAGS}
+    _b.allocate = lambda total, *a, **k: (
+        {"exp-short-b1": total, "exp-short-b2": 0}, "آزمونی")
+    opened_before = len(opened_rows)
     try:
         r2 = S.sample(setups, opener=fake_open)
     finally:
-        S.counts = real_counts
-    check("بودجهٔ پر = توقف کامل، با دلیل صریح",
-          r2["opened"] == 0 and "تمام" in (r2.get("why") or ""), str(r2))
+        S.counts, _b.allocate = real_counts, real_alloc
+    check("بودجهٔ پر = فاز غلتان با تخصیص بندیت",
+          r2.get("mode") == "rolling-bandit"
+          and 0 < r2["opened"] <= S.ROLLING_PER_CYCLE, str(r2))
+    check("و سهم بندیت مو‌به‌مو اجرا می‌شود (فقط بازوی تخصیص‌گرفته)",
+          all(x["stage_tag"] == "exp-short-b1"
+              for x in opened_rows[opened_before:]))
+    check("سقف غلتان کوچک‌تر از فاز اول است (درسِ پرشدن ۸ساعته)",
+          S.ROLLING_PER_CYCLE < S.PER_CYCLE * len(S.TAGS))
+
+    S.counts = lambda: {t: S.BANDS[t][3] for t in S.TAGS}
+    _b.allocate = lambda total, *a, **k: (
+        {t: 0 for t in S.TAGS}, "همهٔ بازوها حکم گرفته‌اند")
+    try:
+        r2b = S.sample(setups, opener=fake_open)
+    finally:
+        S.counts, _b.allocate = real_counts, real_alloc
+    check("همهٔ بازوها حکم‌گرفته = توقف کامل، با دلیل صریح",
+          r2b["opened"] == 0 and "تمام" in (r2b.get("why") or ""), str(r2b))
+    S.counts = lambda: {t: S.BANDS[t][3] for t in S.TAGS}
+    _b.allocate = None                              # بندیت خراب → نمونهٔ کور ممنوع
+    try:
+        r2c = S.sample(setups, opener=fake_open)
+    finally:
+        S.counts, _b.allocate = real_counts, real_alloc
+    check("بندیتِ خراب = صفر نمونهٔ کور، با دلیل",
+          r2c["opened"] == 0 and "بندیت" in (r2c.get("why") or ""), str(r2c))
     S.counts = lambda: {t: 0 for t in S.TAGS}
     try:
         r3 = S.sample([setup("X1USDT", q=30)], opener=fake_open)
