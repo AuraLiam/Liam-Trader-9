@@ -577,7 +577,30 @@
    "consumer": "panel+lead",
    "critical": false,
    "kind": "live",
-   "cadence_note": "هر چرخهٔ زنجیرهٔ سیگنال (کرون */15، اجرا ~۱۵د) → سقف ۴۵ دقیقه، هم‌قد بقیهٔ خروجی‌های همان زنجیره"
+   "cadence_note": "هر چرخهٔ زنجیرهٔ سیگنال (کرون */15، اجرا ~۱۵د) → سقف ۴۵ دقیقه، هم‌قد بقیهٔ خروجی‌های همان زنجیره",
+   "optional": true
+  },
+  "gainer-radar.json": {
+   "layer": "L1_market",
+   "owner": "E01",
+   "producer": "hamid/gainer_radar.py --write (pump-radar.yml)",
+   "max_age_min": 45,
+   "consumer": "panel+telegram",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "زنجیرهٔ سیگنال هر ۱۵ دقیقه (اجرا ~۱۵د) → سقف ۴۵، هم‌قد بقیهٔ همان زنجیره · optional: فقط با شبکه روی Actions ساخته می‌شود",
+   "optional": true
+  },
+  "curriculum.json": {
+   "layer": "L6_learning",
+   "owner": "E22",
+   "producer": "hamid/curriculum.py --write (work-report.yml)",
+   "max_age_min": 1560,
+   "consumer": "panel+lead",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "روزی یک بار در نوبت گزارش کار؛ بزرگ‌ترین فاصله ~۲۴س → سقف ۱۵۶۰ دقیقه",
+   "optional": true
   }
  }
 }

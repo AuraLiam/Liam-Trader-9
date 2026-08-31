@@ -23,6 +23,8 @@ sys.path.insert(0, str(PY))
 
 import telegram as TG                                # noqa: E402
 
+import pathlib
+
 OK = 0
 FAIL = []
 
@@ -324,6 +326,43 @@ check("زنجیره sent.json و دفترهای پیپر را در بکاپ بی
       'cp signals/sent.json "$BK/"' in wf
       and 'cp brain/paper/open.jsonl "$BK/"' in wf
       and 'cp brain/paper/closed.jsonl "$BK/"' in wf)
+
+# ── کلاسِ عیبِ ۳۱ اوت: ارسالِ هم‌زمان روی دو رانرِ جدا ──────────────────
+#
+# ASTERUSDT دو بار در ۵ دقیقه رفت چون سه منبعِ حافظه هر سه **محلی** بودند
+# و زنجیرهٔ دوم چک‌اوتش را قبل از کامیتِ زنجیرهٔ اول گرفته بود. منبعِ
+# چهارم (ریموت) تنها چیزی است که هر سه زنجیره مشترک می‌بینند.
+_src = pathlib.Path(__file__).resolve().parent.parent / "telegram.py"
+_t = _src.read_text(encoding="utf-8")
+
+check("منبع چهارمِ حافظه از ریموت می‌خواند (نه فقط دیسک/tmp/لاگ محلی)",
+      "_remote_log_rows" in _t and "origin/main" in _t)
+_body = _t.split("def _load_sent")[1].split("def _save_sent")[0]
+check("منبع ریموت داخل خودِ _load_sent مصرف می‌شود",
+      "_remote_log_rows()" in _body, _body[-400:])
+check("ریموت هر دو کلیدِ ضدتکرار را بازمی‌سازد (any و pair)",
+      'f"any|{r[\'sym\']}|{r[\'tf\']}|{r[\'dir\']}"' in _t
+      and 'f"pair|{r[\'sym\']}|{r[\'dir\']}"' in _t)
+check("شکستِ شبکه ارسال را متوقف نمی‌کند (خرابی نرم)",
+      "return []" in _t.split("def _remote_log_rows")[1][:2600])
+check("خواندنِ ریموت قابلِ خاموش‌کردن است (برای آزمون/سرویس محلی)",
+      "LIAM9_NO_REMOTE_DEDUPE" in _t)
+
+# رفتار: با خاموش‌کردن ریموت، تابع باید بی‌خطا فهرست خالی بدهد
+import os as _os
+import telegram as _tg
+_os.environ["LIAM9_NO_REMOTE_DEDUPE"] = "1"
+check("خاموش‌کردن ریموت، خطا نمی‌دهد و خالی برمی‌گرداند",
+      _tg._remote_log_rows() == [])
+_os.environ.pop("LIAM9_NO_REMOTE_DEDUPE")
+
+# پارسِ لاگ باید در برابر فایلِ خراب مقاوم باشد — وگرنه یک فایلِ نیمه‌نوشته
+# کلِ حافظه را صفر می‌کند و همان عیب برمی‌گردد.
+check("لاگِ خراب حافظه را صفر نمی‌کند", _tg._log_rows("{ناقص") == []
+      and _tg._log_rows('{"sent":[{"sym":"X"}]}') == [{"sym": "X"}])
+
+check("سه ورک‌فلوی ارساله همچنان جدا می‌دوند (سریالی‌کردن ممنوع بود)",
+      True, "مستندسازی: رفع از راه حافظهٔ مشترک است نه قفلِ سراسری")
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

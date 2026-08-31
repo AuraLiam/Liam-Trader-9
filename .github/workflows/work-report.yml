@@ -42,6 +42,14 @@ jobs:
       - name: تمرکز انجین‌ها (بندیت)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.bandit --write || true
+      # برنامهٔ درسی روزانه (دستور حمید ۱ سپتامبر): سه منبع برای هر انجین،
+      # اولویت با انجینی که کارنامه‌اش قرمز است. `--verify` نرخِ پیگیریِ
+      # تخصیصِ دیروز را می‌سنجد — خواندنِ بی‌یافته مطالعه نیست.
+      - name: برنامهٔ درسی انجین‌ها
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.curriculum --verify || true
+          python3 -m hamid.curriculum --write || true
       - name: ثبت گزارش (ضدتصادم)
         run: |
           git config user.name "Claude"
