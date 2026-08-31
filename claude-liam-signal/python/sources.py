@@ -288,8 +288,78 @@ def used():
     return dict(_used)
 
 
+PERP_VENUES = []
+
+
+def perp_venue(vid, label, url):
+    """صرافیِ **قرارداد دائمی** — همان قرارداد `venue`، دفتر جدا."""
+    def deco(fn):
+        PERP_VENUES.append({"id": vid, "label": label, "url": url, "parse": fn})
+        return fn
+    return deco
+
+
+@perp_venue("binance-perp", "Binance Perpetual",
+            lambda s, tf, n: f"https://fapi.binance.com/fapi/v1/klines?symbol={s}"
+                             f"&interval={tf}&limit={n}")
+def _binance_perp(r):
+    # شکل کندل فیوچرز بایننس عیناً همان اسپات است — پس هیچ‌چیز پایین‌دست
+    # نمی‌فهمد کدام آمده، و همین باعث شده بود این تفاوت سال‌ها نامرئی بماند.
+    return [_k(x[0], x[1], x[2], x[3], x[4], x[5]) for x in _rows(r)]
+
+
+@perp_venue("mexc-perp", "MEXC Perpetual",
+            lambda s, tf, n: "https://contract.mexc.com/api/v1/contract/kline/"
+                             + s.replace("USDT", "_USDT")
+                             + f"?interval={ {'1m':'Min1','5m':'Min5','15m':'Min15','1h':'Min60','4h':'Hour4','1d':'Day1'}[tf] }")
+def _mexc_perp(r):
+    # {data:{time:[],open:[],close:[],high:[],low:[],vol:[]}} — ستونی، ثانیه‌ای
+    d = (r or {}).get("data") or {}
+    t = d.get("time") or []
+    return [_k(int(t[i]) * 1000, d["open"][i], d["high"][i], d["low"][i],
+               d["close"][i], (d.get("vol") or [0] * len(t))[i])
+            for i in range(len(t))]
+
+
+def perp_klines(sym, tf, limit, quiet=True):
+    """کندلِ **قرارداد دائمی** — همان چیزی که حمید واقعاً معامله می‌کند.
+
+    دستور صریح حمید (۳۱ اوت): «برو توی تریدینگ‌ویو، کریپتو را انتخاب کن،
+    و بعد ارز را به‌صورت پرپچوال انتخاب کن.» ممیزی نشان داد کل تحلیل
+    زنده تا امروز روی کندلِ **اسپات** بود (`api/v3/klines` — سه صرافیِ
+    اول همه اسپات‌اند)، در حالی که اجرا روی فیوچرز بیت‌یونیکس است.
+
+    چرا نامرئی مانده بود: شکل کندلِ فیوچرز بایننس با اسپات یکی است، پس
+    هیچ لایه‌ای پایین‌دست نمی‌توانست بفهمد کدام را گرفته.
+
+    چرا مهم است — و چرا هنوز جایگزینِ خودکارِ اسپات نشده: قیمتِ پرپ با
+    اسپات پایه (basis) دارد، ویک‌های لیکوییدیشن دارد که اسپات ندارد، و
+    حجمش کلاً ابزار دیگری است. یعنی سطح‌ها، اردر بلاک‌ها و استاپ‌ها روی
+    دو نمودار **جای متفاوتی** می‌افتند. اندازهٔ این تفاوت باید سنجیده
+    شود نه حدس زده (`hamid/perp_vs_spot.py`)؛ کلِ دفترِ تاریخی هم روی
+    اسپات ساخته شده و عوض‌کردنِ بی‌سنجشِ منبع، آن تاریخ را بی‌معنا
+    می‌کند. پس فعلاً این تابع **در دسترس** است و مقایسه‌اش اجرا می‌شود؛
+    سوییچِ منبعِ تحلیل تصمیم صریح حمید است (قانون ۰۳)."""
+    errs = []
+    for v in PERP_VENUES:
+        try:
+            rows = v["parse"](_json(v["url"](sym, tf, limit)))[-limit:]
+        except Exception as e:                       # noqa: BLE001 - صرافی بعدی
+            errs.append(f"{v['id']}: {type(e).__name__}")
+            continue
+        if sane(rows, limit):
+            if not quiet:
+                print(f"  perp klines {sym} {tf} ← {v['label']}", flush=True)
+            return rows
+        errs.append(f"{v['id']}: insane")
+    raise RuntimeError(f"perp klines {sym} {tf}: " + " · ".join(errs))
+
+
 def klines(sym, tf, limit, quiet=True):
-    """Candles from the first venue that gives a full, sane series."""
+    """Candles from the first venue that gives a full, sane series.
+
+    مرز صادقانه (۳۱ اوت): این مسیر **اسپات** است. مسیر قرارداد دائمی
+    `perp_klines` است — تفاوتشان و دلیلِ جدانگه‌داشتنشان آن‌جا نوشته شده."""
     errs = []
     order = [v for v in VENUES if _available(v["id"])] or VENUES
     for v in order:
