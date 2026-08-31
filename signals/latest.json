@@ -1,6 +1,6 @@
 {
- "generated": 1788185389582,
- "generatedText": "2026-08-31 14:09 UTC",
+ "generated": 1788185582587,
+ "generatedText": "2026-08-31 14:13 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -9,23 +9,23 @@
   "15m"
  ],
  "counts": {
-  "SIGNAL": 9,
-  "ARMED": 63,
-  "PULLBACK_1": 1,
-  "WATCH": 154
+  "SIGNAL": 10,
+  "ARMED": 65,
+  "PULLBACK_1": 2,
+  "WATCH": 150
  },
  "per_strategy": {
   "smc": {
    "name": "کانال + اردر بلاک",
    "signals": 1,
    "armed": 4,
-   "watching": 106
+   "watching": 105
   },
   "ibs": {
    "name": "IBS + پولبک",
-   "signals": 8,
-   "armed": 59,
-   "watching": 48
+   "signals": 9,
+   "armed": 61,
+   "watching": 45
   }
  },
  "strategy_priority": {
@@ -37,6 +37,18 @@
   "scope": "فقط ترتیب رتبه‌بندی نامزدها؛ ibs بسته نمی‌شود و هیچ آستانه‌ای عوض نمی‌شود"
  },
  "alarms": [
+  {
+   "sym": "LINKUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
+   "price": 11.195,
+   "now": 11.195,
+   "distancePct": 0.0,
+   "why": "ADX 22.1 زیر حد 25 — بازار روند ندارد",
+   "stage": "ARMED"
+  },
   {
    "sym": "WLDUSDT",
    "tf": "15m",
@@ -62,16 +74,16 @@
    "stage": "ARMED"
   },
   {
-   "sym": "LINKUSDT",
+   "sym": "PEPEUSDT",
    "tf": "5m",
    "dir": "SHORT",
    "strategy": "smc",
    "strategyName": "کانال + اردر بلاک",
-   "price": 11.21,
-   "now": 11.211,
-   "distancePct": 0.00892060660124394,
-   "why": "منتظر تأییدیه",
-   "stage": "ARMED"
+   "price": 3.55e-06,
+   "now": 3.55e-06,
+   "distancePct": 0.0,
+   "why": "پولبک اول تمام شد ولی هم‌سویی کم بود — منتظر پولبک دوم",
+   "stage": "PULLBACK_1"
   },
   {
    "sym": "ONGUSDT",
@@ -80,8 +92,8 @@
    "strategy": "smc",
    "strategyName": "کانال + اردر بلاک",
    "price": 0.09334,
-   "now": 0.09335,
-   "distancePct": 0.010713520462819929,
+   "now": 0.09341,
+   "distancePct": 0.07499464323976925,
    "why": "منتظر تأییدیه",
    "stage": "ARMED"
   },
@@ -92,21 +104,9 @@
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "price": 687.31,
-   "now": 686.27,
-   "distancePct": 0.1513145451106435,
+   "now": 686.26,
+   "distancePct": 0.152769492659783,
    "why": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 23.4٪، انتظار -0.35R",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "ETHUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 2450.74,
-   "now": 2444.81,
-   "distancePct": 0.24196773219516704,
-   "why": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 26.9٪، انتظار -0.14R",
    "stage": "ARMED"
   },
   {
@@ -116,9 +116,33 @@
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "price": 0.195,
-   "now": 0.1944,
-   "distancePct": 0.3076923076923165,
+   "now": 0.1946,
+   "distancePct": 0.20512820512821098,
    "why": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 29.3٪، انتظار -0.07R",
+   "stage": "ARMED"
+  },
+  {
+   "sym": "ETHUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 2450.74,
+   "now": 2445.19,
+   "distancePct": 0.22646221141368436,
+   "why": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 26.9٪، انتظار -0.14R",
+   "stage": "ARMED"
+  },
+  {
+   "sym": "FETUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.15084999999999998,
+   "now": 0.1505,
+   "distancePct": 0.23201856148491168,
+   "why": "اتاق یادگیری مخالف است — 495 مورد مشابه، برد 30.9٪، انتظار -0.10R",
    "stage": "ARMED"
   },
   {
@@ -128,8 +152,8 @@
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "price": 4430.055,
-   "now": 4412.86,
-   "distancePct": 0.3881441652530413,
+   "now": 4418.99,
+   "distancePct": 0.2497711653692902,
    "why": "اتاق یادگیری مخالف است — 540 مورد مشابه، برد 27.2٪، انتظار -0.05R",
    "stage": "ARMED"
   },
@@ -146,18 +170,6 @@
    "stage": "ARMED"
   },
   {
-   "sym": "FETUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.15084999999999998,
-   "now": 0.1501,
-   "distancePct": 0.49718263175337946,
-   "why": "اتاق یادگیری مخالف است — 495 مورد مشابه، برد 30.9٪، انتظار -0.10R",
-   "stage": "ARMED"
-  },
-  {
    "sym": "ETHUSDT",
    "tf": "15m",
    "dir": "SHORT",
@@ -170,26 +182,26 @@
    "stage": "ARMED"
   },
   {
-   "sym": "PUMPUSDT",
+   "sym": "TRUMPUSDT",
    "tf": "5m",
    "dir": "SHORT",
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "price": 0.00431,
-   "now": 0.004284,
-   "distancePct": 0.6032482598607886,
+   "price": 2.3810000000000002,
+   "now": 2.366,
+   "distancePct": 0.6299874002520001,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
   {
-   "sym": "DOGEUSDT",
+   "sym": "LINKUSDT",
    "tf": "5m",
    "dir": "SHORT",
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "price": 0.082835,
-   "now": 0.08232,
-   "distancePct": 0.6217178728798232,
+   "price": 11.2665,
+   "now": 11.195,
+   "distancePct": 0.63462477255581,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -200,8 +212,8 @@
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "price": 7.2044999999999995,
-   "now": 7.159,
-   "distancePct": 0.6315497258657735,
+   "now": 7.155,
+   "distancePct": 0.6870705808869347,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -243,18 +255,6 @@
   },
   {
    "sym": "TRXUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.3345,
-   "now": 0.3321,
-   "distancePct": 0.7174887892376721,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "TRXUSDT",
    "tf": "15m",
    "dir": "SHORT",
    "strategy": "ibs",
@@ -290,6 +290,18 @@
    "stage": "ARMED"
   },
   {
+   "sym": "PEPEUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 3.58e-06,
+   "now": 3.55e-06,
+   "distancePct": 0.8379888268156462,
+   "why": "قیمت هنوز به باکس نرسیده",
+   "stage": "ARMED"
+  },
+  {
    "sym": "SOLUSDT",
    "tf": "15m",
    "dir": "SHORT",
@@ -308,8 +320,8 @@
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
    "price": 78670.63,
-   "now": 77962,
-   "distancePct": 0.9007554661758836,
+   "now": 77975.17,
+   "distancePct": 0.8840147841704158,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -338,18 +350,6 @@
    "stage": "ARMED"
   },
   {
-   "sym": "TRUMPUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 2.3810000000000002,
-   "now": 2.359,
-   "distancePct": 0.9239815203696027,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
    "sym": "ASTERUSDT",
    "tf": "15m",
    "dir": "SHORT",
@@ -358,6 +358,18 @@
    "price": 0.6984999999999999,
    "now": 0.692,
    "distancePct": 0.9305654974946244,
+   "why": "قیمت هنوز به باکس نرسیده",
+   "stage": "ARMED"
+  },
+  {
+   "sym": "SOLUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 103.575,
+   "now": 102.61,
+   "distancePct": 0.9316920106203268,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -374,6 +386,18 @@
    "stage": "ARMED"
   },
   {
+   "sym": "HEMIUSDT",
+   "tf": "5m",
+   "dir": "LONG",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.015115,
+   "now": 0.01497,
+   "distancePct": 0.9593119417796845,
+   "why": "قیمت هنوز به باکس نرسیده",
+   "stage": "ARMED"
+  },
+  {
    "sym": "FTMUSDT",
    "tf": "5m",
    "dir": "SHORT",
@@ -386,26 +410,14 @@
    "stage": "ARMED"
   },
   {
-   "sym": "SOLUSDT",
+   "sym": "TUTUSDT",
    "tf": "5m",
    "dir": "SHORT",
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "price": 103.575,
-   "now": 102.57,
-   "distancePct": 0.9703113685735067,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "XLMUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.1772,
-   "now": 0.1752,
-   "distancePct": 1.128668171557563,
+   "price": 0.03206,
+   "now": 0.03169,
+   "distancePct": 1.1540860885838908,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -434,6 +446,18 @@
    "stage": "ARMED"
   },
   {
+   "sym": "XLMUSDT",
+   "tf": "5m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.1772,
+   "now": 0.175,
+   "distancePct": 1.2415349887133225,
+   "why": "قیمت هنوز به باکس نرسیده",
+   "stage": "ARMED"
+  },
+  {
    "sym": "ADAUSDT",
    "tf": "15m",
    "dir": "SHORT",
@@ -446,6 +470,18 @@
    "stage": "ARMED"
   },
   {
+   "sym": "ONDOUSDT",
+   "tf": "15m",
+   "dir": "SHORT",
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "price": 0.3473,
+   "now": 0.3425,
+   "distancePct": 1.3820904117477602,
+   "why": "قیمت هنوز به باکس نرسیده",
+   "stage": "ARMED"
+  },
+  {
    "sym": "ENAUSDT",
    "tf": "5m",
    "dir": "SHORT",
@@ -454,18 +490,6 @@
    "price": 0.1511,
    "now": 0.149,
    "distancePct": 1.3898080741231094,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "PEPEUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 3.58e-06,
-   "now": 3.53e-06,
-   "distancePct": 1.396648044692736,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
   },
@@ -492,211 +516,31 @@
    "distancePct": 1.4797763893456113,
    "why": "قیمت هنوز به باکس نرسیده",
    "stage": "ARMED"
-  },
-  {
-   "sym": "PENGUUSDT",
-   "tf": "15m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.008777,
-   "now": 0.008646,
-   "distancePct": 1.4925373134328461,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
-  },
-  {
-   "sym": "POLUSDT",
-   "tf": "5m",
-   "dir": "SHORT",
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "price": 0.089695,
-   "now": 0.08833,
-   "distancePct": 1.5218239589720624,
-   "why": "قیمت هنوز به باکس نرسیده",
-   "stage": "ARMED"
   }
  ],
  "learning": {
-  "experiences": 173958,
-  "heldBack": 13,
+  "experiences": 173974,
+  "heldBack": 12,
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": -1.164
+  "btcChange": -1.225
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "sym": "LINKUSDT",
+   "sym": "PUMPUSDT",
    "tf": "5m",
    "stage": "SIGNAL",
    "dir": "SHORT",
-   "entry": 11.2665,
-   "sl": 11.302807,
-   "tp1": 11.212039500000003,
-   "tp2": 11.175732500000002,
+   "entry": 0.004304,
+   "sl": 0.004330954,
+   "tp1": 0.004263569,
+   "tp2": 0.004236614999999999,
    "rr": 1.5,
-   "price": 11.211,
-   "conf": null,
-   "ev": null,
-   "quality": 64,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 11.264,
-    "high": 11.269
-   },
-   "choch": 0,
-   "barsAgo": 3,
-   "inOB": 0,
-   "nearOB": 1,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 540,
-    "hit": 38.3,
-    "ev": 0.138
-   },
-   "trend4": "down",
-   "trend1": "range",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 11.356743,
-      "pct_away": 1.3,
-      "score": 39
-     },
-     {
-      "price": 11.379165,
-      "pct_away": 1.5,
-      "score": 40
-     }
-    ],
-    "below": [
-     {
-      "price": 11.154945,
-      "pct_away": -0.5,
-      "score": 50
-     },
-     {
-      "price": 11.132523,
-      "pct_away": -0.7,
-      "score": 39
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 39) · پایین در -0.5٪ (شدت 50)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "PAXGUSDT",
-   "tf": "5m",
-   "stage": "SIGNAL",
-   "dir": "SHORT",
-   "entry": 4438.530000000001,
-   "sl": 4454.03213,
-   "tp1": 4415.276805000002,
-   "tp2": 4399.774675000003,
-   "rr": 1.5,
-   "price": 4421.54,
-   "conf": null,
-   "ev": null,
-   "quality": 64,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 4436.35,
-    "high": 4440.71
-   },
-   "choch": 0,
-   "barsAgo": 4,
-   "inOB": 0,
-   "nearOB": 1,
-   "elite": false,
-   "learning": {
-    "verdict": "flat",
-    "n": 480,
-    "hit": 29.8,
-    "ev": -0.041
-   },
-   "trend4": "down",
-   "trend1": "down",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "below",
-    "above": [
-     {
-      "price": 4487.8631,
-      "pct_away": 1.5,
-      "score": 38
-     },
-     {
-      "price": 4505.54926,
-      "pct_away": 1.9,
-      "score": 39
-     }
-    ],
-    "below": [
-     {
-      "price": 4408.27538,
-      "pct_away": -0.3,
-      "score": 42
-     },
-     {
-      "price": 4399.4323,
-      "pct_away": -0.5,
-      "score": 45
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.5٪ (شدت 38) · پایین در -0.3٪ (شدت 42) — آهن‌ربای لیکویید هم‌جهت فروش"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "AAVEUSDT",
-   "tf": "5m",
-   "stage": "SIGNAL",
-   "dir": "SHORT",
-   "entry": 123,
-   "sl": 124.15133999999999,
-   "tp1": 121.27299000000002,
-   "tp2": 120.12165000000002,
-   "rr": 1.5,
-   "price": 123,
+   "price": 0.004304,
    "conf": null,
    "ev": null,
    "quality": 76,
@@ -714,13 +558,169 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.004302,
+    "high": 0.004318
+   },
+   "choch": 0,
+   "barsAgo": 4,
+   "inOB": 1,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 540,
+    "hit": 42.6,
+    "ev": 0.291
+   },
+   "trend4": "range",
+   "trend1": "down",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "below",
+    "above": [
+     {
+      "price": 0.004316912,
+      "pct_away": 0.3,
+      "score": 41
+     },
+     {
+      "price": 0.004351344,
+      "pct_away": 1.1,
+      "score": 36
+     }
+    ],
+    "below": [
+     {
+      "price": 0.00428248,
+      "pct_away": -0.5,
+      "score": 50
+     },
+     {
+      "price": 0.004273872,
+      "pct_away": -0.7,
+      "score": 94
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 41) · پایین در -0.5٪ (شدت 50) — آهن‌ربای لیکویید هم‌جهت فروش"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "PAXGUSDT",
+   "tf": "5m",
+   "stage": "SIGNAL",
+   "dir": "SHORT",
+   "entry": 4438.530000000001,
+   "sl": 4454.03213,
+   "tp1": 4415.276805000002,
+   "tp2": 4399.774675000003,
+   "rr": 1.5,
+   "price": 4428.12,
+   "conf": null,
+   "ev": null,
+   "quality": 64,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": null,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 4436.35,
+    "high": 4440.71
+   },
+   "choch": 0,
+   "barsAgo": 5,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "flat",
+    "n": 480,
+    "hit": 29.8,
+    "ev": -0.041
+   },
+   "trend4": "down",
+   "trend1": "down",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 4476.82932,
+      "pct_away": 1.1,
+      "score": 40
+     },
+     {
+      "price": 4485.68556,
+      "pct_away": 1.3,
+      "score": 47
+     }
+    ],
+    "below": [
+     {
+      "price": 4414.83564,
+      "pct_away": -0.3,
+      "score": 41
+     },
+     {
+      "price": 4397.12316,
+      "pct_away": -0.7,
+      "score": 47
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 40) · پایین در -0.3٪ (شدت 41)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "AAVEUSDT",
+   "tf": "5m",
+   "stage": "SIGNAL",
+   "dir": "SHORT",
+   "entry": 123.08,
+   "sl": 124.15133999999999,
+   "tp1": 121.47299000000001,
+   "tp2": 120.40165000000002,
+   "rr": 1.5,
+   "price": 123.08,
+   "conf": null,
+   "ev": null,
+   "quality": 76,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": true,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": null,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 122.88,
     "high": 123.78
    },
    "choch": 0,
-   "barsAgo": 3,
+   "barsAgo": 4,
    "inOB": 1,
    "nearOB": 0,
    "elite": false,
@@ -737,30 +737,186 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 124.599,
+      "price": 124.68004,
       "pct_away": 1.3,
-      "score": 47
+      "score": 50
      },
      {
-      "price": 125.829,
+      "price": 125.91084,
       "pct_away": 2.3,
-      "score": 70
+      "score": 75
      }
     ],
     "below": [
      {
-      "price": 122.139,
+      "price": 122.21844,
       "pct_away": -0.7,
       "score": 50
      },
      {
-      "price": 120.909,
+      "price": 120.98764,
       "pct_away": -1.7,
       "score": 74
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 47) · پایین در -0.7٪ (شدت 50)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 50) · پایین در -0.7٪ (شدت 50)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "DOGEUSDT",
+   "tf": "5m",
+   "stage": "SIGNAL",
+   "dir": "SHORT",
+   "entry": 0.082835,
+   "sl": 0.08313867,
+   "tp1": 0.08237949500000002,
+   "tp2": 0.08207582500000002,
+   "rr": 1.5,
+   "price": 0.08236,
+   "conf": null,
+   "ev": null,
+   "quality": 64,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": null,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.08278,
+    "high": 0.08289
+   },
+   "choch": 0,
+   "barsAgo": 3,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 540,
+    "hit": 38.9,
+    "ev": 0.156
+   },
+   "trend4": "down",
+   "trend1": "range",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.08326596,
+      "pct_away": 1.1,
+      "score": 43
+     },
+     {
+      "price": 0.08343068,
+      "pct_away": 1.3,
+      "score": 42
+     }
+    ],
+    "below": [
+     {
+      "price": 0.08211292,
+      "pct_away": -0.3,
+      "score": 55
+     },
+     {
+      "price": 0.08178348,
+      "pct_away": -0.7,
+      "score": 42
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 43) · پایین در -0.3٪ (شدت 55)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "TRXUSDT",
+   "tf": "5m",
+   "stage": "SIGNAL",
+   "dir": "SHORT",
+   "entry": 0.3345,
+   "sl": 0.33560379999999995,
+   "tp1": 0.3328443000000001,
+   "tp2": 0.3317405000000002,
+   "rr": 1.5,
+   "price": 0.3327,
+   "conf": null,
+   "ev": null,
+   "quality": 64,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": null,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.3344,
+    "high": 0.3346
+   },
+   "choch": 0,
+   "barsAgo": 6,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 525,
+    "hit": 35.4,
+    "ev": 0.158
+   },
+   "trend4": "range",
+   "trend1": "down",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.3390213,
+      "pct_away": 1.9,
+      "score": 86
+     },
+     {
+      "price": 0.3416829,
+      "pct_away": 2.7,
+      "score": 46
+     }
+    ],
+    "below": [
+     {
+      "price": 0.3290403,
+      "pct_away": -1.1,
+      "score": 76
+     },
+     {
+      "price": 0.3283749,
+      "pct_away": -1.3,
+      "score": 44
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.9٪ (شدت 86) · پایین در -1.1٪ (شدت 76)"
   },
   {
    "strategy": "ibs",
@@ -792,13 +948,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 1.838,
     "high": 1.841
    },
    "choch": 0,
-   "barsAgo": 2,
+   "barsAgo": 3,
    "inOB": 1,
    "nearOB": 0,
    "elite": false,
@@ -822,7 +978,7 @@
      {
       "price": 1.85656,
       "pct_away": 0.9,
-      "score": 69
+      "score": 81
      }
     ],
     "below": [
@@ -839,84 +995,6 @@
     ]
    },
    "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.7٪ (شدت 36) · پایین در -0.1٪ (شدت 99)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "HEMIUSDT",
-   "tf": "5m",
-   "stage": "SIGNAL",
-   "dir": "LONG",
-   "entry": 0.01502,
-   "sl": 0.01497494,
-   "tp1": 0.01508759,
-   "tp2": 0.01513265,
-   "rr": 1.5,
-   "price": 0.01502,
-   "conf": null,
-   "ev": null,
-   "quality": 98,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": true,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.01502,
-    "high": 0.01521
-   },
-   "choch": 1,
-   "barsAgo": 17,
-   "inOB": 1,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 210,
-    "hit": 47.6,
-    "ev": 0.452
-   },
-   "trend4": "up",
-   "trend1": "up",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "above",
-    "above": [
-     {
-      "price": 0.01506506,
-      "pct_away": 0.3,
-      "score": 71
-     },
-     {
-      "price": 0.0150951,
-      "pct_away": 0.5,
-      "score": 37
-     }
-    ],
-    "below": [
-     {
-      "price": 0.01500498,
-      "pct_away": -0.1,
-      "score": 48
-     },
-     {
-      "price": 0.01497494,
-      "pct_away": -0.3,
-      "score": 40
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 71) · پایین در -0.1٪ (شدت 48) — آهن‌ربای لیکویید هم‌جهت خرید"
   },
   {
    "strategy": "smc",
@@ -1323,19 +1401,19 @@
    "tf": "5m",
    "stage": "WATCH",
    "dir": "SHORT",
-   "entry": 822.665,
+   "entry": 823.06,
    "sl": 825.9404099999999,
-   "tp1": 817.751885,
-   "tp2": 814.476475,
+   "tp1": 818.739385,
+   "tp2": 815.858975,
    "rr": 1.5,
-   "price": 823.58,
+   "price": 823.06,
    "conf": null,
    "ev": null,
-   "quality": 64,
+   "quality": 86,
    "visits": null,
    "depth": null,
    "exited": false,
-   "inside": false,
+   "inside": true,
    "fvg": false,
    "level": null,
    "channel": null,
@@ -1345,16 +1423,16 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": null,
-   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: choch · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
+   "lastClose": 1788185100000,
    "ob": {
     "low": 821.86,
     "high": 823.47
    },
    "choch": 0,
-   "barsAgo": 3,
-   "inOB": 0,
-   "nearOB": 1,
+   "barsAgo": 4,
+   "inOB": 1,
+   "nearOB": 0,
    "elite": false,
    "learning": {
     "verdict": "good",
@@ -1378,7 +1456,7 @@
    "tp1": 2438.6133849999997,
    "tp2": 2430.528975,
    "rr": 1.5,
-   "price": 2444.81,
+   "price": 2445.19,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -1396,13 +1474,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 26.9٪، انتظار -0.14R",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 2450.01,
     "high": 2451.47
    },
    "choch": 0,
-   "barsAgo": 2,
+   "barsAgo": 3,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1419,30 +1497,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 2476.59253,
+      "price": 2476.97747,
       "pct_away": 1.3,
-      "score": 37
+      "score": 42
      },
      {
-      "price": 2496.15101,
-      "pct_away": 2.1,
-      "score": 41
+      "price": 2501.42937,
+      "pct_away": 2.3,
+      "score": 67
      }
     ],
     "below": [
      {
-      "price": 2427.69633,
+      "price": 2428.07367,
       "pct_away": -0.7,
-      "score": 42
+      "score": 50
      },
      {
-      "price": 2408.13785,
-      "pct_away": -1.5,
-      "score": 41
+      "price": 2403.62177,
+      "pct_away": -1.7,
+      "score": 75
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 37) · پایین در -0.7٪ (شدت 42)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 42) · پایین در -0.7٪ (شدت 50)"
   },
   {
    "strategy": "ibs",
@@ -1456,7 +1534,7 @@
    "tp1": 1.3704859999999996,
    "tp2": 1.3771099999999992,
    "rr": 1.5,
-   "price": 1.3648,
+   "price": 1.3652,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -1474,13 +1552,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 1.358,
     "high": 1.3631
    },
    "choch": 0,
-   "barsAgo": 5,
+   "barsAgo": 6,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1506,7 +1584,7 @@
    "tp1": 38.29131500000001,
    "tp2": 38.42552500000001,
    "rr": 1.5,
-   "price": 38.16,
+   "price": 38.21,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -1524,13 +1602,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 38.07,
     "high": 38.11
    },
    "choch": 0,
-   "barsAgo": 8,
+   "barsAgo": 9,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1547,16 +1625,16 @@
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "sym": "AUCTIONUSDT",
+   "sym": "ZKUSDT",
    "tf": "5m",
    "stage": "WATCH",
    "dir": "SHORT",
-   "entry": 3.46,
-   "sl": 3.4763979999999997,
-   "tp1": 3.4354030000000004,
-   "tp2": 3.4190050000000007,
+   "entry": 0.008985,
+   "sl": 0.009026999999999999,
+   "tp1": 0.008922000000000003,
+   "tp2": 0.008880000000000002,
    "rr": 1.5,
-   "price": 3.473,
+   "price": 0.00894,
    "conf": null,
    "ev": null,
    "quality": 86,
@@ -1574,13 +1652,63 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.00897,
+    "high": 0.009
+   },
+   "choch": 1,
+   "barsAgo": 18,
+   "inOB": 0,
+   "nearOB": 1,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 30,
+    "hit": 33.3,
+    "ev": 0.1
+   },
+   "trend4": "up",
+   "trend1": "range",
+   "trend_mode": "counter-blocked"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "AUCTIONUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "SHORT",
+   "entry": 3.46,
+   "sl": 3.4763979999999997,
+   "tp1": 3.4354030000000004,
+   "tp2": 3.4190050000000007,
+   "rr": 1.5,
+   "price": 3.468,
+   "conf": null,
+   "ev": null,
+   "quality": 86,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": null,
+   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
+   "lastClose": 1788185100000,
    "ob": {
     "low": 3.454,
     "high": 3.466
    },
    "choch": 1,
-   "barsAgo": 15,
+   "barsAgo": 16,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1606,7 +1734,7 @@
    "tp1": 5.076032000000001,
    "tp2": 5.058720000000001,
    "rr": 1.5,
-   "price": 5.083,
+   "price": 5.08,
    "conf": null,
    "ev": null,
    "quality": 86,
@@ -1624,13 +1752,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 5.1,
     "high": 5.104
    },
    "choch": 1,
-   "barsAgo": 15,
+   "barsAgo": 16,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1656,7 +1784,7 @@
    "tp1": 0.1938216,
    "tp2": 0.193036,
    "rr": 1.5,
-   "price": 0.1944,
+   "price": 0.1946,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -1674,13 +1802,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 29.3٪، انتظار -0.07R",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.1948,
     "high": 0.1952
    },
    "choch": 0,
-   "barsAgo": 3,
+   "barsAgo": 4,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1697,80 +1825,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.1961496,
-      "pct_away": 0.9,
-      "score": 42
+      "price": 0.195573,
+      "pct_away": 0.5,
+      "score": 40
      },
      {
-      "price": 0.1980936,
-      "pct_away": 1.9,
-      "score": 88
+      "price": 0.1959622,
+      "pct_away": 0.7,
+      "score": 66
      }
     ],
     "below": [
      {
-      "price": 0.1942056,
-      "pct_away": -0.1,
-      "score": 75
+      "price": 0.1940162,
+      "pct_away": -0.3,
+      "score": 100
      },
      {
-      "price": 0.1938168,
-      "pct_away": -0.3,
-      "score": 47
+      "price": 0.193627,
+      "pct_away": -0.5,
+      "score": 72
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 42) · پایین در -0.1٪ (شدت 75)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "TUTUSDT",
-   "tf": "5m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 0.03176,
-   "sl": 0.0316049,
-   "tp1": 0.03199265,
-   "tp2": 0.03214774999999999,
-   "rr": 1.5,
-   "price": 0.03187,
-   "conf": null,
-   "ev": null,
-   "quality": 86,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": null,
-   "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.0317,
-    "high": 0.03182
-   },
-   "choch": 1,
-   "barsAgo": 8,
-   "inOB": 0,
-   "nearOB": 1,
-   "elite": false,
-   "learning": {
-    "verdict": "bad",
-    "n": 435,
-    "hit": 29.0,
-    "ev": -0.115
-   },
-   "trend4": "down",
-   "trend1": "down",
-   "trend_mode": "hard-veto"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 40) · پایین در -0.3٪ (شدت 100)"
   },
   {
    "strategy": "ibs",
@@ -1784,7 +1862,7 @@
    "tp1": 1.1550764000000004,
    "tp2": 1.1513940000000007,
    "rr": 1.5,
-   "price": 1.1596,
+   "price": 1.1599,
    "conf": null,
    "ev": null,
    "quality": 60,
@@ -1802,13 +1880,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 1.1604,
     "high": 1.1608
    },
    "choch": 0,
-   "barsAgo": 23,
+   "barsAgo": 24,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1829,19 +1907,19 @@
    "tf": "5m",
    "stage": "WATCH",
    "dir": "LONG",
-   "entry": 0.99983,
+   "entry": 0.99981,
    "sl": 0.99681057,
-   "tp1": 1.004359145,
-   "tp2": 1.0073785750000002,
+   "tp1": 1.0043091450000001,
+   "tp2": 1.0073085750000002,
    "rr": 1.5,
-   "price": 0.9998,
+   "price": 0.99981,
    "conf": null,
    "ev": null,
-   "quality": 64,
+   "quality": 86,
    "visits": null,
    "depth": null,
    "exited": false,
-   "inside": false,
+   "inside": true,
    "fvg": false,
    "level": null,
    "channel": null,
@@ -1852,15 +1930,15 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.99981,
     "high": 0.99985
    },
    "choch": 0,
-   "barsAgo": 4,
-   "inOB": 0,
-   "nearOB": 1,
+   "barsAgo": 5,
+   "inOB": 1,
+   "nearOB": 0,
    "elite": false,
    "learning": {
     "verdict": "flat",
@@ -1884,7 +1962,7 @@
    "tp1": 684.11179,
    "tp2": 681.9796500000001,
    "rr": 1.5,
-   "price": 686.27,
+   "price": 686.26,
    "conf": null,
    "ev": null,
    "quality": 86,
@@ -1902,13 +1980,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 525 مورد مشابه، برد 23.4٪، انتظار -0.35R",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 687.24,
     "high": 687.38
    },
    "choch": 1,
-   "barsAgo": 17,
+   "barsAgo": 18,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -1925,30 +2003,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 692.44643,
-      "pct_away": 0.9,
-      "score": 38
-     },
-     {
-      "price": 693.81897,
+      "price": 693.80886,
       "pct_away": 1.1,
       "score": 50
+     },
+     {
+      "price": 695.18138,
+      "pct_away": 1.3,
+      "score": 36
      }
     ],
     "below": [
      {
-      "price": 681.46611,
+      "price": 681.45618,
       "pct_away": -0.7,
-      "score": 37
+      "score": 36
      },
      {
-      "price": 680.09357,
+      "price": 680.08366,
       "pct_away": -0.9,
       "score": 48
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 38) · پایین در -0.7٪ (شدت 37)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 50) · پایین در -0.7٪ (شدت 36)"
   },
   {
    "strategy": "ibs",
@@ -1962,7 +2040,7 @@
    "tp1": 4407.689985000001,
    "tp2": 4392.779975000001,
    "rr": 1.5,
-   "price": 4412.86,
+   "price": 4418.99,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -1980,13 +2058,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 540 مورد مشابه، برد 27.2٪، انتظار -0.05R",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 4428.44,
     "high": 4431.67
    },
    "choch": 0,
-   "barsAgo": 4,
+   "barsAgo": 5,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -2003,30 +2081,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 4496.70434,
-      "pct_away": 1.9,
-      "score": 43
+      "price": 4458.76091,
+      "pct_away": 0.9,
+      "score": 35
      },
      {
-      "price": 4505.53006,
-      "pct_away": 2.1,
-      "score": 37
+      "price": 4476.43687,
+      "pct_away": 1.3,
+      "score": 36
      }
     ],
     "below": [
      {
-      "price": 4399.62142,
+      "price": 4405.73303,
       "pct_away": -0.3,
-      "score": 36
+      "score": 53
      },
      {
-      "price": 4364.31854,
-      "pct_away": -1.1,
-      "score": 53
+      "price": 4388.05707,
+      "pct_away": -0.7,
+      "score": 36
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.9٪ (شدت 43) · پایین در -0.3٪ (شدت 36)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 35) · پایین در -0.3٪ (شدت 53)"
   },
   {
    "strategy": "ibs",
@@ -2090,7 +2168,7 @@
    "tp1": 0.1499455,
    "tp2": 0.1493425,
    "rr": 1.5,
-   "price": 0.1501,
+   "price": 0.1505,
    "conf": null,
    "ev": null,
    "quality": 86,
@@ -2108,13 +2186,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "اتاق یادگیری مخالف است — 495 مورد مشابه، برد 30.9٪، انتظار -0.10R",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.1507,
     "high": 0.151
    },
    "choch": 1,
-   "barsAgo": 17,
+   "barsAgo": 18,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -2131,30 +2209,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.1529519,
-      "pct_away": 1.9,
-      "score": 50
+      "price": 0.1521555,
+      "pct_away": 1.1,
+      "score": 36
      },
      {
-      "price": 0.1532521,
-      "pct_away": 2.1,
-      "score": 50
+      "price": 0.1530585,
+      "pct_away": 1.7,
+      "score": 66
      }
     ],
     "below": [
      {
-      "price": 0.1499499,
-      "pct_away": -0.1,
-      "score": 50
+      "price": 0.1500485,
+      "pct_away": -0.3,
+      "score": 48
      },
      {
-      "price": 0.1493495,
-      "pct_away": -0.5,
-      "score": 67
+      "price": 0.1494465,
+      "pct_away": -0.7,
+      "score": 60
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.9٪ (شدت 50) · پایین در -0.1٪ (شدت 50)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 36) · پایین در -0.3٪ (شدت 48)"
   },
   {
    "strategy": "ibs",
@@ -2168,7 +2246,7 @@
    "tp1": 0.008709594,
    "tp2": 0.008750989999999998,
    "rr": 1.5,
-   "price": 0.00868,
+   "price": 0.008686,
    "conf": null,
    "ev": null,
    "quality": 64,
@@ -2186,13 +2264,13 @@
    "goOnFirst": false,
    "waitReason": null,
    "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.008632,
     "high": 0.008663
    },
    "choch": 0,
-   "barsAgo": 6,
+   "barsAgo": 7,
    "inOB": 0,
    "nearOB": 1,
    "elite": false,
@@ -2770,11 +2848,11 @@
    "stage": "ARMED",
    "dir": "SHORT",
    "entry": 0.09334,
-   "sl": 0.09414097142857143,
-   "tp1": 0.09189825142857144,
-   "tp2": 0.09074485257142859,
+   "sl": 0.09414114285714285,
+   "tp1": 0.09189794285714288,
+   "tp2": 0.09074429714285719,
    "rr": 1.8,
-   "price": 0.09335,
+   "price": 0.09341,
    "conf": 41,
    "ev": 0.1547557525033565,
    "quality": 81,
@@ -2789,10 +2867,10 @@
    },
    "channel": {
     "dir": "نزولی",
-    "drift": -1.8,
-    "posPct": 27
+    "drift": -1.9,
+    "posPct": 30
    },
-   "adx": 27.1,
+   "adx": 25.7,
    "room": {
     "r": 99,
     "blocker": null
@@ -2802,12 +2880,12 @@
    },
    "thin": {
     "insideRatio": 0.14,
-    "volRatio": 1.29
+    "volRatio": 1.11
    },
    "goOnFirst": true,
    "waitReason": null,
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.09334,
     "high": 0.09407
@@ -2835,30 +2913,100 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.09363005,
+      "price": 0.09369023,
       "pct_away": 0.3,
-      "score": 59
+      "score": 86
      },
      {
-      "price": 0.09381675,
+      "price": 0.09387705,
       "pct_away": 0.5,
-      "score": 67
+      "score": 44
      }
     ],
     "below": [
      {
-      "price": 0.09325665,
+      "price": 0.09331659,
       "pct_away": -0.1,
-      "score": 100
+      "score": 70
      },
      {
-      "price": 0.09306995,
+      "price": 0.09312977,
       "pct_away": -0.3,
-      "score": 42
+      "score": 68
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 59) · پایین در -0.1٪ (شدت 100)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 86) · پایین در -0.1٪ (شدت 70)"
+  },
+  {
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
+   "sym": "ZKCUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "LONG",
+   "entry": 0.0563,
+   "sl": 0.054911714285714286,
+   "tp1": 0.05879891428571429,
+   "tp2": 0.06079804571428572,
+   "rr": 1.8,
+   "price": 0.0563,
+   "conf": 41,
+   "ev": 0.1547557525033565,
+   "quality": 49,
+   "visits": 1,
+   "depth": 100,
+   "exited": true,
+   "inside": false,
+   "fvg": false,
+   "level": {
+    "type": "S",
+    "touches": 4
+   },
+   "channel": {
+    "dir": "نزولی",
+    "drift": -6.4,
+    "posPct": 82
+   },
+   "adx": 23.7,
+   "room": {
+    "r": 0.11,
+    "blocker": "اردر بلاک مقابل"
+   },
+   "swept": {
+    "n": 2
+   },
+   "thin": {
+    "insideRatio": 0.28,
+    "volRatio": 1.13
+   },
+   "goOnFirst": true,
+   "waitReason": null,
+   "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB, fvg, quality>=70 · محاسبه‌نشده: choch → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.055,
+    "high": 0.0557
+   },
+   "learned": {
+    "boost": -0.287,
+    "rules": [
+     {
+      "rule": "جای حرکت کمتر از ۱ برابر",
+      "delta": -0.287
+     }
+    ]
+   },
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 30,
+    "hit": 53.3,
+    "ev": 0.848
+   },
+   "trend4": "up",
+   "trend1": "down",
+   "trend_mode": "counter-blocked"
   },
   {
    "strategy": "smc",
@@ -2867,19 +3015,19 @@
    "tf": "5m",
    "stage": "ARMED",
    "dir": "SHORT",
-   "entry": 11.21,
-   "sl": 11.255945714285714,
-   "tp1": 11.094,
-   "tp2": 11.014,
-   "rr": 2.52,
-   "price": 11.211,
-   "conf": 38,
-   "ev": 0.3425364436501568,
+   "entry": 11.195,
+   "sl": 11.256074285714286,
+   "tp1": 11.014,
+   "tp2": 10.8692,
+   "rr": 2.96,
+   "price": 11.195,
+   "conf": 36,
+   "ev": 0.4370833727487735,
    "quality": 73,
    "visits": 1,
    "depth": 51,
-   "exited": false,
-   "inside": true,
+   "exited": true,
+   "inside": false,
    "fvg": true,
    "level": {
     "type": "R",
@@ -2887,25 +3035,25 @@
    },
    "channel": {
     "dir": "خنثی",
-    "drift": 0.7,
-    "posPct": 23
+    "drift": 0.6,
+    "posPct": 16
    },
-   "adx": 20.8,
+   "adx": 22.1,
    "room": {
-    "r": 0.91,
-    "blocker": "FVG مقابل"
+    "r": 0.23,
+    "blocker": "مقاومت ×3"
    },
    "swept": {
     "n": 7
    },
    "thin": {
     "insideRatio": 0.1,
-    "volRatio": 1.51
+    "volRatio": 1.37
    },
    "goOnFirst": true,
    "waitReason": null,
-   "skip": null,
-   "lastClose": 1788184800000,
+   "skip": "ADX 22.1 زیر حد 25 — بازار روند ندارد",
+   "lastClose": 1788185100000,
    "ob": {
     "low": 11.21,
     "high": 11.251
@@ -2937,104 +3085,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 11.356743,
-      "pct_away": 1.3,
-      "score": 39
+      "price": 11.362925,
+      "pct_away": 1.5,
+      "score": 41
      },
      {
-      "price": 11.379165,
-      "pct_away": 1.5,
-      "score": 40
+      "price": 11.385315,
+      "pct_away": 1.7,
+      "score": 39
      }
     ],
     "below": [
      {
-      "price": 11.154945,
+      "price": 11.161415,
+      "pct_away": -0.3,
+      "score": 41
+     },
+     {
+      "price": 11.139025,
       "pct_away": -0.5,
-      "score": 50
-     },
-     {
-      "price": 11.132523,
-      "pct_away": -0.7,
-      "score": 39
+      "score": 41
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 39) · پایین در -0.5٪ (شدت 50)"
-  },
-  {
-   "strategy": "smc",
-   "strategyName": "کانال + اردر بلاک",
-   "sym": "CRCLBUSDT",
-   "tf": "5m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 87.25,
-   "sl": 87.01345714285715,
-   "tp1": 87.9,
-   "tp2": 88.25,
-   "rr": 2.75,
-   "price": 87.25,
-   "conf": 37,
-   "ev": 0.3938142938923769,
-   "quality": 87,
-   "visits": 1,
-   "depth": 81,
-   "exited": false,
-   "inside": true,
-   "fvg": true,
-   "level": {
-    "type": "R",
-    "touches": 9
-   },
-   "channel": {
-    "dir": "صعودی",
-    "drift": 1.5,
-    "posPct": 10
-   },
-   "adx": 26.7,
-   "room": {
-    "r": 0.51,
-    "blocker": "مقاومت ×9"
-   },
-   "swept": {
-    "n": 4
-   },
-   "thin": {
-    "insideRatio": 0.17,
-    "volRatio": 2.38
-   },
-   "goOnFirst": true,
-   "waitReason": null,
-   "skip": "خلاف روند ۴س (down) و تأییدیه ناقص است — محاسبه‌نشده: choch → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 87.09,
-    "high": 87.25
-   },
-   "learned": {
-    "boost": -0.706,
-    "rules": [
-     {
-      "rule": "R:R بالای ۲.۵",
-      "delta": -0.419
-     },
-     {
-      "rule": "جای حرکت کمتر از ۱ برابر",
-      "delta": -0.287
-     }
-    ]
-   },
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 367,
-    "hit": 40.3,
-    "ev": 0.796
-   },
-   "trend4": "down",
-   "trend1": "range",
-   "trend_mode": "counter-blocked"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.5٪ (شدت 41) · پایین در -0.3٪ (شدت 41)"
   },
   {
    "strategy": "ibs",
@@ -3048,7 +3122,7 @@
    "tp1": 78273.53833000002,
    "tp2": 78008.81055000004,
    "rr": 1.5,
-   "price": 77962,
+   "price": 77975.17,
    "conf": null,
    "ev": null,
    "quality": 74,
@@ -3066,13 +3140,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 78642,
     "high": 78699.26
    },
    "choch": 1,
-   "barsAgo": 26,
+   "barsAgo": 27,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3089,30 +3163,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 78663.658,
+      "price": 78676.94653,
       "pct_away": 0.9,
-      "score": 40
+      "score": 50
      },
      {
-      "price": 78819.582,
+      "price": 78832.89687,
       "pct_away": 1.1,
-      "score": 45
+      "score": 43
      }
     ],
     "below": [
      {
-      "price": 77260.342,
+      "price": 77273.39347,
       "pct_away": -0.9,
-      "score": 50
+      "score": 49
      },
      {
-      "price": 77104.418,
+      "price": 77117.44313,
       "pct_away": -1.1,
-      "score": 51
+      "score": 57
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 40) · پایین در -0.9٪ (شدت 50)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 50) · پایین در -0.9٪ (شدت 49)"
   },
   {
    "strategy": "ibs",
@@ -3126,7 +3200,7 @@
    "tp1": 0.020577070000000006,
    "tp2": 0.02064845000000001,
    "rr": 1.5,
-   "price": 0.02064,
+   "price": 0.02062,
    "conf": null,
    "ev": null,
    "quality": 78,
@@ -3144,13 +3218,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.02046,
     "high": 0.02048
    },
    "choch": 1,
-   "barsAgo": 8,
+   "barsAgo": 9,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3167,84 +3241,6 @@
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "sym": "PUMPUSDT",
-   "tf": "5m",
-   "stage": "ARMED",
-   "dir": "SHORT",
-   "entry": 0.00431,
-   "sl": 0.004330954,
-   "tp1": 0.004278568999999999,
-   "tp2": 0.004257614999999999,
-   "rr": 1.5,
-   "price": 0.004284,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.004302,
-    "high": 0.004318
-   },
-   "choch": 0,
-   "barsAgo": 3,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 540,
-    "hit": 42.6,
-    "ev": 0.291
-   },
-   "trend4": "range",
-   "trend1": "down",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 0.004356828,
-      "pct_away": 1.7,
-      "score": 35
-     },
-     {
-      "price": 0.004365396,
-      "pct_away": 1.9,
-      "score": 51
-     }
-    ],
-    "below": [
-     {
-      "price": 0.004279716,
-      "pct_away": -0.1,
-      "score": 49
-     },
-     {
-      "price": 0.004271148,
-      "pct_away": -0.3,
-      "score": 71
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.7٪ (شدت 35) · پایین در -0.1٪ (شدت 49)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
    "sym": "PROMUSDT",
    "tf": "5m",
    "stage": "WATCH",
@@ -3254,7 +3250,7 @@
    "tp1": 6.8296980000000005,
    "tp2": 6.770830000000002,
    "rr": 1.5,
-   "price": 5.846,
+   "price": 5.779,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -3272,13 +3268,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 6.88,
     "high": 6.956
    },
    "choch": 0,
-   "barsAgo": 18,
+   "barsAgo": 19,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3295,19 +3291,19 @@
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "sym": "ZKCUSDT",
+   "sym": "LINKUSDT",
    "tf": "5m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 0.053349999999999995,
-   "sl": 0.053040399999999994,
-   "tp1": 0.0538144,
-   "tp2": 0.05412399999999999,
+   "stage": "ARMED",
+   "dir": "SHORT",
+   "entry": 11.2665,
+   "sl": 11.302807,
+   "tp1": 11.212039500000003,
+   "tp2": 11.175732500000002,
    "rr": 1.5,
-   "price": 0.0553,
+   "price": 11.195,
    "conf": null,
    "ev": null,
-   "quality": 74,
+   "quality": 56,
    "visits": null,
    "depth": null,
    "exited": false,
@@ -3321,14 +3317,92 @@
    "thin": null,
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "skip": null,
+   "lastClose": 1788185100000,
    "ob": {
-    "low": 0.0532,
-    "high": 0.0535
+    "low": 11.264,
+    "high": 11.269
    },
-   "choch": 1,
-   "barsAgo": 33,
+   "choch": 0,
+   "barsAgo": 4,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 540,
+    "hit": 38.3,
+    "ev": 0.138
+   },
+   "trend4": "down",
+   "trend1": "range",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 11.362925,
+      "pct_away": 1.5,
+      "score": 41
+     },
+     {
+      "price": 11.385315,
+      "pct_away": 1.7,
+      "score": 39
+     }
+    ],
+    "below": [
+     {
+      "price": 11.161415,
+      "pct_away": -0.3,
+      "score": 41
+     },
+     {
+      "price": 11.139025,
+      "pct_away": -0.5,
+      "score": 41
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.5٪ (شدت 41) · پایین در -0.3٪ (شدت 41)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "ZKCUSDT",
+   "tf": "5m",
+   "stage": "WATCH",
+   "dir": "LONG",
+   "entry": 0.05365,
+   "sl": 0.053239800000000004,
+   "tp1": 0.0542653,
+   "tp2": 0.0546755,
+   "rr": 1.5,
+   "price": 0.0563,
+   "conf": null,
+   "ev": null,
+   "quality": 56,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": "خلاف روند ۱س (down) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.0534,
+    "high": 0.0539
+   },
+   "choch": 0,
+   "barsAgo": 0,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3354,7 +3428,7 @@
    "tp1": 0.35874600000000006,
    "tp2": 0.3570100000000001,
    "rr": 1.5,
-   "price": 0.3554,
+   "price": 0.3552,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -3372,13 +3446,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.3607,
     "high": 0.362
    },
    "choch": 0,
-   "barsAgo": 2,
+   "barsAgo": 3,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3395,30 +3469,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.3585986,
-      "pct_away": 0.9,
-      "score": 52
+      "price": 0.3555552,
+      "pct_away": 0.1,
+      "score": 44
      },
      {
-      "price": 0.3621526,
-      "pct_away": 1.9,
-      "score": 42
+      "price": 0.3583968,
+      "pct_away": 0.9,
+      "score": 47
      }
     ],
     "below": [
      {
-      "price": 0.3543338,
-      "pct_away": -0.3,
-      "score": 56
+      "price": 0.3548448,
+      "pct_away": -0.1,
+      "score": 41
      },
      {
-      "price": 0.353623,
-      "pct_away": -0.5,
-      "score": 83
+      "price": 0.3541344,
+      "pct_away": -0.3,
+      "score": 73
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.9٪ (شدت 52) · پایین در -0.3٪ (شدت 56)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 44) · پایین در -0.1٪ (شدت 41)"
   },
   {
    "strategy": "ibs",
@@ -3578,13 +3652,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.0481,
     "high": 0.0482
    },
    "choch": 1,
-   "barsAgo": 18,
+   "barsAgo": 19,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3610,7 +3684,7 @@
    "tp1": 0.22064315000000007,
    "tp2": 0.2169052500000001,
    "rr": 1.5,
-   "price": 0.2104,
+   "price": 0.2102,
    "conf": null,
    "ev": null,
    "quality": 74,
@@ -3628,13 +3702,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "هر دو تایم بالا خلاف SHORT است (۴س=up، ۱س=up) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.2232,
     "high": 0.2293
    },
    "choch": 1,
-   "barsAgo": 24,
+   "barsAgo": 25,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3710,7 +3784,7 @@
    "tp1": 0.7287267000000001,
    "tp2": 0.7320445000000001,
    "rr": 1.5,
-   "price": 0.7182,
+   "price": 0.7183,
    "conf": null,
    "ev": null,
    "quality": 74,
@@ -3728,13 +3802,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.7226,
     "high": 0.7249
    },
    "choch": 1,
-   "barsAgo": 39,
+   "barsAgo": 40,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3778,13 +3852,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.1508,
     "high": 0.1514
    },
    "choch": 1,
-   "barsAgo": 15,
+   "barsAgo": 16,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3798,7 +3872,7 @@
    "trend1": "down",
    "trend_mode": "with-trend",
    "liq_map": {
-    "magnet": "below",
+    "magnet": "balanced",
     "above": [
      {
       "price": 0.149745,
@@ -3808,7 +3882,7 @@
      {
       "price": 0.150341,
       "pct_away": 0.9,
-      "score": 47
+      "score": 50
      }
     ],
     "below": [
@@ -3824,7 +3898,7 @@
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 46) · پایین در -0.1٪ (شدت 37) — آهن‌ربای لیکویید هم‌جهت فروش"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 46) · پایین در -0.1٪ (شدت 37)"
   },
   {
    "strategy": "ibs",
@@ -3838,7 +3912,7 @@
    "tp1": 3.548845000000001e-06,
    "tp2": 3.5280750000000014e-06,
    "rr": 1.5,
-   "price": 3.53e-06,
+   "price": 3.55e-06,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -3856,13 +3930,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 3.57e-06,
     "high": 3.59e-06
    },
    "choch": 0,
-   "barsAgo": 1,
+   "barsAgo": 2,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -3879,30 +3953,30 @@
     "magnet": "below",
     "above": [
      {
-      "price": 3.5477e-06,
-      "pct_away": 0.5,
-      "score": 48
+      "price": 3.5536e-06,
+      "pct_away": 0.1,
+      "score": 45
      },
      {
-      "price": 3.5547e-06,
-      "pct_away": 0.7,
-      "score": 44
+      "price": 3.5606e-06,
+      "pct_away": 0.3,
+      "score": 41
      }
     ],
     "below": [
      {
-      "price": 3.5265e-06,
+      "price": 3.5464e-06,
       "pct_away": -0.1,
-      "score": 82
+      "score": 50
      },
      {
-      "price": 3.5194e-06,
-      "pct_away": -0.3,
-      "score": 66
+      "price": 3.5252e-06,
+      "pct_away": -0.7,
+      "score": 84
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 48) · پایین در -0.1٪ (شدت 82) — آهن‌ربای لیکویید هم‌جهت فروش"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 45) · پایین در -0.1٪ (شدت 50) — آهن‌ربای لیکویید هم‌جهت فروش"
   },
   {
    "strategy": "ibs",
@@ -4016,7 +4090,7 @@
    "tp1": 7.165309499999999,
    "tp2": 7.1391825,
    "rr": 1.5,
-   "price": 7.159,
+   "price": 7.155,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4034,13 +4108,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 7.2,
     "high": 7.209
    },
    "choch": 0,
-   "barsAgo": 2,
+   "barsAgo": 3,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4057,80 +4131,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 7.252067,
+      "price": 7.248015,
       "pct_away": 1.3,
-      "score": 46
+      "score": 50
      },
      {
-      "price": 7.295021,
+      "price": 7.290945,
       "pct_away": 1.9,
-      "score": 54
+      "score": 48
      }
     ],
     "below": [
      {
-      "price": 7.108887,
+      "price": 7.104915,
       "pct_away": -0.7,
-      "score": 48
+      "score": 51
      },
      {
-      "price": 7.094569,
+      "price": 7.090605,
       "pct_away": -0.9,
-      "score": 38
+      "score": 46
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 46) · پایین در -0.7٪ (شدت 48)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "ZKUSDT",
-   "tf": "5m",
-   "stage": "WATCH",
-   "dir": "SHORT",
-   "entry": 0.008985,
-   "sl": 0.009026999999999999,
-   "tp1": 0.008922000000000003,
-   "tp2": 0.008880000000000002,
-   "rr": 1.5,
-   "price": 0.00892,
-   "conf": null,
-   "ev": null,
-   "quality": 78,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": "خلاف روند ۴س (up) و تأییدیه ناقص است — غایب: inOB · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.00897,
-    "high": 0.009
-   },
-   "choch": 1,
-   "barsAgo": 17,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 30,
-    "hit": 33.3,
-    "ev": 0.1
-   },
-   "trend4": "up",
-   "trend1": "range",
-   "trend_mode": "counter-blocked"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.3٪ (شدت 50) · پایین در -0.7٪ (شدت 51)"
   },
   {
    "strategy": "ibs",
@@ -4144,7 +4168,7 @@
    "tp1": 0.094654235,
    "tp2": 0.09433372500000001,
    "rr": 1.5,
-   "price": 0.09335,
+   "price": 0.09341,
    "conf": null,
    "ev": null,
    "quality": 78,
@@ -4162,13 +4186,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.0951,
     "high": 0.09517
    },
    "choch": 1,
-   "barsAgo": 9,
+   "barsAgo": 10,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4185,30 +4209,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.09363005,
+      "price": 0.09369023,
       "pct_away": 0.3,
-      "score": 59
+      "score": 86
      },
      {
-      "price": 0.09381675,
+      "price": 0.09387705,
       "pct_away": 0.5,
-      "score": 67
+      "score": 44
      }
     ],
     "below": [
      {
-      "price": 0.09325665,
+      "price": 0.09331659,
       "pct_away": -0.1,
-      "score": 100
+      "score": 70
      },
      {
-      "price": 0.09306995,
+      "price": 0.09312977,
       "pct_away": -0.3,
-      "score": 42
+      "score": 68
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 59) · پایین در -0.1٪ (شدت 100)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 86) · پایین در -0.1٪ (شدت 70)"
   },
   {
    "strategy": "ibs",
@@ -4222,7 +4246,7 @@
    "tp1": 102.84562500000003,
    "tp2": 102.35937500000004,
    "rr": 1.5,
-   "price": 102.57,
+   "price": 102.61,
    "conf": null,
    "ev": null,
    "quality": 78,
@@ -4240,13 +4264,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 103.4,
     "high": 103.75
    },
    "choch": 1,
-   "barsAgo": 19,
+   "barsAgo": 20,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4260,33 +4284,33 @@
    "trend1": "down",
    "trend_mode": "with-trend",
    "liq_map": {
-    "magnet": "below",
+    "magnet": "balanced",
     "above": [
      {
-      "price": 102.87771,
-      "pct_away": 0.3,
-      "score": 36
+      "price": 103.73871,
+      "pct_away": 1.1,
+      "score": 44
      },
      {
-      "price": 103.69827,
-      "pct_away": 1.1,
-      "score": 49
+      "price": 104.35437,
+      "pct_away": 1.7,
+      "score": 37
      }
     ],
     "below": [
      {
-      "price": 102.05715,
+      "price": 102.09695,
       "pct_away": -0.5,
-      "score": 37
+      "score": 40
      },
      {
-      "price": 101.85201,
+      "price": 101.89173,
       "pct_away": -0.7,
-      "score": 93
+      "score": 65
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 36) · پایین در -0.5٪ (شدت 37) — آهن‌ربای لیکویید هم‌جهت فروش"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 44) · پایین در -0.5٪ (شدت 40)"
   },
   {
    "strategy": "ibs",
@@ -4341,162 +4365,6 @@
   {
    "strategy": "ibs",
    "strategyName": "IBS + پولبک",
-   "sym": "DOGEUSDT",
-   "tf": "5m",
-   "stage": "ARMED",
-   "dir": "SHORT",
-   "entry": 0.082835,
-   "sl": 0.08313867,
-   "tp1": 0.08237949500000002,
-   "tp2": 0.08207582500000002,
-   "rr": 1.5,
-   "price": 0.08232,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.08278,
-    "high": 0.08289
-   },
-   "choch": 0,
-   "barsAgo": 2,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 540,
-    "hit": 38.9,
-    "ev": 0.156
-   },
-   "trend4": "down",
-   "trend1": "range",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 0.0835548,
-      "pct_away": 1.5,
-      "score": 58
-     },
-     {
-      "price": 0.08371944,
-      "pct_away": 1.7,
-      "score": 42
-     }
-    ],
-    "below": [
-     {
-      "price": 0.08207304,
-      "pct_away": -0.3,
-      "score": 46
-     },
-     {
-      "price": 0.0819084,
-      "pct_away": -0.5,
-      "score": 53
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.5٪ (شدت 58) · پایین در -0.3٪ (شدت 46)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
-   "sym": "TRXUSDT",
-   "tf": "5m",
-   "stage": "ARMED",
-   "dir": "SHORT",
-   "entry": 0.3345,
-   "sl": 0.33560379999999995,
-   "tp1": 0.3328443000000001,
-   "tp2": 0.3317405000000002,
-   "rr": 1.5,
-   "price": 0.3321,
-   "conf": null,
-   "ev": null,
-   "quality": 56,
-   "visits": null,
-   "depth": null,
-   "exited": false,
-   "inside": false,
-   "fvg": false,
-   "level": null,
-   "channel": null,
-   "adx": null,
-   "room": null,
-   "swept": null,
-   "thin": null,
-   "goOnFirst": false,
-   "waitReason": "قیمت هنوز به باکس نرسیده",
-   "skip": null,
-   "lastClose": 1788184800000,
-   "ob": {
-    "low": 0.3344,
-    "high": 0.3346
-   },
-   "choch": 0,
-   "barsAgo": 5,
-   "inOB": 0,
-   "nearOB": 0,
-   "elite": false,
-   "learning": {
-    "verdict": "good",
-    "n": 525,
-    "hit": 35.4,
-    "ev": 0.158
-   },
-   "trend4": "range",
-   "trend1": "down",
-   "trend_mode": "with-trend",
-   "liq_map": {
-    "magnet": "balanced",
-    "above": [
-     {
-      "price": 0.3357531,
-      "pct_away": 1.1,
-      "score": 50
-     },
-     {
-      "price": 0.3384099,
-      "pct_away": 1.9,
-      "score": 55
-     }
-    ],
-    "below": [
-     {
-      "price": 0.3291111,
-      "pct_away": -0.9,
-      "score": 66
-     },
-     {
-      "price": 0.3284469,
-      "pct_away": -1.1,
-      "score": 60
-     }
-    ]
-   },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 50) · پایین در -0.9٪ (شدت 66)"
-  },
-  {
-   "strategy": "ibs",
-   "strategyName": "IBS + پولبک",
    "sym": "SNDKBUSDT",
    "tf": "5m",
    "stage": "ARMED",
@@ -4506,7 +4374,7 @@
    "tp1": 1500.523925,
    "tp2": 1507.059875,
    "rr": 1.5,
-   "price": 1524.97,
+   "price": 1518,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4524,13 +4392,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 1488.65,
     "high": 1492.79
    },
    "choch": 0,
-   "barsAgo": 6,
+   "barsAgo": 7,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4547,30 +4415,30 @@
     "magnet": "above",
     "above": [
      {
-      "price": 1541.74467,
-      "pct_away": 1.1,
-      "score": 69
+      "price": 1519.518,
+      "pct_away": 0.1,
+      "score": 39
      },
      {
-      "price": 1544.79461,
-      "pct_away": 1.3,
-      "score": 100
+      "price": 1540.77,
+      "pct_away": 1.5,
+      "score": 65
      }
     ],
     "below": [
      {
-      "price": 1517.34515,
-      "pct_away": -0.5,
-      "score": 49
+      "price": 1501.302,
+      "pct_away": -1.1,
+      "score": 39
      },
      {
-      "price": 1514.29521,
-      "pct_away": -0.7,
-      "score": 44
+      "price": 1498.266,
+      "pct_away": -1.3,
+      "score": 43
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +1.1٪ (شدت 69) · پایین در -0.5٪ (شدت 49) — آهن‌ربای لیکویید هم‌جهت خرید"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 39) · پایین در -1.1٪ (شدت 39) — آهن‌ربای لیکویید هم‌جهت خرید"
   },
   {
    "strategy": "ibs",
@@ -4584,7 +4452,7 @@
    "tp1": 229.11320000000006,
    "tp2": 228.32200000000006,
    "rr": 1.5,
-   "price": 226.8,
+   "price": 226.9,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4602,13 +4470,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": "خلاف روند ۱س (up) و تأییدیه ناقص است — غایب: inOB, choch, quality>=70 · محاسبه‌نشده: swept, fvg → NO_SIGNAL (قانون: خلاف روند فقط با تمام تأییدیه‌ها؛ شاهدِ محاسبه‌نشده = دادهٔ ناموجود، قانون ۱)",
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 230.2,
     "high": 230.4
    },
    "choch": 0,
-   "barsAgo": 3,
+   "barsAgo": 4,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4621,6 +4489,84 @@
    "trend4": "down",
    "trend1": "up",
    "trend_mode": "counter-blocked"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "TUTUSDT",
+   "tf": "5m",
+   "stage": "ARMED",
+   "dir": "SHORT",
+   "entry": 0.03206,
+   "sl": 0.032176239999999995,
+   "tp1": 0.03188564000000001,
+   "tp2": 0.0317694,
+   "rr": 1.5,
+   "price": 0.03169,
+   "conf": null,
+   "ev": null,
+   "quality": 56,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": null,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.03204,
+    "high": 0.03208
+   },
+   "choch": 0,
+   "barsAgo": 0,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "flat",
+    "n": 435,
+    "hit": 32.6,
+    "ev": 0.028
+   },
+   "trend4": "down",
+   "trend1": "down",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "below",
+    "above": [
+     {
+      "price": 0.03172169,
+      "pct_away": 0.1,
+      "score": 45
+     },
+     {
+      "price": 0.03178507,
+      "pct_away": 0.3,
+      "score": 42
+     }
+    ],
+    "below": [
+     {
+      "price": 0.03159493,
+      "pct_away": -0.3,
+      "score": 56
+     },
+     {
+      "price": 0.03153155,
+      "pct_away": -0.5,
+      "score": 62
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 45) · پایین در -0.3٪ (شدت 56) — آهن‌ربای لیکویید هم‌جهت فروش"
   },
   {
    "strategy": "ibs",
@@ -4684,7 +4630,7 @@
    "tp1": 0.08896790499999999,
    "tp2": 0.088483175,
    "rr": 1.5,
-   "price": 0.08833,
+   "price": 0.08816,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4702,13 +4648,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.08948,
     "high": 0.08991
    },
    "choch": 0,
-   "barsAgo": 7,
+   "barsAgo": 8,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4725,30 +4671,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.08877165,
-      "pct_away": 0.5,
-      "score": 38
+      "price": 0.08824816,
+      "pct_away": 0.1,
+      "score": 73
      },
      {
-      "price": 0.09000827,
-      "pct_away": 1.9,
-      "score": 53
+      "price": 0.0886008,
+      "pct_away": 0.5,
+      "score": 36
      }
     ],
     "below": [
      {
-      "price": 0.08824167,
+      "price": 0.08807184,
       "pct_away": -0.1,
-      "score": 73
+      "score": 68
      },
      {
-      "price": 0.08806501,
+      "price": 0.08789552,
       "pct_away": -0.3,
-      "score": 68
+      "score": 41
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.5٪ (شدت 38) · پایین در -0.1٪ (شدت 73)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 73) · پایین در -0.1٪ (شدت 68)"
   },
   {
    "strategy": "ibs",
@@ -4762,7 +4708,7 @@
    "tp1": 0.17610170000000003,
    "tp2": 0.1753695,
    "rr": 1.5,
-   "price": 0.1752,
+   "price": 0.175,
    "conf": null,
    "ev": null,
    "quality": 78,
@@ -4780,13 +4726,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.177,
     "high": 0.1774
    },
    "choch": 1,
-   "barsAgo": 17,
+   "barsAgo": 18,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4800,33 +4746,33 @@
    "trend1": "down",
    "trend_mode": "with-trend",
    "liq_map": {
-    "magnet": "balanced",
+    "magnet": "below",
     "above": [
      {
-      "price": 0.1753752,
-      "pct_away": 0.1,
-      "score": 37
+      "price": 0.175525,
+      "pct_away": 0.3,
+      "score": 44
      },
      {
-      "price": 0.1771272,
-      "pct_away": 1.1,
-      "score": 45
+      "price": 0.176575,
+      "pct_away": 0.9,
+      "score": 35
      }
     ],
     "below": [
      {
-      "price": 0.1739736,
+      "price": 0.173775,
       "pct_away": -0.7,
-      "score": 40
+      "score": 92
      },
      {
-      "price": 0.1736232,
+      "price": 0.173425,
       "pct_away": -0.9,
-      "score": 100
+      "score": 97
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 37) · پایین در -0.7٪ (شدت 40)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 44) · پایین در -0.7٪ (شدت 92) — آهن‌ربای لیکویید هم‌جهت فروش"
   },
   {
    "strategy": "ibs",
@@ -4918,7 +4864,7 @@
    "tp1": 0.9238015000000002,
    "tp2": 0.9190025000000004,
    "rr": 1.5,
-   "price": 0.913,
+   "price": 0.914,
    "conf": null,
    "ev": null,
    "quality": 56,
@@ -4936,13 +4882,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 0.929,
     "high": 0.933
    },
    "choch": 0,
-   "barsAgo": 11,
+   "barsAgo": 12,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -4959,30 +4905,30 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 0.915739,
+      "price": 0.916742,
       "pct_away": 0.3,
-      "score": 60
+      "score": 43
      },
      {
-      "price": 0.917565,
+      "price": 0.91857,
       "pct_away": 0.5,
-      "score": 46
+      "score": 54
      }
     ],
     "below": [
      {
-      "price": 0.912087,
+      "price": 0.913086,
       "pct_away": -0.1,
-      "score": 40
+      "score": 35
      },
      {
-      "price": 0.910261,
+      "price": 0.911258,
       "pct_away": -0.3,
-      "score": 90
+      "score": 58
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 60) · پایین در -0.1٪ (شدت 40)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 43) · پایین در -0.1٪ (شدت 35)"
   },
   {
    "strategy": "ibs",
@@ -4996,7 +4942,7 @@
    "tp1": 2.3657720000000015,
    "tp2": 2.355620000000002,
    "rr": 1.5,
-   "price": 2.359,
+   "price": 2.366,
    "conf": null,
    "ev": null,
    "quality": 78,
@@ -5014,13 +4960,13 @@
    "goOnFirst": false,
    "waitReason": "قیمت هنوز به باکس نرسیده",
    "skip": null,
-   "lastClose": 1788184800000,
+   "lastClose": 1788185100000,
    "ob": {
     "low": 2.378,
     "high": 2.384
    },
    "choch": 1,
-   "barsAgo": 15,
+   "barsAgo": 16,
    "inOB": 0,
    "nearOB": 0,
    "elite": false,
@@ -5037,30 +4983,186 @@
     "magnet": "balanced",
     "above": [
      {
-      "price": 2.361359,
+      "price": 2.368366,
       "pct_away": 0.1,
-      "score": 43
+      "score": 37
      },
      {
-      "price": 2.403821,
-      "pct_away": 1.9,
-      "score": 74
+      "price": 2.392026,
+      "pct_away": 1.1,
+      "score": 44
      }
     ],
     "below": [
      {
-      "price": 2.356641,
+      "price": 2.363634,
       "pct_away": -0.1,
-      "score": 42
+      "score": 37
      },
      {
-      "price": 2.351923,
+      "price": 2.358902,
       "pct_away": -0.3,
-      "score": 40
+      "score": 36
      }
     ]
    },
-   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 43) · پایین در -0.1٪ (شدت 42)"
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 37) · پایین در -0.1٪ (شدت 37)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "HEMIUSDT",
+   "tf": "5m",
+   "stage": "ARMED",
+   "dir": "LONG",
+   "entry": 0.015115,
+   "sl": 0.01497494,
+   "tp1": 0.01532509,
+   "tp2": 0.015465149999999997,
+   "rr": 1.5,
+   "price": 0.01497,
+   "conf": null,
+   "ev": null,
+   "quality": 78,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": null,
+   "lastClose": 1788185100000,
+   "ob": {
+    "low": 0.01502,
+    "high": 0.01521
+   },
+   "choch": 1,
+   "barsAgo": 18,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "good",
+    "n": 210,
+    "hit": 47.6,
+    "ev": 0.452
+   },
+   "trend4": "up",
+   "trend1": "up",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.01501491,
+      "pct_away": 0.3,
+      "score": 42
+     },
+     {
+      "price": 0.01507479,
+      "pct_away": 0.7,
+      "score": 51
+     }
+    ],
+    "below": [
+     {
+      "price": 0.01495503,
+      "pct_away": -0.1,
+      "score": 44
+     },
+     {
+      "price": 0.01489515,
+      "pct_away": -0.5,
+      "score": 43
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.3٪ (شدت 42) · پایین در -0.1٪ (شدت 44)"
+  },
+  {
+   "strategy": "ibs",
+   "strategyName": "IBS + پولبک",
+   "sym": "FTMUSDT",
+   "tf": "5m",
+   "stage": "ARMED",
+   "dir": "SHORT",
+   "entry": 0.7011499999999999,
+   "sl": 0.7049083999999999,
+   "tp1": 0.6955124,
+   "tp2": 0.6917540000000001,
+   "rr": 1.5,
+   "price": 0.6944,
+   "conf": null,
+   "ev": null,
+   "quality": 56,
+   "visits": null,
+   "depth": null,
+   "exited": false,
+   "inside": false,
+   "fvg": false,
+   "level": null,
+   "channel": null,
+   "adx": null,
+   "room": null,
+   "swept": null,
+   "thin": null,
+   "goOnFirst": false,
+   "waitReason": "قیمت هنوز به باکس نرسیده",
+   "skip": null,
+   "lastClose": 1736736600000,
+   "ob": {
+    "low": 0.6995,
+    "high": 0.7028
+   },
+   "choch": 0,
+   "barsAgo": 0,
+   "inOB": 0,
+   "nearOB": 0,
+   "elite": false,
+   "learning": {
+    "verdict": "thin",
+    "n": 0,
+    "hit": null,
+    "ev": null
+   },
+   "trend4": "range",
+   "trend1": "down",
+   "trend_mode": "with-trend",
+   "liq_map": {
+    "magnet": "balanced",
+    "above": [
+     {
+      "price": 0.6950944,
+      "pct_away": 0.1,
+      "score": 41
+     },
+     {
+      "price": 0.6964832,
+      "pct_away": 0.3,
+      "score": 49
+     }
+    ],
+    "below": [
+     {
+      "price": 0.6937056,
+      "pct_away": -0.1,
+      "score": 43
+     },
+     {
+      "price": 0.6923168,
+      "pct_away": -0.3,
+      "score": 50
+     }
+    ]
+   },
+   "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 41) · پایین در -0.1٪ (شدت 43)"
   }
  ],
  "learned_rules": [
