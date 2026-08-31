@@ -83,9 +83,18 @@ for (const job of jobs) {
       const timedOut = !done && bar.t - open.t0 > TIMEOUT_MS;
       if (done || timedOut) {
         const res = done || { r: open.t1 ? open.R1 : 0, why: "timeout" };
+        /* هندسه و کارمزد روی خودِ ردیف (رفع D2 ممیزی ۳۰ اوت): بدون
+           stop_pct هیچ تفکیک هندسه‌ای ممکن نبود، و بدون خالص، بک‌تست
+           همان دروغِ «لبهٔ ناخالص» را می‌گفت که دفتر پیپر می‌گفت.
+           کارمزد = ۰.۱۵٪ رفت‌وبرگشت (مدل رسمی، اعداد راستی‌آزمایی‌شدهٔ
+           بیت‌یونیکس) تقسیم بر درصدِ استاپ — سهم کارمزد از R. */
+        const feeR = 0.15 / open.stopPct;
         out.push({
           sym: job.sym, tf: job.tf, dir: open.dir, r: +res.r.toFixed(3), why: res.why,
           w: res.r > 0 ? 1 : 0, bars: i - open.i, R: open.R2,
+          stop_pct: +open.stopPct.toFixed(4),
+          fee_r: +feeR.toFixed(4),
+          r_net: +(res.r - feeR).toFixed(4),
           room: open.room, swept: open.swept, inside: open.inside,
           volr: open.volr, thin: open.thin, adx: open.adx, conf: open.conf,
           openedAt: open.t0, closedAt: bar.t
@@ -97,8 +106,20 @@ for (const job of jobs) {
     if (i - lastEntry < COOLDOWN) continue;
     const view = cd.slice(Math.max(0, i - WINDOW + 1), i + 1);
     let x = null;
-    try { x = E.smcSetup(view, { tf: job.tf, asset: job.sym }); } catch (e) { continue; }
-    if (!x || x.stage !== "SIGNAL" || !x.tp1) continue;
+    if (variant === "ibs") {
+      /* واریانت ibs (رفع D1 ممیزی ۳۰ اوت): مرجعِ ادعای عملکرد تا امروز
+         فقط smcSetup را ریپلی می‌کرد، در حالی که ۸۲٪ شورت‌های ارسالی از
+         ibsPullback آمده بود — یعنی استراتژیِ اصلیِ موضوعِ بحث اصلاً
+         بک‌تست نمی‌شد. شرط شلیک عیناً آینهٔ scan_worker.js است
+         (quality>=55 و قیمت داخل/کنار بلاک) تا سیگنال زنده و ریپلی
+         یک معنا داشته باشند. */
+      try { x = E.ibsPullback(view); } catch (e) { continue; }
+      if (!x || !x.tp1 || !x.dir) continue;
+      if (!(x.quality >= 55 && (x.inOB || x.nearOB))) continue;
+    } else {
+      try { x = E.smcSetup(view, { tf: job.tf, asset: job.sym }); } catch (e) { continue; }
+      if (!x || x.stage !== "SIGNAL" || !x.tp1) continue;
+    }
 
     const risk = Math.abs(x.entry - x.sl);
     if (!risk || risk / x.entry < 0.0008) continue;
@@ -109,6 +130,7 @@ for (const job of jobs) {
     lastEntry = i;
     open = {
       i, t0: bar.t, dir: x.dir, entry: x.entry, sl: x.sl, tp1: x.tp1, tp2: x.tp2,
+      stopPct: (risk / x.entry) * 100,
       R1, R2, t1: false,
       room: x.room ? x.room.r : null, swept: x.swept ? 1 : 0,
       inside: x.thin ? x.thin.insideRatio : null, volr: x.thin ? x.thin.volRatio : null,

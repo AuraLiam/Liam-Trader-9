@@ -57,6 +57,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: پاسبان قرارداد بک‌تست
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_backtest_contract
+
       - name: Run the backtest
         run: |
           set -o pipefail
