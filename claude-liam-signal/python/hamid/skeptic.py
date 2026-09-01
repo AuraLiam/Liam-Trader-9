@@ -171,29 +171,60 @@ def q_delivery_id(now):
         f"{leaks} نشتی از {la.get('n_closed_sig') or '?'} بسته")
 
 
+RECENT_H = 24            # پنجرهٔ حکم — پایین‌تر توضیح داده شده
+
+
 def q_dedupe_contract(now):
-    """همان قرارداد ۲۶ اوت — نه سخت‌گیرتر، نه شل‌تر."""
+    """قرارداد ضدتکرار — **از روی خودِ کد**، نه از روی سند.
+
+    دو عیبِ اندازه‌گیری‌شدهٔ ۱ سپتامبر که این تابع را عوض کرد:
+
+    ۱. **قراردادِ خیالی.** نسخهٔ قبلی عددها را سفت نوشته بود
+       (۳س/۱۲س/سقف ۲ در ۱۲س) — همان چیزی که `trading-core.md` می‌گفت.
+       ولی حمید ۲۷ اوت پنجره را از ۱۲ به ۶ ساعت آورد («تا سیگنال هست
+       باید بدهد») و سند به‌روز نشد. نتیجه: ۶ «نقض» گزارش می‌شد که
+       **۵تایش اصلاً نقض نبود** — بازرس علیه مشخصاتی می‌سنجید که کد
+       هرگز اجرایش نمی‌کرد. حالا ثابت‌ها از `telegram` خوانده می‌شوند،
+       پس مشخصات دیگر نمی‌تواند از کد جدا بیفتد.
+
+    ۲. **متری که هرگز سبز نمی‌شود.** نسخهٔ قبلی کلِ تاریخ را می‌سنجید،
+       پس یک نقضِ بسته‌شده تا ابد آلارم می‌داد. متری که رفعِ ریشه هم
+       سبزش نکند، آموزشِ نادیده‌گرفتن است — دقیقاً همان چیزی که قانون
+       ۰۷ بسته. حکم روی پنجرهٔ تازه است؛ تاریخ به‌عنوان زمینه گزارش
+       می‌شود، نه به‌عنوان اتهامِ امروز.
+    """
+    from telegram import SKIP_TTL_MS, TTL_MS         # noqa: F401 — منبع واحد
     H = 3_600_000
+    ttl_h = TTL_MS / H                               # پنجرهٔ هم‌استراتژی و سقف
+    any_h = 3                                        # `_dup_any` / `_dup_pair`
     rows = sorted((_j("signals/telegram-log.json", {}) or {}).get("sent") or [],
                   key=lambda x: x.get("at") or 0)
     if not rows:
         return na("قرارداد ضدتکرار رعایت شده؟", "دفتر ارسال خالی است")
-    last_any, last_st, per, bad = {}, {}, {}, 0
+    last_any, last_pair, last_st, per = {}, {}, {}, {}
+    bad, bad_recent = 0, 0
     for r in rows:
         t = r.get("at") or 0
         ak = (r.get("sym"), r.get("dir"), r.get("tf"))
+        pk = (r.get("sym"), r.get("dir"))
         sk = ak + (r.get("name"),)
         hits = per.setdefault(r.get("sym"), [])
-        if ((ak in last_any and t - last_any[ak] <= 3 * H)
-                or (sk in last_st and t - last_st[sk] <= 12 * H)
-                or len([x for x in hits if t - x <= 12 * H]) >= 2):
+        if ((ak in last_any and t - last_any[ak] < any_h * H)
+                or (pk in last_pair and t - last_pair[pk] < any_h * H)
+                or (sk in last_st and t - last_st[sk] < ttl_h * H)
+                or len([x for x in hits if t - x < ttl_h * H]) >= 2):
             bad += 1
-        last_any[ak], last_st[sk] = t, t
+            if now - t <= RECENT_H * H:
+                bad_recent += 1
+        last_any[ak] = last_pair[pk] = last_st[sk] = t
         hits.append(t)
-    return (ok if bad == 0 else no)(
+    recent = [r for r in rows if now - (r.get("at") or 0) <= RECENT_H * H]
+    return (ok if bad_recent == 0 else no)(
         "قرارداد ضدتکرار رعایت شده؟",
-        f"{bad} نقض از {len(rows)} ارسال",
-        "کلید بی‌استراتژی ۳س · هم‌استراتژی ۱۲س · سقف ۲ در ۱۲س")
+        f"{bad_recent} نقض از {len(recent)} ارسالِ {RECENT_H} ساعت اخیر "
+        f"(کل تاریخ: {bad} از {len(rows)})",
+        f"کلید بی‌استراتژی {any_h}س · جفت {any_h}س · هم‌استراتژی "
+        f"{ttl_h:g}س · سقف ۲ در {ttl_h:g}س — ثابت‌ها از خودِ telegram.py")
 
 
 def q_unique_rows(now):

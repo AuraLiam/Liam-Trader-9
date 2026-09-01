@@ -164,6 +164,67 @@ try:
           str(src_p.count('sent[f"pair|{s[\'sym\']}|{s[\'dir\']}"]')))
     check("سقف هر ارز به ۲ برگشت (سقف ۳ همان بود که PAXG دوم را رد کرد)",
           ">= 2" in src_p.split("def _sym_worn", 1)[1][:600])
+
+    # ── ۵.۳۱) رزروِ درون-دسته — عیب اندازه‌گیری‌شدهٔ ۱ سپتامبر ──────────
+    #
+    # همان کلاسِ بالا، ولی از درِ دیگر: کلید `pair|` فقط بین **اجراها**
+    # کار می‌کرد. فیلترِ ورودی یک list-comprehension بود و همهٔ ستاپ‌ها
+    # را روی یک عکسِ منجمدِ `sent` می‌سنجید، پس دو ستاپ از یک (ارز، جهت)
+    # روی دو تایم در **همان دسته** هر دو رد می‌شدند — نوشتنِ کلید بعد از
+    # فیلتر اتفاق می‌افتاد. شاهد: BTCUSDT لانگ ۵د ۰۷:۲۷:۵۸ و لانگ ۱۵د
+    # ۰۷:۲۸:۱۶ (۱۸ ثانیه) در دفتر ارسالِ ۳۱ اوت.
+    # سنجه، تعدادِ **ردشده از فیلتر** است نه تعدادِ تحویل‌شده: تحویل به
+    # قیمت زنده و دروازهٔ روند نیاز دارد و در آزمون شبکه‌ای نیست. خودِ
+    # فرستنده تعداد را چاپ می‌کند («… of N new signals delivered»).
+    import contextlib
+    import io
+    import re as _re
+
+    def _passed_filter(sigs):
+        # حافظهٔ کناری هم پاک شود: ستاپی که دروازه ردش می‌کند مهرِ
+        # `skip|` می‌گیرد و تا ۳۰ دقیقه دوباره بررسی نمی‌شود. بدون این
+        # پاک‌سازی، فراخوانِ بعدیِ همین آزمون قربانیِ مهرِ قبلی می‌شد.
+        TG.SENT.write_text("{}")
+        TG.TGLOG.write_text("{}")
+        TG.SIDECAR.write_text("{}")
+        op, oc = TG._post, TG.creds
+        TG._post = lambda *a, **k: {"result": {"message_id": 7}}
+        TG.creds = lambda: ("tok", "chat")
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                TG.send_signals(sigs, lambda s, p: None)
+        finally:
+            TG._post, TG.creds = op, oc
+        m = _re.search(r"of (\d+) new signals", buf.getvalue())
+        return int(m.group(1)) if m else 0
+
+    got3 = _passed_filter(
+        [{"sym": "BTCUSDT", "tf": "5m", "dir": "LONG", "strategy": "ibs",
+          "entry": 100, "sl": 99, "tp1": 103},
+         {"sym": "BTCUSDT", "tf": "15m", "dir": "LONG", "strategy": "ibs",
+          "entry": 100, "sl": 99, "tp1": 103}])
+    check("همان (ارز، جهت) روی دو تایم در یک دسته فقط یک بار رد می‌شود",
+          got3 == 1, f"{got3} تا از فیلتر رد شد — رزروِ درون-دسته کار نکرد")
+
+    # ارزِ دیگر و جهتِ مخالف نباید قربانی رزرو شوند
+    got4 = _passed_filter(
+        [{"sym": "BTCUSDT", "tf": "5m", "dir": "LONG", "strategy": "ibs",
+          "entry": 100, "sl": 99, "tp1": 103},
+         {"sym": "ETHUSDT", "tf": "5m", "dir": "LONG", "strategy": "ibs",
+          "entry": 50, "sl": 49, "tp1": 53}])
+    check("رزرو فقط همان (ارز، جهت) را می‌بندد، نه کلِ دسته را",
+          got4 == 2, f"{got4} تا رد شد — ارزِ دیگر هم قربانی شد")
+    got5 = _passed_filter(
+        [{"sym": "BTCUSDT", "tf": "5m", "dir": "LONG", "strategy": "ibs",
+          "entry": 100, "sl": 99, "tp1": 103},
+         {"sym": "BTCUSDT", "tf": "5m", "dir": "SHORT", "strategy": "ibs",
+          "entry": 100, "sl": 101, "tp1": 97}])
+    check("جهتِ مخالف همان ارز در یک دسته مستقل می‌ماند",
+          got5 == 2, f"{got5} تا رد شد")
+    check("رزرو در دفترِ ماندگار نوشته نمی‌شود (ستاپِ نرفته خفه نشود)",
+          "claim_any" in src_p and 'sent[f"any|' not in
+          src_p.split("claim_any, claim_pair", 1)[1].split("fresh = []", 1)[0])
 finally:
     TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = old2
 

@@ -731,10 +731,44 @@ def send_signals(signals, render_chart, limit=8):
         print(f"  دروازهٔ تایم‌فریم: {s.get('sym')} {s.get('tf')} رد شد — "
               f"ارسال فقط در ۵د/۱۵د (دستور ۲۶ اوت)", flush=True)
     signals = [s for s in signals if s.get("tf") in ALLOWED_TFS]
-    fresh = [s for s in signals
-             if _key(s) not in sent and f"skip|{_key(s)}" not in sent
-             and not _dup_any(s) and not _dup_pair(s)
-             and not _sym_worn(s) and not _stable(s)][:limit]
+    # ── رزروِ درون-دسته (عیب اندازه‌گیری‌شدهٔ ۱ سپتامبر) ──────────────────
+    #
+    # تا امشب این یک list-comprehension بود و **همهٔ** شرط‌ها را روی یک
+    # عکسِ منجمدِ `sent` می‌سنجید. یعنی دو ستاپ از یک (ارز، جهت) روی دو
+    # تایم مختلف، هر دو رد می‌شدند چون هیچ‌کدام هنوز در `sent` نبود —
+    # نوشتنِ کلیدها در حلقهٔ ارسال (پایین‌تر) اتفاق می‌افتد، بعد از این
+    # فیلتر. پس `pair|` فقط بین **اجراها** محافظت می‌کرد، نه داخل یک دسته.
+    #
+    # همان چیزی که این کلید ۲۷ اوت برایش ساخته شد (TRX ۵د و ۱۵د با سه
+    # دقیقه فاصله) دوباره اتفاق افتاد: BTCUSDT لانگ ۵د ساعت ۰۷:۲۷:۵۸ و
+    # BTCUSDT لانگ ۱۵د ساعت ۰۷:۲۸:۱۶ — ۱۸ ثانیه، همان دسته.
+    #
+    # حالا هر ستاپِ پذیرفته‌شده کلیدهایش را **همان لحظه برای بقیهٔ دسته**
+    # رزرو می‌کند. رزرو در `sent` نوشته نمی‌شود: اگر ستاپ بعداً با نردبان
+    # یا سقف روزانه بیفتد، رزرو با همین دسته می‌میرد و سیگنالی که نرفته
+    # خفه نمی‌شود.
+    claim_any, claim_pair, claim_sym = set(), set(), {}
+
+    def _claimed(s):
+        if f"{s['sym']}|{s['tf']}|{s['dir']}" in claim_any:
+            return True
+        if f"{s['sym']}|{s['dir']}" in claim_pair:
+            return True
+        prior = sum(1 for k in sent if k.startswith(f"any|{s['sym']}|"))
+        return prior + claim_sym.get(s["sym"], 0) >= 2
+
+    fresh = []
+    for s in signals:
+        if (_key(s) in sent or f"skip|{_key(s)}" in sent
+                or _dup_any(s) or _dup_pair(s)
+                or _sym_worn(s) or _stable(s) or _claimed(s)):
+            continue
+        fresh.append(s)
+        claim_any.add(f"{s['sym']}|{s['tf']}|{s['dir']}")
+        claim_pair.add(f"{s['sym']}|{s['dir']}")
+        claim_sym[s["sym"]] = claim_sym.get(s["sym"], 0) + 1
+        if len(fresh) >= limit:
+            break
     if not fresh:
         print(f"telegram: {len(signals)} signals, all already sent", flush=True)
         return 0
