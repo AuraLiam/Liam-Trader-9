@@ -350,6 +350,39 @@ check(f"هیچ دروازهٔ تازگی روی mtime دیسک نمی‌نشین
 check("سنِ btc-sensitivity از مهرِ خودِ فایل خوانده می‌شود",
       "btc-sensitivity.json'))['generated']" in _chain)
 
+# ── کلاسِ عیبِ ۱ سپتامبر: محافظِ بمب‌ساعتی ─────────────────────────────
+#
+# `test_strategy_priority` شرط گذاشته بود سررسیدِ ترجیح **در آینده** باشد
+# و ترجیح **فعال** باشد. ترجیح دقیقاً طبق طراحی ساعت ۲۰:۲۹ UTC سررسید شد
+# → محافظ قرمز → دروازهٔ سختِ زنجیره → حلقهٔ ۵دقیقه‌ای skip → latest،
+# funnel، system-state و loop-audit کهنه ماندند. یک محافظ، تولید را
+# خواباند، بی‌آنکه هیچ کدی خراب شده باشد.
+#
+# قاعده: هر محافظی که روی وضعیتِ **منقضی‌شونده** حکم می‌دهد باید شاخهٔ
+# «سررسیده» را هم سالم بداند. تشخیصش عینی است: فایلی که هم `until` دارد
+# هم با `now` مقایسه می‌کند، باید کلمهٔ `expired` را هم داشته باشد —
+# یعنی هر دو شاخه را پوشانده باشد.
+_gate_dir = Path(__file__).resolve().parent
+_bombs = []
+for _t in sorted(_gate_dir.glob("test_*.py")):
+    _txt = _t.read_text(encoding="utf-8", errors="ignore")
+    if '"until"' in _txt and "now" in _txt and "expired" not in _txt:
+        _bombs.append(_t.name)
+check(f"هیچ محافظی وضعیتِ منقضی‌شونده را «باید فعال باشد» فرض نمی‌کند "
+      f"{_bombs or ''}", not _bombs)
+
+# و خودِ فایلِ ترجیح باید سررسید داشته باشد — ترجیحِ ابدی همان چیزی است
+# که این محافظ‌ها اصلاً برایش گذاشته شدند.
+import json as _json
+_pref_p = _gate_dir.parent.parent.parent / "config" / "strategy_priority.json"
+try:
+    _pref = _json.loads(_pref_p.read_text(encoding="utf-8"))
+    check("ترجیح استراتژی سررسید عددی دارد (ابدی نیست)",
+          isinstance(_pref.get("until"), (int, float)))
+except FileNotFoundError:
+    check("ترجیح استراتژی سررسید عددی دارد (ابدی نیست)", True,
+          "فایل ترجیح وجود ندارد — یعنی ترجیحی هم نیست")
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")
