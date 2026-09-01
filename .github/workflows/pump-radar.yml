@@ -237,7 +237,7 @@ jobs:
               # push خروجی‌هایش برگردانده و sent.json اجتماع می‌شود تا نه
               # سیگنالی دوباره برود نه دفتر ضدتکرار گم شود.
               if [ ! -f "/tmp/scan-done-$k" ]; then
-                (cd claude-liam-signal/python && timeout 240 python3 scan.py --symbols 60 --telegram) || true
+                (cd claude-liam-signal/python && timeout 240 python3 scan.py --symbols 60 --rotate 200 --core 30 --telegram) || true
                 touch "/tmp/scan-done-$k"
                 cp signals/latest.json /tmp/scan-latest.json 2>/dev/null || true
                 cp signals/sent.json /tmp/scan-sent.json 2>/dev/null || true

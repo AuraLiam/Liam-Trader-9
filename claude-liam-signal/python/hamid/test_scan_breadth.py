@@ -103,6 +103,48 @@ def run():
         except Exception as e:                       # noqa: BLE001
             check("خروجیِ فعلی خوانا است", False, str(e))
 
+    # ── میدانِ چرخان (۱ سپتامبر) ────────────────────────────────────────
+    #
+    # اندازه‌گیری ۳ روزه: از ۳۳۲ اسکنِ ثبت‌شده، ۳۲۵ تا ۶۰نمادی و فقط ۵ تا
+    # ۲۰۰نمادی — اسکنِ پهن ۱.۷ بار در روز، نه هر ۱۵ دقیقه. و چون زنجیره
+    # همیشه همان ۶۰ نمادِ اولِ حجم را می‌گرفت، رتبه‌های ۶۱–۲۰۰ عملاً هرگز
+    # دیده نمی‌شدند.
+    import scan as S
+    _real = S.top_by_48h
+    try:
+        S.top_by_48h = lambda n: [f"S{i:03d}USDT" for i in range(n)]
+        core_syms = [f"S{i:03d}USDT" for i in range(30)]
+        slots = [S.rotating_field(60, universe=200, core=30, slot=k)
+                 for k in range(6)]
+        check("هستهٔ پرحجم در هر برش اسکن می‌شود (بسترِ اجباری قانون ۳)",
+              all(g[:30] == core_syms for g in slots))
+        check("هر برش دقیقاً به اندازهٔ خواسته و بدون تکرار است",
+              all(len(g) == 60 and len(set(g)) == 60 for g in slots))
+        cov = set().union(*[set(g) for g in slots])
+        check("شش برش کلِ میدان ۲۰۰تایی را می‌پوشاند (~۳۰ دقیقه)",
+              len(cov) == 200, f"{len(cov)} نماد")
+        check("برش‌های پیاپی دُمِ متفاوت می‌گیرند (چرخش واقعی است)",
+              slots[0][30:] != slots[1][30:])
+        check("چرخش قطعی است — همان برش، همان نمادها",
+              S.rotating_field(60, 200, 30, 3) == slots[3])
+        check("بدون --rotate رفتار قدیمی دست‌نخورده می‌ماند",
+              len(S.rotating_field(60, universe=0, core=30)) == 60)
+        check("میدانِ کوچک‌تر از خواسته، چرخش نمی‌گیرد",
+              len(S.rotating_field(60, universe=40, core=30)) == 60)
+    finally:
+        S.top_by_48h = _real
+    src = (PY / "scan.py").read_text(encoding="utf-8")
+    check("اسکن دفترِ پوششِ غلتان می‌نویسد", "scan-coverage.json" in src)
+    check("دفتر پوشش نمادِ یکتای یک‌ساعته را می‌شمرد", "unique_1h" in src)
+    wf = (PY.parent.parent / ".github/workflows/pump-radar.yml").read_text(
+        encoding="utf-8")
+    check("زنجیره با میدانِ چرخان اسکن می‌کند", "--rotate 200" in wf)
+    import json as _json
+    reg = _json.loads((PY.parent.parent / "config/state_registry.json")
+                      .read_text(encoding="utf-8"))["files"]
+    check("دفتر پوشش ردیف قرارداد دارد (قانون ۱۳)",
+          "scan-coverage.json" in reg)
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

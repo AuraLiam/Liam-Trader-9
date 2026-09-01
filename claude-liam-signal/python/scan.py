@@ -120,6 +120,46 @@ def top_by_48h(n):
     return [s for s, _ in ranked[:n]]
 
 
+# ── پهنای دید: هسته + دُمِ چرخان (اصلاح ۱ سپتامبر) ──────────────────────
+#
+# سند می‌گوید «پایش ۲۰۰ ارز»، ولی اندازه‌گیری روی ۳ روز گذشته: از ۳۳۲
+# اسکنِ ثبت‌شده، **۳۲۵ تا ۶۰ نمادی** بودند و فقط **۵ تا ۲۰۰ نمادی** —
+# یعنی اسکنِ پهن ۱.۷ بار در روز اجرا شده، نه هر ۱۵ دقیقه. علتش همان
+# چیزی است که خودِ `live-scan.yml` در سرآیندش نوشته: کرونِ `*/N` روی
+# حساب رایگان انداخته می‌شود (همان کلاسِ گزارش ساعتیِ دامیننس).
+#
+# و چون زنجیره همیشه **همان ۶۰ نمادِ اولِ حجم** را می‌گیرد، رتبه‌های ۶۱
+# تا ۲۰۰ عملاً هرگز دیده نمی‌شوند. اثرش روی محصول در ممیزی ۳۰ اوت
+# شمرده شده بود: ۳۱ نمادِ یکتا از ۶۸ ارسال در ۷ روز، در حالی که سقف
+# روزانه هرگز پر نمی‌شد.
+#
+# درمان، بالا بردن هزینهٔ هر اجرا نیست (زمانِ زنجیره محدود است) بلکه
+# **چرخاندن** است: هستهٔ پرنقدینگی هر بار اسکن می‌شود — بی‌آن، بیت‌کوین
+# دو-سومِ اوقات دیده نمی‌شد و بسترِ اجباریِ قانون ۳ می‌شکست — و بقیهٔ
+# ظرفیت روی دُم می‌چرخد تا در چند اجرا کلِ میدان پوشیده شود.
+#
+# هیچ دروازهٔ تحلیلی عوض نمی‌شود؛ فقط میدانِ دید به اندازهٔ سندش برمی‌گردد.
+def rotating_field(n, universe=200, core=30, slot=None):
+    """`n` نماد: `core` تای اول همیشه + بقیه از دُم، با چرخشِ قطعی.
+
+    `slot` از زمان می‌آید تا اجراهای پیاپیِ زنجیره برشِ متفاوتی بگیرند؛
+    قطعی است (نه تصادفی) تا بازتولیدپذیر بماند.
+    """
+    if universe <= n:                                # چرخش بی‌معنا
+        return top_by_48h(n)
+    ranked = top_by_48h(universe)
+    core = max(0, min(core, n, len(ranked)))
+    head, tail = ranked[:core], ranked[core:]
+    want = n - core
+    if want <= 0 or not tail:
+        return head[:n]
+    if slot is None:
+        slot = int(time.time() // 300)               # هر ۵ دقیقه یک برش
+    start = (slot * want) % len(tail)
+    picked = [tail[(start + i) % len(tail)] for i in range(min(want, len(tail)))]
+    return head + picked
+
+
 def ctx_dir(setup):
     """The market direction the mined history was keyed on. The live scan has no
     per-setup dominance series, so this stays '?' and the lookup falls back to
@@ -342,16 +382,54 @@ def main():
     ap.add_argument("--symbols", type=int, default=100)
     ap.add_argument("--tf", default="5m,15m")
     ap.add_argument("--cores", type=int, default=os.cpu_count() or 4)
+    ap.add_argument("--rotate", type=int, default=0,
+                    help="میدانِ کامل (مثلاً ۲۰۰) — هر اجرا برشی از آن، "
+                         "با هستهٔ ثابت. صفر = رفتار قدیمی")
+    ap.add_argument("--core", type=int, default=30,
+                    help="چند نمادِ پرحجم همیشه اسکن شوند (بسترِ اجباری)")
     ap.add_argument("--telegram", action="store_true",
                     help="deliver new signals as charts (needs TELEGRAM_BOT_TOKEN/CHAT_ID)")
     args = ap.parse_args()
     tfs = [t.strip() for t in args.tf.split(",") if t.strip()]
 
     t0 = time.time()
-    syms = top_by_48h(args.symbols)
+    if args.rotate and args.rotate > args.symbols:
+        syms = rotating_field(args.symbols, universe=args.rotate,
+                              core=args.core)
+        print(f"scanning {len(syms)} pairs — {args.core} core + "
+              f"{len(syms) - args.core} rotating out of the top {args.rotate} "
+              f"× {len(tfs)} timeframes", flush=True)
+    else:
+        syms = top_by_48h(args.symbols)
+        print(f"scanning the {len(syms)} most-traded pairs of the last 48h "
+              f"× {len(tfs)} timeframes", flush=True)
+    # دفترِ پوششِ غلتان — با چرخش، «پهنای دید» دیگر عددِ یک اجرا نیست.
+    # هر اجرا ۶۰ نماد می‌بیند ولی برشِ متفاوتی؛ چیزی که واقعاً اهمیت
+    # دارد این است که در یک پنجرهٔ معنادار چند نمادِ **یکتا** دیده شده.
+    # بدون این دفتر، متر E01 هر بار ۶۰ می‌دید و چرخش را نمی‌فهمید.
+    try:
+        _cov_p = ROOT / "signals" / "scan-coverage.json"
+        _now_ms = int(time.time() * 1000)
+        try:
+            _cov = json.loads(_cov_p.read_text(encoding="utf-8"))
+        except Exception:                                # noqa: BLE001
+            _cov = {}
+        _seen = {k: v for k, v in (_cov.get("seen") or {}).items()
+                 if isinstance(v, int) and _now_ms - v <= 3 * 3600_000}
+        for _s in syms:
+            _seen[_s] = _now_ms
+        _cov_p.parent.mkdir(parents=True, exist_ok=True)
+        _cov_p.write_text(json.dumps(
+            {"generated": _now_ms, "window_h": 3, "seen": _seen,
+             "unique_1h": sum(1 for v in _seen.values()
+                              if _now_ms - v <= 3600_000),
+             "unique_3h": len(_seen), "last_run": len(syms),
+             "field": args.rotate or len(syms)},
+            ensure_ascii=False), encoding="utf-8")
+    except Exception as _e:                              # noqa: BLE001
+        print(f"  دفتر پوشش نوشته نشد: {type(_e).__name__}", flush=True)
+
     pairs = [(s, tf) for tf in tfs for s in syms]
-    print(f"scanning the {len(syms)} most-traded pairs of the last 48h "
-          f"× {len(tfs)} timeframes", flush=True)
 
     jobs, failed = [], 0
     with ThreadPoolExecutor(max_workers=10) as ex:

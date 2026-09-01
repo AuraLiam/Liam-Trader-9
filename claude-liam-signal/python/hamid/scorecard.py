@@ -52,6 +52,7 @@
 
 اجرا: `python3 -m hamid.scorecard [--write] [--json]`
 """
+import collections
 import json
 import math
 import statistics
@@ -228,16 +229,33 @@ def build(now_ms=None):
     lt = _j("signals/latest.json", {}) or {}
     seen = lt.get("symbols") or 0
     want = 200
-    C.append(card("E01", "تأمین‌کننده", "پهنای اسکنِ آخر",
-                  round(100 * seen / want, 1) if seen else None, "٪ از ۲۰۰",
-                  n=seen, baseline=100.0,
-                  verdict="OK" if seen >= want else "UNDER",
-                  falsifier=("اسکنِ باریک‌تر از ۲۰۰ یعنی میدان دید کوچک‌تر از "
+    # پهنا در **پنجره** سنجیده می‌شود، نه در یک اجرا (اصلاح ۱ سپتامبر).
+    #
+    # با چرخشِ میدان، هر اجرا ۶۰ نماد می‌بیند ولی برشِ متفاوتی؛ پس عددِ
+    # یک اجرا دیگر «پهنای دید» نیست. اندازه‌گیریِ همان روز نشان داد
+    # اسکنِ ۲۰۰تایی فقط ۵ بار در ۳ روز اجرا شده (۳۲۵ اجرا ۶۰تایی بود)،
+    # پس متر قبلی همیشه ۳۰٪ می‌داد و کاری هم نمی‌شد کرد. حالا از دفترِ
+    # پوششِ غلتان خوانده می‌شود: چند نمادِ **یکتا** در یک ساعت اخیر.
+    cov = _j("signals/scan-coverage.json", {}) or {}
+    uniq = cov.get("unique_1h")
+    if uniq:
+        val, n_val = uniq, uniq
+        note = (f"{uniq} نمادِ یکتا در ۱ ساعت اخیر (۳ ساعت: "
+                f"{cov.get('unique_3h')}) · اسکنِ آخر {cov.get('last_run')} "
+                f"از میدانِ {cov.get('field')}")
+    else:
+        val, n_val = seen, seen
+        note = f"{seen} نماد در اسکنِ آخر (دفتر پوشش هنوز ساخته نشده)"
+    C.append(card("E01", "تأمین‌کننده", "پهنای دیدِ یک‌ساعته",
+                  round(100 * val / want, 1) if val else None, "٪ از ۲۰۰",
+                  n=n_val, baseline=100.0,
+                  verdict="OK" if val >= want else "UNDER",
+                  falsifier=("پوششِ باریک‌تر از ۲۰۰ یعنی میدان دید کوچک‌تر از "
                              "سند — همان عیبِ ۳۰ اوت که اسکن پهن عملاً هرگز "
                              "اجرا نمی‌شد"),
-                  source=["signals/latest.json", "signals/watchlist.json"],
-                  note=f"{seen} نماد در اسکنِ آخر · گشت: "
-                       f"{len(wl.get('rows') or [])} نامزد از "
+                  source=["signals/scan-coverage.json", "signals/latest.json",
+                          "signals/watchlist.json"],
+                  note=note + f" · گشت: {len(wl.get('rows') or [])} نامزد از "
                        f"{len(wl.get('sources_ok') or [])} منبع سالم "
                        f"({len(wl.get('sources_err') or [])} خطا)"))
 
@@ -285,13 +303,37 @@ def build(now_ms=None):
     # E10 — نقدینگی
     rw = {r["engine"]: r for r in ((_j("signals/rewards.json", {}) or {})
                                    .get("board") or [])}
+    def _base_ratio():
+        """نسبتِ تارگت به استاپِ **کلِ دفتر** — پایهٔ منصفانهٔ مقایسه.
+
+        اصلاح ۱ سپتامبر: نسخهٔ قبلی پایه را روی عددِ ثابتِ ۱.۰ گذاشته بود،
+        یعنی «هر انجین باید به ازای هر استاپ یک تارگت داشته باشد». آن
+        آستانه اختراعی بود و هیچ بخشی از این سامانه به آن نمی‌رسد: با
+        تارگتِ RR≥۱.۵، سیستمِ سودده هم نسبتِ زیر یک دارد. اندازه‌گیری روی
+        دفتر: پایهٔ کل **۰.۴۳** (۴٬۹۶۲ تارگت در برابر ۱۱٬۵۲۰ استاپ)، و
+        هر شش انجینِ ردپادار بین ۰.۵۰ تا ۰.۷۷ — یعنی **همه بالای پایه**،
+        ولی متر دو تایشان را FAULT می‌خواند.
+
+        پرسشِ درست این نیست «آیا تارگت بیشتر از استاپ است؟» بلکه «آیا
+        ردپای این انجین روی معامله‌های برنده **بیشتر از متوسطِ دفتر**
+        دیده می‌شود؟». پایه از خودِ داده می‌آید، نه از حدس.
+        """
+        try:
+            from hamid import paper as _p
+            oc = collections.Counter(r.get("outcome") for r in _p._read(_p.CLOSED))
+            t, s = oc.get("target", 0), oc.get("stop", 0)
+            return round(t / s, 2) if s else None
+        except Exception:                            # noqa: BLE001
+            return None
+
+    base_ratio = _base_ratio()
+
     def _reward_card(eid, label, why):
         """جایزه، وقتی حکمش را از خودِ ترکیبش بگیرد نه از بزرگیِ عدد.
 
         امتیاز خام همیشه بالا می‌رود (هر تأیید امتیاز می‌گیرد)، پس به
         تنهایی نمره نیست. چیزی که می‌تواند بد شود نسبتِ **تارگت به
-        استاپ** است: اگر ردپای این انجین بیشتر روی معامله‌های استاپ‌خورده
-        باشد تا تارگت‌زده، تأییدش گمراه‌کننده بوده."""
+        استاپ** است — ولی در برابر پایهٔ خودِ دفتر، نه عددِ گِرد."""
         r = rw.get(eid)
         if not r:
             return no_metric(eid, "شاهد روی معامله", label,
@@ -299,12 +341,18 @@ def build(now_ms=None):
                              ["signals/rewards.json"])
         tot = r["target"] + r["trail"] + r["stop"]
         ratio = round(r["target"] / r["stop"], 2) if r["stop"] else None
+        if ratio is None or base_ratio is None:
+            v = "NO_METRIC"
+        else:
+            v = "OK" if ratio >= base_ratio else "FAULT"
         return card(eid, "شاهد روی معامله", label, ratio, "تارگت به ازای هر استاپ",
-                    n=tot, baseline=1.0,
-                    verdict=("OK" if (ratio or 0) >= 1 else "FAULT"),
-                    falsifier=why, source=["signals/rewards.json"],
+                    n=tot, baseline=base_ratio,
+                    verdict=v,
+                    falsifier=why, source=["signals/rewards.json",
+                                           "brain/paper/closed.jsonl"],
                     note=f"امتیاز {r['points']} · تارگت {r['target']} · "
-                         f"تریل {r['trail']} · استاپ {r['stop']}")
+                         f"تریل {r['trail']} · استاپ {r['stop']} · "
+                         f"پایهٔ دفتر {base_ratio}")
 
     C.append(_reward_card("E10", "نسبتِ تارگت به استاپِ تأییدِ نقدینگی",
                           "تارگت کمتر از استاپ = تأییدِ نقدینگی بیشتر روی "
@@ -481,23 +529,45 @@ def build(now_ms=None):
     # سخت‌گیرتر از قرارداد باشد، آلارمِ کاذب می‌سازد — همان چیزی که
     # قانون ۰۷ منعش کرده.
     #
-    # قرارداد واقعی: کلیدِ استراتژی‌دار ۱۲ ساعت · کلیدِ بی‌استراتژی ۳ ساعت
-    # · سقف ۲ ارسال به‌ازای هر ارز در ۱۲ ساعت.
+    # اصلاح ۱ سپتامبر — همان درس، بارِ دوم: کامنتِ بالا می‌گوید «ملاک باید
+    # همان قراردادِ نوشته‌شده باشد، نه قاعده‌ای که خودم اختراع کنم» و بعد
+    # عددها را سفت می‌نویسد (۱۲ ساعت). ولی حمید ۲۷ اوت پنجره را ۶ ساعت
+    # کرد و این عدد به‌روز نشد — دقیقاً همان چیزی که در `skeptic` هم پیدا
+    # شد و ۵ نقضِ کاذب از ۶ می‌ساخت. حالا ثابت‌ها از خودِ `telegram`
+    # خوانده می‌شوند، پس مشخصات نمی‌تواند از کد جدا بیفتد.
+    #
+    # و پنجرهٔ حکم: نقضِ بسته‌شدهٔ تاریخی تا ابد نباید قرمز نگه دارد
+    # (متری که رفعِ ریشه سبزش نکند، آموزشِ نادیده‌گرفتن است — قانون ۰۷).
     H = 3_600_000
+    try:
+        from telegram import TTL_MS as _TTL
+        ttl_h = _TTL / H
+    except Exception:                                # noqa: BLE001
+        ttl_h = 6
+    any_h = 3                                        # `_dup_any` / `_dup_pair`
+    RECENT_H = 24
+    _now = time.time() * 1000
     sent_rows = sorted((_j("signals/telegram-log.json", {}) or {}).get("sent") or [],
                        key=lambda x: x.get("at") or 0)
-    last_any, last_strat, per_sym, dup = {}, {}, {}, 0
+    last_any, last_pair, last_strat, per_sym = {}, {}, {}, {}
+    dup, recent_n = 0, 0
     for r in sent_rows:
         t = r.get("at") or 0
         any_k = (r.get("sym"), r.get("dir"), r.get("tf"))
+        pair_k = (r.get("sym"), r.get("dir"))
         st_k = any_k + (r.get("name"),)
         hits = per_sym.setdefault(r.get("sym"), [])
-        bad = ((any_k in last_any and t - last_any[any_k] <= 3 * H)
-               or (st_k in last_strat and t - last_strat[st_k] <= 12 * H)
-               or len([x for x in hits if t - x <= 12 * H]) >= 2)
-        dup += bool(bad)
-        last_any[any_k], last_strat[st_k] = t, t
+        bad = ((any_k in last_any and t - last_any[any_k] < any_h * H)
+               or (pair_k in last_pair and t - last_pair[pair_k] < any_h * H)
+               or (st_k in last_strat and t - last_strat[st_k] < ttl_h * H)
+               or len([x for x in hits if t - x < ttl_h * H]) >= 2)
+        if _now - t <= RECENT_H * H:
+            recent_n += 1
+            dup += bool(bad)
+        last_any[any_k] = last_pair[pair_k] = last_strat[st_k] = t
         hits.append(t)
+    sent_rows = [r for r in sent_rows
+                 if _now - (r.get("at") or 0) <= RECENT_H * H]
     C.append(_ops("E25", "شکستِ قراردادِ ضدتکرار", dup, len(sent_rows),
                   "همان کلیدِ بی‌استراتژی زیر ۳ ساعت، یا همان استراتژی زیر "
                   "۱۲ ساعت، یا بیش از ۲ ارسال یک ارز در ۱۲ ساعت — قرارداد "
