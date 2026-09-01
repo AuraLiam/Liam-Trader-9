@@ -100,6 +100,23 @@ try:
     src = (HERE / "test_alert_gate.py").read_text(encoding="utf-8")
     check("dominance_report در DIRECT_OK با دلیل ثبت است",
           '"dominance_report.py"' in src and "۲۶ اوت" in src)
+
+    # ── کادنس واقعی، نه کادنس اسمی (اندازه‌گیری ۱ سپتامبر) ─────────────
+    #
+    # کرونِ ساعتی این ورک‌فلو هر ۲۲ اجرا سبز بود، ولی در ۶ روز فقط ۲۲ بار
+    # فیره کرد — ~۳.۷ بار در روز به‌جای ۲۴، با شکاف تا ۸س۱۷د. کرونِ
+    # Actions تضمینِ اجرا نیست. پس زنجیرهٔ پیوسته هم باید تلاش کند.
+    wf = HERE.parent.parent.parent / ".github" / "workflows"
+    chain = (wf / "pump-radar.yml").read_text(encoding="utf-8")
+    own = (wf / "dominance-report.yml").read_text(encoding="utf-8")
+    check("زنجیرهٔ پیوسته هم گزارش دامیننس را تلاش می‌کند",
+          "hamid.dominance_report" in chain)
+    check("و با --send صدا زده می‌شود (بی آن، گامِ بی‌اثر است)",
+          "hamid.dominance_report --send" in chain)
+    check("ورک‌فلوی مستقل هم سر جایش مانده (دو مسیر، نه جایگزینی)",
+          "hamid.dominance_report --send" in own and "cron" in own)
+    check("ضدتکرار داخل ماژول کادنس را ساعتی نگه می‌دارد",
+          DR.MIN_GAP_MIN >= 50, str(DR.MIN_GAP_MIN))
 finally:
     DR.DOM, DR.STATE, DR.SERIES = old
 
