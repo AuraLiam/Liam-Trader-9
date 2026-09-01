@@ -96,6 +96,7 @@ jobs:
           python3 -m hamid.test_scorecard
           python3 -m hamid.test_gainer_radar
           python3 -m hamid.test_curriculum
+          python3 -m hamid.test_skeptic
           python3 -m hamid.test_pump_profile
           python3 -m hamid.test_patterns
           python3 -m hamid.test_orderblocks
@@ -194,6 +195,10 @@ jobs:
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
               # به تلگرام می‌دهد (ضداسپم داخل خودِ ماژول + دروازهٔ آلارم).
               (cd claude-liam-signal/python && python3 -m hamid.gainer_radar --write --telegram) || true
+              # شکاک (دستور حمید ۱ سپتامبر) — بازجویی زنجیره از E01 تا
+              # E25 با سؤال چرخشی. آخرِ همهٔ تولیدکننده‌ها اجرا می‌شود تا
+              # خروجیِ تازهٔ همان دور را ببیند، نه دورِ قبل را.
+              (cd claude-liam-signal/python && python3 -m hamid.skeptic --write --telegram) || true
               # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
               # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
               # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و

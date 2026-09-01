@@ -1,0 +1,138 @@
+"""پاسبان شکاک — بازرسِ بی‌شاهد، خودش بدترین نوع ادعاست.
+
+شکاک برای این ساخته شد که به نتیجه‌گیری‌ها شک کند. پس اگر خودش شل باشد،
+یک لایهٔ اطمینانِ کاذب اضافه کرده‌ایم — بدتر از نداشتنش. سه راه خرابی:
+
+۱. **سؤالی که همیشه سبز است.** متری که نتواند رد شود، بازجویی نیست.
+۲. **نبودِ داده = قبول.** اگر فایلی نباشد و شکاک «ثابت شد» بدهد، دقیقاً
+   همان کاری را کرده که قانون ۰۱ بند ۱ منع کرده.
+۳. **آلارمِ زودرس.** یک شکستِ لحظه‌ای پیام نمی‌خواهد؛ سه نوبتِ پیاپی
+   می‌خواهد. وگرنه همان اسپمی می‌شود که قانون ۰۷ بسته.
+
+اجرا: `python3 -m hamid.test_skeptic`
+"""
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PY = HERE.parent
+sys.path.insert(0, str(PY))
+
+from hamid import skeptic as S                                  # noqa: E402
+
+OK = 0
+FAIL = []
+
+
+def check(name, cond, extra=""):
+    global OK
+    if cond:
+        OK += 1
+        print(f"  ✓ {name}")
+    else:
+        FAIL.append(name)
+        print(f"  ✗ {name}")
+        if extra:
+            print(f"      ↳ {extra}")
+
+
+def run():
+    res = S.interrogate()
+
+    # ── ۱) ترتیب و پوشش: از جهانِ نمادها تا فرستنده ────────────────────
+    ids = [e for e, _, _ in S.BANK]
+    check("بازجویی از E01 شروع می‌شود", ids[0] == "E01", str(ids[:3]))
+    check("و به E25 (فرستنده) می‌رسد", "E25" in ids, str(ids))
+    check("بازرسیِ نتیجه‌گیری هم در بانک هست", "**" in ids)
+    check("هر انجینِ بانک دست‌کم یک سؤال دارد",
+          all(pool for _, _, pool in S.BANK))
+
+    # ── ۲) سه حکم، و هیچ‌کدام حدس نیست ─────────────────────────────────
+    vs = {a["verdict"] for a in res["answers"]}
+    check("فقط سه حکم ممکن است", vs <= {"PROVED", "UNPROVED", "NO_DATA"}, str(vs))
+    check("هر جواب شواهدِ نوشته‌شده دارد",
+          all(a["evidence"] for a in res["answers"]),
+          str([a["q"] for a in res["answers"] if not a["evidence"]]))
+    check("هر جواب به انجینش نسبت داده می‌شود",
+          all(a.get("engine") for a in res["answers"]))
+
+    # ── ۳) نبودِ داده هرگز «ثابت شد» نمی‌شود ───────────────────────────
+    f = S.q_fresh("signals/__nope__.json", 10, "چیزِ نبوده")
+    a = f(0)
+    check("فایلِ ناموجود → NO_DATA، نه PROVED و نه UNPROVED",
+          a["verdict"] == "NO_DATA", str(a))
+    check("و دلیلِ بی‌داده‌بودن نوشته می‌شود", bool(a["evidence"]))
+
+    # ── ۴) سؤالِ تازگی واقعاً می‌تواند رد شود ───────────────────────────
+    import json
+    import tempfile
+    d = Path(tempfile.mkdtemp())
+    old_root = S.ROOT
+    try:
+        S.ROOT = d
+        (d / "signals").mkdir()
+        now = 10_000_000
+        (d / "signals" / "x.json").write_text(
+            json.dumps({"generated": now - 60 * 60000}), encoding="utf-8")
+        fresh = S.q_fresh("signals/x.json", 120, "تست")(now)
+        stale = S.q_fresh("signals/x.json", 30, "تست")(now)
+        check("۶۰ دقیقه زیر سقف ۱۲۰ → ثابت", fresh["verdict"] == "PROVED")
+        check("همان ۶۰ دقیقه بالای سقف ۳۰ → رد", stale["verdict"] == "UNPROVED")
+    finally:
+        S.ROOT = old_root
+
+    # ── ۵) قیفِ تک‌دلیل رد می‌شود (دروازهٔ کور) ─────────────────────────
+    old = S._j
+    try:
+        S._j = lambda rel, default=None: (
+            {"top_reasons": {"یک دلیل": 100}} if "funnel" in rel else default)
+        deg = S.q_funnel_degenerate(0)
+        S._j = lambda rel, default=None: (
+            {"top_reasons": {"الف": 30, "ب": 25, "ج": 25, "د": 20}}
+            if "funnel" in rel else default)
+        div = S.q_funnel_degenerate(0)
+    finally:
+        S._j = old
+    check("قیفی که یک دلیل ۱۰۰٪ آن است، رد می‌شود",
+          deg["verdict"] == "UNPROVED", str(deg))
+    check("و قیفِ متنوع قبول می‌شود", div["verdict"] == "PROVED", str(div))
+
+    # ── ۶) آلارم فقط با شکستِ پابرجا ───────────────────────────────────
+    check("آستانهٔ آلارم سه نوبتِ پیاپی است", S.FAIL_STREAK_ALARM == 3)
+    check("پیام فقط از موارد پابرجا ساخته می‌شود",
+          S.caption({"persistent": [], "n": 1, "proved": 1,
+                     "unproved": 0, "no_data": 0}) is None)
+    cap = S.caption({"persistent": [{"engine": "E01", "label": "ل", "q": "س",
+                                     "evidence": "ش", "detail": "", "streak": 3}],
+                     "n": 5, "proved": 4, "unproved": 1, "no_data": 0})
+    check("پیامِ پابرجا شواهد و سؤال را می‌برد", "س" in cap and "ش" in cap)
+    check("و امضای پنل دارد (دستور ۱۶ اوت)", "لیام" in cap)
+
+    # ── ۷) چرخش: سؤال ثابت پرسیده نمی‌شود ──────────────────────────────
+    a1 = {(x["engine"], x["q"]) for x in S.interrogate(rnd=0)["answers"]}
+    a2 = {(x["engine"], x["q"]) for x in S.interrogate(rnd=1)["answers"]}
+    check("دو نوبتِ پیاپی مجموعهٔ سؤال یکسان ندارند", a1 != a2,
+          "چرخش کار نمی‌کند — سؤال ثابت شده")
+    check("و چرخش قطعی است (همان نوبت، همان سؤال‌ها)",
+          {(x["engine"], x["q"]) for x in S.interrogate(rnd=0)["answers"]} == a1)
+
+    # ── ۸) مرزها ───────────────────────────────────────────────────────
+    src = (PY / "hamid" / "skeptic.py").read_text(encoding="utf-8")
+    check("شکاک از دروازهٔ آلارم رد می‌شود (قانون ۰۷)",
+          "alert_gate.send" in src and "tg.send_text" not in src)
+    check("شکاک سیگنال صادر یا وتو نمی‌کند",
+          "send_signals" not in src and "veto" not in src)
+    check("فقط خروجی و دفتر خودش را می‌نویسد (قانون ۰۵)",
+          src.count("write_text") == 1 and 'LOG.open("a"' in src)
+    check("دفترش append-only است", '"a"' in src and '"w"' not in src)
+    check("خروجی مرز صادقانه دارد", "دروازه" in res["boundary"])
+    check("شمارش‌ها با فهرست می‌خوانند",
+          res["n"] == len(res["answers"])
+          and res["proved"] + res["unproved"] + res["no_data"] == res["n"])
+
+    print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
+    return 1 if FAIL else 0
+
+
+if __name__ == "__main__":
+    sys.exit(run())

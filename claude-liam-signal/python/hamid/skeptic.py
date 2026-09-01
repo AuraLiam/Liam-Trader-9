@@ -1,0 +1,406 @@
+"""شکاک — بازجویی زنجیره از E01 تا E25، هر ۱۰ دقیقه (دستور حمید، ۱ سپتامبر).
+
+حمید: «تو باید آن آدم شکاک باشی که به همه چیز گیر می‌دهد تا بهت ثابت کنند
+درست می‌گویند یا نتوانند ثابت کنند… از ایجنتی که هر ۱۵ دقیقه ۲۰۰ ارز برتر
+را می‌آورد شروع به سؤال‌پرسیدن می‌کنی تا برسی به ایجنت آخری که سیگنال را
+می‌فرستد… و سؤال ثابت نپرس.»
+
+## چرا این ماژول لازم بود — و چرا فقط «سلامت» کافی نیست
+
+پاسبان‌های موجود می‌پرسند «آیا کار می‌کند؟». شکاک می‌پرسد **«ثابت کن»**.
+فرقش را همین هفته دیدیم: چرخهٔ حمید ۲۶ گام سبز داد و دیده‌بان هم گفت
+«۹ سالم · ۰ خراب» — در حالی که همان اجرا هیچ‌چیز منتشر نکرده بود و
+فایل‌هایش ۹ ساعت کهنه بودند. هر جزء درست جواب می‌داد؛ **نتیجه** غلط بود.
+
+پس شکاک از خودِ انجین نمی‌پرسد حالت چطور است؛ **ردپایش را می‌شمارد**.
+
+## چهار خانوادهٔ سؤال — همه شاهدمحور
+
+| خانواده | سؤال | چه چیزی ردش می‌کند |
+|---|---|---|
+| **پوشش** | چند تا را واقعاً دیدی؟ | عددِ خروجی از سند کمتر است |
+| **تازگی** | خروجی‌ات چقدر کهنه است؟ | از سقف قرارداد گذشته |
+| **ردپا** | حکمت روی چند معاملهٔ بسته نشست؟ | صفر — یعنی وجودش قابل‌سنجش نیست |
+| **نتیجه‌گیری** | خودِ عددت درست ساخته شده؟ | یکتایی، منبع کارمزد، توزیع دلیل |
+
+خانوادهٔ چهارم مهم‌ترین است و همان چیزی است که حمید گفت: «شاید
+نتیجه‌گیری درست انجام نمی‌شود». چهار عیبِ اندازه‌گیریِ همین هفته
+(دو تعریف کارمزد · کلیدی که دو بازوی A/B را یکی می‌دید · پوشش ۲۶۱۱٪ ·
+مترِ سخت‌گیرتر از قرارداد) همه از این جنس بودند و هیچ‌کدام را پاسبانِ
+«آیا کار می‌کند» نمی‌گرفت.
+
+## سؤال ثابت نپرس — چرخش قطعی
+
+هر نوبت، از استخرِ سؤالِ هر انجین یکی انتخاب می‌شود با چرخشی که به
+**شمارهٔ نوبت** گره خورده (قطعی و بازتولیدپذیر، نه تصادفی)، و انجینی که
+کارنامه‌اش قرمز است یا نوبت قبل نتوانست ثابت کند **سؤال بیشتری** می‌گیرد.
+یعنی فشار روی ضعف می‌رود، نه یکنواخت روی همه.
+
+## آلارم فقط برای شکستِ پابرجا
+
+یک «نتوانست ثابت کند» خبر نیست؛ ممکن است لحظه‌ای باشد. سه نوبتِ پیاپیِ
+همان سؤال یعنی مشکل واقعی، و آن‌وقت از دروازهٔ آلارم (قانون ۰۷) رد
+می‌شود. دفتر: `brain/skeptic-log.jsonl` (append-only).
+
+## مرز
+
+شکاک **هیچ دروازه‌ای را عوض نمی‌کند** و هیچ سیگنالی صادر یا وتو
+نمی‌کند. فقط می‌پرسد، می‌شمارد، و ثبت می‌کند.
+
+اجرا: `python3 -m hamid.skeptic [--write] [--telegram]`
+"""
+import json
+import statistics
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PY = HERE.parent
+sys.path.insert(0, str(PY))
+ROOT = PY.parent.parent
+SIG = ROOT / "signals"
+OUT = SIG / "skeptic.json"
+LOG = ROOT / "brain" / "skeptic-log.jsonl"
+
+FAIL_STREAK_ALARM = 3     # چند نوبتِ پیاپی تا آلارم
+ROUND_MIN = 10            # کادنس اسمی (دقیقه) — برای شمارهٔ نوبت
+
+
+def _j(rel, default=None):
+    try:
+        return json.loads((ROOT / rel).read_text(encoding="utf-8"))
+    except Exception:                                # noqa: BLE001
+        return default
+
+
+def _age_min(rel, now):
+    d = _j(rel, {}) or {}
+    g = d.get("generated") or d.get("at")
+    if isinstance(g, str):
+        return None
+    return round((now - g) / 60000) if g else None
+
+
+def ok(q, evidence, detail=""):
+    return {"q": q, "verdict": "PROVED", "evidence": evidence, "detail": detail}
+
+
+def no(q, why, detail=""):
+    return {"q": q, "verdict": "UNPROVED", "evidence": why, "detail": detail}
+
+
+def na(q, why):
+    """نه قبول نه رد — دادهٔ لازم نیست. صفر گرفتن این حالت، دروغ است."""
+    return {"q": q, "verdict": "NO_DATA", "evidence": why, "detail": ""}
+
+
+# ── استخر سؤال‌ها ────────────────────────────────────────────────────────
+#
+# هر سؤال یک تابع است که شواهد را **می‌شمارد**، نه اینکه حال بپرسد.
+
+def q_breadth(now):
+    lt = _j("signals/latest.json", {}) or {}
+    n = lt.get("symbols") or 0
+    return (ok if n >= 200 else no)(
+        "چند نماد را واقعاً در آخرین اسکن دیدی؟",
+        f"{n} نماد" if n else "خروجی اسکن پهنا اعلام نکرده",
+        "سند می‌گوید ۲۰۰ (ممیزی ۳۰ اوت)")
+
+
+def q_scout_sources(now):
+    wl = _j("signals/watchlist.json", {}) or {}
+    okc, err = len(wl.get("sources_ok") or []), len(wl.get("sources_err") or [])
+    return (ok if okc >= 4 else no)(
+        "چند منبع صرافی واقعاً جواب دادند؟",
+        f"{okc} سالم · {err} خطا",
+        "قاعدهٔ گشت: هر ردیف دست‌کم دو منبع")
+
+
+def q_fresh(rel, cap, label):
+    def f(now):
+        a = _age_min(rel, now)
+        if a is None:
+            return na(f"خروجی {label} چقدر کهنه است؟", f"{rel} مهر ندارد یا نیست")
+        return (ok if a <= cap else no)(
+            f"خروجی {label} چقدر کهنه است؟", f"{a} دقیقه", f"سقف قرارداد {cap}")
+    return f
+
+
+def q_funnel_degenerate(now):
+    """توزیعِ دلیلِ رد نباید تک‌قله باشد — دروازه‌ای که همیشه یک دلیل
+    می‌آورد، یا واقعاً یک دروازه است یا بقیه اصلاً اجرا نمی‌شوند."""
+    fn = _j("signals/funnel.json", {}) or {}
+    top = fn.get("top_reasons") or {}
+    if not top:
+        return na("دلیلِ ردها متنوع است یا یک دلیل همه را می‌خورد؟",
+                  "قیف دلیلی ثبت نکرده")
+    tot = sum(top.values())
+    share = max(top.values()) / tot if tot else 0
+    return (ok if share < 0.8 else no)(
+        "دلیلِ ردها متنوع است یا یک دلیل همه را می‌خورد؟",
+        f"سهم دلیلِ غالب {share:.0%} از {tot}",
+        "بالای ۸۰٪ یعنی بقیهٔ دروازه‌ها احتمالاً اصلاً به حرف نمی‌آیند")
+
+
+def q_fingerprint(key, label):
+    """حکمِ این انجین روی چند معاملهٔ بستهٔ اخیر ردپا گذاشته؟"""
+    def f(now):
+        try:
+            from hamid.direction_autopsy import load
+            rows = load("sig-")[-120:]
+        except Exception as e:                       # noqa: BLE001
+            return na(f"ردپای {label} روی معامله‌ها هست؟",
+                      f"دفتر خوانده نشد: {type(e).__name__}")
+        n = sum(1 for r in rows
+                if (r.get("why") or {}).get(key) is not None)
+        return (ok if n >= 10 else no)(
+            f"ردپای {label} روی معامله‌ها هست؟",
+            f"{n} از {len(rows)} معاملهٔ اخیر",
+            "زیر ۱۰ یعنی اثرش قابل‌سنجش نیست")
+    return f
+
+
+def q_delivery_id(now):
+    la = _j("signals/loop-audit.json", {}) or {}
+    leaks = la.get("n_leaks")
+    if leaks is None:
+        return na("هر سیگنالِ رفته ردپای کامل دارد؟", "ممیز حلقه اجرا نشده")
+    return (ok if leaks == 0 else no)(
+        "هر سیگنالِ رفته ردپای کامل دارد؟",
+        f"{leaks} نشتی از {la.get('n_closed_sig') or '?'} بسته")
+
+
+def q_dedupe_contract(now):
+    """همان قرارداد ۲۶ اوت — نه سخت‌گیرتر، نه شل‌تر."""
+    H = 3_600_000
+    rows = sorted((_j("signals/telegram-log.json", {}) or {}).get("sent") or [],
+                  key=lambda x: x.get("at") or 0)
+    if not rows:
+        return na("قرارداد ضدتکرار رعایت شده؟", "دفتر ارسال خالی است")
+    last_any, last_st, per, bad = {}, {}, {}, 0
+    for r in rows:
+        t = r.get("at") or 0
+        ak = (r.get("sym"), r.get("dir"), r.get("tf"))
+        sk = ak + (r.get("name"),)
+        hits = per.setdefault(r.get("sym"), [])
+        if ((ak in last_any and t - last_any[ak] <= 3 * H)
+                or (sk in last_st and t - last_st[sk] <= 12 * H)
+                or len([x for x in hits if t - x <= 12 * H]) >= 2):
+            bad += 1
+        last_any[ak], last_st[sk] = t, t
+        hits.append(t)
+    return (ok if bad == 0 else no)(
+        "قرارداد ضدتکرار رعایت شده؟",
+        f"{bad} نقض از {len(rows)} ارسال",
+        "کلید بی‌استراتژی ۳س · هم‌استراتژی ۱۲س · سقف ۲ در ۱۲س")
+
+
+def q_unique_rows(now):
+    """درسِ ۲۴ اوت: CI فرض می‌کند هر ردیف یک مشاهدهٔ مستقل است."""
+    try:
+        from hamid.direction_autopsy import load, _identity
+    except Exception as e:                           # noqa: BLE001
+        return na("ردیف‌های دفتر یکتا هستند؟", f"{type(e).__name__}")
+    rows = load("sig-")
+    ids = [_identity(r) for r in rows]
+    dup = len(ids) - len(set(ids))
+    return (ok if dup == 0 else no)(
+        "ردیف‌های دفتر یکتا هستند؟",
+        f"{dup} تکراری از {len(ids)}",
+        "ردیف تکراری بازهٔ اطمینان را به‌دروغ تنگ می‌کند")
+
+
+def q_fee_single_source(now):
+    """درسِ ۳۰ اوت: دو تعریفِ «خالص» در یک نمونه، خودش مخدوش‌کننده است."""
+    try:
+        from hamid.direction_autopsy import load
+        rows = load("sig-")
+    except Exception as e:                           # noqa: BLE001
+        return na("خالصِ گزارش‌شده از منبع واحد کارمزد است؟", f"{type(e).__name__}")
+    diff = [abs((r.get("_R_net_stored") or 0) - r["R_net"]) for r in rows
+            if r.get("_R_net_stored") is not None]
+    if not diff:
+        return na("خالصِ گزارش‌شده از منبع واحد کارمزد است؟", "ردیفی با خالصِ ذخیره نبود")
+    med = statistics.median(diff)
+    return (ok if med < 0.02 else no)(
+        "خالصِ گزارش‌شده از منبع واحد کارمزد است؟",
+        f"اختلاف میانهٔ ذخیره‌شده و بازمحاسبه {med:.3f}R",
+        "اختلاف یعنی دفتر دو تعریف دارد — تحلیل باید بازمحاسبه کند")
+
+
+def q_scorecard_red(now):
+    sc = _j("signals/scorecard.json", {}) or {}
+    cards = sc.get("cards") or []
+    if not cards:
+        return na("کارنامهٔ انجین‌ها ساخته شده؟", "scorecard.json نیست")
+    red = [c["id"] for c in cards
+           if c.get("verdict") in ("FAULT", "NEGATIVE", "UNDER")]
+    return (ok if len(red) <= 4 else no)(
+        "چند انجین نمرهٔ قرمز دارند؟",
+        f"{len(red)} قرمز: {'، '.join(red[:8])}",
+        "بالای ۴ یعنی مشکل سامانه‌ای نه موردی")
+
+
+def q_state_bus(now):
+    ss = _j("signals/system-state.json", {}) or {}
+    v = ss.get("verdict")
+    if not v:
+        return na("گذرگاه وضعیت چه می‌گوید؟", "system-state.json نیست")
+    return (ok if v == "HEALTHY" else no)(
+        "گذرگاه وضعیت چه می‌گوید؟",
+        f"{v} · {ss.get('n_faults', '?')} عیب از {ss.get('n_files', '?')} فایل")
+
+
+def q_orphans(now):
+    reg = _j("config/state_registry.json", {}) or {}
+    files = set(reg.get("files", reg))
+    have = {p.name for p in SIG.glob("*.json")}
+    orph = sorted(have - files)
+    return (ok if not orph else no)(
+        "فایلِ بی‌مالک در signals هست؟",
+        f"{len(orph)} یتیم: {'، '.join(orph[:5])}" if orph else "هیچ",
+        "قانون ۱۳: هر فایل باید مالک و سقف کهنگی داشته باشد")
+
+
+# نگاشت انجین → استخر سؤال. ترتیب همان ترتیبِ زنجیره: از جهانِ نمادها
+# تا فرستنده — دقیقاً مسیری که حمید خواست.
+BANK = [
+    ("E01", "جهانِ نمادها", [q_breadth, q_scout_sources,
+                             q_fresh("signals/watchlist.json", 360, "گشت")]),
+    ("E02", "کیفیت داده", [q_fresh("signals/depth-health.json", 360, "عمق")]),
+    ("E03", "دامیننس تتر", [q_fresh("signals/dominance.json", 45, "دامیننس"),
+                            q_fingerprint("dom_tf_regime", "رژیم دامیننس")]),
+    ("E06", "بیت‌کوین", [q_fresh("signals/btc-patterns.json", 120, "الگوهای BTC")]),
+    ("E07", "ساختار", [q_fingerprint("supertrend_align", "هم‌ترازی ساختار")]),
+    ("E08", "اردر بلاک", [q_fingerprint("ob_align", "هم‌ترازی OB"),
+                          q_fresh("signals/ob-radar.json", 240, "رادار OB")]),
+    ("E09", "کندل", [q_fingerprint("pattern_align", "الگوی کندلی")]),
+    ("E10", "نقدینگی", [q_fresh("signals/top-liquidity.json", 360, "نقدینگی")]),
+    ("E17", "کمیتهٔ سیگنال", [q_funnel_degenerate,
+                              q_fresh("signals/latest.json", 45, "اسکن")]),
+    ("E21", "حافظه", [q_fingerprint("exp_used", "لایهٔ تجربه")]),
+    ("E23", "ناظر", [q_state_bus, q_orphans]),
+    ("E25", "تحویل", [q_delivery_id, q_dedupe_contract]),
+    # بازرسیِ نتیجه‌گیری — همان چیزی که حمید گفت باید به آن شک کرد
+    ("**", "بازرسیِ نتیجه‌گیری", [q_unique_rows, q_fee_single_source,
+                                  q_scorecard_red]),
+]
+
+
+def _history():
+    out = {}
+    try:
+        for line in LOG.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("{"):
+                r = json.loads(line)
+                for a in r.get("answers") or []:
+                    k = (a["engine"], a["q"])
+                    out[k] = out.get(k, 0) + (1 if a["verdict"] == "UNPROVED" else -99)
+    except Exception:                                # noqa: BLE001
+        pass
+    return {k: max(0, v) for k, v in out.items()}
+
+
+def interrogate(now_ms=None, rnd=None):
+    """یک نوبت بازجویی — از E01 تا E25، با سؤالِ چرخشی."""
+    now = now_ms or int(time.time() * 1000)
+    rnd = now // (ROUND_MIN * 60_000) if rnd is None else rnd
+    hist = _history()
+    sc = {c["id"]: c for c in (_j("signals/scorecard.json", {}) or {}).get("cards") or []}
+    answers = []
+    for eid, label, pool in BANK:
+        # فشار روی ضعف: قرمز در کارنامه، یا سابقهٔ «نتوانست ثابت کند»
+        # روی همین انجین ⇒ سؤال بیشتر. (نسخهٔ اول این‌جا
+        # `any(... for _ in ())` داشت که همیشه False است — یعنی سابقه
+        # اصلاً خوانده نمی‌شد و فشار فقط از کارنامه می‌آمد.)
+        weak = (sc.get(eid, {}).get("verdict") in ("FAULT", "NEGATIVE", "UNDER")
+                or any(k[0] == eid and v > 0 for k, v in hist.items()))
+        n_ask = 2 if (weak or eid == "**") else 1
+        n_ask = min(n_ask, len(pool))
+        for i in range(n_ask):
+            fn = pool[(rnd + i) % len(pool)]
+            try:
+                a = fn(now)
+            except Exception as e:                   # noqa: BLE001
+                a = na("سؤال اجرا نشد", f"{type(e).__name__}: {e}")
+            a["engine"], a["label"] = eid, label
+            a["streak"] = hist.get((eid, a["q"]), 0) + (
+                1 if a["verdict"] == "UNPROVED" else 0)
+            answers.append(a)
+    proved = sum(1 for a in answers if a["verdict"] == "PROVED")
+    unproved = [a for a in answers if a["verdict"] == "UNPROVED"]
+    persistent = [a for a in unproved if a["streak"] >= FAIL_STREAK_ALARM]
+    return {
+        "generated": now, "round": rnd, "panel": "لیام تریدر ۹",
+        "n": len(answers), "proved": proved, "unproved": len(unproved),
+        "no_data": len(answers) - proved - len(unproved),
+        "answers": answers, "persistent": persistent,
+        "boundary": ("شکاک هیچ دروازه‌ای را عوض نمی‌کند و سیگنالی صادر یا "
+                     "وتو نمی‌کند — فقط می‌پرسد، می‌شمارد، ثبت می‌کند."),
+    }
+
+
+def caption(res):
+    p = res.get("persistent") or []
+    if not p:
+        return None
+    L = [f"🕵️ شکاک — {len(p)} مورد که {FAIL_STREAK_ALARM} نوبت پیاپی "
+         f"ثابت نشد", ""]
+    for a in p:
+        L.append(f"• {a['engine']} {a['label']}")
+        L.append(f"    «{a['q']}»")
+        L.append(f"    شواهد: {a['evidence']}")
+        if a.get("detail"):
+            L.append(f"    {a['detail']}")
+        L.append("")
+    L.append(f"از {res['n']} سؤال این نوبت: {res['proved']} ثابت · "
+             f"{res['unproved']} نشد · {res['no_data']} بی‌داده")
+    L.append("")
+    try:
+        import telegram as tg                        # ماژول ریشه، نه hamid.*
+        L.append(getattr(tg, "PANEL_NAME", "لیام تریدر ۹"))
+    except Exception:                                # noqa: BLE001
+        L.append("لیام تریدر ۹")
+    return "\n".join(L)
+
+
+def main(argv=()):
+    res = interrogate()
+    print(f"### شکاک — نوبت {res['round']} · {res['proved']} ثابت · "
+          f"{res['unproved']} نشد · {res['no_data']} بی‌داده\n")
+    cur = None
+    for a in res["answers"]:
+        if a["engine"] != cur:
+            cur = a["engine"]
+            print(f"— {a['engine']} {a['label']}")
+        mark = {"PROVED": "✓", "UNPROVED": "✗", "NO_DATA": "○"}[a["verdict"]]
+        print(f"  {mark} {a['q']}")
+        print(f"      {a['evidence']}"
+              + (f"  ({a['detail']})" if a["detail"] else "")
+              + (f"  [شکستِ پیاپی {a['streak']}]" if a["streak"] >= 2 else ""))
+    print(f"\n### مرز\n  {res['boundary']}")
+    if "--write" in argv:
+        OUT.parent.mkdir(exist_ok=True)
+        OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1),
+                       encoding="utf-8")
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        with LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps({"generated": res["generated"],
+                                "round": res["round"],
+                                "answers": [{"engine": a["engine"], "q": a["q"],
+                                             "verdict": a["verdict"]}
+                                            for a in res["answers"]]},
+                               ensure_ascii=False) + "\n")
+        print(f"\n  نوشته شد: {OUT.name}")
+    if "--telegram" in argv and res.get("persistent"):
+        from hamid import alert_gate
+        key = "skeptic|" + "|".join(sorted(f"{a['engine']}:{a['q'][:20]}"
+                                           for a in res["persistent"]))
+        sent, why = alert_gate.send("شکاک", key, caption(res))
+        print(f"  تلگرام: {'رفت' if sent else 'نرفت'} ({why})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
