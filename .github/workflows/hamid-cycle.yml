@@ -294,14 +294,14 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8; do
             git push origin HEAD:main && exit 0
             git fetch origin main || true
-            if ! git merge --no-edit origin/main; then
+            if ! git merge --no-edit --allow-unrelated-histories origin/main; then
               # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
               # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
               # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
               # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
               python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
-                || { git merge --abort; exit 1; }
-              git commit --no-edit || { git merge --abort; exit 1; }
+                || { git merge --abort || true; }
+              git commit --no-edit || { git merge --abort || true; }
             fi
             # Never publish a file carrying conflict markers. This has happened:
             # a retry once committed brain/learning/index.json with the markers

@@ -383,6 +383,35 @@ except FileNotFoundError:
     check("ترجیح استراتژی سررسید عددی دارد (ابدی نیست)", True,
           "فایل ترجیح وجود ندارد — یعنی ترجیحی هم نیست")
 
+# ── کلاسِ عیبِ ۱ سپتامبر (دوم): حلقهٔ پوشِ خودکش ───────────────────────
+#
+# چرخهٔ حمید ۲۶ گام را سبز تمام می‌کرد و بعد گامِ «Publish to main» در
+# ۳ ثانیه با exit 128 می‌مرد. لاگ اجرای ۳۲۰:
+#     ! [rejected] HEAD -> main (non-fast-forward)
+#     fatal: refusing to merge unrelated histories
+#     fatal: There is no merge to abort (MERGE_HEAD missing)
+# یعنی: پوش رد شد (عادی) → merge با «تاریخچهٔ نامرتبط» نخورد (این ریپو
+# واقعاً دو ریشه دارد) → پس هیچ merge ای در جریان نبود → `git merge
+# --abort` خطای کشنده داد → و زیر `bash -e` کلِ گام مرد. حلقهٔ ۸تایی
+# **هرگز دور دوم را ندید**. نتیجه: چرخه کار می‌کرد ولی هرگز منتشر
+# نمی‌شد، و همهٔ فایل‌هایش ساعت‌ها کهنه می‌ماندند.
+#
+# دو ناوردا که این را ناممکن می‌کنند:
+_loop_bad_abort, _loop_no_allow = [], []
+for _w in sorted(WF.glob("*.yml")):
+    _t = _w.read_text(encoding="utf-8")
+    if "resolve_brain_conflicts" not in _t:
+        continue
+    if "git merge --abort; exit 1" in _t or "git merge --abort;exit 1" in _t:
+        _loop_bad_abort.append(_w.name)
+    if re.search(r'git merge --no-edit (?!--allow)["\']?origin', _t):
+        _loop_no_allow.append(_w.name)
+
+check(f"هیچ حلقهٔ پوشی با پاک‌سازیِ کشنده نمی‌میرد {_loop_bad_abort or ''}",
+      not _loop_bad_abort)
+check(f"هر merge با origin تاریخچهٔ نامرتبط را می‌پذیرد (ریپو دو ریشه دارد) "
+      f"{_loop_no_allow or ''}", not _loop_no_allow)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

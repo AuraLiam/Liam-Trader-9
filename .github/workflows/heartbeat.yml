@@ -118,7 +118,7 @@ jobs:
               for a in 1 2 3 4 5 6 7 8; do
                 git push origin HEAD:main && break
                 git fetch origin main || true
-                if ! git merge --no-edit origin/main; then
+                if ! git merge --no-edit --allow-unrelated-histories origin/main; then
                   # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
                   # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
                   # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،

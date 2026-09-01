@@ -178,7 +178,7 @@ jobs:
           for attempt in 1 2 3 4 5 6 7 8; do
             git push origin "HEAD:$BRANCH" && exit 0
             git fetch origin "$BRANCH" || true
-            if ! git merge --no-edit "origin/$BRANCH"; then
+            if ! git merge --no-edit --allow-unrelated-histories "origin/$BRANCH"; then
               # Resolve every generated path, not just rooms: staging brain/
               # wholesale after a partial resolution once committed a file with
               # its conflict markers still in it, which left the recall index
@@ -188,8 +188,8 @@ jobs:
               # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
               # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
               python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
-                || { git merge --abort; exit 1; }
-              git commit --no-edit || { git merge --abort; exit 1; }
+                || { git merge --abort || true; }
+              git commit --no-edit || { git merge --abort || true; }
             fi
             # Never publish a file carrying conflict markers.
             if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals; then
