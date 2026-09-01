@@ -612,6 +612,28 @@
    "kind": "live",
    "optional": true,
    "cadence_note": "زنجیرهٔ سیگنال هر ۱۵ دقیقه؛ کادنس اسمی بازجویی ۱۰ دقیقه (شمارهٔ نوبت) → سقف ۴۵"
+  },
+  "trail-arms.json": {
+   "layer": "L6_learning",
+   "owner": "E18",
+   "producer": "hamid/trail_arms.py --write (work-report.yml)",
+   "max_age_min": 600,
+   "consumer": "lead",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "گزارش کار سه نوبت در روز تهران (۰۹/۱۶/۲۲) → فاصلهٔ بیشینه ~۷ ساعت، سقف ۱۰ ساعت",
+   "optional": true
+  },
+  "trail-lab.json": {
+   "layer": "L6_learning",
+   "owner": "E18",
+   "producer": "hamid/trail_lab.py --bars --write (work-report.yml)",
+   "max_age_min": null,
+   "consumer": "lead",
+   "critical": false,
+   "kind": "snapshot",
+   "cadence_note": "عکس‌فوریِ بازپخشِ ضدواقع — تازگی معیارش نیست؛ هر بار که اجرا شود جای قبلی را می‌گیرد",
+   "optional": true
   }
  }
 }

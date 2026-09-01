@@ -49,6 +49,20 @@ OPEN = BOOK / "open.jsonl"
 CLOSED = BOOK / "closed.jsonl"
 EQUITY = BOOK / "equity.json"
 
+# ── دفترهای آزمایش — یک منبع حقیقت (۱ سپتامبر) ──────────────────────────
+#
+# تا امشب همین فهرست در **پنج جا** تکرار می‌شد: دو جای همین فایل، خلاصهٔ
+# دفتر، `work_report.NOT_PERFORMANCE` و طبقه‌بند. هر بازوی آزمایشِ تازه
+# باید در هر پنج جا اضافه می‌شد و اگر یکی جا می‌ماند، آزمایش بی‌صدا وارد
+# آمارِ سیگنالِ واقعی می‌شد — یعنی همان کلاسِ عیبی که ۲۴ اوت CI را باددار
+# کرد، فقط از درِ دیگر. حالا هر جا از همین ثابت می‌خواند؛ بازوی تازه
+# خودبه‌خود همه‌جا جدا می‌ماند. محافظ: `test_trail_arms`.
+EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
+                     "exp-trail-g65", "exp-trail-g80")
+# دفترهایی که ادعای عملکردِ استراتژی نیستند (آزمایش، تمرین، ضدواقع).
+_NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "v2",
+               "scalp", "shock") + EXPERIMENT_STAGES
+
 START_BALANCE = 1000.0
 RISK_FRACTION = 0.01          # 1% of balance per trade
 # تغییر کنترل‌شدهٔ این چرخه، با اندازه‌گیری نه حدس: از ۴۵ سفارش پرشده، میانهٔ
@@ -136,10 +150,7 @@ def experience_index(min_n=12):
         # داور بیرونی: وتو فقط از دفترهای هم‌جنسِ سیگنال واقعی — تمرینِ
         # دروازه‌شل و آزمایش‌ها (پولبک اول/ایندوسمنت) و وتوشده‌ها معیار
         # منصفانه‌ای برای رد سیگنال واقعی همان ارز نیستند.
-        if (t.get("why") or {}).get("stage") in ("practice", "first",
-                                                 "inducement", "vetoed", "v2",
-                                                 "scalp", "shock",
-                                                 "exp-short-b1", "exp-short-b2"):
+        if (t.get("why") or {}).get("stage") in _NOT_SIGNAL:
             continue
         idx.setdefault((t["sym"], t["dir"]), []).append(t["R"])
     out = {}
@@ -223,9 +234,7 @@ def open_from(setups, context):
         _is_sent = str(_stage).startswith("sig-")
         # exp-short-*: دفتر آزمایش هندسهٔ شورت (۳۰ اوت) — دروازهٔ کارمزد
         # نباید نمونهٔ موضوعِ مطالعه را حذف کند؛ کارش اندازه‌گیری است.
-        if not _is_sent and _stage not in ("first", "vetoed", "inducement",
-                                           "practice", "v2", "scalp", "shock",
-                                           "exp-short-b1", "exp-short-b2"):
+        if not _is_sent and _stage not in _NOT_SIGNAL:
             if _fr is not None and _fr >= 0.25:
                 _append_gatelog(s["symbol"], _stage,
                                 f"استاپ تنگ: کارمزد {_fr}R ≥ 0.25R")
@@ -281,6 +290,95 @@ def _candles_since(sym, since_ms):
         return []
     return [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]}
             for k in rows if k[0] >= since_ms]
+
+
+# ── نردبان تریل — قاعدهٔ تولید، و دو بازوی آزمایشی (۱ سپتامبر) ──────────
+#
+# اندازه‌گیریِ ۱ سپتامبر روی ۲۵۶ معاملهٔ بستهٔ سیگنال: تریل‌ها به‌طور
+# میانه **MFE ‎+۰.۸۵R دیدند و ‎+۰.۰۰R برداشتند** (۸۴٪ دقیقاً صفر). علتش
+# باگ نیست — نردبانِ ۱۲ اوت در ⅓ مسیر روی سربه‌سر مسلح می‌شود، پس هر
+# برگشتی به‌ساخت صفر می‌بندد. فرضیه: نگه‌داشتنِ نسبتی از قله بهتر است،
+# چون با اندازهٔ حرکت مقیاس می‌شود.
+#
+# آن فرضیه با بازپخشِ دونقطه‌ای «اثبات» نمی‌شود — آن روش تریلِ تنگ‌تر را
+# سیستماتیک بالا می‌برد (اندازه‌اش در `trail_lab.bias_demo`: ‎+۰.۴R روی
+# یک پولبکِ میانی). پس جواب فقط از **پیپرِ زنده** می‌آید: همان ستاپ،
+# همان ورود، همان استاپِ اولیه، فقط نردبانِ متفاوت. مقایسهٔ جفتی.
+TRAIL_ARMS = {"exp-trail-g65": 0.65, "exp-trail-g80": 0.80}
+
+
+def _trail_dist(p, gain, tp_dist, fee_px):
+    """فاصلهٔ استاپِ تریل از ورود (قیمتی، مثبت = در سود)، یا None.
+
+    `gain` بهترین سودِ دیده‌شده تا کندلِ **قبل** است (بدون خوش‌بینی
+    درون-کندلی). برای هر برچسبی جز بازوهای آزمایش، خروجی مو به مو همان
+    نردبانِ ۱۲ اوت است — تولید تغییری نکرده.
+    """
+    frac = TRAIL_ARMS.get((p.get("why") or {}).get("stage")
+                          or p.get("stage_tag") or "")
+    if frac is not None:
+        # زیر سربه‌سرِ کارمزددار اصلاً مسلح نمی‌شود، وگرنه در نوسانِ اولِ
+        # معامله ضررِ کارمزد قفل می‌شود — بدتر از استاپِ اولیه.
+        if gain < fee_px:
+            return None
+        lvl = gain * frac
+        return lvl if lvl >= fee_px else None
+    prog = gain / tp_dist
+    if prog >= 2 / 3:
+        return tp_dist / 3
+    if prog >= 1 / 3:
+        return fee_px
+    return None
+
+
+def mirror_trail_arms(limit=40):
+    """هر ستاپِ سیگنال‌شدهٔ باز را با نردبان‌های آزمایشی هم باز کن.
+
+    A/B **جفتی**: همان نماد، همان ورود، همان استاپ، همان تارگت، همان
+    لحظه — تنها متغیر، نردبانِ تریل. چون ستاپ یکی است، نویزِ انتخابِ
+    ستاپ از معادله بیرون می‌رود و اختلاف مستقیماً به نردبان نسبت
+    داده می‌شود؛ چیزی که مقایسهٔ دو دفترِ جدا هرگز نمی‌دهد.
+
+    خارج-از-نمونه بودن: قاعده از روی معامله‌های **بسته** انتخاب شد؛
+    این‌ها هنوز بازند، پس نتیجه‌شان در آن انتخاب نقشی نداشته.
+
+    **دو جمعیت، عمداً**: ستاپ‌های `sig-*` محصولِ واقعی‌اند ولی کم‌اند
+    (اندازه‌گیری ۱ سپتامبر: ۷ ردیفِ باز) — با همان‌ها رسیدن به n لازم
+    هفته‌ها طول می‌کشد. میز تمرین (`practice`) روزانه ~۵۶۶ معامله
+    می‌بندد و کارش دقیقاً همین است: چندبرابر کردن نمونهٔ یادگیری. پس
+    هر دو آینه می‌شوند و داور جدا نگهشان می‌دارد؛ **هم‌جهت بودنِ دو
+    جمعیت** شاهدِ قوی‌تری است از هرکدام به‌تنهایی، و ناهم‌جهتی حکم را
+    UNDECIDED می‌کند نه این‌که پنهان شود.
+
+    این تابع فقط دفتر می‌نویسد — نه ستاپی می‌سازد، نه دروازه‌ای را
+    لمس می‌کند، نه چیزی به تلگرام می‌دهد (قانون ۰۵/۰۷).
+    """
+    rows = _read(OPEN)
+    have = {(r.get("sym"), r.get("entry"), (r.get("why") or {}).get("stage"))
+            for r in rows}
+    added = 0
+    # اول محصولِ واقعی، بعد میز تمرین — اگر بودجه ته کشید، `sig-*` نباید
+    # قربانیِ حجمِ تمرین شود.
+    def _rank(r):
+        return 0 if ((r.get("why") or {}).get("stage") or "").startswith("sig-") else 1
+    for r in sorted(rows, key=_rank):
+        st = (r.get("why") or {}).get("stage") or ""
+        if not (st.startswith("sig-") or st == "practice"):
+            continue
+        for tag in TRAIL_ARMS:
+            if added >= limit:
+                return added
+            key = (r.get("sym"), r.get("entry"), tag)
+            if key in have:
+                continue
+            m = json.loads(json.dumps(r))
+            m.setdefault("why", {})["stage"] = tag
+            m["why"]["mirror_of"] = st
+            m["stage_tag"] = tag
+            _append(OPEN, m)
+            have.add(key)
+            added += 1
+    return added
 
 
 def _settle_one(p, now, still, box):
@@ -375,14 +473,9 @@ def _settle_one(p, now, still, box):
     best = p["entry"]
     for c in after:
         if tp_dist > 0:
-            prog = sgn * (best - p["entry"]) / tp_dist
-            if prog >= 2 / 3:
-                lvl = p["entry"] + sgn * tp_dist / 3
-            elif prog >= 1 / 3:
-                lvl = p["entry"] + sgn * fee_px
-            else:
-                lvl = None
-            if lvl is not None:
+            d = _trail_dist(p, sgn * (best - p["entry"]), tp_dist, fee_px)
+            if d is not None:
+                lvl = p["entry"] + sgn * d
                 sl_eff = max(sl_eff, lvl) if long else min(sl_eff, lvl)
         bar += 1
         fav = ((c["h"] - p["entry"]) if long else (p["entry"] - c["l"])) / risk
@@ -561,9 +654,10 @@ def _equity():
     # چهار دفتر جدا: سیگنال‌شده (رکورد اصلی)، دو آزمایش، میز تمرین (دروازهٔ
     # شل برای چندبرابر کردن نمونهٔ یادگیری) و سیگنال‌های آلارم. قاطی کردنشان
     # رکورد استراتژی سیگنال‌شده را ناخوانا می‌کند.
-    _aside = ("exp-short-b1", "exp-short-b2",
-              "first", "inducement", "practice", "alarm", "vetoed", "scalp",
-              "shock")
+    # «v2» عمداً این‌جا نیست (برخلاف `_NOT_SIGNAL`): دفتر v2 همان ستاپ
+    # سیگنال‌شده با نسخهٔ دیگر موتور است و در این خلاصه شمرده می‌شود.
+    _aside = EXPERIMENT_STAGES + ("first", "inducement", "practice", "alarm",
+                                  "vetoed", "scalp", "shock")
 
     def _stage(t):
         return (t.get("why") or {}).get("stage") or ""

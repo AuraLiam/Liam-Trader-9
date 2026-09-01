@@ -50,6 +50,15 @@ jobs:
         run: |
           python3 -m hamid.curriculum --verify || true
           python3 -m hamid.curriculum --write || true
+      # آزمایش نردبان تریل (۱ سپتامبر). یافته: تریل‌ها میانه MFE ‎+۰.۸۵R
+      # دیدند و ‎+۰.۰۰R برداشتند. `--bars` بازپخشِ کندل‌به‌کندل روی کندل
+      # واقعی است — شبکهٔ نشست‌های محلی به صرافی راه ندارد، پس این‌جا
+      # (رانر) اجرا می‌شود. `trail_arms` دفترِ A/B زنده را داوری می‌کند.
+      - name: آزمایشگاه و بازوهای تریل
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.trail_lab --bars --write || true
+          python3 -m hamid.trail_arms --write || true
       - name: ثبت گزارش (ضدتصادم)
         run: |
           git config user.name "Claude"

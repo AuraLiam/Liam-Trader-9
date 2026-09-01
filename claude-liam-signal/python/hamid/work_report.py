@@ -60,8 +60,14 @@ BOOKS = {
     "vetoed": "وتوشده (ضدواقع — اگر می‌رفت چه می‌شد)",
 }
 # دفترهایی که ادعای عملکرد نیستند: یا فرضیهٔ آزمایشی‌اند یا ضدواقع.
-NOT_PERFORMANCE = {"first", "second", "inducement", "vetoed", "alarm",
-                   "exp-short-b1", "exp-short-b2"}
+NOT_PERFORMANCE = {"first", "second", "inducement", "vetoed", "alarm"}
+# بازوهای آزمایش از منبع واحدِ `paper` می‌آیند — بازوی تازه خودبه‌خود
+# این‌جا هم جدا می‌ماند (کلاسِ عیبِ «فهرست تکراری در پنج جا»، ۱ سپتامبر).
+try:
+    from hamid.paper import EXPERIMENT_STAGES as _EXP
+    NOT_PERFORMANCE |= set(_EXP)
+except Exception:                                    # noqa: BLE001
+    NOT_PERFORMANCE |= {"exp-short-b1", "exp-short-b2"}
 
 
 def load(since_ms=None, path=None):

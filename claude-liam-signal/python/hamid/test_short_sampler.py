@@ -155,16 +155,27 @@ def run():
           and S.BANDS["exp-short-b2"][3] == 150)
 
     # ── ۳) هر هفت فهرست جداسازی ───────────────────────────────────────
+    #
+    # تا ۱ سپتامبر این بررسی‌ها **متنِ سورس** را می‌گشتند
+    # (`'"exp-short-b1", "exp-short-b2"):\n  continue' in src`). آن کار
+    # دو عیب داشت و هر دو همان کلاسِ «تایم‌بمب» ۳۱ اوت است: بازآراییِ
+    # بی‌ضررِ همان فهرست چرخه را سرخ می‌کرد (که همین امشب شد)، و
+    # برعکس، فهرستی که درست نوشته شده ولی جایی **خوانده نمی‌شود** سبز
+    # می‌ماند. حالا خودِ رفتار سنجیده می‌شود: هر برچسبِ آزمایش باید در
+    # هر فهرست جداسازی حاضر باشد، از هر منبعی که آمده.
     paper = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
-    for what, src, needle in (
-            ("کارنامهٔ تجربه", paper, '"exp-short-b1", "exp-short-b2"):\n            continue'),
-            ("دروازهٔ کارمزد", paper, '"exp-short-b1", "exp-short-b2"):\n            if _fr'),
-            ("ترازِ دفتر (_aside)", paper, '_aside = ("exp-short-b1", "exp-short-b2"'),
-            ("نمرهٔ سیگنال (_siggrade)", paper, 'not st.startswith("exp-")')):
-        check(f"جداسازی در {what}", needle in src)
+    from hamid import paper as PP
+    exp = set(PP.EXPERIMENT_STAGES)
+    check("هر بازوی آزمایش در «سیگنال نیست» هست (کارنامهٔ تجربه + "
+          "دروازهٔ کارمزد)", exp <= set(PP._NOT_SIGNAL), str(exp))
+    check("دو باند شورت هنوز داخل همان فهرست‌اند",
+          {"exp-short-b1", "exp-short-b2"} <= exp)
+    check("نمرهٔ سیگنال بازوها را کنار می‌گذارد",
+          'not st.startswith("exp-")' in paper)
     wr = (PY / "hamid" / "work_report.py").read_text(encoding="utf-8")
+    from hamid import work_report as WR
     check("جداسازی در گزارش کار",
-          '"exp-short-b1"' in wr and "NOT_PERFORMANCE" in wr)
+          exp <= WR.NOT_PERFORMANCE and "NOT_PERFORMANCE" in wr)
     br = (PY / "hamid" / "bridge.py").read_text(encoding="utf-8")
     check("جداسازی در پل یادگیری", 'st.startswith("exp-")' in br)
     cl = (PY / "hamid" / "classify.py").read_text(encoding="utf-8")
