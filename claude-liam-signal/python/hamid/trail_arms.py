@@ -76,6 +76,25 @@ def fingerprint():
     return "·".join(f"{k}={v}" for k, v in sorted(paper.TRAIL_ARMS.items()))
 
 
+# ── رژیم — تقسیمِ توصیفی، نه دروازه ──────────────────────────────────────
+#
+# شاهدِ بیرونی (جست‌وجوی ۱ سپتامبر، منابع در `brain/library/queue.jsonl`):
+# ادعا می‌شود تریل فقط در بازارِ رونددار مثبت است و در بازارِ برگشتی
+# ارزشِ منفی دارد. آن ادعا **راستی‌آزمایی نشده** و طبق قانون ۱۱ شاهدی با
+# ~۳۰٪ خطاست، نه دروازه. ولی یک شکافِ واقعی در طراحی را نشان داد:
+# بازوهای من رژیم‌کور بودند، و میانگین‌گیری روی دو رژیمِ متضاد می‌تواند
+# اثرِ قوی را به «بی‌اثر» تبدیل کند. قانون ۰۳ هم از قبل regime split
+# می‌خواست. پس رژیم فقط **ثبت و گزارش** می‌شود؛ حکم همچنان از نمونهٔ
+# کل می‌آید و هیچ آستانه‌ای بر پایهٔ رژیم عوض نمی‌شود.
+def _regime(r):
+    w = r.get("why") or {}
+    t = w.get("trend_4h")
+    d = r.get("dir")
+    if t in ("up", "down") and d in ("LONG", "SHORT"):
+        return "با روند" if (t == "up") == (d == "LONG") else "خلاف روند"
+    return "رنج/نامعلوم"
+
+
 def _net(r):
     if r.get("R") is None:
         return None
@@ -109,10 +128,11 @@ def pairs():
             nb, na = _net(b), _net(arm)
             if nb is None or na is None:
                 continue
-            bst = (b.get("why") or {}).get("stage") or ""
+            bw = b.get("why") or {}
+            bst = bw.get("stage") or ""
             got["practice" if bst == "practice" else "sig"].append(
                 {"key": k, "base": round(nb, 4), "arm": round(na, 4),
-                 "diff": round(na - nb, 4),
+                 "diff": round(na - nb, 4), "regime": _regime(b),
                  "base_out": b.get("outcome"), "arm_out": arm.get("outcome")})
         out[tag] = got
     return out
@@ -185,8 +205,15 @@ def study():
             why = (f"n={n}؛ برآورد ~{need} جفت دیگر تا نیم‌پهنای "
                    f"{HALF_WIDTH_TARGET}R" if need is not None
                    else f"n={n} — هنوز برای برآورد هم کم است")
+        allrows = pops["sig"] + pops["practice"]
+        by_reg = {}
+        for reg in ("با روند", "خلاف روند", "رنج/نامعلوم"):
+            sub = [r for r in allrows if r.get("regime") == reg]
+            if sub:
+                by_reg[reg] = _group(sub)
         arms[tag] = {**pooled, "verdict": v, "why": why,
-                     "consistent": not clash, "by_population": groups}
+                     "consistent": not clash, "by_population": groups,
+                     "by_regime": by_reg}
     return {
         "generated": int(time.time() * 1000),
         "fingerprint": fingerprint(),
@@ -202,7 +229,11 @@ def study():
             "PROMOTE هم فقط پیشنهاد است — تغییر نردبانِ تولید تأیید صریح "
             "حمید می‌خواهد (قانون ۰۳/۱۲). حکم به اثرانگشتِ نسبت‌ها گره "
             "خورده؛ عوض‌شدنِ هر نسبت یعنی دفترِ حکم از صفر. "
-            "پیپر سقفِ خوش‌بینانه است: فیل کامل و بدون لغزش فرض می‌شود.")}
+            "پیپر سقفِ خوش‌بینانه است: فیل کامل و بدون لغزش فرض می‌شود. "
+            "تقسیمِ رژیم **توصیفی** است: از شاهدِ بیرونیِ راستی‌آزمایی‌نشده "
+            "آمده (قانون ۱۱، ~۳۰٪ خطا) و هیچ آستانه‌ای را عوض نمی‌کند؛ "
+            "حکم از نمونهٔ کل می‌آید نه از بهترین زیرگروه — وگرنه همان "
+            "data-snooping است که قانون ۰۳ منعش کرده.")}
 
 
 def _zero(rows, side):
@@ -226,6 +257,9 @@ def render(s):
                  f"{a['zero_pct_arm']}٪")
         for pop, g in a["by_population"].items():
             L.append(f"      • {pop}: n={g['n_pairs']}  "
+                     f"اختلاف {g['diff_mean']}  CI {g['ci']}")
+        for reg, g in a.get("by_regime", {}).items():
+            L.append(f"      ▸ {reg}: n={g['n_pairs']}  "
                      f"اختلاف {g['diff_mean']}  CI {g['ci']}")
         L.append(f"      → {a['verdict']} — {a['why']}")
     L.append(f"\n### قاعدهٔ توقف (ثبت‌شده پیش از داده)\n  {s['stopping_rule']}")

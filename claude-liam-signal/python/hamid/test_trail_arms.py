@@ -190,6 +190,40 @@ def run():
     check("معیار خالص از کارمزد است، نه ناخالص",
           "fee_r" in asrc and "خالص" in s["stopping_rule"])
 
+    # ── ۶.۵) تقسیمِ رژیم توصیفی است، نه دروازه ──────────────────────────
+    #
+    # این خطرناک‌ترین بخشِ امشب است: تقسیمِ زیرگروه وسوسه می‌کند که حکم
+    # را از «بهترین زیرگروه» بگیریم. آن دقیقاً data-snooping است.
+    check("رژیم از جهتِ معامله در برابر روند ۴س ساخته می‌شود",
+          A._regime({"dir": "LONG", "why": {"trend_4h": "up"}}) == "با روند"
+          and A._regime({"dir": "LONG", "why": {"trend_4h": "down"}})
+          == "خلاف روند")
+    check("روندِ نامعلوم «با روند» خوانده نمی‌شود (قانون ۰۱ بند ۱)",
+          A._regime({"dir": "LONG", "why": {}}) == "رنج/نامعلوم"
+          and A._regime({"dir": "LONG", "why": {"trend_4h": "range"}})
+          == "رنج/نامعلوم")
+    # حکم نباید از بهترین زیرگروه بیاید: یک زیرگروهِ درخشان و کلِ منفی
+    strong = ([{"base": 0.0, "arm": 1.0, "diff": 1.0, "regime": "با روند"}] * 60
+              + [{"base": 0.0, "arm": -1.0, "diff": -1.0,
+                  "regime": "خلاف روند"}] * 500)
+    real = A.pairs
+    try:
+        A.pairs = lambda: {t: {"sig": strong, "practice": []}
+                           for t in ("exp-trail-g65", "exp-trail-g80")}
+        sp2 = A.study()
+    finally:
+        A.pairs = real
+    g = sp2["arms"]["exp-trail-g65"]
+    check("زیرگروهِ درخشان با کلِ منفی، PROMOTE نمی‌سازد",
+          g["verdict"] != "PROMOTE", str(g["verdict"]))
+    check("ولی زیرگروه‌ها گزارش می‌شوند (پنهان‌کاری هم ممنوع)",
+          g["by_regime"]["با روند"]["diff_mean"] > 0
+          > g["by_regime"]["خلاف روند"]["diff_mean"])
+    check("مرز صادقانه می‌گوید رژیم دروازه نیست",
+          "data-snooping" in sp2["boundary"] and "توصیفی" in sp2["boundary"])
+    check("و منبعِ ایدهٔ رژیم را شاهدِ راستی‌آزمایی‌نشده می‌خواند",
+          "قانون ۱۱" in asrc and "راستی‌آزمایی‌نشده" in asrc)
+
     # ── ۷) سیم‌کشی — ماژولی که صدا زده نشود، کدِ مرده است ────────────────
     cyc = (PY / "hamid" / "cycle.py").read_text(encoding="utf-8")
     check("چرخه آینه را قبل از تسویه صدا می‌زند",
