@@ -159,13 +159,14 @@ def load(stage_prefix="sig-"):
         # تنگ بزرگ‌تر می‌شود، یعنی دقیقاً روی همان چیزی که می‌سنجیم.
         # ردیف‌های گذشته بازنویسی نمی‌شوند (دادهٔ runtime دست‌نخورده،
         # قانون ضد-merge)؛ فقط این‌جا یک‌بار و یکنواخت بازمحاسبه می‌شوند.
-        r["_R_net_stored"] = r.get("R_net")
+        # بازمحاسبه از **یک** پیاده‌سازی (`fees.apply_net`) — تا ۱ سپتامبر
+        # همین منطق این‌جا کپی شده بود و گزارش کار نسخهٔ خودش را داشت،
+        # یعنی «منبع واحد» عملاً دو جا بود.
         try:
             from hamid import fees as _fees
-            fr = _fees.cost_in_r(r["entry"], r["sl"], r.get("sym"))
-            r["_fee_r"] = fr
-            r["R_net"] = round(r["R"] - fr, 4) if fr is not None else r["R_net"]
+            _fees.apply_net([r])
         except Exception:                            # noqa: BLE001
+            r["_R_net_stored"] = r.get("R_net")
             r["_fee_r"] = r.get("fee_r")
         out.append(r)
     return out

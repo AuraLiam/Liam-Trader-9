@@ -250,15 +250,22 @@ def q_fee_single_source(now):
         rows = load("sig-")
     except Exception as e:                           # noqa: BLE001
         return na("خالصِ گزارش‌شده از منبع واحد کارمزد است؟", f"{type(e).__name__}")
-    diff = [abs((r.get("_R_net_stored") or 0) - r["R_net"]) for r in rows
-            if r.get("_R_net_stored") is not None]
-    if not diff:
-        return na("خالصِ گزارش‌شده از منبع واحد کارمزد است؟", "ردیفی با خالصِ ذخیره نبود")
-    med = statistics.median(diff)
-    return (ok if med < 0.02 else no)(
+    # سؤالِ درست: «آیا **تحلیل** بازمحاسبه می‌کند؟» — نه «آیا دفتر یکدست
+    # است؟». دفتر هرگز یکدست نمی‌شود چون ردیف‌های گذشته بازنویسی
+    # نمی‌شوند (قانون ضد-merge)، پس نسخهٔ قبلیِ این سؤال متری بود که هیچ
+    # رفعی سبزش نمی‌کرد — و متری که همیشه قرمز است، آموزشِ نادیده‌گرفتن
+    # است. اختلافِ تاریخی به‌عنوان زمینه گزارش می‌شود.
+    bad = [r for r in rows if r.get("R") is not None
+           and r.get("_fee_r") is not None
+           and abs(round(r["R"] - r["_fee_r"], 4) - (r.get("R_net") or 0)) > 1e-3]
+    diff = [abs(r["_R_net_stored"] - r["R_net"]) for r in rows
+            if r.get("_R_net_stored") is not None and r.get("R_net") is not None]
+    med = statistics.median(diff) if diff else 0.0
+    return (ok if not bad else no)(
         "خالصِ گزارش‌شده از منبع واحد کارمزد است؟",
-        f"اختلاف میانهٔ ذخیره‌شده و بازمحاسبه {med:.3f}R",
-        "اختلاف یعنی دفتر دو تعریف دارد — تحلیل باید بازمحاسبه کند")
+        f"{len(bad)} ردیف از {len(rows)} بازمحاسبه‌نشده "
+        f"(اختلاف تاریخیِ دفتر: میانهٔ {med:.3f}R — بازنویسی نمی‌شود)",
+        "معیار: تحلیل باید بازمحاسبه کند، نه اینکه دفترِ گذشته یکدست شود")
 
 
 def q_scorecard_red(now):

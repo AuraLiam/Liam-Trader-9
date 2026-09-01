@@ -40,6 +40,12 @@ def rows(path):
                 out.append(json.loads(line))
             except Exception:                                # noqa: BLE001
                 pass
+    # منبع واحد کارمزد — نه `R_net` ذخیره‌شده (توضیح در `fees.apply_net`)
+    try:
+        from hamid import fees as _fees
+        _fees.apply_net(out)
+    except Exception:                                        # noqa: BLE001
+        pass
     return out
 
 

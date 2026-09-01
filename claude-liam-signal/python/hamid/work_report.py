@@ -89,6 +89,14 @@ def load(since_ms=None, path=None):
             if since_ms and (r.get("closed") or 0) < since_ms:
                 continue
             out.append(r)
+    # خالص با منبع واحد کارمزد بازمحاسبه می‌شود — نه از `R_net` ذخیره‌شده.
+    # (اندازه‌گیری ۱ سپتامبر: گزارشِ ۷روزه با عددِ ذخیره‌شده ‎+۰.۰۶۳R
+    # خوش‌بینانه‌تر بود؛ توضیح کامل در `fees.apply_net`.)
+    try:
+        from hamid import fees as _fees
+        _fees.apply_net(out)
+    except Exception:                                # noqa: BLE001
+        pass
     return out
 
 

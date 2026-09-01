@@ -158,10 +158,75 @@ def run():
 
     # ── ۵) موتور سنجش نباید به عددِ ذخیره‌شده اعتماد کند ───────────────
     da = (PY / "hamid" / "direction_autopsy.py").read_text(encoding="utf-8")
-    check("کالبدشکافی خالص را از entry/sl بازمحاسبه می‌کند",
-          "cost_in_r(r[\"entry\"], r[\"sl\"]" in da)
+    check("کالبدشکافی خالص را بازمحاسبه می‌کند", "apply_net" in da)
     check("و عددِ ذخیره‌شده را برای مقایسه نگه می‌دارد",
-          "_R_net_stored" in da)
+          "_R_net_stored" in F.apply_net([{"R": 1.0, "entry": 100,
+                                           "sl": 99, "R_net": 0.5}])[0])
+
+    # ── ۶) «منبع واحد» یعنی یک پیاده‌سازی، نه چند کپیِ هم‌شکل ──────────
+    #
+    # عیب ۱ سپتامبر: منطق بازمحاسبه در `direction_autopsy` کپی شده بود و
+    # `work_report` نسخهٔ خودش را نداشت — یعنی گزارشی که حمید سه بار در
+    # روز می‌خواند، `R_net` **ذخیره‌شده** را می‌خواند. اندازه‌گیری: در
+    # پنجرهٔ ۷ روزه ‎−۰.۰۶۳R خطا (گزارش خوش‌بینانه‌تر از واقعیت)، و بدتر
+    # از آن ۵۸۰ ردیفِ «تمرین» اصلاً `R_net` نداشتند، پس نرخ برد روی یک
+    # جمعیت حساب می‌شد و خالص روی جمعیتی دیگر.
+    row = {"R": 1.0, "entry": 100.0, "sl": 99.0, "sym": "BTCUSDT",
+           "R_net": 0.9}
+    out = F.apply_net([row])[0]
+    check("بازمحاسبه خالص را از entry/sl می‌سازد، نه از عددِ ذخیره‌شده",
+          out["R_net"] != 0.9 and out["_R_net_stored"] == 0.9, str(out))
+    check("ردیفِ بی‌خالصِ ذخیره‌شده هم خالص می‌گیرد (نه اینکه بیفتد)",
+          F.apply_net([{"R": 1.0, "entry": 100.0, "sl": 99.0}])[0]["R_net"]
+          is not None)
+    twice = F.apply_net(F.apply_net([{"R": 1.0, "entry": 100.0, "sl": 99.0,
+                                      "R_net": 0.9}]))[0]
+    check("اعمالِ دوباره عددِ اصلِ ذخیره‌شده را خراب نمی‌کند (idempotent)",
+          twice["_R_net_stored"] == 0.9, str(twice))
+    check("ورودیِ نامعتبر ردیف را نمی‌کُشد",
+          F.apply_net([{"R": 1.0, "entry": 0, "sl": 0}])[0].get("R") == 1.0)
+
+    # رفتار سنجیده می‌شود، نه متنِ سورس. (اولین نسخهٔ همین بررسی
+    # `"apply_net" in source` بود؛ وقتی عمداً صدازدنش را برداشتم، همچنان
+    # سبز ماند — چون رشته در کامنت هم پیدا می‌شد. همان کلاسِ «متن به‌جای
+    # رفتار» که امروز در test_short_sampler هم اصلاح شد.)
+    import json as _json
+    _d = Path(tempfile.mkdtemp())
+    _led = _d / "closed.jsonl"
+    _row = {"sym": "BTCUSDT", "dir": "LONG", "entry": 100.0, "sl": 99.0,
+            "tp1": 103.0, "R": 1.0, "R_net": 0.9, "closed": 10**13,
+            "outcome": "target", "why": {"stage": "practice"}}
+    _led.write_text(_json.dumps(_row, ensure_ascii=False) + "\n",
+                    encoding="utf-8")
+    from hamid import work_report as _WR
+    _got = _WR.load(path=_led)
+    check("گزارش کار خالص را بازمحاسبه می‌کند (رفتار، نه متنِ سورس)",
+          _got and _got[0]["R_net"] != 0.9
+          and _got[0]["_R_net_stored"] == 0.9,
+          str(_got[:1]))
+    from hamid import daily_report as _DR
+    _got2 = _DR.rows(_led)
+    check("گزارش روزانه هم بازمحاسبه می‌کند",
+          _got2 and _got2[0]["R_net"] != 0.9, str(_got2[:1]))
+    _led2 = _d / "c2.jsonl"
+    _r2 = dict(_row, why={"stage": "sig-ibs"}, opened=10**12, filled=10**12)
+    _led2.write_text(_json.dumps(_r2, ensure_ascii=False) + "\n",
+                     encoding="utf-8")
+    from hamid import direction_autopsy as _DA
+    _old_cl = _DA.CLOSED
+    try:
+        _DA.CLOSED = _led2
+        _got3 = _DA.load("sig-")
+    finally:
+        _DA.CLOSED = _old_cl
+    check("کالبدشکافی هم بازمحاسبه می‌کند",
+          _got3 and _got3[0]["R_net"] != 0.9, str(_got3[:1]))
+    fs = (PY / "hamid" / "fees.py").read_text(encoding="utf-8")
+    check("و بازمحاسبه فقط یک جا تعریف شده", fs.count("def apply_net") == 1)
+    check("هیچ مصرف‌کننده‌ای فرمولِ خودش را ننوشته",
+          all("R\"] - fr" not in (PY / "hamid" / f"{m}.py").read_text(
+              encoding="utf-8")
+              for m in ("work_report", "daily_report", "direction_autopsy")))
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0

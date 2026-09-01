@@ -78,6 +78,41 @@ def cost_in_r(entry, sl, symbol=None, entry_maker=False, exit_maker=False):
     return round(round_trip_pct(symbol, entry_maker, exit_maker) / risk_pct, 3)
 
 
+def apply_net(rows):
+    """خالصِ هر ردیفِ دفتر را با **منبع واحد** بازمحاسبه کن (درجا).
+
+    چرا لازم است: تا ۳۰ اوت شب، `paper._settle_one` خالص را با ۰.۱٪
+    می‌ساخت در حالی که مدل رسمی و اعداد راستی‌آزمایی‌شدهٔ بیت‌یونیکس
+    ۰.۱۵٪ است. ردیف‌های گذشته **بازنویسی نمی‌شوند** (دادهٔ runtime
+    دست‌نخورده، قانون ضد-merge)، پس دفتر دو تعریفِ «خالص» دارد و هر
+    مصرف‌کننده‌ای که `R_net` ذخیره‌شده را مستقیم بخواند، عددِ کهنه
+    گزارش می‌کند.
+
+    اندازه‌گیریِ ۱ سپتامبر روی خودِ گزارش کار: در پنجرهٔ ۲۴ ساعته
+    اختلاف صفر بود (ردیف‌های تازه همه ۰.۱۵٪‌اند)، ولی در ۷۲ ساعت
+    ‎+۰.۰۱۷R و در ۷ روز **‎+۰.۰۶۳R** — یعنی گزارشِ هفتگی خالص را
+    آن‌قدر بهتر نشان می‌داد که با اندازهٔ خودِ لبه (~۰.۰۹R) قابل
+    مقایسه بود.
+
+    `_R_net_stored` برای مقایسه/ممیزی می‌ماند؛ چیزی روی دیسک عوض
+    نمی‌شود. این تابع تنها جای بازمحاسبه است — هر مصرف‌کنندهٔ تازه
+    باید همین را صدا بزند، نه فرمولِ خودش را بنویسد.
+    """
+    for r in rows:
+        if r.get("_R_net_stored") is not None:       # قبلاً اعمال شده
+            continue
+        r["_R_net_stored"] = r.get("R_net")
+        fr = None
+        try:
+            fr = cost_in_r(r.get("entry"), r.get("sl"), r.get("sym"))
+        except Exception:                            # noqa: BLE001
+            fr = None
+        r["_fee_r"] = fr if fr is not None else r.get("fee_r")
+        if fr is not None and r.get("R") is not None:
+            r["R_net"] = round(r["R"] - fr, 4)
+    return rows
+
+
 def net_rr(entry, sl, tp, symbol=None, entry_maker=False, exit_maker=False):
     """RR خالص بعد از کارمزد. gross_RR - fee_R."""
     if not entry or not sl or not tp or entry == sl:
