@@ -94,6 +94,8 @@ jobs:
           python3 -m hamid.test_engine_map
           python3 -m hamid.test_engine_dossier
           python3 -m hamid.test_scorecard
+          python3 -m hamid.test_gainer_radar
+          python3 -m hamid.test_curriculum
           python3 -m hamid.test_pump_profile
           python3 -m hamid.test_patterns
           python3 -m hamid.test_orderblocks
@@ -187,6 +189,11 @@ jobs:
               # loop_audit، چون از خروجی همان‌ها می‌خواند. سقف کهنگی‌اش ۴۵د
               # است، پس باید در همین زنجیرهٔ */15 باشد نه جای کم‌کادنس‌تر.
               (cd claude-liam-signal/python && python3 -m hamid.scorecard --write) || true
+              # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
+              # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
+              # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
+              # به تلگرام می‌دهد (ضداسپم داخل خودِ ماژول + دروازهٔ آلارم).
+              (cd claude-liam-signal/python && python3 -m hamid.gainer_radar --write --telegram) || true
               # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
               # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
               # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و

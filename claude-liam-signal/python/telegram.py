@@ -151,6 +151,52 @@ def scrub(text):
     return out
 
 
+def _log_rows(text):
+    try:
+        return json.loads(text).get("sent") or []
+    except Exception:                                # noqa: BLE001
+        return []
+
+
+def _remote_log_rows():
+    """منبع چهارم — دفترِ ارسالِ روی **ریموت**، نه روی این ماشین.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۳۱ اوت (ASTERUSDT دو بار در ۵ دقیقه، ۰۱:۰۱ و
+    ۰۱:۰۶): سه منبعِ قبلی — دیسک، /tmp، بازسازی از لاگ — **هر سه محلیِ
+    همان رانر**اند. سه ورک‌فلو حق ارسال دارند (hamid-cycle، pump-radar،
+    live-scan) و هر کدام گروه هم‌زمانیِ جدا دارد، پس با هم می‌دوند و هر
+    کدام چک‌اوتِ خودش را دارد. زنجیره‌ای که چک‌اوتش را قبل از کامیتِ
+    زنجیرهٔ دیگر گرفته باشد، ارسالِ چند دقیقه پیش را **اصلاً نمی‌بیند** —
+    حافظه‌اش واقعاً خالی است و دروازهٔ ۳ ساعته چیزی برای دیدن ندارد.
+
+    همان کلاسِ PAXG×۵ است: رفعِ ۲۶ اوت درست بود ولی هر سه منبعش داخلِ
+    یک ماشین می‌ماند. تنها چیزی که هر سه زنجیره **مشترک** می‌بینند
+    ریموت است، پس درست قبل از دروازه یک بار از آن‌جا خوانده می‌شود.
+
+    مرز: شکستِ شبکه نباید ارسال را متوقف کند، پس خطا = فهرست خالی و
+    همان سه منبعِ قبلی سرِ جایشان‌اند (خرابیِ نرم، نه سخت). و چون فقط
+    **می‌خواند**، هیچ حالتِ گیتی را عوض نمی‌کند."""
+    if os.environ.get("LIAM9_NO_REMOTE_DEDUPE"):
+        return []
+    import subprocess
+    for ref in ("origin/main", "main"):
+        try:
+            if ref.startswith("origin/"):
+                subprocess.run(["git", "fetch", "-q", "--depth=1", "origin", "main"],
+                               cwd=str(SENT.parent.parent), timeout=25,
+                               capture_output=True, check=False)
+            out = subprocess.run(["git", "show", f"{ref}:signals/telegram-log.json"],
+                                 cwd=str(SENT.parent.parent), timeout=20,
+                                 capture_output=True, text=True, check=False)
+            if out.returncode == 0 and out.stdout.strip():
+                rows = _log_rows(out.stdout)
+                if rows:
+                    return rows
+        except Exception:                            # noqa: BLE001
+            continue
+    return []
+
+
 def _load_sent():
     """ارسال‌شده ۱۲ ساعت یادش می‌ماند؛ ردشدهٔ موقت فقط ۳۰ دقیقه.
 
@@ -176,14 +222,14 @@ def _load_sent():
             pass
     # منبع سوم: هر ردیفی که واقعاً به تلگرام رفته (telegram-log) دست‌کم
     # کلید بین‌استراتژی any| را بازمی‌سازد — حتی اگر sent.json کامل گم شود.
-    try:
-        for r in (json.loads(TGLOG.read_text()).get("sent") or []):
+    for rows in (_log_rows(TGLOG.read_text() if TGLOG.exists() else ""),
+                 _remote_log_rows()):
+        for r in rows:
             if r.get("sym") and r.get("tf") and r.get("dir") and r.get("at"):
-                k = f"any|{r['sym']}|{r['tf']}|{r['dir']}"
-                if float(r["at"]) > merged.get(k, 0):
-                    merged[k] = float(r["at"])
-    except Exception:                                # noqa: BLE001
-        pass
+                for k in (f"any|{r['sym']}|{r['tf']}|{r['dir']}",
+                          f"pair|{r['sym']}|{r['dir']}"):
+                    if float(r["at"]) > merged.get(k, 0):
+                        merged[k] = float(r["at"])
     now = time.time() * 1000
     return {k: v for k, v in merged.items()
             if now - v < (SKIP_TTL_MS if k.startswith("skip|") else TTL_MS)}
