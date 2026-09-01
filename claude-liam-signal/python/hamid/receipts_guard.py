@@ -34,6 +34,11 @@ done
 | `telegram-feed.json` | ❌ اصلاً در فهرست نیست — پاک |
 | `brain/paper/*.jsonl` | ❌ به نسخهٔ **پیش‌ازاسکن** برمی‌گردد |
 
+**تکمیل ۱ سپتامبر**: رفعِ ۳۰ اوت فقط چهار ردیف اول این جدول را برداشت؛
+سطر آخر (دفترهای پیپر) باز ماند و همان‌جا ماند تا ممیزِ حلقه شمردش —
+۴ سیگنال از ۴۰ ارسالِ ۷۲ ساعت اخیر بدون هیچ ردیف یادگیری. حالا هر شش
+سطر ✅ هستند.
+
 و این دقیقاً همان چیزی است که در دادهٔ ۳۰ اوت دیده شد. رفعِ PAXG (۲۶ اوت)
 `sent.json` و دفترهای پیپر را به فهرست اضافه کرد — ولی عکس‌فوری را
 **جای درستش** نبرد: بکاپی که قبل از تولید گرفته شود، تولیدِ خودش را
@@ -80,6 +85,34 @@ SINGLES = (
     ("signals/telegram-feed.json", "rows", ("at", "kind", "title")),
     ("signals/telegram-log.json", "sent", ("at", "sym")),
 )
+# دفترهای پیپر (تکمیل ۱ سپتامبر) — نیمهٔ باقی‌ماندهٔ همین عیب.
+#
+# جدول بالای همین سند خودش گفته بود `brain/paper/*.jsonl` به نسخهٔ
+# پیش‌ازاسکن برمی‌گردد، ولی رفعِ ۳۰ اوت فقط رسیدها را برداشت و دفترها
+# در فهرست نیامدند. نتیجه‌اش را ممیزِ حلقه شمرد: سیگنالی که رفته ولی
+# هیچ ردیف یادگیری ندارد.
+#
+# اندازه‌گیری ۱ سپتامبر: ۴ سیگنال از ۴۰ ارسالِ ۷۲ ساعت اخیر (AAVE، FET،
+# TRX، ETH) — تلگرام رفته، `sent.json` یادش مانده (چون sidecar در /tmp
+# دارد)، ولی ردیف دفتر با بازگردانیِ سختِ درخت پاک شده و هیچ‌کس
+# برنگرداندش. و چون ضدتکرار **درست** کار می‌کند، اسکنِ دور بعد هم
+# دوباره نمی‌سازدش. پس سیگنال تجربه نمی‌سازد و کارنامه از نمونهٔ ناقص
+# ساخته می‌شود — همان سوگیری‌ای که قانون ۰۳ منعش کرده.
+#
+# هویتِ ردیف = `paper.trade_key` (همان کلیدِ درس ۲۴ اوت). اجتماع است نه
+# بازنویسی؛ و ردیفی که در دفترِ بسته هست، به دفترِ باز برنمی‌گردد.
+LEDGERS = ("brain/paper/open.jsonl", "brain/paper/closed.jsonl")
+
+
+def _trade_ident(r):
+    try:
+        from hamid import paper
+        return paper.trade_key(r)
+    except Exception:                                # noqa: BLE001
+        return (r.get("sym"), r.get("opened"), r.get("entry"),
+                (r.get("why") or {}).get("stage"))
+
+
 # آرشیوهای jsonl — (پیشوند نام، فیلدهای هویت)
 ARCHIVES = (
     ("telegram-sent-", ("at", "sym", "tf", "dir")),
@@ -113,6 +146,11 @@ def snapshot(bk_dir):
         src = ROOT / rel
         if src.exists():
             shutil.copy(src, dst / Path(rel).name)
+            n += 1
+    for rel in LEDGERS:
+        lsrc = ROOT / rel
+        if lsrc.exists():
+            shutil.copy(lsrc, dst / Path(rel).name)
             n += 1
     if ARCHIVE.exists():
         adst = dst / "archive"
@@ -161,6 +199,32 @@ def restore(bk_dir):
                 merged[stamp] = max(ours.get(stamp) or 0, theirs.get(stamp) or 0)
         tgt.parent.mkdir(parents=True, exist_ok=True)
         tgt.write_text(json.dumps(merged, ensure_ascii=False), encoding="utf-8")
+
+    # دفترهای پیپر — اجتماع بر هویتِ معامله (نه بازنویسی، قانون ضد-merge)
+    closed_keys = {_trade_ident(r)
+                   for r in _read_jsonl(ROOT / "brain/paper/closed.jsonl")}
+    for rel in LEDGERS:
+        b = src / Path(rel).name
+        if not b.exists():
+            continue
+        tgt = ROOT / rel
+        rows = _read_jsonl(tgt)
+        seen = {_trade_ident(r) for r in rows}
+        is_open = rel.endswith("open.jsonl")
+        for r in _read_jsonl(b):
+            k = _trade_ident(r)
+            if k in seen:
+                continue
+            # معامله‌ای که تسویه شده به دفترِ باز برنمی‌گردد — وگرنه دوباره
+            # تسویه می‌شود و همان ردیفِ تکراریِ درس ۲۴ اوت ساخته می‌شود
+            if is_open and k in closed_keys:
+                continue
+            rows.append(r)
+            seen.add(k)
+            added += 1
+        tgt.parent.mkdir(parents=True, exist_ok=True)
+        tgt.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n"
+                               for x in rows), encoding="utf-8")
 
     adir = src / "archive"
     if adir.exists():

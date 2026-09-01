@@ -87,11 +87,28 @@ def audit(window_h=WINDOW_H):
     ok = 0
     for s in sent:
         sym, at = s.get("sym"), s.get("at") or 0
+        # تطبیق ردیفِ یادگیری: اول با **هویتِ ستاپ** (ورود یکی)، بعد با
+        # پنجرهٔ زمانی.
+        #
+        # چرا هویت مقدم است (اصلاح ۱ سپتامبر): سیگنالِ همان ستاپ بعد از
+        # پنجرهٔ ضدتکرار دوباره می‌رود، ولی `paper.open_from` عمداً ردیف
+        # دوم نمی‌سازد — همان لیمیتِ منتظر است، نه معاملهٔ تازه. با معیارِ
+        # زمانیِ تنها، ارسالِ دوم «بی‌ردپا» شمرده می‌شد در حالی که ردپایش
+        # سرِ جایش بود. نمونهٔ اندازه‌گیری‌شده: LOKAUSDT، ارسال ۰۰:۱۶ و
+        # ردیفِ باز از ۱۵:۱۰ با همان ورودِ ۰.۱۲۳۶ — ۵۴۷ دقیقه فاصله، پس
+        # از پنجرهٔ ۹۰دقیقه‌ای بیرون می‌افتاد. نشتیِ کاذب.
         row = None
-        for r in by_sym.get(sym, []):
-            if abs((r.get("opened") or 0) - at) < 90 * 60000:      # ±۹۰ دقیقه
-                row = r
-                break
+        entry = s.get("entry")
+        if entry is not None:
+            for r in by_sym.get(sym, []):
+                if r.get("entry") == entry and r.get("dir") == s.get("dir"):
+                    row = r
+                    break
+        if row is None:
+            for r in by_sym.get(sym, []):
+                if abs((r.get("opened") or 0) - at) < 90 * 60000:   # ±۹۰ دقیقه
+                    row = r
+                    break
         miss = []
         if feed_since is not None and at >= feed_since and sym not in feed_keys:
             miss.append("panel")            # رد ۲: پنل

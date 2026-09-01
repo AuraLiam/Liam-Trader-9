@@ -152,6 +152,68 @@ def run():
     check("بازگردانی **بعد از** reset است",
           0 <= i_reset < i_rest, f"reset={i_reset} restore={i_rest}")
 
+    # ── دفترهای پیپر هم باید جان به در ببرند (تکمیل ۱ سپتامبر) ────────
+    #
+    # نیمهٔ باقی‌ماندهٔ همین عیب: رسیدها نجات یافتند، دفتر یادگیری نه.
+    # اثرش را ممیزِ حلقه شمرد — ۴ سیگنال از ۴۰ ارسالِ ۷۲ ساعت اخیر
+    # (AAVE، FET، TRX، ETH) بدون هیچ ردیف یادگیری: تلگرام رفته،
+    # `sent.json` یادش مانده، ردیف دفتر پاک شده و چون ضدتکرار درست کار
+    # می‌کند دیگر هرگز ساخته نمی‌شود.
+    import json as _json
+    import tempfile as _tf
+    _T = Path(_tf.mkdtemp())
+    (_T / "brain/paper").mkdir(parents=True)
+    (_T / "signals/archive").mkdir(parents=True)
+    _old = (RG.ROOT, RG.SIG, RG.ARCHIVE)
+    try:
+        RG.ROOT, RG.SIG, RG.ARCHIVE = _T, _T / "signals", _T / "signals/archive"
+
+        def _row(sym, opened=1000, stage="sig-ibs"):
+            return {"sym": sym, "dir": "LONG", "entry": 1.0, "sl": 0.9,
+                    "tp1": 1.2, "opened": opened, "why": {"stage": stage}}
+
+        _op, _cl = _T / "brain/paper/open.jsonl", _T / "brain/paper/closed.jsonl"
+        _op.write_text("".join(_json.dumps(_row(s)) + "\n"
+                               for s in ("AAVEUSDT", "FETUSDT")), encoding="utf-8")
+        _cl.write_text("", encoding="utf-8")
+        _bk = _T / "bk"
+        _bk.mkdir()
+        check("عکس‌فوری دفترهای پیپر را هم برمی‌دارد", RG.snapshot(_bk) >= 2)
+
+        _op.write_text("", encoding="utf-8")          # بازگردانیِ سختِ درخت
+        _cl.write_text("", encoding="utf-8")
+        RG.restore(_bk)
+        _back = [_json.loads(x) for x in _op.read_text().splitlines() if x.strip()]
+        check("ردیفِ یادگیریِ سیگنالِ رفته برمی‌گردد",
+              {r["sym"] for r in _back} == {"AAVEUSDT", "FETUSDT"}, str(_back))
+
+        # تسویه‌شده به دفتر باز برنمی‌گردد (وگرنه ردیف تکراریِ ۲۴ اوت)
+        _cl.write_text(_json.dumps(_row("AAVEUSDT")) + "\n", encoding="utf-8")
+        _op.write_text("", encoding="utf-8")
+        RG.restore(_bk)
+        _b2 = [_json.loads(x) for x in _op.read_text().splitlines() if x.strip()]
+        check("معاملهٔ تسویه‌شده دوباره باز نمی‌شود",
+              {r["sym"] for r in _b2} == {"FETUSDT"}, str(_b2))
+
+        # اجتماع است نه بازنویسی: ردیفِ تازهٔ درخت نباید پاک شود
+        _cl.write_text("", encoding="utf-8")
+        _op.write_text(_json.dumps(_row("XUSDT", opened=2000)) + "\n",
+                       encoding="utf-8")
+        RG.restore(_bk)
+        _b3 = [_json.loads(x) for x in _op.read_text().splitlines() if x.strip()]
+        check("ردیفِ تازهٔ درخت با بازگردانی پاک نمی‌شود (اجتماع)",
+              {r["sym"] for r in _b3} == {"XUSDT", "AAVEUSDT", "FETUSDT"}, str(_b3))
+        n_before = len(_b3)
+        RG.restore(_bk)
+        _b4 = [_json.loads(x) for x in _op.read_text().splitlines() if x.strip()]
+        check("بازگردانیِ دوباره ردیف تکراری نمی‌سازد",
+              len(_b4) == n_before, f"{n_before} → {len(_b4)}")
+    finally:
+        RG.ROOT, RG.SIG, RG.ARCHIVE = _old
+    check("هویتِ ردیف همان کلیدِ معاملهٔ paper است (درس ۲۴ اوت)",
+          "trade_key" in (PY / "hamid" / "receipts_guard.py").read_text(
+              encoding="utf-8"))
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 
