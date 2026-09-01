@@ -5,6 +5,9 @@
 سکرت لو رفته — و اینکه حالت پاک، آلارم کاذب نمی‌دهد.
 """
 import json
+import pathlib
+import shutil
+import tempfile
 import sys
 import time
 from pathlib import Path
@@ -43,8 +46,21 @@ check("ایمیل ناشناس با نام جعلیِ شبیه خودی هم ب�
 
 # تشخیص ورک‌فلوی تازه/عوض‌شده روی مرجع ساختگی
 real_base, real_out = S.BASELINE, S.OUT
-tmp_base = S.ROOT / "brain" / "sentinel-baseline-test.json"
-tmp_out = S.ROOT / "signals" / "sentinel-test.json"
+# پوشهٔ موقتِ واقعی، نه داخل ریپو.
+#
+# قبلاً این دو فایل در `brain/` و `signals/` ساخته می‌شدند و `finally`
+# پاکشان می‌کرد — که تا وقتی فرایند سالم تمام شود درست است. ولی اجرای
+# **کشته‌شده** (تایم‌اوت، cancel شدنِ ران — که روی این ریپو کم نیست)
+# `finally` را اجرا نمی‌کند، فایل‌ها می‌مانند، و زنجیره با
+# `git add signals brain` کامیتشان می‌کند. نتیجه: فایلِ یتیم در
+# `signals/` که گذرگاه وضعیت (قانون ۱۳) عیب می‌گیرد — یعنی آزمون،
+# خودش خرابیِ گزارش‌شده می‌سازد.
+#
+# پوشهٔ موقتِ سیستم این را **مستقل از نحوهٔ مردنِ فرایند** غیرممکن
+# می‌کند؛ متکی به پاک‌سازی نیست.
+_tmpdir = pathlib.Path(tempfile.mkdtemp(prefix="liam9-sentinel-"))
+tmp_base = _tmpdir / "sentinel-baseline-test.json"
+tmp_out = _tmpdir / "sentinel-test.json"
 S.BASELINE, S.OUT = tmp_base, tmp_out
 try:
     now = S.workflow_prints()
@@ -104,6 +120,7 @@ finally:
     S.BASELINE, S.OUT = real_base, real_out
     tmp_base.unlink(missing_ok=True)
     tmp_out.unlink(missing_ok=True)
+    shutil.rmtree(_tmpdir, ignore_errors=True)
 
 # تشخیص سکرت روی نمونهٔ ساختگی (بدون نوشتن روی ریپو)
 import re                                   # noqa: E402
