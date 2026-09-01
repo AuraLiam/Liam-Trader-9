@@ -50,6 +50,7 @@
 اجرا: `python3 -m hamid.skeptic [--write] [--telegram]`
 """
 import json
+import os
 import statistics
 import sys
 import time
@@ -319,12 +320,34 @@ BANK = [
 ]
 
 
+def where():
+    """کجا اجرا شده — رانرِ تولید یا نشستِ محلی.
+
+    این تفکیک آرایشی نیست. سؤال‌های «تازگی» سنِ فایل‌های **همین
+    درخت** را می‌سنجند؛ روی رانر یعنی سنِ واقعیِ تولید، ولی در یک
+    نشستِ محلی یعنی «آخرین بار کِی fetch کردم». اندازه‌گیریِ ۱ سپتامبر:
+    شکاکِ محلی گفت دامیننس ۴۱۹ دقیقه کهنه است، در حالی که همان لحظه
+    گذرگاه وضعیت ۳ دقیقه می‌دید — چون بین آن دو، fetch اتفاق افتاده
+    بود. هیچ‌کدام دروغ نگفتند؛ دو چیزِ متفاوت را می‌سنجیدند.
+    """
+    return "ci" if os.environ.get("GITHUB_ACTIONS") else "local"
+
+
 def _history():
+    """شمارشِ شکستِ پیاپی — **فقط از نوبت‌های رانر**.
+
+    وگرنه یک اجرای اکتشافیِ محلی (روی درختِ کهنه) می‌تواند شمارنده را
+    باد کند و آلارمِ تلگرام را دربارهٔ چیزی که اصلاً خراب نیست شلیک
+    کند. ردیفِ بی‌برچسب مالِ پیش از ۱ سپتامبر است و محافظه‌کارانه
+    رانر فرض می‌شود.
+    """
     out = {}
     try:
         for line in LOG.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("{"):
                 r = json.loads(line)
+                if r.get("env", "ci") != "ci":
+                    continue
                 for a in r.get("answers") or []:
                     k = (a["engine"], a["q"])
                     out[k] = out.get(k, 0) + (1 if a["verdict"] == "UNPROVED" else -99)
@@ -418,13 +441,20 @@ def main(argv=()):
         LOG.parent.mkdir(parents=True, exist_ok=True)
         with LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps({"generated": res["generated"],
-                                "round": res["round"],
+                                "round": res["round"], "env": where(),
                                 "answers": [{"engine": a["engine"], "q": a["q"],
                                              "verdict": a["verdict"]}
                                             for a in res["answers"]]},
                                ensure_ascii=False) + "\n")
         print(f"\n  نوشته شد: {OUT.name}")
     if "--telegram" in argv and res.get("persistent"):
+        # نشستِ محلی حق ندارد به حمید پیام بدهد: سؤال‌های تازگی این‌جا
+        # سنِ درختِ محلی را می‌سنجند نه تولید را، پس آلارمش می‌تواند
+        # دربارهٔ چیزی باشد که اصلاً خراب نیست. (قانون ۰۷: آلارم فقط
+        # برای چیزی که حمید می‌تواند و باید رویش عمل کند.)
+        if where() != "ci":
+            print("  تلگرام: نرفت (اجرای محلی — آلارم فقط از رانر)")
+            return 0
         from hamid import alert_gate
         key = "skeptic|" + "|".join(sorted(f"{a['engine']}:{a['q'][:20]}"
                                            for a in res["persistent"]))

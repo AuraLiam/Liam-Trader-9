@@ -121,6 +121,58 @@ def run():
           "اخیر" in a["evidence"] and "کل تاریخ" in a["evidence"],
           a["evidence"])
 
+    # ── ۵.۷) نوبتِ محلی نباید آلارمِ تولید بسازد ────────────────────────
+    #
+    # عیب ۱ سپتامبر: سؤال‌های «تازگی» سنِ فایل‌های همین درخت را
+    # می‌سنجند. روی رانر یعنی سنِ تولید؛ در نشستِ محلی یعنی «آخرین بار
+    # کِی fetch کردم». همان لحظه شکاکِ محلی گفت دامیننس ۴۱۹ دقیقه کهنه
+    # است و گذرگاه وضعیت ۳ دقیقه می‌دید — هیچ‌کدام دروغ نگفتند، دو چیزِ
+    # متفاوت را می‌سنجیدند. ولی چون دفترِ شکست مشترک بود، همان نوبتِ
+    # محلی می‌توانست شمارنده را باد کند و آلارمِ تلگرام شلیک شود.
+    import os as _os
+    old_env = _os.environ.get("GITHUB_ACTIONS")
+    try:
+        _os.environ["GITHUB_ACTIONS"] = "true"
+        check("روی رانر، محیط ci علامت می‌خورد", S.where() == "ci")
+        _os.environ.pop("GITHUB_ACTIONS", None)
+        check("در نشست محلی، محیط local علامت می‌خورد", S.where() == "local")
+    finally:
+        if old_env is None:
+            _os.environ.pop("GITHUB_ACTIONS", None)
+        else:
+            _os.environ["GITHUB_ACTIONS"] = old_env
+
+    d2 = Path(tempfile.mkdtemp())
+    old_log = S.LOG
+    try:
+        S.LOG = d2 / "log.jsonl"
+        rowl = {"env": "local", "answers": [{"engine": "E01", "q": "س",
+                                             "verdict": "UNPROVED"}]}
+        rowc = {"env": "ci", "answers": [{"engine": "E01", "q": "س",
+                                          "verdict": "UNPROVED"}]}
+        S.LOG.write_text("\n".join(json.dumps(r, ensure_ascii=False)
+                                   for r in [rowl] * 5) + "\n", encoding="utf-8")
+        check("پنج نوبتِ محلیِ ناموفق، شمارندهٔ شکست را تکان نمی‌دهد",
+              S._history().get(("E01", "س"), 0) == 0, str(S._history()))
+        S.LOG.write_text("\n".join(json.dumps(r, ensure_ascii=False)
+                                   for r in [rowc] * 3) + "\n", encoding="utf-8")
+        check("ولی سه نوبتِ رانرِ ناموفق شمرده می‌شود",
+              S._history().get(("E01", "س"), 0) == 3, str(S._history()))
+        S.LOG.write_text(json.dumps(
+            {"answers": [{"engine": "E01", "q": "س", "verdict": "UNPROVED"}]},
+            ensure_ascii=False) + "\n", encoding="utf-8")
+        check("ردیفِ بی‌برچسب (پیش از ۱ سپتامبر) رانر فرض می‌شود",
+              S._history().get(("E01", "س"), 0) == 1)
+    finally:
+        S.LOG = old_log
+
+    ssrc = (PY / "hamid" / "skeptic.py").read_text(encoding="utf-8")
+    check("محیط روی هر ردیفِ دفتر نوشته می‌شود",
+          '"env": where()' in ssrc)
+    check("اجرای محلی حق ارسال تلگرام ندارد (قانون ۰۷)",
+          'where() != "ci"' in ssrc
+          and ssrc.index('where() != "ci"') < ssrc.index("alert_gate.send"))
+
     # ── ۶) آلارم فقط با شکستِ پابرجا ───────────────────────────────────
     check("آستانهٔ آلارم سه نوبتِ پیاپی است", S.FAIL_STREAK_ALARM == 3)
     check("پیام فقط از موارد پابرجا ساخته می‌شود",
