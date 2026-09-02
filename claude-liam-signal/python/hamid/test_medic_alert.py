@@ -198,8 +198,14 @@ for _f in ("signals/pump-radar.json", "signals/bubbles.json",
     check(f"زنجیرهٔ سیگنال دیگر {_f.split('/')[-1]} را بکاپ/بازنشانی نمی‌کند "
           "(فقط تولیدکننده)", f'cp {_f} "$BK/"' not in _chain)
 _review = (REPO / ".github" / "workflows" / "pump-review.yml").read_text(encoding="utf-8")
-check("و تولیدکننده (pump-review) بازنشانی خودش را نگه داشته",
-      'cp signals/pump-radar.json "$BK/"' in _review)
+# ۲ سپتامبر: تولیدکننده حالا با ناشر مشترک (scripts/publish.sh، قانون ۱۴)
+# منتشر می‌کند که خروجیِ همین اجرا را خودش نجات می‌دهد — بکاپ/reapply
+# دستی دیگر لازم نیست. قاعدهٔ ۲۵ اوت همان است: فقط تولیدکننده
+# pump-radar.json را منتشر می‌کند؛ نسخهٔ قبلیِ این بررسی متنِ پیاده‌سازی
+# را می‌گشت نه قاعده را، و مهاجرت را قرمز کرد (اجرای ۳۶۴ چرخه).
+check("و تولیدکننده (pump-review) خودش pump-radar.json را منتشر می‌کند",
+      'cp signals/pump-radar.json "$BK/"' in _review
+      or ("scripts/publish.sh" in _review and " signals" in _review))
 
 print()
 if FAIL:
