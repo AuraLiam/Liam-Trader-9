@@ -169,6 +169,18 @@ WF = PY.parent.parent / ".github" / "workflows"
 for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
     check(f"{wf}: سوییچ LIAM9_CANDLES=perp روشن است", "LIAM9_CANDLES: perp" in (WF / wf).read_text(encoding="utf-8"))
 
+# ── ۳ج. برچسب منبع = شمارش، نه «آخرین صرافی» (اثبات سوییچ، ۲۱:۲۹) ─────────
+S._used_counts.clear()
+S._note_used("bitunix-perp"); S._note_used("bitunix-perp"); S._note_used("binance")
+check("شمارش هر صرافی نگه داشته می‌شود", S.used_counts() == {"bitunix-perp": 2, "binance": 1})
+check("used() همچنان آخرین صرافی را می‌گوید (سازگاری)", S.used()["klines"] == "binance")
+check("برچسب پرپ از فهرست پرپ خوانده می‌شود، نه شناسهٔ خام", S.venue_label("bitunix-perp") == "Bitunix Perpetual" and S.venue_label("zzz") == "zzz")
+import scan as _scan                                  # noqa: E402
+_lbl = _scan._source_label()
+check("برچسب اسکن، بیت‌یونیکس را با شمار بیشتر جلوتر از بایننس می‌آورد",
+      _lbl.index("Bitunix Perpetual 2") < _lbl.index("Binance 1"), _lbl)
+S._used_counts.clear()
+
 # ── ۴. اسکن هم همین سوییچ را دارد ────────────────────────────────────────
 scan_src = (PY / "scan.py").read_text(encoding="utf-8")
 check("scan.klines_now با LIAM9_CANDLES=perp از sources.klines می‌خواند (پشتیبان + هویت) و اسپات پشتیبان می‌ماند",

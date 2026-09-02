@@ -309,6 +309,30 @@ def used():
     return dict(_used)
 
 
+# شمارِ سری‌های کندل از هر صرافی در همین فرایند — «آخرین صرافی» (used) برای
+# برچسب گمراه‌کننده بود: اسکنِ اولِ بعد از سوییچ پرپ (۲ سپتامبر ۲۱:۲۹) ۱۰۰+
+# سری از بیت‌یونیکس گرفت و چون آخرین نماد به اسپات بایننس افتاد، پنل «Binance»
+# نوشت. شمارش دروغ نمی‌گوید.
+_used_counts = {}
+
+
+def _note_used(vid):
+    _used["klines"] = vid
+    _used_counts[vid] = _used_counts.get(vid, 0) + 1
+
+
+def used_counts():
+    return dict(_used_counts)
+
+
+def venue_label(vid):
+    """نام خوانای صرافی از هر دو فهرست (اسپات و پرپ)؛ ناشناخته = همان شناسه."""
+    for v in list(VENUES) + list(PERP_VENUES):
+        if v["id"] == vid:
+            return v["label"]
+    return vid
+
+
 PERP_VENUES = []
 
 
@@ -467,7 +491,7 @@ def perp_klines(sym, tf, limit, quiet=True):
             errs.append(f"{v['id']}: {type(e).__name__}")
             continue
         if sane(rows, limit):
-            _used["klines"] = v["id"]
+            _note_used(v["id"])
             if not quiet:
                 print(f"  perp klines {sym} {tf} ← {v['label']}", flush=True)
             return rows
@@ -565,10 +589,10 @@ def spot_klines(sym, tf, limit, quiet=True):
             _note_failure(v["id"])
             continue
         _note_success(v["id"])
-        if _used["klines"] != v["id"]:
-            _used["klines"] = v["id"]
-            if not quiet:
-                print(f"candles from {v['label']}")
+        changed = _used["klines"] != v["id"]
+        _note_used(v["id"])
+        if changed and not quiet:
+            print(f"candles from {v['label']}")
         return rows
     raise RuntimeError(f"{sym} {tf}: no venue answered — {'; '.join(errs[:8])}")
 
