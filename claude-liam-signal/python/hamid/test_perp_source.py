@@ -98,8 +98,14 @@ def run():
     # روی همان تابع می‌ماند تا هیچ‌کس اسپات را با پرپ اشتباه نگیرد.
     check("مسیر اسپات صریح برچسب خورده",
           "def spot_klines(" in src and "این مسیر اسپات است" in src)
-    check("perp_vs_spot اسپات را از spot_klines می‌گیرد نه از سوییچ",
-          "sources.spot_klines" in (HERE / "perp_vs_spot.py").read_text(encoding="utf-8"))
+    pvs = (HERE / "perp_vs_spot.py").read_text(encoding="utf-8")
+    check("perp_vs_spot اسپات را از spot_klines می‌گیرد نه از سوییچ", "sources.spot_klines" in pvs)
+    # کاوش ۸: تابع جهان نمادها روی sources نبود و ۴۰ نماد بی‌صدا ۵ تا شد
+    import backtest
+    check("جهان نمادها از تابعی می‌آید که واقعاً وجود دارد (backtest.top_symbols)",
+          "backtest.top_symbols(" in pvs and callable(getattr(backtest, "top_symbols", None))
+          and "sources.top_symbols(" not in pvs)
+    check("پشتیبانِ ۵ نماد فقط با اعلام صریح در لاگ", "جهان نمادها گرفته نشد" in pvs)
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0

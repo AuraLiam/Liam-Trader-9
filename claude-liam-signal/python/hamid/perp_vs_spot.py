@@ -154,10 +154,18 @@ def main(argv=()):
             n_sym = int(argv[i + 1])
         if a == "--tf" and i + 1 < len(argv):
             tf = argv[i + 1]
+    # کاوش ۸ روی رانر (۲ سپتامبر): «sources.top_symbols» وجود نداشت، پس با
+    # --symbols 40 هم بی‌صدا فقط ۵ نماد بزرگ مقایسه می‌شد. جهان نمادها از
+    # backtest.top_symbols (همان اسکن) می‌آید؛ پشتیبان فقط با اعلام صریح.
     try:
-        syms = sources.top_symbols(n_sym)
-    except Exception:                                # noqa: BLE001
+        import backtest
+        syms = list(backtest.top_symbols(n_sym))
+        if len(syms) < min(n_sym, 5):
+            raise RuntimeError(f"فقط {len(syms)} نماد")
+    except Exception as e:                           # noqa: BLE001
+        print(f"  جهان نمادها گرفته نشد ({type(e).__name__}: {e}) → ۵ نماد بزرگ", flush=True)
         syms = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"][:n_sym]
+    _ = sources
     rows = [compare(s, tf) for s in syms]
     s = summarize(rows)
     print(f"### اسپات در برابر قرارداد دائمی — {tf}")
