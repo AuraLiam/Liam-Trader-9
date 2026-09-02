@@ -57,10 +57,22 @@ git commit -q -m "$MSG" || { echo "publish: کامیت نشد"; exit 1; }
 echo "publish: $(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد"
 
 # چک‌اوتِ کم‌عمق (fetch-depth: 1) مبنای مشترک ندارد و هر merge را add/add
-# می‌کند؛ عمیق‌کردن ارزان‌تر از حل صدها تعارضِ ساختگی است.
-if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
-  git fetch -q --unshallow "$REMOTE" "$BRANCH" 2>/dev/null || git fetch -q "$REMOTE" "$BRANCH" || true
-fi
+# می‌کند. عمیق‌کردنِ **محدود** کافی است: origin معمولاً چند کامیت جلوتر
+# است، پس ۵۰ کامیت مبنای مشترک را برمی‌گرداند. `--unshallow` روی این
+# مخزن (۳۰۰۰+ کامیت، هزاران فایل JSON در تاریخچه) دقیقه‌ها طول می‌کشد و
+# یک بار گام انتشار را تا سقف ۱۵ دقیقهٔ job خواباند (۲ سپتامبر ۰۹:۳۹).
+# اگر بعد از سه پله هم مبنا پیدا نشد، merge بی‌ربط می‌شود و همان مسیرِ
+# آزموده (نانوشته → origin، نوشته → ما) جواب می‌دهد.
+_deepen_until_related() {
+  git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || return 0
+  local d
+  for d in 50 200 800; do
+    git merge-base HEAD "$REMOTE/$BRANCH" >/dev/null 2>&1 && return 0
+    [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ] || return 0
+    git fetch -q --deepen="$d" "$REMOTE" "$BRANCH" 2>/dev/null || return 0
+  done
+}
+_deepen_until_related
 
 _in_changed() { printf '%s\n' "$CHANGED" | grep -qxF -- "$1"; }
 
