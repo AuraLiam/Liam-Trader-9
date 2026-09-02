@@ -147,10 +147,11 @@
    "layer": "L1_market",
    "owner": "E12",
    "producer": "hamid/bubbles.py",
-   "max_age_min": 180,
+   "max_age_min": 600,
    "consumer": "panel",
    "critical": false,
-   "kind": "live"
+   "kind": "live",
+   "cadence_note": "تولیدش در مرور پامپ است: ۵ نوبت در روز تهران (pump-review.yml) — فاصلهٔ اسمی ~۵ ساعت، ولی کرونِ رایگان دیر می‌رسد. ۲۷ فاصلهٔ اندازه‌گیری‌شدهٔ ۵ روزه (git log): میانه ۳.۶ · p90 ۶.۶ · بیشینه ۸.۸ ساعت. سقف ۱۰ ساعت از همین اندازه‌گیری؛ سقف ۳ساعتهٔ قبلی هر روز چند بار بی‌دلیل قرمز می‌شد (۲ سپتامبر)"
   },
   "pump-radar.json": {
    "layer": "L1_market",
@@ -282,19 +283,21 @@
    "layer": "L4_decision",
    "owner": "E11",
    "producer": "hamid/scalp.py",
-   "max_age_min": 180,
+   "max_age_min": 660,
    "consumer": "panel",
    "critical": false,
-   "kind": "live"
+   "kind": "live",
+   "cadence_note": "کرونِ scalp.yml هر ۱۵ دقیقه است ولی اجرای واقعی روی کرونِ رایگان هر ~۴ ساعت می‌رسد. ۲۶ فاصلهٔ اندازه‌گیری‌شدهٔ ۵ روزه (git log): میانه ۴.۳ · p90 ۵.۹ · بیشینه ۹.۳ ساعت. سقف ۱۱ ساعت از همین اندازه‌گیری، نه از کرون (قانون ۱۳: سقف از کادنس واقعی)"
   },
   "scalp-exec.json": {
    "layer": "L4_decision",
    "owner": "E11",
    "producer": "hamid/scalp1m.py",
-   "max_age_min": 180,
+   "max_age_min": 660,
    "consumer": "panel",
    "critical": false,
-   "kind": "live"
+   "kind": "live",
+   "cadence_note": "هم‌قدم با scalp.json — همان ورک‌فلو (scalp.yml) هر دو را می‌نویسد؛ همان ۲۶ فاصلهٔ اندازه‌گیری‌شده (بیشینه ۹.۳ ساعت) → سقف ۱۱ ساعت"
   },
   "scalp-verdict.json": {
    "layer": "L6_learning",
