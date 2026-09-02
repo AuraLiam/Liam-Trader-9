@@ -7,6 +7,7 @@
 ۳. سوییچ LIAM9_CANDLES=perp اول پرپ می‌رود و در شکست به اسپات برمی‌گردد.
 ۴. پیش‌فرض همان اسپات تاریخی است (هیچ دفتری بی‌سنجش عوض نمی‌شود).
 """
+import json
 import sys
 from pathlib import Path
 
@@ -165,6 +166,33 @@ check("کپشن نماد پرپ بیت‌یونیکس در تریدینگ‌وی
 check("کپشن منبع واقعی کندل را چاپ می‌کند", "bitunix-perp" in _cap)
 _cap2 = _tg.caption({"dir": "SHORT", "sym": "XUSDT", "tf": "5m", "entry": 1.0, "sl": 1.02, "tp1": 0.96, "rr": 2.0})
 check("بی‌ردپا: منبع «نامعلوم» یا منبعِ used()، هرگز ادعای بیت‌یونیکس", "BITUNIX:XUSDT.P" in _cap2 and "کندل تحلیل" in _cap2)
+# ── ۳د. هر بازکنندهٔ دفتر ردپای منبع می‌گذارد (یافتهٔ ۲۱:۳۲: exp-short بی‌ردپا) ──
+import tempfile as _tf                                # noqa: E402
+_tmp = Path(_tf.mkdtemp(prefix="liam9-cs-"))
+_saved_open, _saved_log = _paper.OPEN, _paper.brain.room_log
+try:
+    _paper.OPEN = _tmp / "open.jsonl"
+    _paper.brain.room_log = lambda *a, **k: None
+    S._used["klines"] = "bitunix-perp"
+    n = _paper.open_from([{"symbol": "ABCUSDT", "dir": "SHORT", "entry": 1.0, "sl": 1.02, "tp1": 0.96,
+                           "tf": "5m", "stage_tag": "exp-short-b2"}], {"experiment": "b2"})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("ردیف آزمایشی بی‌مسیرِ تلگرام هم candle_src می‌گیرد (از sources.used)",
+          n == 1 and rows and rows[0]["why"].get("candle_src") == "bitunix-perp", str(rows[:1]))
+    S._used["klines"] = None
+    _paper.open_from([{"symbol": "DEFUSDT", "dir": "LONG", "entry": 1.0, "sl": 0.98, "tp1": 1.04,
+                       "tf": "5m", "stage_tag": "exp-short-b2"}], {"candle_src": "mexc-perp"})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("ردپای صریحِ بازکننده (context) بر حدسِ used مقدم است", rows[-1]["why"].get("candle_src") == "mexc-perp")
+    _paper.open_from([{"symbol": "GHIUSDT", "dir": "LONG", "entry": 1.0, "sl": 0.98, "tp1": 1.04,
+                       "tf": "5m", "stage_tag": "exp-short-b2"}], {})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("بی‌منبع = None روی ردیف، نه ادعای بیت‌یونیکس", rows[-1]["why"].get("candle_src") is None)
+finally:
+    _paper.OPEN, _paper.brain.room_log = _saved_open, _saved_log
+    import shutil as _sh
+    _sh.rmtree(_tmp, ignore_errors=True)
+
 WF = PY.parent.parent / ".github" / "workflows"
 for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
     check(f"{wf}: سوییچ LIAM9_CANDLES=perp روشن است", "LIAM9_CANDLES: perp" in (WF / wf).read_text(encoding="utf-8"))
