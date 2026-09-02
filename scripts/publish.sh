@@ -64,6 +64,21 @@ fi
 
 _in_changed() { printf '%s\n' "$CHANGED" | grep -qxF -- "$1"; }
 
+_settle_untouched() {
+  # فایلی که همین اجرا ننوشته ولی در تعارض است (فقط وقتی پیش می‌آید که
+  # تاریخچه‌ها بی‌ربط دیده شوند و هر فایلِ متفاوت add/add شود): نسخهٔ
+  # origin بی‌چون‌وچرا. وگرنه حل‌کننده «عکس‌فوری → مال ما» را روی
+  # چک‌اوتِ کهنهٔ رانر اعمال می‌کند و خروجیِ تازهٔ اجرای دیگر را می‌کوبد
+  # (همان عیب ۲۵ اوت: pump-radar.json تازه با نسخهٔ صبح بازنویسی شد).
+  local f
+  git -c core.quotepath=false diff --name-only --diff-filter=U | while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    _in_changed "$f" && continue
+    git checkout -q --theirs -- "$f" 2>/dev/null || git rm -q --cached -- "$f" 2>/dev/null || true
+    git add -- "$f" 2>/dev/null || true
+  done
+}
+
 _settle_leftovers() {
   # هر چه حل‌کننده جا گذاشت، بر اساس «کی این فایل را نوشته» حل می‌شود.
   local f side
@@ -99,6 +114,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   fi
   git fetch -q "$REMOTE" "$BRANCH" || { sleep $((attempt * 4 + RANDOM % 7)); continue; }
   if ! git merge -q --no-edit --allow-unrelated-histories "$REMOTE/$BRANCH" 2>/dev/null; then
+    _settle_untouched
     if [ -f "$RESOLVER" ]; then
       python3 "$RESOLVER" || true
     fi
