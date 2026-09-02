@@ -1,6 +1,6 @@
 {
- "generated": 1788329834588,
- "generatedText": "2026-09-02 06:17 UTC",
+ "generated": 1788330061983,
+ "generatedText": "2026-09-02 06:21 UTC",
  "source": "کندل واقعی Binance، اسکن‌شده روی رانر گیت‌هاب",
  "symbols": 60,
  "series": 120,
@@ -522,7 +522,7 @@
   "note": "قبل از هر سیگنال، سابقهٔ همان ارز با همان استراتژی و همان جهت پرسیده می‌شود. اگر سابقه بد و نمونه کافی باشد، سیگنال نگه داشته می‌شود. اگر سابقه کم باشد چیزی تغییر نمی‌کند."
  },
  "context": {
-  "btcChange": -1.657
+  "btcChange": -1.621
  },
  "note": "۵ دقیقه بالاتر از ۱۵ دقیقه رتبه می‌گیرد، چون بک‌تست روی کندل واقعی روی ۵ دقیقه لبه اندازه گرفت (+۰.۱۴۱R با بازهٔ کاملاً بالای صفر) و روی ۱۵ دقیقه نه (+۰.۰۰۵R، بازه صفر را در بر می‌گیرد). این فقط رتبه‌بندی است — هیچ ارزی به‌خاطر تایم‌فریمش حذف نمی‌شود.",
  "signals": [
@@ -3195,8 +3195,12 @@
     "high": 0.02061
    },
    "learned": {
-    "boost": 0.31,
+    "boost": 0.911,
     "rules": [
+     {
+      "rule": "بیت‌کوین صعودی",
+      "delta": 0.601
+     },
      {
       "rule": "جای حرکت بیش از ۱.۵ برابر",
       "delta": 0.31
@@ -3241,6 +3245,88 @@
     ]
    },
    "liqmap_note": "🗺 خوشهٔ لیکویید بالا در +0.1٪ (شدت 39) · پایین در -5.5٪ (شدت 100)"
+  },
+  {
+   "strategy": "smc",
+   "strategyName": "کانال + اردر بلاک",
+   "sym": "TRXUSDT",
+   "tf": "15m",
+   "stage": "WATCH",
+   "dir": "LONG",
+   "entry": 0.3227,
+   "sl": 0.3219597142857143,
+   "tp1": 0.3293,
+   "tp2": 0.33458,
+   "rr": 8.92,
+   "price": 0.3227,
+   "conf": 32,
+   "ev": 2.1825473041801016,
+   "quality": 67,
+   "visits": 1,
+   "depth": 100,
+   "exited": true,
+   "inside": false,
+   "fvg": true,
+   "level": {
+    "type": "S",
+    "touches": 11
+   },
+   "channel": {
+    "dir": "نزولی",
+    "drift": -4.2,
+    "posPct": 95
+   },
+   "adx": 27.6,
+   "room": {
+    "r": 0.81,
+    "blocker": "اردر بلاک مقابل"
+   },
+   "swept": {
+    "n": 8
+   },
+   "thin": {
+    "insideRatio": 0.31,
+    "volRatio": 0.85
+   },
+   "goOnFirst": true,
+   "waitReason": null,
+   "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
+   "lastClose": 1788328800000,
+   "ob": {
+    "low": 0.322,
+    "high": 0.3221
+   },
+   "learned": {
+    "boost": 0.58,
+    "rules": [
+     {
+      "rule": "لانگ همسو با بیت‌کوین",
+      "delta": 0.713
+     },
+     {
+      "rule": "بیت‌کوین صعودی",
+      "delta": 0.601
+     },
+     {
+      "rule": "R:R بالای ۲.۵",
+      "delta": -0.468
+     },
+     {
+      "rule": "جای حرکت کمتر از ۱ برابر",
+      "delta": -0.266
+     }
+    ]
+   },
+   "elite": false,
+   "learning": {
+    "verdict": "bad",
+    "n": 534,
+    "hit": 17.2,
+    "ev": -0.067
+   },
+   "trend4": "down",
+   "trend1": "down",
+   "trend_mode": "hard-veto"
   },
   {
    "strategy": "ibs",
@@ -3971,80 +4057,6 @@
     "n": 15,
     "hit": 73.3,
     "ev": 1.433
-   },
-   "trend4": "down",
-   "trend1": "down",
-   "trend_mode": "hard-veto"
-  },
-  {
-   "strategy": "smc",
-   "strategyName": "کانال + اردر بلاک",
-   "sym": "TRXUSDT",
-   "tf": "15m",
-   "stage": "WATCH",
-   "dir": "LONG",
-   "entry": 0.3227,
-   "sl": 0.3219597142857143,
-   "tp1": 0.3293,
-   "tp2": 0.33458,
-   "rr": 8.92,
-   "price": 0.3227,
-   "conf": 32,
-   "ev": 2.1825473041801016,
-   "quality": 67,
-   "visits": 1,
-   "depth": 100,
-   "exited": true,
-   "inside": false,
-   "fvg": true,
-   "level": {
-    "type": "S",
-    "touches": 11
-   },
-   "channel": {
-    "dir": "نزولی",
-    "drift": -4.2,
-    "posPct": 95
-   },
-   "adx": 27.6,
-   "room": {
-    "r": 0.81,
-    "blocker": "اردر بلاک مقابل"
-   },
-   "swept": {
-    "n": 8
-   },
-   "thin": {
-    "insideRatio": 0.31,
-    "volRatio": 0.85
-   },
-   "goOnFirst": true,
-   "waitReason": null,
-   "skip": "هر دو تایم بالا خلاف LONG است (۴س=down، ۱س=down) — وتوی مطلق؛ تایم پایین حق نقض ساختار بالا را ندارد (قانون ۲)",
-   "lastClose": 1788328800000,
-   "ob": {
-    "low": 0.322,
-    "high": 0.3221
-   },
-   "learned": {
-    "boost": -0.734,
-    "rules": [
-     {
-      "rule": "R:R بالای ۲.۵",
-      "delta": -0.468
-     },
-     {
-      "rule": "جای حرکت کمتر از ۱ برابر",
-      "delta": -0.266
-     }
-    ]
-   },
-   "elite": false,
-   "learning": {
-    "verdict": "bad",
-    "n": 534,
-    "hit": 17.2,
-    "ev": -0.067
    },
    "trend4": "down",
    "trend1": "down",
