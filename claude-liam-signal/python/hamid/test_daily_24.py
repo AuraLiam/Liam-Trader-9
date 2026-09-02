@@ -56,6 +56,69 @@ old = {f"ibs|D{i}USDT|5m|SHORT": now - (25 + i) * 3600 * 1000 for i in range(9)}
 check("ارسال‌های کهنه‌تر از ۲۴ ساعت سقف امروز را نمی‌بندند",
       tg._sent_in(old, 24) == 0, str(tg._sent_in(old, 24)))
 
+# ── ۱ب. سقف باید ۲۴ ساعتِ کامل را ببیند، نه فقط حافظهٔ ۶ساعته ────────────
+# عیبِ اندازه‌گیری‌شدهٔ ۲ سپتامبر: ۳۳ ارسال یکتا در ۲۴ ساعت با سقف ۲۴.
+# حافظهٔ ضدتکرار هر کلید را TTL_MS (۶ ساعت) نگه می‌دارد؛ سقفی که از آن
+# می‌شمرد، هر ۶ ساعت از نو ۲۴ می‌داد. این بخش همان مسیر واقعی را می‌رود:
+# دیسک → _load_sent (هرس) → شمارش، در کنار آرشیو ۲۴ساعته.
+import inspect                                        # noqa: E402
+
+H = 3600 * 1000
+_tmp = Path(tempfile.mkdtemp(prefix="daily24-"))
+_saved = {k: getattr(tg, k) for k in ("ARCHIVE_DIR", "SENT", "SIDECAR", "TGLOG", "_remote_log_rows")}
+try:
+    tg.ARCHIVE_DIR = _tmp / "archive"
+    tg.SENT = _tmp / "sent.json"
+    tg.SIDECAR = _tmp / "sidecar.json"
+    tg.TGLOG = _tmp / "telegram-log.json"
+    tg._remote_log_rows = lambda: []
+    tg.ARCHIVE_DIR.mkdir()
+
+    def _day(ms):
+        return time.strftime("%Y%m%d", time.gmtime(ms / 1000))
+
+    def _row(i, at):
+        return json.dumps({"n": i, "at": int(at), "sym": f"C{i}USDT", "tf": "5m",
+                           "dir": "LONG", "tg_msg_id": 5000 + i}) + "\n"
+
+    rows = {}
+    # ۲۰ ارسال بین ۲۰ تا ۸ ساعت پیش (بیرون از حافظهٔ ۶ساعته، داخل ۲۴ ساعت)
+    for i in range(20):
+        at = now - (20 - i * 0.6) * H
+        rows.setdefault(_day(at), []).append(_row(i, at))
+    # ۱۲ ارسال در ۵ ساعت اخیر (داخل حافظه)
+    for i in range(20, 32):
+        at = now - (5 - (i - 20) * 0.3) * H
+        rows.setdefault(_day(at), []).append(_row(i, at))
+    # یک ردیفِ تکراری (همان tg_msg_id) و یک ردیفِ ۳۰ساعته — هیچ‌کدام نباید بشمرد
+    rows.setdefault(_day(now - 1 * H), []).append(_row(31, now - 1 * H))
+    rows.setdefault(_day(now - 30 * H), []).append(_row(99, now - 30 * H))
+    for day, lines in rows.items():
+        (tg.ARCHIVE_DIR / f"telegram-sent-{day}.jsonl").write_text("".join(lines))
+
+    # حافظهٔ روی دیسک: همان ۳۲ ارسال به شکل کلید واقعی
+    disk = {f"ibs|C{i}USDT|5m|LONG": now - (20 - i * 0.6) * H for i in range(20)}
+    disk.update({f"ibs|C{i}USDT|5m|LONG": now - (5 - (i - 20) * 0.3) * H for i in range(20, 32)})
+    tg.SENT.write_text(json.dumps(disk))
+
+    loaded = tg._load_sent()
+    check("حافظهٔ ضدتکرار بعد از بارگذاری فقط ۶ ساعت را نگه می‌دارد (عیبِ ریشه، مستند)",
+          tg._sent_in(loaded, 24) == 12, str(tg._sent_in(loaded, 24)))
+    check("آرشیو ۲۴ساعته هر ۳۲ ارسال یکتا را می‌شمرد (تکراری و ۳۰ساعته نه)",
+          tg._archive_sent_in(24, now) == 32, str(tg._archive_sent_in(24, now)))
+    check("شمارِ سقف روزانه = ۳۲ → سقف ۲۴ واقعاً می‌بندد",
+          tg._sent_in_24h(loaded) >= tg.DAILY_CAP, str(tg._sent_in_24h(loaded)))
+    check("آرشیو خالی → شمارش صفر، نه خطا",
+          (lambda d: (setattr(tg, "ARCHIVE_DIR", d), tg._archive_sent_in(24))[1])(_tmp / "none") == 0)
+    src = inspect.getsource(tg.send_signals)
+    check("گلوگاه ارسال از شمارندهٔ ۲۴ساعته می‌خواند، نه از حافظهٔ هرس‌شده",
+          "_sent_in_24h(" in src and "_sent_in(sent, 24)" not in src)
+    check("تا وقتی حافظه کمتر از ۲۴ ساعت یاد دارد، منبعِ دوم اجباری است",
+          tg.TTL_MS >= 24 * H or "_archive_sent_in" in inspect.getsource(tg._sent_in_24h))
+finally:
+    for k, v in _saved.items():
+        setattr(tg, k, v)
+
 # ── ۲. نردبان تا ۲۴ باز می‌ماند، نه اینکه وسط راه ببندد ──────────────────
 b12 = tg.ladder_bar(12)
 b24 = tg.ladder_bar(24)

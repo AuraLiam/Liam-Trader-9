@@ -662,6 +662,51 @@ def _sent_in(sent, hours):
                if not k.startswith(("any|", "skip|", "pair|")) and t >= lo)
 
 
+def _archive_sent_in(hours, now_ms=None):
+    """شمار ارسال‌های واقعیِ پنجرهٔ گذشته از آرشیو شماره‌دار (append-only).
+
+    عیبِ اندازه‌گیری‌شدهٔ ۲ سپتامبر: حافظهٔ ضدتکرار (`sent`) هر کلید را
+    فقط `TTL_MS` (۶ ساعت) نگه می‌دارد، پس `_sent_in(sent, 24)` هرگز بیش از
+    ۶ ساعت را نمی‌دید و «سقف ۲۴ در ۲۴ ساعت» عملاً «۲۴ در ۶ ساعت» بود —
+    یعنی هیچ‌وقت نمی‌بست. شمارش: ۳۳ ارسال یکتا (tg_msg_id) در ۲۴ ساعتِ
+    منتهی به ۱۰:۰۴ UTC، در برابر سقف ۲۴. آرشیو روزانه تنها دفتری است که
+    ۲۴ ساعت را کامل دارد؛ ردیف یکتا با tg_msg_id (یا at+sym) شمرده
+    می‌شود تا ثبتِ دوباره سقف را ساختگی پر نکند."""
+    now_ms = now_ms or time.time() * 1000
+    lo = now_ms - hours * 3600 * 1000
+    days = {time.strftime("%Y%m%d", time.gmtime(t / 1000))
+            for t in (lo, now_ms, (lo + now_ms) / 2)}
+    seen = set()
+    for day in sorted(days):
+        f = ARCHIVE_DIR / f"telegram-sent-{day}.jsonl"
+        if not f.exists():
+            continue
+        try:
+            for line in f.read_text(encoding="utf-8").splitlines():
+                try:
+                    r = json.loads(line)
+                except Exception:                    # noqa: BLE001
+                    continue
+                if not isinstance(r, dict):
+                    continue
+                at = r.get("at")
+                if not isinstance(at, (int, float)) or at < lo or at > now_ms:
+                    continue
+                seen.add(r.get("tg_msg_id") or (int(at), r.get("sym")))
+        except Exception:                            # noqa: BLE001 - آرشیو ناخوانا = شمارش صفر از این منبع
+            continue
+    return len(seen)
+
+
+def _sent_in_24h(sent):
+    """شمارِ سقف روزانه = بیشینهٔ حافظهٔ ۶ساعته و آرشیو ۲۴ساعته.
+
+    هیچ‌کدام تنها کافی نیست: حافظه ۶ ساعت بیشتر یادش نمی‌ماند، و آرشیوِ
+    چک‌اوتِ رانر می‌تواند چند دقیقه از ریموت عقب باشد. بیشینه یعنی
+    هیچ ارسالِ دیده‌شده‌ای از شمارش نمی‌افتد."""
+    return max(_sent_in(sent, 24), _archive_sent_in(24))
+
+
 def ladder_bar(n_sent):
     """آستانهٔ لازم برای سیگنال بعدی، بر پایهٔ تعداد ارسالِ پنجرهٔ ۱۲ ساعته."""
     step = max(0, int(n_sent) - LADDER_FREE + 1) if n_sent >= LADDER_FREE else 0
@@ -784,7 +829,8 @@ def send_signals(signals, render_chart, limit=8):
     # (ev) بیشتری لازم می‌شود. پله‌ها خطی‌اند و سقف دارند تا از یک جایی
     # به بعد عملاً فقط ستاپ‌های عالی رد شوند — نه اینکه در بسته شود.
     # سقف سختِ روزانه — دستور ۲۹ اوت: روزی ۲۴ سیگنال
-    n_day = _sent_in(sent, 24)
+    # شمارش از آرشیو ۲۴ساعته هم می‌آید، نه فقط از حافظهٔ ۶ساعته (رفع ۲ سپتامبر)
+    n_day = _sent_in_24h(sent)
     if n_day >= DAILY_CAP:
         print(f"telegram: سقف روزانه پر است ({n_day}/{DAILY_CAP} در ۲۴ ساعت) — "
               f"{len(fresh)} سیگنال تا بازشدن پنجره نگه داشته شد", flush=True)
