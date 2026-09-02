@@ -112,22 +112,40 @@ check("صرافی کمتر از خواسته داد → همان‌قدر برم
 # ── ۳. ترتیب و سوییچ ────────────────────────────────────────────────────
 check("بیت‌یونیکس اولین صرافی پرپ است", S.PERP_VENUES[0]["id"] == "bitunix-perp" and S.PERP_VENUES[0].get("fetch"))
 check("پیش‌فرضِ منبع اسپات است (سوییچ فقط با LIAM9_CANDLES=perp)", S.CANDLE_SOURCE in ("spot", "perp"))
-_saved = (S.CANDLE_SOURCE, S.perp_klines, S.klines)
+_saved = (S.CANDLE_SOURCE, S.perp_klines, S.spot_klines)
 try:
     S.CANDLE_SOURCE = "perp"
     S.perp_klines = lambda sym, tf, n, quiet=True: [["perp"]]
-    S.klines = lambda sym, tf, n, quiet=True: [["spot"]]
-    check("perp ترجیح: اول پرپ", S.klines_pref("BTCUSDT", "15m", 10) == [["perp"]])
+    S.spot_klines = lambda sym, tf, n, quiet=True: [["spot"]]
+    check("perp ترجیح: sources.klines (نقطهٔ واحد ۴۰+ مصرف‌کننده) اول پرپ می‌رود", S.klines("BTCUSDT", "15m", 10) == [["perp"]])
+    check("klines_pref همان klines است (نام قدیمی نمی‌شکند)", S.klines_pref is S.klines)
 
     def boom(*a, **k):
         raise RuntimeError("down")
     S.perp_klines = boom
-    check("perp ترجیح، پرپ خراب → پشتیبان اسپات (هیچ مصرف‌کننده‌ای بی‌کندل نمی‌ماند)", S.klines_pref("BTCUSDT", "15m", 10) == [["spot"]])
+    check("perp ترجیح، پرپ خراب → پشتیبان اسپات (هیچ مصرف‌کننده‌ای بی‌کندل نمی‌ماند)", S.klines("BTCUSDT", "15m", 10) == [["spot"]])
     S.CANDLE_SOURCE = "spot"
     S.perp_klines = lambda *a, **k: [["perp"]]
-    check("spot پیش‌فرض: اصلاً سراغ پرپ نمی‌رود", S.klines_pref("BTCUSDT", "15m", 10) == [["spot"]])
+    check("spot پیش‌فرض: اصلاً سراغ پرپ نمی‌رود", S.klines("BTCUSDT", "15m", 10) == [["spot"]])
+    S.CANDLE_SOURCE = "perp"
+    check("spot_klines با سوییچ perp هم اسپات می‌ماند (perp_vs_spot به آن تکیه دارد)", S.spot_klines("BTCUSDT", "15m", 10) == [["spot"]])
 finally:
-    S.CANDLE_SOURCE, S.perp_klines, S.klines = _saved
+    S.CANDLE_SOURCE, S.perp_klines, S.spot_klines = _saved
+
+# ── ۳ب. ردپا و اندازه‌گیری ─────────────────────────────────────────────────
+pvs_src = (HERE / "perp_vs_spot.py").read_text(encoding="utf-8")
+check("perp_vs_spot اسپات را صریح از spot_klines می‌گیرد", "sources.spot_klines" in pvs_src)
+tg_src = (PY / "telegram.py").read_text(encoding="utf-8")
+check("ردپای candle_src روی هر دو مسیر بازکردن پوزیشن می‌نشیند", tg_src.count("**_candle_trace()") >= 2 and '"candle_src"' in tg_src)
+import hamid.paper as _paper                          # noqa: E402
+_names = [c[0] for c in _paper.CONDITIONS]
+check("ماشین بونفرونی شرط «کندل از پرپ بیت‌یونیکس» را دارد", "کندل از پرپ بیت‌یونیکس" in _names)
+_cond = dict(_paper.CONDITIONS)["کندل از پرپ بیت‌یونیکس"]
+check("شرط فقط روی bitunix-perp درست است، روی اسپات/None غلط",
+      _cond({"candle_src": "bitunix-perp"}) and not _cond({"candle_src": "mexc"}) and not _cond({}))
+WF = PY.parent.parent / ".github" / "workflows"
+for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
+    check(f"{wf}: سوییچ LIAM9_CANDLES=perp روشن است", "LIAM9_CANDLES: perp" in (WF / wf).read_text(encoding="utf-8"))
 
 # ── ۴. اسکن هم همین سوییچ را دارد ────────────────────────────────────────
 scan_src = (PY / "scan.py").read_text(encoding="utf-8")

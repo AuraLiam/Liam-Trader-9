@@ -747,6 +747,19 @@ def _fomo_trace(sym):
         return {"fomo_heat": None, "fomo_witness": None}
 
 
+def _candle_trace():
+    """منبع کندلی که این سیگنال رویش ساخته شد (۲ سپتامبر، سوییچ پرپ).
+
+    `candle_src`: شناسهٔ صرافی از `sources.used()` — مثلاً bitunix-perp یا
+    mexc (اسپات). دفتر تاریخی روی اسپات است؛ بدون این ردپا، ماشین شبانه دو
+    بازار را در یک نمونه قاطی می‌کرد (کلاسِ عیبِ «دو تعریف در یک نمونه»)."""
+    try:
+        import sources as _src
+        return {"candle_src": _src.used().get("klines")}
+    except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
+        return {"candle_src": None}
+
+
 def _news_trace(sym, direction):
     """ردپای نظرسنجی خبر روی دفتر سیگنال (۲ سپتامبر) — فقط از عکس‌فوری، بدون شبکه.
 
@@ -977,7 +990,7 @@ def send_signals(signals, render_chart, limit=8):
                                       # ردپای اتاق فومو (۲ سپتامبر) — فقط ثبت برای
                                       # سنجش شبانه؛ از عکس‌فوری، بدون شبکه
                                       **_fomo_trace(s["sym"]),
-                                      **_news_trace(s["sym"], s["dir"]),
+                                      **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
                                       **(pm.get("tv") or {})})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
@@ -1090,7 +1103,7 @@ def send_signals(signals, render_chart, limit=8):
                                   # شاهد اپ fomo — ثبت برای ماشین شبانه، نه امتیاز
                                   **_fomo_trace(s["sym"]),
                                   # اجماع خبری ایجنت‌ها (۲ سپتامبر): فقط ردپا — خبر دیدگاه است، نه تصمیم
-                                  **_news_trace(s["sym"], s["dir"]),
+                                  **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
                                   # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
                                   # سنجش شبانه، نه دروازه (۳۰ اوت)
                                   "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),
