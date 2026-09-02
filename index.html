@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.40 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.41 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -293,6 +293,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
@@ -3744,6 +3745,40 @@ function renderSys(){
 }
 setInterval(sysFetch,120000);setTimeout(sysFetch,4800);
 (()=>{const s=DB.get("sys_cache");if(s&&!SYS.data){SYS.data=s;setTimeout(renderSys,600);}})();
+/* اتاق فومو (۲ سپتامبر) — داغی جمعیت از دادهٔ عمومی + شاهدِ دستی از اپ fomo
+   (که API ندارد). فقط نمایش و ثبت؛ هیچ امتیاز/دروازه‌ای از این کارت نمی‌آید. */
+const FOMO={data:null};
+async function fomoFetch(){
+  try{
+    const r=await fetch("./signals/fomo.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){FOMO.data=j;DB.set("fomo_cache",j);renderFomo();}}
+  }catch(e){}
+}
+function renderFomo(){
+  const el=$("#fomoBox");if(!el)return;
+  const j=FOMO.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اتاق فومو هنوز عکس‌فوری نساخته.</div>`;return;}
+  const m=j.market||{};
+  const heat=m.heat==null?"بی‌داده":m.heat;
+  const dot=m.heat==null?"⚪":(m.heat>=70?"🔴":(m.heat<=30?"🔵":"🟡"));
+  const meta=$("#fomoMeta");
+  if(meta)meta.textContent=`داغی ${heat} (${m.label||"—"}) · شاهد ۲۴س ${(j.witness_recent||[]).length} · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const comp=m.components||{};
+  const parts=Object.keys(comp).map(k=>`${{fear_greed:"ترس/طمع",funding:"فاندینگ",trending:"ترند"}[k]||k} ${Math.round(comp[k])}`).join(" · ");
+  const trend=(j.trending||[]).slice(0,8).map(t=>`<span style="margin-inline-end:8px" class="${t.tradable?"":"dim"}">${t.sym.replace("USDT","")}${t.tradable?"":"×"}</span>`).join("");
+  const wit=(j.witness_recent||[]).slice(-6).reverse().map(w=>`<div style="font-size:11px">${w.sym.replace("USDT","")} <b>${w.kind}</b>${w.rank?" #"+w.rank:""} <span class="dim">${w.note||""}</span></div>`).join("");
+  const tr=(j.track_record||{})["4h"]||{};
+  const rec=tr.hit==null?`<span class="dim">کارنامه: ${tr.why||"n کافی نیست"}</span>`:
+    `کارنامهٔ ۴س: اصابت ${Math.round(tr.hit*100)}٪ CI [${tr.ci[0]},${tr.ci[1]}] n=${tr.n}`;
+  const errs=Object.keys(m.errors||{}).length?`<div class="dim" style="font-size:11px">منبع ناموجود: ${Object.keys(m.errors).join("، ")}</div>`:"";
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:4px">${dot} داغی جمعیت <b>${heat}</b> <span class="dim" style="font-size:11px">${parts}</span></div>
+    ${errs}<div style="font-size:12px;margin:4px 0"><span class="dim">ترند (× = در بیت‌یونیکس نیست):</span> ${trend||"—"}</div>
+    <div style="margin:4px 0">${wit||`<span class="dim" style="font-size:11px">شاهدی ثبت نشده — از اپ fomo با پیام «fomo نماد buy|sell|trend [رتبه]» به بات بفرست.</span>`}</div>
+    <div style="font-size:11px">${rec}</div>`;
+}
+setInterval(fomoFetch,180000);setTimeout(fomoFetch,5200);
+(()=>{const f=DB.get("fomo_cache");if(f&&!FOMO.data){FOMO.data=f;setTimeout(renderFomo,700);}})();
 /* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
    کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
    یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی

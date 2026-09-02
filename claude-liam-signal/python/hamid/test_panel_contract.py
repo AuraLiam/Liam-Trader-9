@@ -84,5 +84,18 @@ check("چیپ اعتماد/انتظار/پولبک روی مقدار null ساخ
       's.conf==null?""' in html and 's.ev==null?""' in html
       and 's.visits==null?""' in html)
 
+# ── ۵) هر فایل signals که پنل می‌خواند باید به /aura/signals/ برسد ─────────
+# عیبِ اندازه‌گیری‌شدهٔ ۲ سپتامبر: پنل ./signals/system-state.json و
+# loop-audit و bubbles و telegram-feed را می‌خواند ولی فهرست کپیِ مرحلهٔ
+# انتشار آن‌ها را نداشت — روی آدرس واقعی (/aura/) دو کارت همیشه «هنوز
+# ساخته نشده» نشان می‌دادند. کلاس عیب: کارت تازه بی‌فهرست.
+fetched = sorted(set(re.findall(r'\./signals/([A-Za-z0-9_-]+)\.json', html)))
+m_wl = re.search(r'for f in (.*?); do\s*\n\s*cp "signals/\$f\.json" /tmp/ghp/aura', wf, re.S)
+whitelist = set(m_wl.group(1).replace("\\\n", "").split()) if m_wl else set()
+not_deployed = [f for f in fetched if f not in whitelist]
+check("فهرست کپی مرحلهٔ انتشار پیدا می‌شود", bool(m_wl))
+check("هر signals/*.json که پنل می‌خواند در فهرست انتشار /aura/ هست",
+      bool(fetched) and not not_deployed, f"کپی‌نشده: {not_deployed}")
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

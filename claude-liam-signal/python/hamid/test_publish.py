@@ -160,6 +160,19 @@ check("فقط مسیرهای داده‌شده منتشر می‌شوند",
       "code/engine.py" not in git("show", "--stat", "--format=", "HEAD", cwd=w.work).stdout)
 w.close()
 
+# ── ۲ب) مسیرِ ناموجود در فهرست، تغییرِ واقعی را نمی‌کشد (اجرای ۱ فومو) ──
+# `git add -A -- a b` وقتی b وجود ندارد با خطا هیچ‌چیز stage نمی‌کند؛ ناشر
+# «بدون تغییر» می‌گفت در حالی که a عوض شده بود.
+w = World()
+(w.work / "signals/latest.json").write_text('{"generated": 3}')
+r = w.publish("signals/latest.json", "brain/not-yet-there")
+check("مسیر ناموجود: خروج ۰ و اعلام در لاگ", r.returncode == 0 and "ناموجود" in r.stdout, r.stdout + r.stderr)
+check("مسیر ناموجود: فایلِ واقعاً عوض‌شده منتشر شد",
+      w.on_origin("signals/latest.json") == '{"generated": 3}')
+r = w.publish("brain/also-missing")
+check("همهٔ مسیرها ناموجود: «بدون تغییر»، خروج ۰", r.returncode == 0 and "بدون تغییر" in r.stdout, r.stdout + r.stderr)
+w.close()
+
 # ── ۳) origin جلو رفته (فایل دیگر) → ادغام، هر دو می‌مانند ──────────────
 w = World()
 w.other_push({"signals/other.json": '{"o": 7}'})

@@ -101,6 +101,7 @@ jobs:
           python3 -m hamid.test_state_bus
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
+          python3 -m hamid.test_fomo
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
           python3 -m hamid.test_exec_feed
@@ -331,10 +332,15 @@ jobs:
           for ic in icon-192.png icon-512.png apple-touch-icon.png; do
             cp "$ic" /tmp/ghp/aura/ 2>/dev/null || true
           done
+          # فهرست باید هر فایلی را که index.html با ./signals/… می‌خواند
+          # داشته باشد — ۲ سپتامبر معلوم شد پنجِ آن‌ها (system-state،
+          # loop-audit، bubbles، telegram-feed، fomo) هرگز به /aura/ نمی‌رسید
+          # و دو کارت پنل روی آدرس واقعی کور بودند. محافظ: test_panel_contract.
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
-                   experience-effect \
+                   experience-effect system-state loop-audit bubbles \
+                   telegram-feed fomo \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
             cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
