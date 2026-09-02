@@ -1,5 +1,10 @@
 # شکار خبر — هر ۳ ساعت (خواستهٔ حمید): جستجوی عمیق وب + RSSها + تریدینگ‌ویو
 # (خبر و تقویم رویدادها)، دسته‌بندی و مسیردهی به اتاق‌ها، و انتشار برای پنل.
+#
+# ۲ سپتامبر: + نظرسنجی خبر بین ایجنت‌ها (hamid/news_poll) — خبر فقط دیدگاه
+# است؛ برداشت هر ایجنت ثبت و بعداً با کندل واقعی نمره می‌شود. روش llm فقط
+# وقتی ANTHROPIC_API_KEY در Secrets باشد؛ بی‌کلید فقط خواننده‌های قطعی.
+# ناشر: مشترک (قانون ۱۴).
 name: News hunt
 
 on:
@@ -17,12 +22,17 @@ concurrency:
 jobs:
   hunt:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
+      - name: محیط مشترک
+        run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_news_poll
       - name: جمع‌آوری و دسته‌بندی
         working-directory: claude-liam-signal/python
         env:
@@ -46,25 +56,30 @@ jobs:
               json.dumps(out, ensure_ascii=False, indent=1))
           print(f"{len(hot)} تیتر داغ، {len(out['calendar'])} رویداد ۴۸س")
           PY
-      - name: ثبت روی main
+      - name: نظرسنجی خبر بین ایجنت‌ها
+        working-directory: claude-liam-signal/python
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWS_POLL_MODEL: ${{ vars.NEWS_POLL_MODEL }}
+        run: python3 -m hamid.news_poll
+      - name: Git identity
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          git add brain 2>/dev/null || true
-          for _f in signals/news.json; do [ -f "$_f" ] && git add "$_f"; done
-          if ! git diff --cached --quiet 2>/dev/null; then
-            git commit -q -m "شکار خبر $(date -u '+%H:%M') UTC"
-            for i in 1 2 3 4 5 6 7 8; do git push origin HEAD:main -q && break; git pull --rebase origin main -q || true; sleep $((i * 4 + RANDOM % 7)); done
-          fi
+      - name: ثبت روی main (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "شکار خبر $(date -u '+%H:%M') UTC" brain signals/news.json signals/news-poll.json
       - name: انتشار روی پنل
         run: |
           git fetch origin gh-pages -q || exit 0
           rm -rf /tmp/ghn
           git worktree add /tmp/ghn origin/gh-pages --detach -q || exit 0
-          mkdir -p /tmp/ghn/signals
-          cp signals/news.json /tmp/ghn/signals/ 2>/dev/null || true
+          mkdir -p /tmp/ghn/signals /tmp/ghn/aura/signals
+          for f in news news-poll; do
+            cp "signals/$f.json" /tmp/ghn/signals/ 2>/dev/null || true
+            cp "signals/$f.json" /tmp/ghn/aura/signals/ 2>/dev/null || true
+          done
           cd /tmp/ghn
-          git add signals
+          git add signals aura
           if ! git diff --cached --quiet; then
             git commit -q -m "شکار خبر $(date -u '+%H:%M') UTC"
             for i in 1 2 3 4 5 6 7 8; do git push origin HEAD:gh-pages -q && break; git fetch origin gh-pages -q||true; git merge -X ours -m "ادغام gh-pages" origin/gh-pages -q||{ git merge --abort 2>/dev/null||true; }; done

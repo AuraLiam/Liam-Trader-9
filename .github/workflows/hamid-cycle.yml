@@ -102,6 +102,7 @@ jobs:
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
           python3 -m hamid.test_fomo
+          python3 -m hamid.test_news_poll
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
           python3 -m hamid.test_exec_feed
@@ -340,7 +341,7 @@ jobs:
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
                    experience-effect system-state loop-audit bubbles \
-                   telegram-feed fomo \
+                   telegram-feed fomo news-poll \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
             cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true

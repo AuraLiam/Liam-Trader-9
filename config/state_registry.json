@@ -110,7 +110,7 @@
   "top-liquidity.json": {
    "layer": "L1_market",
    "owner": "E10",
-   "producer": "hamid/cycle.py",
+   "producer": "hamid/publish_top_liquidity.py",
    "max_age_min": 360,
    "consumer": "engine",
    "critical": false,
@@ -119,7 +119,7 @@
   "volatile-universe.json": {
    "layer": "L1_market",
    "owner": "E01",
-   "producer": "hamid/volatile_universe.py",
+   "producer": "hamid/volatility_universe.py",
    "max_age_min": null,
    "consumer": "research",
    "critical": false,
@@ -137,7 +137,7 @@
   "depth-health.json": {
    "layer": "L1_market",
    "owner": "E02",
-   "producer": "hamid/depth_health.py",
+   "producer": "hamid/depth_collector.py",
    "max_age_min": 360,
    "consumer": "panel",
    "critical": false,
@@ -165,7 +165,7 @@
   "pump-analysis.json": {
    "layer": "L1_market",
    "owner": "E12",
-   "producer": "hamid/pump_analysis.py",
+   "producer": "hamid/analyze_pump.py",
    "max_age_min": null,
    "consumer": "research",
    "critical": false,
@@ -174,7 +174,7 @@
   "ob-radar.json": {
    "layer": "L3_structure",
    "owner": "E08",
-   "producer": "hamid/ob_radar.py",
+   "producer": "hamid/ob_intel.py",
    "max_age_min": 240,
    "consumer": "panel+engine",
    "critical": false,
@@ -201,7 +201,7 @@
   "experience.json": {
    "layer": "L6_learning",
    "owner": "E21",
-   "producer": "hamid/experience.py",
+   "producer": "hamid/publish_experience.py",
    "max_age_min": 360,
    "consumer": "engine",
    "critical": false,
@@ -228,7 +228,7 @@
   "loss-analysis.json": {
    "layer": "L6_learning",
    "owner": "E20",
-   "producer": "hamid/loss_analysis.py",
+   "producer": "hamid/loss_autopsy.py",
    "max_age_min": 360,
    "consumer": "panel",
    "critical": false,
@@ -298,6 +298,16 @@
    "critical": false,
    "kind": "live",
    "cadence_note": "هم‌قدم با scalp.json — همان ورک‌فلو (scalp.yml) هر دو را می‌نویسد؛ همان ۲۶ فاصلهٔ اندازه‌گیری‌شده (بیشینه ۹.۳ ساعت) → سقف ۱۱ ساعت"
+  },
+  "news-poll.json": {
+   "layer": "L2_context",
+   "owner": "E14",
+   "producer": "hamid/news_poll.py",
+   "max_age_min": 420,
+   "consumer": "panel",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "همراه شکار خبر (news-hunt.yml هر ۳ ساعت)؛ همان سقف ۷ ساعتهٔ news.json که از ۱۹ فاصلهٔ اندازه‌گیری‌شده آمد (بیشینه ۵.۸ ساعت)"
   },
   "fomo.json": {
    "layer": "L2_context",
@@ -481,7 +491,7 @@
   "scenario-sweep.json": {
    "layer": "L6_learning",
    "owner": "E18",
-   "producer": "hamid/scenario_sweep.py",
+   "producer": "hamid/scenario_backtest.py",
    "max_age_min": null,
    "consumer": "archive",
    "critical": false,
