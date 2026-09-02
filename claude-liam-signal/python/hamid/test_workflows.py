@@ -273,10 +273,10 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
 # تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
 # می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
 import os as _os                                       # noqa: E402
-INLINE_PUSHERS_MAX = 32      # ۲ سپتامبر: hamid-cycle، work-report، scout،
+INLINE_PUSHERS_MAX = 31      # ۲ سپتامبر: hamid-cycle، work-report، scout،
                              # history-ingest، strategy-volume، dominance-report،
                              # pump-review مهاجرت کردند
-NO_SHARED_DEPS_MAX = 29
+NO_SHARED_DEPS_MAX = 28
 _inline, _nodeps, _both = [], [], []
 for f in files:
     try:

@@ -215,6 +215,14 @@ from hamid import premortem as _pm2, paper as _paper2  # noqa: E402
 
 _tmp2 = Path(_tf.mkdtemp())
 tg.SENT, tg.TGLOG = _tmp2 / "sent.json", _tmp2 / "tglog.json"
+# ۲ سپتامبر: شمارندهٔ سقف روزانه حالا آرشیو ۲۴ساعته را هم می‌خواند؛ آزمون
+# باید آرشیو خودش را داشته باشد وگرنه ۳۳ ارسالِ واقعیِ روز، «هم‌زمانِ سالم»
+# را پشت سقف نگه می‌دارد و آزمون به وضعیت تولید وابسته می‌شود.
+tg.ARCHIVE_DIR = _tmp2 / "archive"
+# حافظهٔ کناری /tmp بین اجراهای آزمون می‌ماند؛ بدون این خط، اجرای دوم همان
+# نمادهای جعلی را «قبلاً فرستاده» می‌دید («3 signals, all already sent»).
+tg.SIDECAR = _tmp2 / "sidecar.json"
+tg.FEED = _tmp2 / "feed.json"                   # دفتر پنل هم به پوشهٔ موقت، نه signals/ واقعی
 from hamid import execution_gate as _eg               # noqa: E402
 _eg.OUTBOX = _tmp2 / "exec-outbox.json"  # قصد اجرا هم به sandbox، نه دفتر تولید
 _orig_env = (tg.creds, tg._post, _sources.klines, _pm2.review, _paper2.open_from)
@@ -250,7 +258,8 @@ check("شناسهٔ پیام برای ریپلای نتیجه ثبت شد (در�
       _opened and _opened[0].get("tg_msg_id") == 777)
 _led = _json.loads(tg.SENT.read_text())
 check("ردشده‌ها سهمیه نمی‌خورند (کلید skip جدا)",
-      len([k for k in _led if not k.startswith(("any|", "skip|"))]) == 1
+      # ۱ سپتامبر کلید کمکی pair| هم اضافه شد؛ کلیدهای کمکی سهمیه نیستند
+      len([k for k in _led if not k.startswith(("any|", "skip|", "pair|"))]) == 1
       and len([k for k in _led if k.startswith("skip|")]) == 2)
 n2 = tg.send_signals([_sig("OKUSDT", strat="alarm")], lambda s, p: None)
 check("همان ستاپ با برچسب استراتژی دیگر دوباره نمی‌رود", n2 == 0)

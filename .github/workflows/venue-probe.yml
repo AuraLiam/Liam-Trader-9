@@ -1,97 +1,52 @@
-# کاوش صرافی نامزد (KCEX) — عمومی، بدون کلید.
-#
-# پرسش حمید (۲۳ اوت): «کارمزد KCEX را ببین... می‌خوای API بگیرم؟»
-# کلید لازم نیست: کارمزد، مشخصات قرارداد و عمق دفتر همه عمومی‌اند و
-# LIVE_EXECUTION=false است، پس دسترسی معامله نمی‌خواهیم. کلیدِ
-# لازم‌نداشته نگرفتن خودش اقدام امنیتی است (قانون ۰۵).
-#
-# چرا این‌جا و نه در نشست: دامنهٔ kcex از محیط نشست توسط پروکسی مسدود
-# است. رانر محدودیت ندارد — همان‌جایی که جمع‌آورندهٔ عمق کار می‌کند.
+# کاوش منابع کندل — فقط دستی. هیچ‌چیز منتشر نمی‌کند؛ فقط چاپ می‌کند کدام
+# صرافی برای BTCUSDT/ETHUSDT کندل سالم می‌دهد و بیت‌یونیکس پرپچوال (صرافی
+# اجرا، دستور حمید) دقیقاً چه شکلی برمی‌گرداند. اثبات پارسر روی رانر است،
+# چون شبکهٔ نشستِ ساخت به صرافی‌ها نمی‌رسد.
 name: Venue probe
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "probe (کشف مسیر) · compare (اسپرد/عمق) · docs (اسناد فنی حمید)"
-        default: "probe"
-      symbols:
-        description: "نمادها برای مقایسه"
-        default: "BTCUSDT,ETHUSDT,SOLUSDT,DOGEUSDT,XRPUSDT"
-      depth_url:
-        description: "مسیر عمق KCEX بعد از کشف (با {s} برای نماد)"
-        default: ""
 
 permissions:
-  contents: write
-
-concurrency:
-  group: venue-probe
-  cancel-in-progress: false
+  contents: read
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 1 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - name: Self-test
+      - name: کاوش
         working-directory: claude-liam-signal/python
         run: |
-          python3 -m hamid.test_venue_probe
-          python3 -m hamid.test_docs_probe
-      - name: Probe or compare
-        working-directory: claude-liam-signal/python
-        run: |
-          set -o pipefail
-          if [ "${{ github.event.inputs.mode || 'probe' }}" = "docs" ]; then
-            python3 -m hamid.docs_probe | tee venue.txt
-          elif [ "${{ github.event.inputs.mode || 'probe' }}" = "probe" ]; then
-            python3 -m hamid.venue_probe --probe | tee venue.txt
-          else
-            D=""
-            if [ -n "${{ github.event.inputs.depth_url }}" ]; then
-              D="--depth-url ${{ github.event.inputs.depth_url }}"
-            fi
-            python3 -m hamid.venue_probe \
-              --compare "${{ github.event.inputs.symbols }}" $D | tee venue.txt
-          fi
-      - name: Summary
-        if: always()
-        working-directory: claude-liam-signal/python
-        run: |
-          { echo '```'; tail -120 venue.txt 2>/dev/null || echo "no output";
-            echo '```'; } >> $GITHUB_STEP_SUMMARY
-      - name: Publish
-        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs'
-        run: |
-          git config user.name "Hamid Signal Agent"
-          git config user.email "actions@users.noreply.github.com"
-          [ -f signals/venue-compare.json ] && git add signals/venue-compare.json || true
-          [ -f signals/docs-probe.json ] && git add signals/docs-probe.json || true
-          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
-          git commit -q -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC"
-          for attempt in 1 2 3 4 5 6 7 8; do
-            git push origin HEAD:main && exit 0
-            git fetch origin main || true
-            # `--allow-unrelated-histories`: این ریپو واقعاً **دو ریشه** دارد
-            # (`git rev-list --max-parents=0` دو کامیت می‌دهد)، پس گیت گاهی
-            # «refusing to merge unrelated histories» می‌دهد و آن‌وقت هیچ
-            # merge ای در جریان نیست.
-            if ! git merge --no-edit --allow-unrelated-histories origin/main; then
-              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" || true
-              # حل‌شده‌ها باید stage شوند، وگرنه commit «چیزی برای کامیت
-              # نیست» می‌دهد و دور بعد هم همان.
-              git add -A brain signals 2>/dev/null || true
-              # هر پاک‌سازی با `|| true`: زیر `bash -e` خطای کشندهٔ
-              # `git merge --abort` (وقتی merge ای در جریان نیست) کلِ گام
-              # را در **دور اول** می‌کشت و حلقهٔ ۸تایی هرگز دور دوم
-              # نمی‌دید. اثبات: اجرای ۳۲۰ چرخه، exit 128 در ۳ ثانیه.
-              git commit --no-edit || git merge --abort || true
-            fi
-            sleep $((attempt * 4 + RANDOM % 7))
-          done
-          exit 1
+          python3 - <<'PY'
+          import json, time, urllib.request
+          import sources
+          # ۱) شکل خامِ بیت‌یونیکس
+          try:
+              raw = sources._json(sources._bitunix_url("BTCUSDT", "15m", 3))
+              print("bitunix raw:", json.dumps(raw)[:400])
+          except Exception as e:
+              print("bitunix raw FAILED:", type(e).__name__, e)
+          # ۲) هر صرافی پرپ جداگانه
+          for v in sources.PERP_VENUES:
+              t0 = time.time()
+              try:
+                  rows = v["fetch"]("BTCUSDT", "15m", 420) if v.get("fetch") else v["parse"](sources._json(v["url"]("BTCUSDT", "15m", 420)))
+                  ok = sources.sane(rows, 420)
+                  print(f"{v['id']}: {len(rows)} rows sane={ok} last={rows[-1][:5] if rows else None} {time.time()-t0:.1f}s")
+              except Exception as e:
+                  print(f"{v['id']}: FAILED {type(e).__name__}: {e}")
+          # ۳) مسیر ترجیحی
+          import os
+          os.environ["LIAM9_CANDLES"] = "perp"; sources.CANDLE_SOURCE = "perp"
+          for sym in ("BTCUSDT", "ETHUSDT", "TRUMPUSDT"):
+              try:
+                  rows = sources.klines_pref(sym, "15m", 420, quiet=False)
+                  print(f"pref {sym}: {len(rows)} rows from {sources.used()}")
+              except Exception as e:
+                  print(f"pref {sym}: FAILED {e}")
+          PY

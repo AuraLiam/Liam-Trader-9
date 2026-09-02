@@ -73,6 +73,16 @@ def strategy_priority(now_ms=None):
 
 
 def klines_now(sym, tf, bars=BARS):
+    # ترجیح منبع (۲ سپتامبر، دستور حمید): LIAM9_CANDLES=perp → اول بیت‌یونیکس
+    # پرپچوال و بعد بقیهٔ پرپ‌ها؛ اسپاتِ تاریخی پشتیبان می‌ماند تا هیچ اسکنی
+    # بی‌کندل نشود («گزینهٔ جایگزین همیشه باید وجود داشته باشد»).
+    if sources.CANDLE_SOURCE == "perp":
+        try:
+            rows = sources.perp_klines(sym, tf, bars)
+            return [{"t": k[0], "o": float(k[1]), "h": float(k[2]), "l": float(k[3]),
+                     "c": float(k[4]), "v": float(k[5])} for k in rows]
+        except Exception:                            # noqa: BLE001 - پشتیبان اسپات
+            pass
     rows = get(f"/api/v3/klines?symbol={sym}&interval={tf}&limit={bars}")
     return [{"t": k[0], "o": float(k[1]), "h": float(k[2]), "l": float(k[3]),
              "c": float(k[4]), "v": float(k[5])} for k in rows]

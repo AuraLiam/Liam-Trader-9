@@ -29,6 +29,7 @@ used short. A scan run on 180 candles when the engine wants 420 is not a
 degraded scan, it is a different one, and it would not announce itself.
 """
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -291,12 +292,83 @@ def used():
 PERP_VENUES = []
 
 
-def perp_venue(vid, label, url):
-    """صرافیِ **قرارداد دائمی** — همان قرارداد `venue`، دفتر جدا."""
+def perp_venue(vid, label, url, fetch=None):
+    """صرافیِ **قرارداد دائمی** — همان قرارداد `venue`، دفتر جدا.
+
+    `fetch(sym, tf, n)` اختیاری: صرافی‌ای که یک درخواستش کل پنجره را نمی‌دهد
+    (سقف ۲۰۰ کندل بیت‌یونیکس) با همین تابع صفحه‌به‌صفحه می‌خواند."""
     def deco(fn):
-        PERP_VENUES.append({"id": vid, "label": label, "url": url, "parse": fn})
+        PERP_VENUES.append({"id": vid, "label": label, "url": url, "parse": fn,
+                            "fetch": fetch})
         return fn
     return deco
+
+
+# ── بیت‌یونیکس — صرافیِ اجرا (دستور مکرر حمید: «بیت‌یونیکس، پرپچوال») ──────
+# دستور حمید (۲ سپتامبر، بار چندم): «صرافی بیت‌یونیکس رو انتخاب کن در
+# تریدینگ‌ویو و ارز پرپچوال رو انتخاب کن که قیمتش درست و چارتش تمیز باشد.»
+# کندلی که حمید روی چارت می‌بیند همین است؛ پس اول این، بعد بقیهٔ پرپ‌ها،
+# و اسپات فقط پشتیبان («گزینهٔ جایگزین همیشه باشد»).
+# API عمومی، بی‌کلید: GET /api/v1/futures/market/kline (سقف ۲۰۰ کندل در
+# هر درخواست؛ startTime/endTime برای صفحه‌بندی). شکل ردیف طبق مستندات:
+# {open, high, low, close, time(ms), baseVol, quoteVol}. پارسر هر دو شکل
+# دیکشنری و لیست را می‌پذیرد و `sane()` پایین‌دست هر انحرافی را رد می‌کند —
+# اثبات نهایی روی رانر است (venue-probe.yml)، نه این‌جا.
+BITUNIX_KLINE = "https://fapi.bitunix.com/api/v1/futures/market/kline"
+BITUNIX_PAGE = 200
+_TF_MS = {"1m": 60_000, "3m": 180_000, "5m": 300_000, "15m": 900_000, "30m": 1_800_000,
+          "1h": 3_600_000, "2h": 7_200_000, "4h": 14_400_000, "1d": 86_400_000}
+
+
+def _bitunix_url(sym, tf, n, end_ms=None):
+    q = f"?symbol={sym}&interval={tf}&limit={min(int(n), BITUNIX_PAGE)}&type=LAST_PRICE"
+    if end_ms:
+        q += f"&endTime={int(end_ms)}"
+    return BITUNIX_KLINE + q
+
+
+def _bitunix_parse(r):
+    rows = _rows(r) or []
+    out = []
+    for x in rows:
+        try:
+            if isinstance(x, dict):
+                t = x.get("time") or x.get("ts") or x.get("t") or x.get("openTime")
+                out.append(_k(t, x.get("open", x.get("o")), x.get("high", x.get("h")),
+                              x.get("low", x.get("l")), x.get("close", x.get("c")),
+                              x.get("baseVol", x.get("vol", x.get("volume", x.get("v", 0)))) or 0))
+            elif isinstance(x, (list, tuple)) and len(x) >= 5:
+                out.append(_k(x[0], x[1], x[2], x[3], x[4], x[5] if len(x) > 5 else 0))
+        except Exception:                            # noqa: BLE001 - ردیف خراب = حذف، بقیه می‌مانند
+            continue
+    out.sort(key=lambda k: k[0])
+    # ثانیه به‌جای میلی‌ثانیه؟ یکنواخت کن
+    if out and out[-1][0] < 10_000_000_000:
+        out = [[k[0] * 1000, *k[1:6], k[0] * 1000] for k in out]
+    return out
+
+
+def _bitunix_fetch(sym, tf, n, _json_fn=None):
+    """صفحه‌به‌صفحه از جدیدترین به قدیمی‌ترین تا `n` کندل؛ یکتا بر زمان."""
+    getj = _json_fn or _json
+    got, end_ms = {}, None
+    step = _TF_MS.get(tf, 900_000)
+    for _ in range(1 + (int(n) - 1) // BITUNIX_PAGE + 1):
+        rows = _bitunix_parse(getj(_bitunix_url(sym, tf, n, end_ms)))
+        if not rows:
+            break
+        for k in rows:
+            got[k[0]] = k
+        oldest = rows[0][0]
+        if len(got) >= n or len(rows) < min(BITUNIX_PAGE, n):
+            break
+        end_ms = oldest - step
+    return [got[t] for t in sorted(got)][-int(n):]
+
+
+@perp_venue("bitunix-perp", "Bitunix Perpetual", _bitunix_url, fetch=_bitunix_fetch)
+def _bitunix_perp(r):
+    return _bitunix_parse(r)
 
 
 @perp_venue("binance-perp", "Binance Perpetual",
@@ -343,16 +415,37 @@ def perp_klines(sym, tf, limit, quiet=True):
     errs = []
     for v in PERP_VENUES:
         try:
-            rows = v["parse"](_json(v["url"](sym, tf, limit)))[-limit:]
+            if v.get("fetch"):
+                rows = v["fetch"](sym, tf, limit)[-limit:]
+            else:
+                rows = v["parse"](_json(v["url"](sym, tf, limit)))[-limit:]
         except Exception as e:                       # noqa: BLE001 - صرافی بعدی
             errs.append(f"{v['id']}: {type(e).__name__}")
             continue
         if sane(rows, limit):
+            _used["klines"] = v["id"]
             if not quiet:
                 print(f"  perp klines {sym} {tf} ← {v['label']}", flush=True)
             return rows
         errs.append(f"{v['id']}: insane")
     raise RuntimeError(f"perp klines {sym} {tf}: " + " · ".join(errs))
+
+
+CANDLE_SOURCE = os.environ.get("LIAM9_CANDLES", "spot").strip().lower()
+
+
+def klines_pref(sym, tf, limit, quiet=True):
+    """کندل با ترجیحِ محیط: `LIAM9_CANDLES=perp` → اول پرپ (بیت‌یونیکس، بعد
+    بقیه)، اسپات فقط پشتیبان؛ پیش‌فرض همان اسپاتِ تاریخی. سوییچِ منبعِ
+    تحلیل دستور حمید است (۲ سپتامبر)؛ این تابع نقطهٔ واحدِ آن سوییچ است تا
+    پشتیبان همیشه بماند و هیچ مصرف‌کننده‌ای بی‌کندل نشود."""
+    if CANDLE_SOURCE == "perp":
+        try:
+            return perp_klines(sym, tf, limit, quiet=quiet)
+        except Exception as e:                       # noqa: BLE001 - پشتیبان اسپات
+            if not quiet:
+                print(f"  perp نشد ({e}) → اسپات", flush=True)
+    return klines(sym, tf, limit, quiet=quiet)
 
 
 def klines(sym, tf, limit, quiet=True):
