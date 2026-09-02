@@ -332,6 +332,76 @@ check("خروجی هنوز gzip خواندنی است (چندعضوی نشکست
       len(_rows) == 5)
 git("commit", "--no-edit", "-q", cwd=tmp)
 
+# ── ۲ سپتامبر: نشانگرِ بی‌پسوند brain/memory/.revalidated ─────────────────
+#
+# چه شد: چرخهٔ حمید در اولین اجرای روزِ تازه این فایل را از ۰۹-۰۱ به ۰۹-۰۲
+# برد. ضربانِ ۰۰:۰۱ (که معمولاً زودتر همین را commit می‌کند) به‌خاطر گارد
+# هم‌زمانی چیزی ننوشته بود. در merge انتشار، فایل بدون handler ماند →
+# «دستی بماند» → exit 1 → merge --abort → push هرگز → ۱۸ اجرای پیاپی و
+# ۸ ساعت بدون انتشار (sentinel، system-state و ۱۰ فایل دیگر کهنه شدند).
+#
+# کلاسِ عیب: پناهِ «هر json زیر brain» فقط پسوندِ json را می‌گرفت. قاعده
+# حالا بر معناست: نشانگر تاریخ → تاریخ تازه‌تر؛ هیچ فایلی زیر brain/ بی‌پاسخ
+# نمی‌ماند.
+check("نشانگر بازسنجی handler دارد (تاریخ تازه‌تر)",
+      rbc.handler_for("brain/memory/.revalidated") is not None
+      and rbc.handler_for("brain/memory/.revalidated")
+      is getattr(rbc, "merge_newest_date", None))
+check(".gitkeep زیر brain/ job را نمی‌کشد",
+      rbc.handler_for("brain/rooms/x/.gitkeep") is not None)
+check("سند دست‌نوشتهٔ brain/ نسخهٔ منتشرشده را می‌گیرد، نه چک‌اوت رانر",
+      rbc.handler_for("brain/research/E07/findings.md") is not None
+      and rbc.handler_for("brain/research/E07/findings.md")
+      is getattr(rbc, "take_theirs", None))
+for _fake in ("brain/memory/.something", "brain/paper/ledger.csv",
+              "brain/x/y.txt", "brain/no-extension"):
+    check(f"هیچ نوعِ تازه‌ای زیر brain/ بی‌پاسخ نمی‌ماند: {_fake.split('/')[-1]}",
+          rbc.handler_for(_fake) is not None)
+check("بیرون از brain/ هم‌چنان دستی (قاعده فراگیر نشد)",
+      rbc.handler_for("docs/x.txt") is None
+      and rbc.handler_for("config/fees.json") is None)
+
+# رفتار، نه فقط نگاشت: همان سناریوی ۲ سپتامبر بازسازی می‌شود
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "brain/memory/.revalidated").write_text("2026-08-31\n")
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "mark base", cwd=tmp)
+git("checkout", "-q", "-b", "mark-other", cwd=tmp)
+(tmp / "brain/memory/.revalidated").write_text("2026-09-01\n")   # ضربانِ دیرتر
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "mark theirs", cwd=tmp)
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "brain/memory/.revalidated").write_text("2026-09-02\n")   # چرخهٔ روز تازه
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "mark ours", cwd=tmp)
+_mm = git("merge", "--no-edit", "mark-other", cwd=tmp)
+check("سناریوی ۲ سپتامبر واقعاً تعارض می‌دهد", _mm.returncode != 0)
+_rm = subprocess.run([sys.executable, "scripts/resolve_brain_conflicts.py"],
+                     cwd=tmp, capture_output=True, text=True)
+check("حل‌کننده با نشانگرِ بی‌پسوند exit 0 می‌دهد (نه «دستی بماند»)",
+      _rm.returncode == 0 and "دستی بماند" not in _rm.stdout)
+check("تاریخ تازه‌تر برنده شد",
+      (tmp / "brain/memory/.revalidated").read_text().strip() == "2026-09-02")
+_cm = git("commit", "--no-edit", "-q", cwd=tmp)
+check("و merge بدون دخالت دستی بسته می‌شود", _cm.returncode == 0)
+
+# قرینه: اگر origin/main تاریخِ جلوتر داشت، همان می‌ماند — بازسنجی تکرار
+# نمی‌شود و حافظه دو بار در یک روز پاک‌سازی نمی‌شود
+git("checkout", "-q", "-b", "mark-other2", cwd=tmp)
+(tmp / "brain/memory/.revalidated").write_text("2026-09-05\n")
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "mark theirs 2", cwd=tmp)
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "brain/memory/.revalidated").write_text("2026-09-03\n")
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "mark ours 2", cwd=tmp)
+git("merge", "--no-edit", "mark-other2", cwd=tmp)
+subprocess.run([sys.executable, "scripts/resolve_brain_conflicts.py"],
+               cwd=tmp, capture_output=True, text=True)
+check("جهت مهم نیست — تاریخِ بزرگ‌تر از هر طرف برنده است",
+      (tmp / "brain/memory/.revalidated").read_text().strip() == "2026-09-05")
+git("commit", "--no-edit", "-q", cwd=tmp)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

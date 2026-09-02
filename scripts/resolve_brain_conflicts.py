@@ -226,6 +226,31 @@ def merge_key_list(path):
     return f"{len(out)} کلید ضدتکرار (اجتماع)"
 
 
+def merge_newest_date(path):
+    """نشانگرهای «آخرین بار کِی» (مثل brain/memory/.revalidated): تاریخ
+    تازه‌تر برنده است.
+
+    ۲ سپتامبر: چرخهٔ حمید اولین اجرای روزِ تازه، این فایل را از ۰۹-۰۱ به
+    ۰۹-۰۲ برد؛ ضربانِ ۰۰:۰۱ (که معمولاً زودتر همین کار را می‌کند) به‌خاطر
+    گاردِ هم‌زمانی چیزی commit نکرده بود. در merge انتشار، فایل بدون
+    handler ماند → «دستی بماند» → exit 1 → merge --abort → push هرگز موفق
+    نشد → **۱۸ اجرای پیاپی، ۸ ساعت، هیچ انتشاری**. محتوای فایل فقط یک
+    تاریخ است؛ بزرگ‌تر گرفتن نه چیزی گم می‌کند نه تکرار می‌سازد."""
+    a = (_stage(2, path) or "").strip()
+    b = (_stage(3, path) or "").strip()
+    win = max(a, b)
+    (ROOT / path).write_text(win + "\n", encoding="utf-8")
+    return f"تاریخ تازه‌تر برنده: {win}"
+
+
+def take_theirs(path):
+    """برای سندهای دست‌نوشتهٔ زیر brain/ (README، یافته‌های تحقیق): نسخهٔ
+    origin/main برنده است — رانرِ بی‌ناظر سندی را عوض نمی‌کند؛ اگر متفاوت
+    است، نسخهٔ منتشرشده حقیقت است، نه چک‌اوتِ کهنهٔ رانر."""
+    subprocess.run(["git", "checkout", "--theirs", "--", path], cwd=ROOT, check=False)
+    return "نسخهٔ منتشرشدهٔ origin/main"
+
+
 def take_ours(path):
     """برای عکس‌فوری‌های تولیدشده: نسخهٔ همین اجرا تازه‌تر است و برنده.
 
@@ -315,6 +340,26 @@ def handler_for(path):
     if path.startswith("brain/") and path.endswith(".json"):
         print(f"⚠ handler صریح ندارد، عکس‌فوری فرض شد: {path} — "
               "اگر این فایل تاریخِ انباشته دارد، handler برایش بنویس")
+        return take_ours
+    # ── هیچ فایلی زیر brain/ نباید job بی‌ناظر را بکشد (درس ۲ سپتامبر) ─────
+    #
+    # پناهِ بالا فقط «.json» را می‌گرفت. فایلِ بی‌پسوندِ
+    # brain/memory/.revalidated از آن رد شد، None گرفت و ۸ ساعت انتشارِ
+    # چرخه را خواباند. کلاسِ عیب: «هر پسوندِ تازه = یک مرگِ تازه». پس
+    # قاعده حالا بر **معنا**ی فایل است نه پسوندش:
+    #   · نشانگر تاریخ            → تاریخ تازه‌تر
+    #   · .gitkeep (خالی)         → هر کدام؛ محتوایی ندارد
+    #   · سند دست‌نوشته (.md)     → نسخهٔ منتشرشده (رانر سند نمی‌نویسد)
+    #   · هر چیز دیگر زیر brain/  → عکس‌فوریِ همین اجرا، با اعلامِ بلند
+    if path == "brain/memory/.revalidated":
+        return merge_newest_date
+    if path.startswith("brain/") and path.endswith(".gitkeep"):
+        return take_ours
+    if path.startswith("brain/") and path.endswith(".md"):
+        return take_theirs
+    if path.startswith("brain/"):
+        print(f"⚠ نوعِ ناشناخته زیر brain/، عکس‌فوری فرض شد: {path} — "
+              "اگر انباشته است، handler صریح بنویس")
         return take_ours
     return None                                       # بیرون از brain/ = دستی
 
