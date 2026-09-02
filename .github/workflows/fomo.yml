@@ -1,0 +1,59 @@
+# اتاق فومو (دستور حمید، ۲ سپتامبر: «از نرم‌افزار fomo هم استفاده کن»)
+#
+# نرم‌افزار fomo API ندارد. این ورک‌فلو دو کار می‌کند:
+#   ۱. پیام‌های «fomo <نماد> <buy|sell|trend|alert|top> …» که حمید از روی اپ
+#      به همان بات می‌فرستد را با getUpdates می‌خواند (فقط از چت خودش)،
+#      در دفتر append-only ثبت و بعداً با کندل واقعی نمره می‌دهد.
+#   ۲. داغیِ جمعیت (ترس/طمع + فاندینگ + ترند کوین‌گکو) را برای پنل و
+#      برای ردپای روی هر سیگنال می‌سازد.
+# هیچ پیامی نمی‌فرستد. نه دروازه است نه امتیاز؛ فقط ثبت و سنجش (قانون ۰۳/۱۱).
+#
+# تنها مصرف‌کنندهٔ getUpdates با offset در کل ریپو همین‌جاست (یک نویسنده
+# برای هر دامنهٔ وضعیت، قانون ۰۵) — محافظ: hamid/test_fomo.py.
+name: Fomo room
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23,53 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fomo
+  cancel-in-progress: false
+
+jobs:
+  fomo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: محیط مشترک
+        run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_fomo
+      - name: اتاق فومو
+        id: run
+        continue-on-error: true
+        working-directory: claude-liam-signal/python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 -m hamid.fomo
+      - name: شکست (فقط اجرای دستی بلند)
+        if: steps.run.outcome == 'failure' && github.event_name != 'schedule'
+        run: exit 1
+      - name: Git identity
+        if: steps.run.outcome == 'success'
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+      - name: ثبت (ناشر مشترک، قانون ۱۴)
+        if: steps.run.outcome == 'success'
+        run: scripts/publish.sh -m "اتاق فومو $(date -u +%H:%M) UTC" signals/fomo.json brain/fomo

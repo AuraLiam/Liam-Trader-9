@@ -44,8 +44,10 @@ def run():
           m["n_traceless"] > 0
           and all(e["files"] == [] for e in m["engines"] if e["traceless"]))
     tr = {e["id"] for e in m["engines"] if e["traceless"]}
-    check("همان هفت انجینِ بی‌ردپای ممیزی",
-          tr == {"E04", "E05", "E07", "E09", "E13", "E15", "E24"}, str(tr))
+    # ۲ سپتامبر: E15 با اتاق فومو (signals/fomo.json) ردپا گرفت — هفت شد شش.
+    # این مجموعه فقط حق دارد کوچک شود؛ انجین تازه‌ای که بی‌ردپا شود سرخ می‌کند.
+    check("همان شش انجینِ بی‌ردپای ممیزی (E15 از ۲ سپتامبر ردپا دارد)",
+          tr == {"E04", "E05", "E07", "E09", "E13", "E24"}, str(tr))
 
     withf = [e for e in m["engines"] if not e["traceless"]]
     check("هر انجینِ فایل‌دار مصرف‌کننده دارد",

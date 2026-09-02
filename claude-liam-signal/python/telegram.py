@@ -733,6 +733,20 @@ def passes_ladder(s, bar):
     return True
 
 
+def _fomo_trace(sym):
+    """ردپای اتاق فومو روی دفتر سیگنال (۲ سپتامبر) — فقط از عکس‌فوری، بدون شبکه.
+
+    دو فیلد: fomo_heat (داغی جمعیت ۰–۱۰۰) و fomo_witness (شاهد اپ fomo در
+    ۲۴ ساعت اخیر برای همین نماد). هیچ‌کدام در امتیاز یا دروازه نیست؛ ماشین
+    بونفرونی شبانه (paper.CONDITIONS) اثرشان را می‌سنجد. نبودِ عکس‌فوری =
+    None، نه صفر (قانون ۱)."""
+    try:
+        from hamid import fomo as _fomo
+        return _fomo.snapshot_for(sym)
+    except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
+        return {"fomo_heat": None, "fomo_witness": None}
+
+
 def send_signals(signals, render_chart, limit=8):
     """render_chart(setup, path) -> path, or None when a chart cannot be drawn."""
     token, chat = creds()
@@ -947,6 +961,9 @@ def send_signals(signals, render_chart, limit=8):
                                       "pattern_align": (pm.get("patterns") or {}).get("align"),
                                       "patterns": (pm.get("patterns") or {}).get("by_tf"),
                                       "fib_ratio": pm.get("fib"),
+                                      # ردپای اتاق فومو (۲ سپتامبر) — فقط ثبت برای
+                                      # سنجش شبانه؛ از عکس‌فوری، بدون شبکه
+                                      **_fomo_trace(s["sym"]),
                                       **(pm.get("tv") or {})})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
@@ -1055,6 +1072,9 @@ def send_signals(signals, render_chart, limit=8):
                                   "ob_align": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("align"),
                                   "ob_hunts": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("hunts"),
                                   "fib_ratio": (s.get("premortem") or {}).get("fib"),
+                                  # ردپای اتاق فومو (۲ سپتامبر): داغی جمعیت +
+                                  # شاهد اپ fomo — ثبت برای ماشین شبانه، نه امتیاز
+                                  **_fomo_trace(s["sym"]),
                                   # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
                                   # سنجش شبانه، نه دروازه (۳۰ اوت)
                                   "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),
