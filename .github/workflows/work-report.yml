@@ -59,17 +59,24 @@ jobs:
         run: |
           python3 -m hamid.trail_lab --bars --write || true
           python3 -m hamid.trail_arms --write || true
+      # ۲ سپتامبر: این گام فقط دو فایل (work-report، engine-focus) را از
+      # reset نجات می‌داد؛ curriculum.json و trail-arms.json و trail-lab.json
+      # که گام‌های بالا می‌نوشتند هر بار دور ریخته می‌شدند — سه اجرای سبزِ
+      # ۱ سپتامبر هیچ‌کدام را منتشر نکرد و گذرگاه وضعیت آن‌ها را ۳۱ ساعت
+      # کهنه دید. کلاسِ عیب: «تولیدکنندهٔ تازه اضافه شد، ناشر به‌روز نشد».
+      # حالا هر فایلِ signals/ که همین اجرا عوض کرده، بی‌فهرست نجات می‌یابد.
       - name: ثبت گزارش (ضدتصادم)
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          cp signals/work-report.json /tmp/wr.json 2>/dev/null || exit 0
-          cp signals/engine-focus.json /tmp/ef.json 2>/dev/null || true
+          CHANGED=$(git status --porcelain -- signals | awk '{print $2}')
+          [ -n "$CHANGED" ] || { echo "بدون تغییر"; exit 0; }
+          KEEP=$(mktemp -d)
+          for f in $CHANGED; do mkdir -p "$KEEP/$(dirname "$f")"; cp "$f" "$KEEP/$f"; done
           for i in 1 2 3 4 5 6 7 8; do
             git fetch origin main -q
             git reset --hard origin/main -q
-            cp /tmp/wr.json signals/work-report.json
-            cp /tmp/ef.json signals/engine-focus.json 2>/dev/null || true
+            for f in $CHANGED; do cp "$KEEP/$f" "$f"; done
             git add signals
             git diff --cached --quiet && { echo "بدون تغییر"; break; }
             git commit -q -m "گزارش کار $(date -u +%H:%M) UTC"

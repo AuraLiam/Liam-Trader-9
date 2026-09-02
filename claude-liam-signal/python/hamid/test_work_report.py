@@ -143,6 +143,86 @@ for want in ("گزارش کار", "سیگنالِ ارسال‌شده", "تای�
 check("پنجرهٔ خالی هم متنِ سالم می‌دهد، نه خطا",
       "هیچ معامله‌ای" in W.text(build([])))
 
+print("\n— ناشرِ ورک‌فلو هیچ خروجی‌ای را دور نمی‌ریزد (درس ۲ سپتامبر):")
+# چه شد: گامِ «ثبت گزارش» بعد از reset فقط دو فایل را برمی‌گرداند
+# (work-report، engine-focus). curriculum.json و trail-arms.json که
+# گام‌های دیگرِ همین ورک‌فلو می‌نوشتند هر بار دور ریخته می‌شدند؛ سه
+# اجرای سبزِ ۱ سپتامبر هیچ‌کدام را منتشر نکرد و گذرگاه وضعیت آن‌ها را ۳۱
+# ساعت کهنه دید. این آزمون **خودِ اسکریپتِ گام** را از yml می‌خواند و در
+# یک مخزن موقت با origin واقعی اجرا می‌کند — نه متنِ آن را می‌گردد.
+import os                                            # noqa: E402
+import shutil                                        # noqa: E402
+import subprocess                                    # noqa: E402
+
+import yaml                                          # noqa: E402
+
+ROOT = PY.parents[1]
+_wf = yaml.safe_load((ROOT / ".github/workflows/work-report.yml")
+                     .read_text(encoding="utf-8"))
+_steps = _wf["jobs"]["report"]["steps"]
+_pub = next((s for s in _steps if "ثبت گزارش" in str(s.get("name"))), None)
+check("گامِ ناشر پیدا شد", _pub is not None)
+
+
+def _git(*a, cwd):
+    return subprocess.run(["git", *a], cwd=cwd, capture_output=True, text=True)
+
+
+def _publish_scenario(script):
+    """origin + کلون؛ چهار فایل signals/ عوض می‌شود، origin هم جلو می‌رود."""
+    td = Path(tempfile.mkdtemp(prefix="wr-pub-"))
+    origin = td / "origin.git"
+    _git("init", "-q", "--bare", "-b", "main", str(origin), cwd=td)
+    work = td / "work"
+    _git("clone", "-q", str(origin), str(work), cwd=td)
+    _git("config", "user.email", "t@t", cwd=work)
+    _git("config", "user.name", "t", cwd=work)
+    (work / "signals").mkdir()
+    for f in ("work-report.json", "engine-focus.json", "curriculum.json",
+              "trail-arms.json", "other.json"):
+        (work / "signals" / f).write_text('{"v": 0}')
+    _git("add", "-A", cwd=work)
+    _git("commit", "-qm", "base", cwd=work)
+    _git("push", "-q", "origin", "HEAD:main", cwd=work)
+    # origin جلو می‌رود (اجرای دیگری فایل دیگری را عوض کرده)
+    other = td / "other"
+    _git("clone", "-q", str(origin), str(other), cwd=td)
+    _git("config", "user.email", "o@o", cwd=other)
+    _git("config", "user.name", "o", cwd=other)
+    (other / "signals" / "other.json").write_text('{"v": 7}')
+    _git("commit", "-qam", "elsewhere", cwd=other)
+    _git("push", "-q", "origin", "HEAD:main", cwd=other)
+    # همین اجرا: چهار فایل می‌نویسد (یکی تازه)
+    for f in ("work-report.json", "engine-focus.json", "curriculum.json",
+              "trail-arms.json"):
+        (work / "signals" / f).write_text('{"v": 1}')
+    (work / "signals" / "brand-new.json").write_text('{"v": 1}')
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+    r = subprocess.run(["bash", "-e", "-c", script], cwd=work, env=env,
+                       capture_output=True, text=True)
+    got = {}
+    for f in ("work-report.json", "engine-focus.json", "curriculum.json",
+              "trail-arms.json", "brand-new.json", "other.json"):
+        _git("fetch", "-q", "origin", "main", cwd=work)
+        s = _git("show", f"origin/main:signals/{f}", cwd=work)
+        got[f] = json.loads(s.stdout)["v"] if s.returncode == 0 else None
+    shutil.rmtree(td, ignore_errors=True)
+    return r, got
+
+
+if _pub is not None:
+    _r, _got = _publish_scenario(_pub["run"])
+    check("اسکریپت ناشر بدون خطا تمام می‌شود", _r.returncode == 0,
+          (_r.stdout + _r.stderr)[-400:])
+    for f in ("work-report.json", "engine-focus.json", "curriculum.json",
+              "trail-arms.json"):
+        check(f"خروجیِ همین اجرا منتشر شد: {f}", _got.get(f) == 1,
+              f"روی origin: {_got.get(f)!r}")
+    check("فایلِ تازه‌ساخته هم منتشر شد (فهرستِ سفت‌نوشته نیست)",
+          _got.get("brand-new.json") == 1, f"روی origin: {_got.get('brand-new.json')!r}")
+    check("کارِ اجرای دیگر پاک نشد (origin که جلو رفته بود، ماند)",
+          _got.get("other.json") == 7, f"روی origin: {_got.get('other.json')!r}")
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
