@@ -260,6 +260,67 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
       f"(بی‌jitter: {_no_jitter[:4]})", not _no_jitter)
 
 
+# ── ضدتکثیر ناشر (دستور حمید، ۲ سپتامبر: «برای همیشه») ──────────────────
+#
+# اندازه‌گیریِ همان روز: ۴۶ ورک‌فلو، ۴۱ push، ۳۶ حلقهٔ انتشارِ دست‌نویس،
+# ۹ reset سخت، فقط ۱۸ با حل‌کنندهٔ معنادار، و ۱۱ خطِ pip پراکنده. سه
+# قطعیِ یک روز هر سه از همین تکثیر آمدند. ناشر یگانه `scripts/publish.sh`
+# است (آزمون رفتاری: hamid/test_publish.py) و محیط یگانه
+# `requirements-ci.txt`.
+#
+# این پاسبان **ratchet** است: شمارِ ورک‌فلوهای دست‌نویس فقط حق دارد پایین
+# برود. مهاجرت تدریجی است (هر ورک‌فلو با اثباتِ اجرای سبز)، ولی ورک‌فلوی
+# تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
+# می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
+import os as _os                                       # noqa: E402
+INLINE_PUSHERS_MAX = 36      # ۲ سپتامبر: hamid-cycle و work-report مهاجرت کردند
+NO_SHARED_DEPS_MAX = 33
+_inline, _nodeps, _both = [], [], []
+for f in files:
+    try:
+        doc = yaml.safe_load(f.read_text())
+    except yaml.YAMLError:
+        continue
+    runs, uses = [], []
+    for job in (doc.get("jobs") or {}).values():
+        if not isinstance(job, dict):
+            continue
+        for st in (job.get("steps") or []):
+            if isinstance(st, dict):
+                runs.append(st.get("run") or "")
+                uses.append(st.get("uses") or "")
+    body = "\n".join(runs)
+    shared = "scripts/publish.sh" in body
+    inline = bool(re.search(r"git push\b", body)) and "HEAD:main" in body
+    if inline:
+        _inline.append(f.name)
+    if shared and inline:
+        _both.append(f.name)
+    if any("setup-python" in u for u in uses) and "hamid." in body \
+            and "requirements-ci.txt" not in body:
+        _nodeps.append(f.name)
+check(f"ناشرِ دست‌نویس تکثیر نشد ({len(_inline)} ≤ {INLINE_PUSHERS_MAX})",
+      len(_inline) <= INLINE_PUSHERS_MAX)
+if len(_inline) > INLINE_PUSHERS_MAX:
+    print(f"      ↳ {_inline}")
+elif len(_inline) < INLINE_PUSHERS_MAX:
+    print(f"      ↳ ratchet را پایین بیاور: INLINE_PUSHERS_MAX = {len(_inline)}")
+check("هیچ ورک‌فلویی هم ناشر مشترک دارد هم حلقهٔ خودش", not _both)
+if _both:
+    print(f"      ↳ {_both}")
+check(f"محیط pip پراکنده تکثیر نشد ({len(_nodeps)} ≤ {NO_SHARED_DEPS_MAX})",
+      len(_nodeps) <= NO_SHARED_DEPS_MAX)
+if len(_nodeps) > NO_SHARED_DEPS_MAX:
+    print(f"      ↳ {_nodeps}")
+elif len(_nodeps) < NO_SHARED_DEPS_MAX:
+    print(f"      ↳ ratchet را پایین بیاور: NO_SHARED_DEPS_MAX = {len(_nodeps)}")
+_pub = WF.parent.parent / "scripts" / "publish.sh"
+check("ناشر مشترک وجود دارد و اجرایی است",
+      _pub.exists() and _os.access(_pub, _os.X_OK))
+check("محیط مشترک وجود دارد و pyyaml را دارد",
+      (WF.parent.parent / "requirements-ci.txt").exists()
+      and "pyyaml" in (WF.parent.parent / "requirements-ci.txt").read_text())
+
 # ── میزهای خاموش‌شده با دستور صریح حمید ───────────────────────────────
 # خاموشی باید **چسبنده** باشد. یک ویرایشِ بی‌دقت که کرون را برگرداند،
 # میزی را که سنجش ردش کرده دوباره وارد چرخه می‌کند و هیچ‌کس نمی‌فهمد.

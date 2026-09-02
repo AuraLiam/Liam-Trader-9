@@ -29,7 +29,7 @@ jobs:
       # پاسبان گزارش کار اسکریپتِ گام ناشر را از همین yml می‌خواند → pyyaml
       # (همان وابستگی‌ای که hamid-cycle و pump-radar هم نصب می‌کنند)
       - name: وابستگی‌ها
-        run: pip -q install pyyaml
+        run: pip -q install -r requirements-ci.txt
       - name: آزمون آفلاین
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.test_work_report
@@ -69,21 +69,7 @@ jobs:
       # ۱ سپتامبر هیچ‌کدام را منتشر نکرد و گذرگاه وضعیت آن‌ها را ۳۱ ساعت
       # کهنه دید. کلاسِ عیب: «تولیدکنندهٔ تازه اضافه شد، ناشر به‌روز نشد».
       # حالا هر فایلِ signals/ که همین اجرا عوض کرده، بی‌فهرست نجات می‌یابد.
+      # ناشر مشترک (۲ سپتامبر، دستور حمید «برای همیشه»): یک اسکریپت برای
+      # همهٔ ورک‌فلوها، با آزمون رفتاری hamid/test_publish.py.
       - name: ثبت گزارش (ضدتصادم)
-        run: |
-          git config user.name "Claude"
-          git config user.email "noreply@anthropic.com"
-          CHANGED=$(git status --porcelain -- signals | awk '{print $2}')
-          [ -n "$CHANGED" ] || { echo "بدون تغییر"; exit 0; }
-          KEEP=$(mktemp -d)
-          for f in $CHANGED; do mkdir -p "$KEEP/$(dirname "$f")"; cp "$f" "$KEEP/$f"; done
-          for i in 1 2 3 4 5 6 7 8; do
-            git fetch origin main -q
-            git reset --hard origin/main -q
-            for f in $CHANGED; do cp "$KEEP/$f" "$f"; done
-            git add signals
-            git diff --cached --quiet && { echo "بدون تغییر"; break; }
-            git commit -q -m "گزارش کار $(date -u +%H:%M) UTC"
-            git push origin HEAD:main -q && break
-            sleep $((i * 4 + RANDOM % 7))
-          done
+        run: scripts/publish.sh -m "گزارش کار $(date -u +%H:%M) UTC" signals
