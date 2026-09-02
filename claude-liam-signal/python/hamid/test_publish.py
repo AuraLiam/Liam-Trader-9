@@ -251,6 +251,34 @@ check("کدِ upstream هم دست‌نخورده", w.on_origin("code/engine.py"
 check("بدون مارکر", not w.markers_on_origin())
 w.close()
 
+# ── ۸ب) همان چیزی که اجرای ۳۶۳ چرخه را کشت (۱۰:۳۷، ۸ تلاش، هیچ انتشاری) ──
+#
+# دو عیب هم‌زمان: (۱) حل‌کننده برای brain/*.jsonِ ناشناخته هشدار روی
+# stdout چاپ می‌کند و ناشر همان را به‌جای sha گرفت؛ (۲) brain/events یک
+# ردیفِ رشته‌ای خام داشت و اجتماعِ دفتر با AttributeError افتاد. هر دو
+# باید در یک انتشارِ «origin جلوتر» زنده بمانند.
+w = World()
+w.other_push({"brain/events/2026-09-02.jsonl": '"a"\n{"t": 1}\n"b"\n',
+              "brain/room-snapshot.json": '{"o": 1}',
+              "brain/alert-state.json": '{"o": 1}',
+              "signals/other.json": '{"o": 5}'})
+(w.work / "brain/events").mkdir(parents=True, exist_ok=True)
+(w.work / "brain/events/2026-09-02.jsonl").write_text('"a"\n{"t": 1}\n{"t": 2}\n')
+(w.work / "brain/room-snapshot.json").write_text('{"m": 1}')     # ناشناخته → هشدار stdout
+(w.work / "brain/alert-state.json").write_text('{"m": 1}')       # مرز پیشروی → اجتماع کلیدها
+r = w.publish("signals", "brain")
+check("هشدارِ stdout حل‌کننده sha را خراب نمی‌کند: خروج ۰", r.returncode == 0,
+      (r.stdout + r.stderr)[-600:])
+check("دفترِ با ردیفِ رشته‌ای: هیچ ردیفی از هیچ طرف گم نشد",
+      sorted((w.on_origin("brain/events/2026-09-02.jsonl") or "").split())
+      == sorted(['"a"', '{"t":', '1}', '"b"', '{"t":', '2}']),
+      repr(w.on_origin("brain/events/2026-09-02.jsonl")))
+check("عکس‌فوریِ ناشناختهٔ brain → مال ما", w.on_origin("brain/room-snapshot.json") == '{"m": 1}')
+_st = json.loads(w.on_origin("brain/alert-state.json") or "{}")
+check("مرز پیشروی (-state.json) → اجتماع کلیدهای هر دو طرف", _st == {"m": 1, "o": 1}, str(_st))
+check("فایلِ نانوشته → نسخهٔ origin", w.on_origin("signals/other.json") == '{"o": 5}')
+w.close()
+
 # ── ۹) ریموتِ مرده → خروج ۱ بعد از تلاش‌ها، نه سکوت ───────────────────────
 w = World()
 (w.work / "signals/latest.json").write_text('{"generated": 4}')

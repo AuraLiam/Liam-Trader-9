@@ -93,6 +93,9 @@ def merge_jsonl(path):
                 rec = json.loads(line)
             except Exception:                        # noqa: BLE001 - خط خراب رد
                 continue
+            if not isinstance(rec, dict):            # ردیفِ غیرشیء (رشته/عدد/لیست)
+                rec = {}                             # ۲ سپتامبر: brain/events یک
+                #                                   # رشتهٔ خام داشت و .get می‌ترکید
             k = trade_key(rec)
             if k[1] is None and k[0] is None:        # ردیفی که هویت ندارد
                 k = ("__raw__", line)                # → مثل قبل، متنی

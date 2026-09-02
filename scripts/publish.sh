@@ -70,9 +70,14 @@ trap 'rm -rf "$TMP"' EXIT
 
 # ── ۲) کامیتِ ما را روی نوکِ تازهٔ origin بازمی‌سازیم (بدون merge) ───────
 _build_on() {
-  # $1 = نوکِ origin. خروجی: sha کامیت تازه روی stdout.
+  # $1 = نوکِ origin. خروجی: sha کامیت تازه در "$TMP/new".
+  #
+  # stdout این تابع عمداً به stderr می‌رود: حل‌کننده برای فایل‌های ناشناختهٔ
+  # brain/*.json هشدار روی stdout چاپ می‌کند و اجرای ۳۶۳ چرخه (۱۰:۳۷) همان
+  # هشدارها را به‌جای sha گرفت («Needed a single revision»، ۸ تلاش، هیچ
+  # انتشاری). sha فقط از فایل خوانده می‌شود، نه از خروجی متنی.
   local base="$1" idx="$TMP/index" f blob mode ours_f theirs_f out_f
-  rm -f "$idx"
+  rm -f "$idx" "$TMP/new"
   GIT_INDEX_FILE="$idx" git read-tree "$base" || return 1
   while IFS= read -r f; do
     [ -n "$f" ] || continue
@@ -110,8 +115,9 @@ _build_on() {
   done <<< "$CHANGED"
   local tree
   tree="$(GIT_INDEX_FILE="$idx" git write-tree)" || return 1
-  git commit-tree "$tree" -p "$base" -m "$MSG"
-}
+  git commit-tree "$tree" -p "$base" -m "$MSG" > "$TMP/new" || return 1
+  [ -s "$TMP/new" ] || return 1
+} 1>&2
 
 for attempt in $(seq 1 "$ATTEMPTS"); do
   _say "fetch $REMOTE/$BRANCH (تلاش $attempt)"
@@ -122,7 +128,9 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   if git merge-base --is-ancestor "$TIP" "$OURS" 2>/dev/null; then
     NEW="$OURS"                                   # origin تکان نخورده
   else
-    NEW="$(_build_on "$TIP")" || { _say "ساختِ کامیت روی نوک شکست"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
+    _build_on "$TIP" || { _say "ساختِ کامیت روی نوک شکست"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
+    NEW="$(tr -d '[:space:]' < "$TMP/new")"
+    git rev-parse -q --verify "$NEW^{commit}" >/dev/null 2>&1 || { _say "sha نامعتبر: '$NEW'"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
   fi
   _say "push $(git rev-parse --short "$NEW") روی $(git rev-parse --short "$TIP")"
   if _net git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>/dev/null; then
