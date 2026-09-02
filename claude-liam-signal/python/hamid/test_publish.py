@@ -212,7 +212,36 @@ check("کدِ upstream که ما دست نزده‌ایم، دست‌نخورد�
       w.on_origin("code/engine.py") == "VERSION = 2\n")
 w.close()
 
-# ── ۸) ریموتِ مرده → خروج ۱ بعد از تلاش‌ها، نه سکوت ───────────────────────
+# ── ۸) تاریخچهٔ بی‌ربط (ریشهٔ دوم) — هر فایلِ متفاوت add/add می‌شود ────────
+#
+# این مخزن دو ریشه دارد و merge با --allow-unrelated-histories گاهی
+# همهٔ فایل‌های متفاوت را تعارض می‌کند. خطر: فایلی که همین اجرا ننوشته
+# (چک‌اوتِ کهنهٔ رانر) با قاعدهٔ «عکس‌فوری → مال ما» روی خروجیِ تازهٔ
+# اجرای دیگر بنشیند. قاعده: فایلِ نانوشته = نسخهٔ origin، همیشه.
+w = World()
+w.other_push({"signals/other.json": '{"o": 99}', "code/engine.py": "VERSION = 3\n"})
+alien = w.td / "alien"
+alien.mkdir()
+git("init", "-q", "-b", "main", cwd=alien)
+World._ident(alien)
+_seed(alien)
+(alien / "signals/other.json").write_text('{"o": 0}')      # کهنه، دست‌نخورده
+git("add", "-A", cwd=alien)
+git("commit", "-qm", "second root", cwd=alien)
+git("remote", "add", "origin", f"file://{w.origin}", cwd=alien)
+(alien / "signals/latest.json").write_text('{"generated": 77}')
+r = subprocess.run(["bash", "scripts/publish.sh", "-m", "alien", "signals", "brain"],
+                   cwd=alien, env=dict(os.environ, PUBLISH_ATTEMPTS="4"),
+                   capture_output=True, text=True)
+check("ریشهٔ بی‌ربط: خروج ۰", r.returncode == 0, (r.stdout + r.stderr)[-500:])
+check("ریشهٔ بی‌ربط: خروجیِ ما رسید", w.on_origin("signals/latest.json") == '{"generated": 77}')
+check("فایلی که ما ننوشتیم، نسخهٔ تازهٔ origin ماند (نه چک‌اوتِ کهنهٔ رانر)",
+      w.on_origin("signals/other.json") == '{"o": 99}', str(w.on_origin("signals/other.json")))
+check("کدِ upstream هم دست‌نخورده", w.on_origin("code/engine.py") == "VERSION = 3\n")
+check("بدون مارکر", not w.markers_on_origin())
+w.close()
+
+# ── ۹) ریموتِ مرده → خروج ۱ بعد از تلاش‌ها، نه سکوت ───────────────────────
 w = World()
 (w.work / "signals/latest.json").write_text('{"generated": 4}')
 r = w.publish("signals", env={"PUBLISH_REMOTE": "nowhere", "PUBLISH_ATTEMPTS": "2"})
