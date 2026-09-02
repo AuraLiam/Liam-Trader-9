@@ -26,7 +26,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-OUT = ROOT / "signals"
+# سرویس سایهٔ محلی (۲ سپتامبر، قانون ۰۲) خروجی‌اش را کنار دفتر تولید می‌نویسد
+# نه روی آن: LIAM9_SIGNALS_DIR=signals/shadow. پیش‌فرض همان signals/ است.
+OUT = Path(os.environ.get("LIAM9_SIGNALS_DIR") or (ROOT / "signals"))
+if not OUT.is_absolute():
+    OUT = ROOT / OUT
 sys.path.insert(0, str(HERE))
 from backtest import get, top_symbols, MS          # same fetching, same retries
 import sources                                      # the venue that actually served
@@ -418,7 +422,7 @@ def main():
     # دارد این است که در یک پنجرهٔ معنادار چند نمادِ **یکتا** دیده شده.
     # بدون این دفتر، متر E01 هر بار ۶۰ می‌دید و چرخش را نمی‌فهمید.
     try:
-        _cov_p = ROOT / "signals" / "scan-coverage.json"
+        _cov_p = OUT / "scan-coverage.json"          # سایه دفتر پوشش خودش را دارد
         _now_ms = int(time.time() * 1000)
         try:
             _cov = json.loads(_cov_p.read_text(encoding="utf-8"))
