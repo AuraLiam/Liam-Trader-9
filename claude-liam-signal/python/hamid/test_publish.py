@@ -127,6 +127,13 @@ class World:
 print("── ناشر مشترک: scripts/publish.sh ──")
 check("اسکریپت وجود دارد و اجرایی است",
       PUBLISH.exists() and os.access(PUBLISH, os.X_OK))
+# ۲ سپتامبر ۰۹:۳۹: `git fetch --unshallow` روی این مخزن گام انتشار را تا
+# سقف ۱۵ دقیقهٔ job خواباند؛ روی کلونِ کم‌عمقِ محلیِ همین مخزن هم ۳۰۰
+# ثانیه بی‌پاسخ ماند، در حالی که fetchِ ساده مبنای مشترک را در ۰ ثانیه
+# پیدا کرد. عمیق‌کردن باید محدود بماند.
+_src = PUBLISH.read_text(encoding="utf-8")
+check("ناشر هرگز کل تاریخچه را نمی‌کشد (--unshallow ممنوع؛ عمیق‌کردن پله‌ای)",
+      "--unshallow" not in _src.replace("`--unshallow`", "") and "--deepen=" in _src)
 
 # ── ۱) بدون تغییر → خروج ۰ و هیچ کامیتی ─────────────────────────────────
 w = World()
