@@ -42,16 +42,5 @@ jobs:
       - name: ثبت واچ‌لیست (ضدتصادم)
         if: steps.run.outcome == 'success'
         run: |
-          git config user.name "Claude"
-          git config user.email "noreply@anthropic.com"
-          cp signals/watchlist.json /tmp/wl.json
-          for i in 1 2 3 4 5 6 7 8; do
-            git fetch origin main -q
-            git reset --hard origin/main -q
-            cp /tmp/wl.json signals/watchlist.json
-            git add signals
-            git diff --cached --quiet && { echo "بدون تغییر"; break; }
-            git commit -q -m "گشت صرافی‌ها $(date -u +%H:%M) UTC"
-            git push origin HEAD:main -q && break
-            sleep $((i * 3 + RANDOM % 5))
-          done
+          # ناشر مشترک (قانون ۱۴، ۲ سپتامبر) — بدون reset، بدون فهرست سفت
+          scripts/publish.sh -m "گشت صرافی‌ها $(date -u +%H:%M) UTC" signals

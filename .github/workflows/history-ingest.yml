@@ -87,17 +87,5 @@ jobs:
       - name: ثبت شناسنامه روی main (ضدتصادم)
         if: steps.dl.outcome == 'success'
         run: |
-          git config user.name "Claude"
-          git config user.email "noreply@anthropic.com"
-          cp brain/research/history/inventory.json /tmp/inv.json
-          for i in 1 2 3 4 5 6 7 8; do
-            git fetch origin main -q
-            git reset --hard origin/main -q
-            mkdir -p brain/research/history
-            cp /tmp/inv.json brain/research/history/inventory.json
-            git add brain/research/history
-            git diff --cached --quiet && { echo "بدون تغییر"; break; }
-            git commit -q -m "شناسنامهٔ دادهٔ ۳ سالهٔ ارزها از درایو — اتاق تاریخچه"
-            git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
-            sleep $((i * 4 + RANDOM % 7))
-          done
+          # ناشر مشترک (قانون ۱۴، ۲ سپتامبر)
+          scripts/publish.sh -m "شناسنامهٔ دادهٔ ۳ سالهٔ ارزها از درایو — اتاق تاریخچه" brain/research/history
