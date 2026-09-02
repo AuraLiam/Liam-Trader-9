@@ -481,6 +481,11 @@ def perp_klines(sym, tf, limit, quiet=True):
     می‌کند. پس فعلاً این تابع **در دسترس** است و مقایسه‌اش اجرا می‌شود؛
     سوییچِ منبعِ تحلیل تصمیم صریح حمید است (قانون ۰۳)."""
     errs = []
+    # اسکن زندهٔ ۳۴۶ (۲ سپتامبر): نمادِ غیرلاتین («币安人生USDT») در سه صرافی
+    # پرپ UnicodeEncodeError داد و بی‌دلیل سه تلاش سوخت. قرارداد پرپ نام
+    # غیرلاتین ندارد؛ صریح رد می‌شود و اسپات (که با این نام‌ها کار می‌کند) می‌ماند.
+    if not str(sym).isascii():
+        raise RuntimeError(f"perp klines {sym} {tf}: نام غیرلاتین — قرارداد پرپ ندارد")
     for v in PERP_VENUES:
         try:
             if v.get("fetch"):
@@ -524,6 +529,12 @@ def klines(sym, tf, limit, quiet=True):
             if not quiet:
                 print(f"  perp {sym} رد شد ({why}) → اسپات", flush=True)
         except Exception as e:                       # noqa: BLE001 - پشتیبان اسپات
+            # نمادی که پرپ ندارد (یا پرپش خراب است) در همین فرایند دیگر
+            # سراغ سه صرافی پرپ نمی‌رود — هر تایم‌فریم/ماژول بعدی مستقیم
+            # اسپات. اندازه‌گیری: اسکن ۲۰۰ نمادی بعد از سوییچ (اجرای ۳۴۶،
+            # ۲ سپتامبر) ۹ دقیقه طول کشید، همان کادنس قبل؛ این کش فقط
+            # تلاش‌های تکراریِ بی‌حاصل را حذف می‌کند، رفعِ کندی نیست.
+            _perp_bad[sym] = f"perp نشد: {e}"
             if not quiet:
                 print(f"  perp نشد ({e}) → اسپات", flush=True)
     return spot_klines(sym, tf, limit, quiet=quiet)

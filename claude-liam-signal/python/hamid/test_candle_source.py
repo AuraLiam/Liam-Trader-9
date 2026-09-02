@@ -113,6 +113,11 @@ check("صرافی کمتر از خواسته داد → همان‌قدر برم
 # ── ۳. ترتیب و سوییچ ────────────────────────────────────────────────────
 check("بیت‌یونیکس اولین صرافی پرپ است", S.PERP_VENUES[0]["id"] == "bitunix-perp" and S.PERP_VENUES[0].get("fetch"))
 check("پیش‌فرضِ منبع اسپات است (سوییچ فقط با LIAM9_CANDLES=perp)", S.CANDLE_SOURCE in ("spot", "perp"))
+try:
+    S.perp_klines("币安人生USDT", "1h", 10)
+    check("نماد غیرلاتین در پرپ صریح رد می‌شود (نه UnicodeEncodeError روی سه صرافی)", False)
+except RuntimeError as e:
+    check("نماد غیرلاتین در پرپ صریح رد می‌شود (نه UnicodeEncodeError روی سه صرافی)", "غیرلاتین" in str(e), str(e))
 _saved = (S.CANDLE_SOURCE, S.perp_klines, S.spot_klines)
 try:
     S.CANDLE_SOURCE = "perp"
@@ -144,6 +149,16 @@ try:
     S.spot_klines = lambda sym, tf, n, quiet=True: (_ for _ in ()).throw(RuntimeError("no spot"))
     check("بی‌اسپات = قابل‌راستی‌آزمایی نیست → پرپ پذیرفته (تنها منبع)", S.klines("NEWUSDT", "15m", 5)[0][4] == 1.004 and "NEWUSDT" in S._perp_ok)
     check("آستانهٔ هویت ۱۵٪ است (basis عادی ≤۱٪ هرگز رد نمی‌شود)", S.PERP_IDENTITY_TOL == 0.15)
+    # نمادِ بی‌پرپ فقط یک بار سه صرافی پرپ را امتحان می‌کند (هزینهٔ اسکن ۲۰۰ نمادی)
+    _calls = []
+
+    def _no_perp(sym, tf, n, quiet=True):
+        _calls.append((sym, tf))
+        raise RuntimeError("perp klines NOPEUSDT: bitunix-perp: insane(کوتاه) · mexc-perp: KeyError")
+    S.perp_klines = _no_perp
+    S.spot_klines = lambda sym, tf, n, quiet=True: [_row(1.0)] * n
+    S.klines("NOPEUSDT", "5m", 5); S.klines("NOPEUSDT", "15m", 5); S.klines("NOPEUSDT", "1h", 5)
+    check("نماد بی‌پرپ: سه تایم‌فریم، فقط یک تلاش پرپ، بقیه مستقیم اسپات", len(_calls) == 1 and "NOPEUSDT" in S._perp_bad, str(_calls))
     S._perp_bad.clear(); S._perp_ok.clear()
 finally:
     S.CANDLE_SOURCE, S.perp_klines, S.spot_klines = _saved
