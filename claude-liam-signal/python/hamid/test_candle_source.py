@@ -129,6 +129,21 @@ try:
     check("spot پیش‌فرض: اصلاً سراغ پرپ نمی‌رود", S.klines("BTCUSDT", "15m", 10) == [["spot"]])
     S.CANDLE_SOURCE = "perp"
     check("spot_klines با سوییچ perp هم اسپات می‌ماند (perp_vs_spot به آن تکیه دارد)", S.spot_klines("BTCUSDT", "15m", 10) == [["spot"]])
+
+    # ── هویت قرارداد (یافتهٔ کاوش ۹: PUMPUSDT پرپ ۱۷۱٪ دور از اسپات) ──
+    S._perp_bad.clear(); S._perp_ok.clear()
+    _row = lambda c: [0, c, c, c, c, 1]                                   # noqa: E731
+    S.perp_klines = lambda sym, tf, n, quiet=True: [_row(2.7)] * 5        # پرپ ۲.۷ برابر
+    S.spot_klines = lambda sym, tf, n, quiet=True: [_row(1.0)] * n
+    out = S.klines("PUMPUSDT", "15m", 5)
+    check("پرپِ همنام با قیمتِ بازارِ دیگر رد می‌شود و اسپات می‌نشیند", out and out[0][4] == 1.0 and "PUMPUSDT" in S._perp_bad, str(S._perp_bad))
+    S.perp_klines = lambda sym, tf, n, quiet=True: [_row(1.004)] * 5      # basis عادی ۰.۴٪
+    check("نماد ردشده در همین فرایند دیگر سراغ پرپ نمی‌رود", S.klines("PUMPUSDT", "15m", 5)[0][4] == 1.0)
+    check("پرپ با basis عادی پذیرفته و هویتش یک‌بار ثبت می‌شود", S.klines("BTCUSDT", "15m", 5)[0][4] == 1.004 and "BTCUSDT" in S._perp_ok)
+    S.spot_klines = lambda sym, tf, n, quiet=True: (_ for _ in ()).throw(RuntimeError("no spot"))
+    check("بی‌اسپات = قابل‌راستی‌آزمایی نیست → پرپ پذیرفته (تنها منبع)", S.klines("NEWUSDT", "15m", 5)[0][4] == 1.004 and "NEWUSDT" in S._perp_ok)
+    check("آستانهٔ هویت ۱۵٪ است (basis عادی ≤۱٪ هرگز رد نمی‌شود)", S.PERP_IDENTITY_TOL == 0.15)
+    S._perp_bad.clear(); S._perp_ok.clear()
 finally:
     S.CANDLE_SOURCE, S.perp_klines, S.spot_klines = _saved
 
@@ -156,8 +171,9 @@ for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
 
 # ── ۴. اسکن هم همین سوییچ را دارد ────────────────────────────────────────
 scan_src = (PY / "scan.py").read_text(encoding="utf-8")
-check("scan.klines_now با LIAM9_CANDLES=perp اول پرپ را می‌خواند و اسپات پشتیبان می‌ماند",
-      "sources.CANDLE_SOURCE" in scan_src and "sources.perp_klines(" in scan_src and "/api/v3/klines" in scan_src)
+check("scan.klines_now با LIAM9_CANDLES=perp از sources.klines می‌خواند (پشتیبان + هویت) و اسپات پشتیبان می‌ماند",
+      "sources.CANDLE_SOURCE" in scan_src and "sources.klines(" in scan_src
+      and "sources.perp_klines(" not in scan_src and "/api/v3/klines" in scan_src)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

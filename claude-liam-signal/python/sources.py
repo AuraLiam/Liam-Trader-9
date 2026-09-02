@@ -490,13 +490,55 @@ def klines(sym, tf, limit, quiet=True):
     مصرف‌کننده‌ای بی‌کندل نشود («گزینهٔ جایگزین همیشه باید وجود داشته باشد»).
     منبعِ واقعاً استفاده‌شده در `used()["klines"]` است و روی دفتر سیگنال
     (`candle_src`) ثبت می‌شود تا ماشین شبانه دو منبع را جدا بسنجد."""
-    if CANDLE_SOURCE == "perp":
+    if CANDLE_SOURCE == "perp" and sym not in _perp_bad:
         try:
-            return perp_klines(sym, tf, limit, quiet=quiet)
+            rows = perp_klines(sym, tf, limit, quiet=quiet)
+            why = _perp_identity_why(sym, tf, rows)
+            if not why:
+                return rows
+            _perp_bad[sym] = why
+            if not quiet:
+                print(f"  perp {sym} رد شد ({why}) → اسپات", flush=True)
         except Exception as e:                       # noqa: BLE001 - پشتیبان اسپات
             if not quiet:
                 print(f"  perp نشد ({e}) → اسپات", flush=True)
     return spot_klines(sym, tf, limit, quiet=quiet)
+
+
+# ── هویت قرارداد: آیا «PUMPUSDT» پرپ همان دارایی «PUMPUSDT» اسپات است؟ ──
+# اندازه‌گیری perp_vs_spot (کاوش ۹، ۲ سپتامبر): PUMPUSDT پرپ ۱۷۱٪ با اسپات
+# فاصله داشت — یعنی قراردادِ همنام، دارایی/مقیاس دیگری بود. سیگنالی که روی
+# آن ساخته شود قیمت‌هایش به بازارِ دیگری تعلق دارد. پس هر نماد یک بار در
+# هر فرایند با آخرین کلوز اسپات مقایسه می‌شود؛ فاصلهٔ بیش از PERP_IDENTITY_TOL
+# = پرپ برای این نماد رد و اسپات جایگزین. بی‌اسپات = قابل‌راستی‌آزمایی
+# نیست → پذیرفته با ثبت (تنها منبع است، ساختگی نیست).
+PERP_IDENTITY_TOL = 0.15
+_perp_bad = {}
+_perp_ok = set()
+
+
+def _perp_identity_why(sym, tf, rows, _spot_fn=None):
+    if sym in _perp_ok or not rows:
+        return ""
+    try:
+        sp = (_spot_fn or spot_klines)(sym, tf, 3)
+    except Exception:                                # noqa: BLE001 - اسپات ندارد
+        _perp_ok.add(sym)
+        return ""
+    if not sp:
+        _perp_ok.add(sym)
+        return ""
+    try:
+        p, s = float(rows[-1][4]), float(sp[-1][4])
+    except Exception:                                # noqa: BLE001 - شکل ناشناخته = قابل‌سنجش نیست
+        return ""
+    if s <= 0:
+        return ""
+    gap = abs(p / s - 1)
+    if gap > PERP_IDENTITY_TOL:
+        return f"هویت: کلوز پرپ {p:.6g} در برابر اسپات {s:.6g} ({gap*100:.0f}٪ فاصله)"
+    _perp_ok.add(sym)
+    return ""
 
 
 klines_pref = klines          # نام قدیمی (۲ سپتامبر صبح) — همان تابع

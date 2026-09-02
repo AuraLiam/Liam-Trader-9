@@ -82,7 +82,9 @@ def klines_now(sym, tf, bars=BARS):
     # بی‌کندل نشود («گزینهٔ جایگزین همیشه باید وجود داشته باشد»).
     if sources.CANDLE_SOURCE == "perp":
         try:
-            rows = sources.perp_klines(sym, tf, bars)
+            # از sources.klines، نه مستقیم perp_klines: همان‌جا پشتیبان اسپات و
+            # بررسی هویت قرارداد (PUMPUSDT ۱۷۱٪ دور از اسپات، کاوش ۹) نشسته است.
+            rows = sources.klines(sym, tf, bars)
             return [{"t": k[0], "o": float(k[1]), "h": float(k[2]), "l": float(k[3]),
                      "c": float(k[4]), "v": float(k[5])} for k in rows]
         except Exception:                            # noqa: BLE001 - پشتیبان اسپات
