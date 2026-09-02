@@ -42,7 +42,8 @@ HB = SH / "heartbeat.json"
 cmd = SS.scan_cmd()
 check("فرمان اسکن بدون --telegram است", "--telegram" not in cmd and cmd[1].endswith("scan.py"))
 check("جهان ۲۰۰ نماد با هستهٔ ۳۰ و دو تایم ۵د/۱۵د", "--rotate" in cmd and "200" in cmd and "5m,15m" in cmd)
-env = SS.env_for({"TELEGRAM_BOT_TOKEN": "x", "TELEGRAM_CHAT_ID": "y", "TG_TOKEN": "z",
+# نام «TG_X» عمداً نام هیچ بات واقعی نیست (test_single_bot نام‌های بات دوم را در کد زنده ممنوع کرده)
+env = SS.env_for({"TELEGRAM_BOT_TOKEN": "x", "TELEGRAM_CHAT_ID": "y", "TG_X": "z",
                   "PATH": "/bin", "LIVE_EXECUTION": "true"}, shadow_dir=SH)
 check("اعتبارنامهٔ تلگرام از محیط زیرفرایند حذف می‌شود",
       not any(k.startswith(("TELEGRAM_", "TG_")) for k in env), str([k for k in env]))
