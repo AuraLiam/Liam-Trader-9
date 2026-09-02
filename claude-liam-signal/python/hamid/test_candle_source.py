@@ -143,6 +143,13 @@ check("ماشین بونفرونی شرط «کندل از پرپ بیت‌یون
 _cond = dict(_paper.CONDITIONS)["کندل از پرپ بیت‌یونیکس"]
 check("شرط فقط روی bitunix-perp درست است، روی اسپات/None غلط",
       _cond({"candle_src": "bitunix-perp"}) and not _cond({"candle_src": "mexc"}) and not _cond({}))
+import telegram as _tg                                # noqa: E402
+_cap = _tg.caption({"dir": "LONG", "sym": "ETHUSDT", "tf": "15m", "entry": 100.0, "sl": 98.0,
+                    "tp1": 104.0, "rr": 2.0, "candle_src": "bitunix-perp"})
+check("کپشن نماد پرپ بیت‌یونیکس در تریدینگ‌ویو را دارد (BITUNIX:ETHUSDT.P)", "BITUNIX:ETHUSDT.P" in _cap, _cap[-300:])
+check("کپشن منبع واقعی کندل را چاپ می‌کند", "bitunix-perp" in _cap)
+_cap2 = _tg.caption({"dir": "SHORT", "sym": "XUSDT", "tf": "5m", "entry": 1.0, "sl": 1.02, "tp1": 0.96, "rr": 2.0})
+check("بی‌ردپا: منبع «نامعلوم» یا منبعِ used()، هرگز ادعای بیت‌یونیکس", "BITUNIX:XUSDT.P" in _cap2 and "کندل تحلیل" in _cap2)
 WF = PY.parent.parent / ".github" / "workflows"
 for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
     check(f"{wf}: سوییچ LIAM9_CANDLES=perp روشن است", "LIAM9_CANDLES: perp" in (WF / wf).read_text(encoding="utf-8"))

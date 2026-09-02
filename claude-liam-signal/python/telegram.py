@@ -595,7 +595,13 @@ def caption(s):
     except Exception as e:                       # noqa: BLE001
         # هیچ خطایی حق ندارد جلوی خودِ سیگنال را بگیرد (دستور «بدون تأخیر»).
         print(f"telegram: بلوک سفارش ساخته نشد — {e}", flush=True)
-    L += ["", "<i>اسکن از راه دور روی کندل واقعی — قبل از ورود خودت هم چارت را ببین.</i>"]
+    # منبع کندل و نماد چارت (دستور حمید ۲ سپتامبر: «در تریدینگ‌ویو صرافی
+    # بیت‌یونیکس و ارز پرپچوال را انتخاب کن»). نماد پرپ بیت‌یونیکس در
+    # تریدینگ‌ویو به شکل BITUNIX:<SYM>.P است؛ منبعِ واقعیِ کندل هم چاپ می‌شود
+    # تا اگر پشتیبان (MEXC/اسپات) جای بیت‌یونیکس نشسته بود، حمید ببیند.
+    src = s.get("candle_src") or _candle_trace().get("candle_src") or "نامعلوم"
+    L += ["", f"📈 <i>چارت: <code>BITUNIX:{s['sym']}.P</code> (تریدینگ‌ویو، پرپچوال) · "
+              f"کندل تحلیل: <code>{src}</code> — قبل از ورود خودت هم چارت را ببین.</i>"]
     # Each strategy carries its own measured record. Attaching one strategy's
     # win rate to another's signal would be worse than attaching none: it reads
     # as evidence and is not. A signal that supplies no footer gets the figure
