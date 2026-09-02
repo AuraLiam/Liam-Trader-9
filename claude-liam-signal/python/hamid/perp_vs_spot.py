@@ -66,7 +66,7 @@ def _pct(a, b):
 def compare(sym, tf="15m", limit=200, spot_fn=None, perp_fn=None):
     """یک نماد: اسپات و پرپ را کنار هم می‌گذارد، فقط روی کندل‌های هم‌زمان."""
     import sources
-    spot_fn = spot_fn or sources.klines
+    spot_fn = spot_fn or sources.spot_klines      # نه klines: با سوییچ perp همان پرپ می‌شد
     perp_fn = perp_fn or sources.perp_klines
     try:
         sp = spot_fn(sym, tf, limit)

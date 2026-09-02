@@ -595,7 +595,13 @@ def caption(s):
     except Exception as e:                       # noqa: BLE001
         # هیچ خطایی حق ندارد جلوی خودِ سیگنال را بگیرد (دستور «بدون تأخیر»).
         print(f"telegram: بلوک سفارش ساخته نشد — {e}", flush=True)
-    L += ["", "<i>اسکن از راه دور روی کندل واقعی — قبل از ورود خودت هم چارت را ببین.</i>"]
+    # منبع کندل و نماد چارت (دستور حمید ۲ سپتامبر: «در تریدینگ‌ویو صرافی
+    # بیت‌یونیکس و ارز پرپچوال را انتخاب کن»). نماد پرپ بیت‌یونیکس در
+    # تریدینگ‌ویو به شکل BITUNIX:<SYM>.P است؛ منبعِ واقعیِ کندل هم چاپ می‌شود
+    # تا اگر پشتیبان (MEXC/اسپات) جای بیت‌یونیکس نشسته بود، حمید ببیند.
+    src = s.get("candle_src") or _candle_trace().get("candle_src") or "نامعلوم"
+    L += ["", f"📈 <i>چارت: <code>BITUNIX:{s['sym']}.P</code> (تریدینگ‌ویو، پرپچوال) · "
+              f"کندل تحلیل: <code>{src}</code> — قبل از ورود خودت هم چارت را ببین.</i>"]
     # Each strategy carries its own measured record. Attaching one strategy's
     # win rate to another's signal would be worse than attaching none: it reads
     # as evidence and is not. A signal that supplies no footer gets the figure
@@ -745,6 +751,19 @@ def _fomo_trace(sym):
         return _fomo.snapshot_for(sym)
     except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
         return {"fomo_heat": None, "fomo_witness": None}
+
+
+def _candle_trace():
+    """منبع کندلی که این سیگنال رویش ساخته شد (۲ سپتامبر، سوییچ پرپ).
+
+    `candle_src`: شناسهٔ صرافی از `sources.used()` — مثلاً bitunix-perp یا
+    mexc (اسپات). دفتر تاریخی روی اسپات است؛ بدون این ردپا، ماشین شبانه دو
+    بازار را در یک نمونه قاطی می‌کرد (کلاسِ عیبِ «دو تعریف در یک نمونه»)."""
+    try:
+        import sources as _src
+        return {"candle_src": _src.used().get("klines")}
+    except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
+        return {"candle_src": None}
 
 
 def _news_trace(sym, direction):
@@ -977,7 +996,7 @@ def send_signals(signals, render_chart, limit=8):
                                       # ردپای اتاق فومو (۲ سپتامبر) — فقط ثبت برای
                                       # سنجش شبانه؛ از عکس‌فوری، بدون شبکه
                                       **_fomo_trace(s["sym"]),
-                                      **_news_trace(s["sym"], s["dir"]),
+                                      **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
                                       **(pm.get("tv") or {})})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
@@ -1090,7 +1109,7 @@ def send_signals(signals, render_chart, limit=8):
                                   # شاهد اپ fomo — ثبت برای ماشین شبانه، نه امتیاز
                                   **_fomo_trace(s["sym"]),
                                   # اجماع خبری ایجنت‌ها (۲ سپتامبر): فقط ردپا — خبر دیدگاه است، نه تصمیم
-                                  **_news_trace(s["sym"], s["dir"]),
+                                  **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
                                   # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
                                   # سنجش شبانه، نه دروازه (۳۰ اوت)
                                   "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),

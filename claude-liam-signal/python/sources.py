@@ -471,32 +471,44 @@ def perp_klines(sym, tf, limit, quiet=True):
             if not quiet:
                 print(f"  perp klines {sym} {tf} ← {v['label']}", flush=True)
             return rows
-        errs.append(f"{v['id']}: insane")
+        # دلیلِ رد همراه می‌آید (کاوش ۶: TRUMPUSDT روی دو صرافی «insane» بود
+        # بی‌آنکه معلوم باشد چرا — عددِ بی‌دلیل قابل رفع نیست).
+        errs.append(f"{v['id']}: insane({sane_why(rows, limit)})")
     raise RuntimeError(f"perp klines {sym} {tf}: " + " · ".join(errs))
 
 
 CANDLE_SOURCE = os.environ.get("LIAM9_CANDLES", "spot").strip().lower()
 
 
-def klines_pref(sym, tf, limit, quiet=True):
-    """کندل با ترجیحِ محیط: `LIAM9_CANDLES=perp` → اول پرپ (بیت‌یونیکس، بعد
-    بقیه)، اسپات فقط پشتیبان؛ پیش‌فرض همان اسپاتِ تاریخی. سوییچِ منبعِ
-    تحلیل دستور حمید است (۲ سپتامبر)؛ این تابع نقطهٔ واحدِ آن سوییچ است تا
-    پشتیبان همیشه بماند و هیچ مصرف‌کننده‌ای بی‌کندل نشود."""
+def klines(sym, tf, limit, quiet=True):
+    """کندل با ترجیحِ محیط — نقطهٔ واحدِ سوییچ منبع (دستور حمید، ۲ سپتامبر).
+
+    `LIAM9_CANDLES=perp` → اول قرارداد دائمی (بیت‌یونیکس، بعد بقیهٔ پرپ‌ها)،
+    اسپات فقط پشتیبان؛ پیش‌فرض همان اسپاتِ تاریخی. چون ۴۰+ مصرف‌کننده
+    (چرخه، دفتر پیپر، سطوح، اردر بلاک…) همین تابع را صدا می‌زنند، سوییچ
+    این‌جاست تا یک سیگنال از اول تا تسویه روی **یک** منبع بماند و هیچ
+    مصرف‌کننده‌ای بی‌کندل نشود («گزینهٔ جایگزین همیشه باید وجود داشته باشد»).
+    منبعِ واقعاً استفاده‌شده در `used()["klines"]` است و روی دفتر سیگنال
+    (`candle_src`) ثبت می‌شود تا ماشین شبانه دو منبع را جدا بسنجد."""
     if CANDLE_SOURCE == "perp":
         try:
             return perp_klines(sym, tf, limit, quiet=quiet)
         except Exception as e:                       # noqa: BLE001 - پشتیبان اسپات
             if not quiet:
                 print(f"  perp نشد ({e}) → اسپات", flush=True)
-    return klines(sym, tf, limit, quiet=quiet)
+    return spot_klines(sym, tf, limit, quiet=quiet)
 
 
-def klines(sym, tf, limit, quiet=True):
-    """Candles from the first venue that gives a full, sane series.
+klines_pref = klines          # نام قدیمی (۲ سپتامبر صبح) — همان تابع
 
-    مرز صادقانه (۳۱ اوت): این مسیر **اسپات** است. مسیر قرارداد دائمی
-    `perp_klines` است — تفاوتشان و دلیلِ جدانگه‌داشتنشان آن‌جا نوشته شده."""
+
+def spot_klines(sym, tf, limit, quiet=True):
+    """Candles from the first **spot** venue that gives a full, sane series.
+
+    مرز صادقانه (۳۱ اوت): این مسیر اسپات است. مسیر قرارداد دائمی
+    `perp_klines` است — تفاوتشان و دلیلِ جدانگه‌داشتنشان آن‌جا نوشته شده.
+    `perp_vs_spot` عمداً این را صدا می‌زند، نه `klines`، تا مقایسه با سوییچ
+    روشن هم معنا داشته باشد."""
     errs = []
     order = [v for v in VENUES if _available(v["id"])] or VENUES
     for v in order:

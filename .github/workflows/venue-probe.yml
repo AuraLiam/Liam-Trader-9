@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe (کشف مسیر) · compare (اسپرد/عمق) · docs (اسناد فنی حمید) · klines (منابع کندل پرپ)"
+        description: "probe (کشف مسیر) · compare (اسپرد/عمق) · docs (اسناد فنی حمید) · klines (منابع کندل پرپ) · perp_vs_spot (اندازهٔ تفاوت اسپات/پرپ)"
         default: "probe"
       symbols:
         description: "نمادها برای مقایسه"
@@ -83,6 +83,11 @@ jobs:
               except Exception as e:
                   print(f"pref {sym}: FAILED {e}")
           PY
+          elif [ "$MODE" = "perp_vs_spot" ]; then
+            # اندازه‌گیری اسپات در برابر پرپ (دستور ۳۱ اوت) — تا امروز فقط
+            # نوشته شده بود و هرگز روی رانر اجرا نشده بود (نشست به صرافی
+            # دسترسی ندارد). خروجی: signals/perp-vs-spot.json (ردیف قرارداد E02).
+            python3 -m hamid.perp_vs_spot --symbols 40 --tf 15m --write | tee venue.txt
           elif [ "$MODE" = "docs" ]; then
             python3 -m hamid.docs_probe | tee venue.txt
           elif [ "$MODE" = "probe" ]; then
@@ -102,8 +107,8 @@ jobs:
           { echo '```'; tail -120 venue.txt 2>/dev/null || echo "no output";
             echo '```'; } >> $GITHUB_STEP_SUMMARY
       - name: Publish (ناشر مشترک، قانون ۱۴)
-        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs'
+        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs' || github.event.inputs.mode == 'perp_vs_spot'
         run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
-          scripts/publish.sh -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC" signals/venue-compare.json signals/docs-probe.json
+          scripts/publish.sh -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC" signals/venue-compare.json signals/docs-probe.json signals/perp-vs-spot.json

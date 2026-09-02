@@ -104,6 +104,7 @@ jobs:
           python3 -m hamid.test_fomo
           python3 -m hamid.test_news_poll
           python3 -m hamid.test_candle_source
+          python3 -m hamid.test_shadow_service
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
           python3 -m hamid.test_exec_feed
@@ -171,6 +172,9 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
           CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
+          # منبع کندل: بیت‌یونیکس پرپچوال، اسپات پشتیبان (دستور حمید؛ اثبات
+          # رانر venue-probe کاوش ۷). ردپای candle_src روی هر سیگنال می‌نشیند.
+          LIAM9_CANDLES: perp
         run: |
           set -o pipefail
           python3 -m hamid.cycle \

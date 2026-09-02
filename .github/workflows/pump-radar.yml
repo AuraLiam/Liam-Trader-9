@@ -132,6 +132,9 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # منبع کندل: بیت‌یونیکس پرپچوال، اسپات پشتیبان (دستور حمید ۳۱ اوت/۲
+          # سپتامبر؛ اثبات رانر: venue-probe کاوش ۷ — ۴۲۰ کندل سالم، بی‌شکاف).
+          LIAM9_CANDLES: perp
         run: |
           export TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-$(jq -r '.inputs.token // empty' "$GITHUB_EVENT_PATH")}"
           export TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-$(jq -r '.inputs.chat_id // empty' "$GITHUB_EVENT_PATH")}"

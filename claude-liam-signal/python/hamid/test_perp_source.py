@@ -94,8 +94,12 @@ def run():
     src = (PY / "sources.py").read_text(encoding="utf-8")
     check("مرزِ «سوییچ تصمیم حمید است» در کد نوشته شده",
           "تصمیم صریح حمید است (قانون ۰۳)" in src)
+    # ۲ سپتامبر: مسیر اسپات به spot_klines رفت و klines نقطهٔ سوییچ شد؛ برچسب
+    # روی همان تابع می‌ماند تا هیچ‌کس اسپات را با پرپ اشتباه نگیرد.
     check("مسیر اسپات صریح برچسب خورده",
-          "این مسیر **اسپات** است" in src)
+          "def spot_klines(" in src and "این مسیر اسپات است" in src)
+    check("perp_vs_spot اسپات را از spot_klines می‌گیرد نه از سوییچ",
+          "sources.spot_klines" in (HERE / "perp_vs_spot.py").read_text(encoding="utf-8"))
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
