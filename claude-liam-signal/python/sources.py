@@ -387,22 +387,26 @@ def _bitunix_fetch(sym, tf, n, _json_fn=None):
     """صفحه‌به‌صفحه از جدیدترین به قدیمی‌ترین تا `n` کندل؛ یکتا بر زمان."""
     getj = _json_fn or _json
     got, end_ms = {}, None
-    step = _TF_MS.get(tf, 900_000)
-    for _ in range(1 + (int(n) - 1) // BITUNIX_PAGE + 1):
+    # یک صفحهٔ اضافه، چون با endTime=oldest ممکن است هر صفحه یک ردیفِ تکراری
+    # (خودِ oldest) بیاورد و ۱۹۹ کندل تازه بدهد.
+    for _ in range(2 + (int(n) - 1) // BITUNIX_PAGE + 1):
         rows = _bitunix_parse(getj(_bitunix_url(sym, tf, n, end_ms)))
         if not rows:
             break
+        before = len(got)
         for k in rows:
             got[k[0]] = k
         oldest = rows[0][0]
-        if len(got) >= n or len(rows) < min(BITUNIX_PAGE, n):
-            break
-        # کاوش ۵ روی رانر: `oldest - step` در هر مرز صفحه یک کندل جا می‌انداخت
-        # (فاصله‌های ۳۰دقیقه‌ای در سری ۱۵د). یک میلی‌ثانیه پیش از قدیمی‌ترین،
-        # چه endTime شامل باشد چه نباشد، کندلِ قبلی را می‌دهد؛ تکراری با
-        # کلیدِ زمان حذف می‌شود.
-        end_ms = oldest - 1
-    _ = step
+        if len(got) >= n or len(got) == before:
+            break                      # کافی است، یا صفحه هیچ کندل تازه‌ای نداشت
+        if len(rows) < min(BITUNIX_PAGE, n) and end_ms is None:
+            break                      # صرافی از اول کمتر از یک صفحه داشت
+        # کاوش ۵ و ۶ روی رانر: هم `oldest - step` و هم `oldest - 1` در هر مرز
+        # صفحه یک کندل جا می‌انداخت (فاصلهٔ ۳۰د در سری ۱۵د). یعنی بیت‌یونیکس
+        # endTime را روی زمانِ «بسته‌شدن» کندل می‌سنجد (open+step ≤ endTime).
+        # با endTime=oldest هر سه تفسیر درست جواب می‌دهد: بسته≤ → کندلِ قبلی؛
+        # باز< → کندلِ قبلی؛ باز≤ → خودِ oldest که با کلیدِ زمان حذف می‌شود.
+        end_ms = oldest
     return [got[t] for t in sorted(got)][-int(n):]
 
 

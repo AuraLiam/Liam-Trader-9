@@ -69,25 +69,42 @@ calls = []
 N_ALL = 500
 
 
-def fake_json(url):
-    calls.append(url)
-    end = None
-    if "endTime=" in url:
-        end = int(url.split("endTime=")[1].split("&")[0])
-    limit = int(url.split("limit=")[1].split("&")[0])
-    # جدیدترین N_ALL کندل موجود
-    last_i = N_ALL - 1 if end is None else min(N_ALL - 1, (end - T0) // STEP)
-    first_i = max(0, last_i - limit + 1)
-    return {"code": 0, "data": [_row(i) for i in range(first_i, last_i + 1)]}
+def _fake(semantics):
+    """سه تفسیر ممکن endTime — کاوش ۶ روی رانر نشان داد بیت‌یونیکس «بسته≤» است."""
+    def fake_json(url):
+        calls.append(url)
+        end = None
+        if "endTime=" in url:
+            end = int(url.split("endTime=")[1].split("&")[0])
+        limit = int(url.split("limit=")[1].split("&")[0])
+        if end is None:
+            last_i = N_ALL - 1
+        elif semantics == "open<=":      # open ≤ endTime
+            last_i = (end - T0) // STEP
+        elif semantics == "open<":       # open < endTime
+            last_i = (end - 1 - T0) // STEP
+        else:                            # close ≤ endTime  ⇔  open ≤ endTime − step
+            last_i = (end - STEP - T0) // STEP
+        last_i = min(N_ALL - 1, last_i)
+        first_i = max(0, last_i - limit + 1)
+        return {"code": 0, "data": [_row(i) for i in range(first_i, last_i + 1)]}
+    return fake_json
 
 
-got = S._bitunix_fetch("BTCUSDT", "15m", 420, _json_fn=fake_json)
-check("۴۲۰ کندل از صفحه‌های ۲۰۰تایی جمع شد", len(got) == 420, str(len(got)))
-check("سه درخواست (۲۰۰+۲۰۰+۲۰)", len(calls) == 3, str(len(calls)))
-check("یکتا و مرتب، جدیدترین کندل آخر است", got[-1][0] == T0 + (N_ALL - 1) * STEP and all(got[i][0] < got[i + 1][0] for i in range(len(got) - 1)))
-check("بی‌شکاف: هیچ کندلی در مرز صفحه‌ها جا نمی‌افتد (یافتهٔ کاوش ۵)", all(got[i + 1][0] - got[i][0] == STEP for i in range(len(got) - 1)))
-check("sane() این پنجره را می‌پذیرد", S.sane(got, 420))
+for sem in ("close<=", "open<", "open<="):
+    calls.clear()
+    got = S._bitunix_fetch("BTCUSDT", "15m", 420, _json_fn=_fake(sem))
+    check(f"[{sem}] ۴۲۰ کندل از صفحه‌های ۲۰۰تایی جمع شد", len(got) == 420, str(len(got)))
+    check(f"[{sem}] یکتا و مرتب، جدیدترین کندل آخر است", got[-1][0] == T0 + (N_ALL - 1) * STEP and all(got[i][0] < got[i + 1][0] for i in range(len(got) - 1)))
+    check(f"[{sem}] بی‌شکاف: هیچ کندلی در مرز صفحه‌ها جا نمی‌افتد (یافتهٔ کاوش ۵ و ۶)", all(got[i + 1][0] - got[i][0] == STEP for i in range(len(got) - 1)),
+          str(sorted({got[i + 1][0] - got[i][0] for i in range(len(got) - 1)})))
+    check(f"[{sem}] sane() این پنجره را می‌پذیرد", S.sane(got, 420))
+    check(f"[{sem}] حداکثر ۴ درخواست", 3 <= len(calls) <= 4, str(len(calls)))
 check("درخواست اول limit=200 و type=LAST_PRICE دارد", "limit=200" in calls[0] and "LAST_PRICE" in calls[0] and "endTime" not in calls[0])
+check("صفحهٔ دوم endTime=قدیمی‌ترینِ صفحهٔ اول (نه −۱، نه −step)", f"endTime={T0 + (N_ALL - 200) * STEP}" in calls[1], calls[1])
+calls.clear()
+stuck = S._bitunix_fetch("YUSDT", "15m", 420, _json_fn=lambda u: (calls.append(u), {"data": [_row(i) for i in range(300, 500)]})[1])
+check("صرافی همان صفحه را تکرار کند → حلقه می‌ایستد، بی‌پایان نمی‌شود", len(stuck) == 200 and len(calls) == 2, f"{len(stuck)} rows / {len(calls)} calls")
 calls.clear()
 short = S._bitunix_fetch("XUSDT", "15m", 420, _json_fn=lambda u: {"data": [_row(i) for i in range(50)]})
 check("صرافی کمتر از خواسته داد → همان‌قدر برمی‌گردد (sane پایین‌دست رد می‌کند)", len(short) == 50 and not S.sane(short, 420))
