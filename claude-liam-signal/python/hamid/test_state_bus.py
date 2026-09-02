@@ -120,6 +120,21 @@ try:
 finally:
     SB.SIGDIR, SB.REGISTRY = old_sig, old_reg
 
+# ── قرارداد نباید دروغ بگوید: تولیدکنندهٔ هر ردیف واقعاً وجود دارد ─────────
+# ممیزی ۲ سپتامبر: ۸ ردیف تولیدکننده‌ای را نام می‌بردند که فایلش وجود نداشت
+# (ob_radar.py به‌جای ob_intel.py، experience.py به‌جای publish_experience.py…).
+# قراردادی که مالک را غلط بگوید، در خرابی کسی را به جای غلط می‌فرستد.
+_reg = json.loads((ROOT / "config" / "state_registry.json").read_text(encoding="utf-8"))
+_py = ROOT / "claude-liam-signal" / "python"
+_ghost = []
+for _fn, _row in _reg["files"].items():
+    _prod = str(_row.get("producer") or "")
+    _first = _prod.split(" ")[0].split("(")[0]
+    if _first.endswith(".py") and not _first.startswith("external"):
+        if not (_py / _first).exists() and not (ROOT / _first).exists():
+            _ghost.append((_fn, _first))
+check("هر تولیدکنندهٔ قرارداد وضعیت فایلِ موجودی است", not _ghost, str(_ghost))
+
 # ── پنل واقعاً همین نقشه را نشان می‌دهد ───────────────────────────────────
 panel = (ROOT / "index.html").read_text(encoding="utf-8")
 check("پنل نقشهٔ وضعیت سامانه را می‌خواند",

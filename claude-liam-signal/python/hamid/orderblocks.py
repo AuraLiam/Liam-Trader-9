@@ -112,6 +112,7 @@ def _score_box(cd, lo, hi, born_i, role=None):
     last = -99
     visit_open = False                                # داخل همان بازدید هستیم؟
     visit_hunted = False
+    side = 0                                          # جهتِ ورود به باکس؛ قبل از اولین بازدید تعریف‌نشده بود (ممیزی ۲ سپتامبر)
     n = len(cd)
     for i in range(born_i + 3, n):
         c = cd[i]
