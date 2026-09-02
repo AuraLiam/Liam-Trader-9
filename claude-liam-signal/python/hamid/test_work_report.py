@@ -180,7 +180,7 @@ def _publish_scenario(script):
     # گام ناشر حالا اسکریپت مشترک را صدا می‌زند؛ همان را داخل مخزن موقت
     # می‌گذاریم تا اسکریپتِ گام دقیقاً همان‌طور که روی رانر است اجرا شود.
     (work / "scripts").mkdir()
-    for s in ("publish.sh", "resolve_brain_conflicts.py"):
+    for s in ("publish.sh", "resolve_brain_conflicts.py", "publish_merge.py"):
         shutil.copy(ROOT / "scripts" / s, work / "scripts" / s)
     (work / "signals").mkdir()
     for f in ("work-report.json", "engine-focus.json", "curriculum.json",

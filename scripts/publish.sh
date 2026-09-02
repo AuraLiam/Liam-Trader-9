@@ -5,32 +5,38 @@
 # چرا لازم شد: ۴۶ ورک‌فلو داشتیم، ۴۱تا push می‌کردند، ۳۶تا حلقهٔ انتشارِ
 # دست‌نویسِ خودشان را داشتند، ۹تا با reset سخت، و فقط ۱۸تا از حل‌کنندهٔ
 # معنادار استفاده می‌کردند. سه قطعیِ یک روز (۲ سپتامبر) هر سه از همین
-# تکثیر آمدند: فایلِ بی‌handler که حلقه را کشت، ناشری که فقط دو فایل را
-# از reset نجات می‌داد، و محیطی که یک وابستگی کم داشت. هر ناشرِ تازه = یک
-# راهِ تازه برای خرابی. پس یکی، با آزمونِ رفتاری (hamid/test_publish.py).
+# تکثیر آمدند. هر ناشرِ تازه = یک راهِ تازه برای خرابی. پس یکی، با آزمونِ
+# رفتاری (hamid/test_publish.py).
+#
+# چرا merge نمی‌کند: تاریخچهٔ مخزن ۴.۴ گیگابایت است. merge روی چک‌اوتِ
+# کم‌عمق یا باید تاریخچه بکشد (دو بار job را تا سقف ۱۵ دقیقه خواباند) یا
+# تاریخچه را بی‌ربط می‌بیند و هزاران تعارضِ ساختگی می‌سازد (اجرای ۳۶۱).
+# پس ناشر **بر پایهٔ محتوا** کار می‌کند: نوکِ تازهٔ origin را (کم‌عمق،
+# ارزان) می‌گیرد و فقط فایل‌هایی را که همین اجرا نوشته، هر کدام با معنای
+# خودش (scripts/publish_merge.py → resolve_brain_conflicts)، روی همان
+# نوک می‌نشاند و یک کامیتِ تازه می‌سازد — بدون merge، بدون چک‌اوت، بدون
+# دست‌زدن به فایلی که ما ننوشته‌ایم.
 #
 # استفاده:
 #   scripts/publish.sh -m "پیام کامیت" مسیر [مسیر...]
 #   متغیرها: PUBLISH_BRANCH (main) · PUBLISH_REMOTE (origin) ·
-#            PUBLISH_ATTEMPTS (8) · PUBLISH_RESOLVER (scripts/resolve_brain_conflicts.py)
+#            PUBLISH_ATTEMPTS (8) · PUBLISH_NET_TIMEOUT (120 ثانیه)
 #
 # قرارداد:
 #   ۱. فقط مسیرهای داده‌شده add می‌شوند؛ چیزی برای انتشار نبود → خروج ۰.
-#   ۲. اول کامیت، بعد حلقهٔ push/fetch/merge — هرگز reset --hard، چون
-#      reset خروجیِ همین اجرا را دور می‌ریزد (عیب work-report، ۱ سپتامبر).
-#   ۳. تعارض با «معنا» حل می‌شود (resolve_brain_conflicts: دفتر → اجتماع،
-#      عکس‌فوری → تازه‌تر، نشانگر → تاریخ جلوتر). هر چه حل‌کننده جا گذاشت:
-#      فایلی که همین اجرا نوشته → نسخهٔ ما؛ غیر آن → نسخهٔ origin. هیچ
-#      تعارضی job بی‌ناظر را نمی‌کشد.
-#   ۴. هیچ فایلی با مارکر تعارض هرگز push نمی‌شود.
+#   ۲. خروجیِ همین اجرا هرگز دور ریخته نمی‌شود (نه reset، نه فهرست سفت).
+#   ۳. دفتر append-only → اجتماع؛ عکس‌فوری/نشانگر → قاعدهٔ خودش؛ فایلی که
+#      ما ننوشته‌ایم → دقیقاً نسخهٔ origin. هیچ تعارضی job را نمی‌کشد.
+#   ۴. هیچ فرمانِ شبکه‌ای بی‌سقف نیست و هر مرحله با ساعت روی لاگ می‌آید.
 #   ۵. ۸ تلاش با jitter؛ بعد از آن خروج ۱ (خرابیِ واقعیِ شبکه/ریموت).
 set -u
 
 REMOTE="${PUBLISH_REMOTE:-origin}"
 BRANCH="${PUBLISH_BRANCH:-main}"
 ATTEMPTS="${PUBLISH_ATTEMPTS:-8}"
+NET_TIMEOUT="${PUBLISH_NET_TIMEOUT:-120}"
 ROOT="$(git rev-parse --show-toplevel)"
-RESOLVER="${PUBLISH_RESOLVER:-$ROOT/scripts/resolve_brain_conflicts.py}"
+MERGER="$ROOT/scripts/publish_merge.py"
 MSG=""
 PATHS=()
 while [ $# -gt 0 ]; do
@@ -45,116 +51,90 @@ done
 cd "$ROOT"
 git config user.name  >/dev/null 2>&1 || git config user.name  "Claude"
 git config user.email >/dev/null 2>&1 || git config user.email "noreply@anthropic.com"
-# هیچ فرمانِ شبکه‌ای بی‌سقف نیست: ۲ سپتامبر دو اجرای گزارش کار در گام
-# انتشار تا سقف ۱۵ دقیقهٔ job بی‌صدا ماندند. حالا هر fetch/push سقف زمانی
-# دارد و هر مرحله با ساعت روی لاگ می‌آید تا «کجا ماند» همیشه معلوم باشد.
-NET_TIMEOUT="${PUBLISH_NET_TIMEOUT:-120}"
 _say() { echo "publish $(date -u +%H:%M:%S): $*"; }
 _net() { timeout "$NET_TIMEOUT" "$@"; }
 
-# ── ۱) فقط خروجیِ همین اجرا ─────────────────────────────────────────────
+# ── ۱) فقط خروجیِ همین اجرا، در یک کامیت محلی ────────────────────────────
 git add -A -- "${PATHS[@]}" 2>/dev/null || true
 if git diff --cached --quiet; then
-  echo "publish: بدون تغییر"
+  _say "بدون تغییر"
   exit 0
 fi
-CHANGED="$(git diff --cached --name-only)"
+CHANGED="$(git -c core.quotepath=false diff --cached --name-only)"
 git commit -q -m "$MSG" || { _say "کامیت نشد"; exit 1; }
-_say "$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد (shallow=$(git rev-parse --is-shallow-repository 2>/dev/null))"
+OURS="$(git rev-parse HEAD)"
+_say "$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد"
 
-# چک‌اوتِ کم‌عمق (fetch-depth: 1) مبنای مشترک ندارد و هر merge را add/add
-# می‌کند. عمیق‌کردنِ **محدود** کافی است: origin معمولاً چند کامیت جلوتر
-# است، پس ۵۰ کامیت مبنای مشترک را برمی‌گرداند. `--unshallow` روی این
-# مخزن (۳۰۰۰+ کامیت، هزاران فایل JSON در تاریخچه) دقیقه‌ها طول می‌کشد و
-# یک بار گام انتشار را تا سقف ۱۵ دقیقهٔ job خواباند (۲ سپتامبر ۰۹:۳۹).
-# اگر بعد از سه پله هم مبنا پیدا نشد، merge بی‌ربط می‌شود و همان مسیرِ
-# آزموده (نانوشته → origin، نوشته → ما) جواب می‌دهد.
-_deepen_until_related() {
-  _say "fetch $REMOTE/$BRANCH"
-  _net git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || { _say "fetch ناموفق/دیر (rc=$?)"; return 0; }
-  local d
-  for d in 50 200 800; do
-    git merge-base HEAD "$REMOTE/$BRANCH" >/dev/null 2>&1 && { _say "مبنای مشترک پیدا شد"; return 0; }
-    [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ] || return 0
-    _say "deepen=$d"
-    _net git fetch -q --deepen="$d" "$REMOTE" "$BRANCH" 2>/dev/null || { _say "deepen ناموفق/دیر (rc=$?)"; return 0; }
-  done
-  _say "مبنای مشترک پیدا نشد — merge بی‌ربط"
-}
-_deepen_until_related
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
 
-_in_changed() { printf '%s\n' "$CHANGED" | grep -qxF -- "$1"; }
-
-_settle_untouched() {
-  # فایلی که همین اجرا ننوشته ولی در تعارض است (فقط وقتی پیش می‌آید که
-  # تاریخچه‌ها بی‌ربط دیده شوند و هر فایلِ متفاوت add/add شود): نسخهٔ
-  # origin بی‌چون‌وچرا. وگرنه حل‌کننده «عکس‌فوری → مال ما» را روی
-  # چک‌اوتِ کهنهٔ رانر اعمال می‌کند و خروجیِ تازهٔ اجرای دیگر را می‌کوبد
-  # (همان عیب ۲۵ اوت: pump-radar.json تازه با نسخهٔ صبح بازنویسی شد).
-  local f
-  git -c core.quotepath=false diff --name-only --diff-filter=U | while IFS= read -r f; do
+# ── ۲) کامیتِ ما را روی نوکِ تازهٔ origin بازمی‌سازیم (بدون merge) ───────
+_build_on() {
+  # $1 = نوکِ origin. خروجی: sha کامیت تازه روی stdout.
+  local base="$1" idx="$TMP/index" f blob mode ours_f theirs_f out_f
+  rm -f "$idx"
+  GIT_INDEX_FILE="$idx" git read-tree "$base" || return 1
+  while IFS= read -r f; do
     [ -n "$f" ] || continue
-    _in_changed "$f" && continue
-    git checkout -q --theirs -- "$f" 2>/dev/null || git rm -q --cached -- "$f" 2>/dev/null || true
-    git add -- "$f" 2>/dev/null || true
-  done
-}
-
-_settle_leftovers() {
-  # هر چه حل‌کننده جا گذاشت، بر اساس «کی این فایل را نوشته» حل می‌شود.
-  local f side
-  git -c core.quotepath=false diff --name-only --diff-filter=U | while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    if _in_changed "$f"; then side=--ours; else side=--theirs; fi
-    if ! git checkout -q "$side" -- "$f" 2>/dev/null; then
-      # طرفِ خواسته‌شده نسخه‌ای ندارد (حذف/تغییر) → طرف دیگر، وگرنه حذف
-      if [ "$side" = --ours ]; then side=--theirs; else side=--ours; fi
-      git checkout -q "$side" -- "$f" 2>/dev/null || git rm -q --cached -- "$f" 2>/dev/null || true
+    ours_f="$TMP/ours"; theirs_f="$TMP/theirs"; out_f="$TMP/out"
+    rm -f "$ours_f" "$theirs_f" "$out_f"
+    if git cat-file -e "$OURS:$f" 2>/dev/null; then
+      git cat-file -p "$OURS:$f" > "$ours_f"
+    else
+      ours_f="-"
     fi
-    git add -- "$f" 2>/dev/null || true
-    echo "publish: جامانده حل شد ($side): $f"
-  done
-}
-
-_strip_markers() {
-  # مارکر تعارض هرگز منتشر نمی‌شود (یک بار index.json با مارکر رفت و
-  # یادگیری ساعت‌ها خاموش ماند). فایلِ مارکردار: مالِ ما اگر ما نوشتیم.
-  local f
-  git grep -lE "^(<<<<<<< |=======$|>>>>>>> )" -- "${PATHS[@]}" 2>/dev/null | while IFS= read -r f; do
-    if _in_changed "$f"; then git checkout -q --ours -- "$f" 2>/dev/null || true
-    else git checkout -q --theirs -- "$f" 2>/dev/null || true; fi
-    git add -- "$f" 2>/dev/null || true
-    echo "publish: مارکر تعارض پاک شد: $f"
-  done
+    if git cat-file -e "$base:$f" 2>/dev/null; then
+      git cat-file -p "$base:$f" > "$theirs_f"
+    else
+      theirs_f="-"
+    fi
+    if [ "$ours_f" = "-" ]; then
+      GIT_INDEX_FILE="$idx" git update-index --force-remove -- "$f" 2>/dev/null || true
+      continue
+    fi
+    if [ "$theirs_f" = "-" ] || cmp -s "$ours_f" "$theirs_f"; then
+      cp "$ours_f" "$out_f"
+    else
+      python3 "$MERGER" "$f" "$ours_f" "$theirs_f" "$out_f" || cp "$ours_f" "$out_f"
+    fi
+    [ -f "$out_f" ] || cp "$ours_f" "$out_f"
+    if grep -qE "^(<<<<<<< |>>>>>>> )" "$out_f" 2>/dev/null; then
+      _say "مارکر تعارض در $f — نسخهٔ ما"; cp "$ours_f" "$out_f"
+    fi
+    blob="$(git hash-object -w "$out_f")"
+    mode="$(git ls-tree "$OURS" -- "$f" | awk '{print $1}')"
+    [ -n "$mode" ] || mode=100644
+    GIT_INDEX_FILE="$idx" git update-index --add --cacheinfo "$mode,$blob,$f"
+    # کارِ ما هم همان چیزی می‌شود که منتشر شد (مثلاً اجتماعِ دفتر)
+    mkdir -p "$(dirname "$f")"; cp "$out_f" "$f"
+  done <<< "$CHANGED"
+  local tree
+  tree="$(GIT_INDEX_FILE="$idx" git write-tree)" || return 1
+  git commit-tree "$tree" -p "$base" -m "$MSG"
 }
 
 for attempt in $(seq 1 "$ATTEMPTS"); do
-  _say "push (تلاش $attempt)"
-  if _net git push -q "$REMOTE" "HEAD:$BRANCH" 2>/dev/null; then
+  _say "fetch $REMOTE/$BRANCH (تلاش $attempt)"
+  if ! _net git fetch -q --depth=1 "$REMOTE" "$BRANCH" 2>/dev/null; then
+    _say "fetch ناموفق/دیر"; sleep $((attempt * 4 + RANDOM % 7)); continue
+  fi
+  TIP="$(git rev-parse "$REMOTE/$BRANCH" 2>/dev/null || git rev-parse FETCH_HEAD)"
+  if git merge-base --is-ancestor "$TIP" "$OURS" 2>/dev/null; then
+    NEW="$OURS"                                   # origin تکان نخورده
+  else
+    NEW="$(_build_on "$TIP")" || { _say "ساختِ کامیت روی نوک شکست"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
+  fi
+  _say "push $(git rev-parse --short "$NEW") روی $(git rev-parse --short "$TIP")"
+  if _net git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>/dev/null; then
+    # HEAD و فایل‌های مسیرهای منتشرشده به همان چیزی می‌رسند که منتشر شد —
+    # گام‌های بعدی (مثلاً انتشار روی پنل) نسخهٔ تازهٔ origin را می‌بینند،
+    # نه چک‌اوتِ کهنهٔ رانر را (درس ۲۵ اوت: pump-radar.json کهنه روی تازه).
+    git reset -q "$NEW" 2>/dev/null || true
+    git checkout -q -- "${PATHS[@]}" 2>/dev/null || true
     _say "منتشر شد (تلاش $attempt)"
     exit 0
   fi
-  _say "push رد شد — fetch"
-  _net git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || { _say "fetch ناموفق/دیر"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
-  _say "merge $REMOTE/$BRANCH ($(git rev-list --count "HEAD..$REMOTE/$BRANCH" 2>/dev/null || echo '?') کامیت جلوتر)"
-  if ! git merge -q --no-edit --allow-unrelated-histories "$REMOTE/$BRANCH" 2>/dev/null; then
-    _say "تعارض: $(git diff --name-only --diff-filter=U | wc -l | tr -d ' ') فایل"
-    _settle_untouched
-    if [ -f "$RESOLVER" ]; then
-      python3 "$RESOLVER" || true
-    fi
-    _settle_leftovers
-    _strip_markers
-    if git -c core.quotepath=false diff --name-only --diff-filter=U | grep -q .; then
-      _say "تعارضِ حل‌نشده ماند — merge لغو شد"; git merge --abort 2>/dev/null || true
-      sleep $((attempt * 4 + RANDOM % 7)); continue
-    fi
-    git commit -q --no-edit 2>/dev/null || git commit -q -m "ادغام $REMOTE/$BRANCH" 2>/dev/null || true
-  fi
-  if git grep -qE "^(<<<<<<< |>>>>>>> )" -- "${PATHS[@]}" 2>/dev/null; then
-    _strip_markers
-    git commit -q -m "پاک‌سازی مارکر تعارض" 2>/dev/null || true
-  fi
+  _say "push رد شد"
   sleep $((attempt * 4 + RANDOM % 7))
 done
 _say "بعد از $ATTEMPTS تلاش منتشر نشد"

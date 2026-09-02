@@ -52,6 +52,7 @@ def _seed(work):
     (work / "scripts").mkdir(exist_ok=True)
     shutil.copy(PUBLISH, work / "scripts" / "publish.sh")
     shutil.copy(RESOLVER, work / "scripts" / "resolve_brain_conflicts.py")
+    shutil.copy(REPO / "scripts" / "publish_merge.py", work / "scripts" / "publish_merge.py")
     for d in ("signals", "brain/paper", "brain/memory", "code"):
         (work / d).mkdir(parents=True, exist_ok=True)
     (work / "signals/latest.json").write_text('{"generated": 1}')
@@ -127,13 +128,15 @@ class World:
 print("── ناشر مشترک: scripts/publish.sh ──")
 check("اسکریپت وجود دارد و اجرایی است",
       PUBLISH.exists() and os.access(PUBLISH, os.X_OK))
-# ۲ سپتامبر ۰۹:۳۹: `git fetch --unshallow` روی این مخزن گام انتشار را تا
-# سقف ۱۵ دقیقهٔ job خواباند؛ روی کلونِ کم‌عمقِ محلیِ همین مخزن هم ۳۰۰
-# ثانیه بی‌پاسخ ماند، در حالی که fetchِ ساده مبنای مشترک را در ۰ ثانیه
-# پیدا کرد. عمیق‌کردن باید محدود بماند.
+# ۲ سپتامبر: تاریخچهٔ مخزن ۴.۴ گیگابایت است. `--unshallow` (اجرای ۲۰) و
+# حتی `--deepen` (اجرای ۲۲) گام انتشار را تا سقف ۱۵ دقیقهٔ job خواباندند.
+# ناشر حق ندارد تاریخچه بکشد یا merge کند: فقط نوکِ کم‌عمق + بازسازیِ
+# محتوایی.
 _src = PUBLISH.read_text(encoding="utf-8")
-check("ناشر هرگز کل تاریخچه را نمی‌کشد (--unshallow ممنوع؛ عمیق‌کردن پله‌ای)",
-      "--unshallow" not in _src.replace("`--unshallow`", "") and "--deepen=" in _src)
+_code = "\n".join(l for l in _src.splitlines() if not l.lstrip().startswith("#"))
+check("ناشر هرگز تاریخچه نمی‌کشد و merge نمی‌کند (فقط نوکِ کم‌عمق + بازسازی محتوایی)",
+      "--unshallow" not in _code and "--deepen" not in _code
+      and "git merge " not in _code and "--depth=1" in _code)
 
 # ── ۱) بدون تغییر → خروج ۰ و هیچ کامیتی ─────────────────────────────────
 w = World()
