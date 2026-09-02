@@ -55,7 +55,19 @@ _say() { echo "publish $(date -u +%H:%M:%S): $*"; }
 _net() { timeout "$NET_TIMEOUT" "$@"; }
 
 # ── ۱) فقط خروجیِ همین اجرا، در یک کامیت محلی ────────────────────────────
-git add -A -- "${PATHS[@]}" 2>/dev/null || true
+# مسیرِ ناموجود کلِ `git add` را می‌کشد و هیچ‌چیز stage نمی‌شود — اجرای ۱
+# اتاق فومو (۲ سپتامبر ۱۵:۲۵): «brain/fomo» هنوز ساخته نشده بود، پس
+# تغییرِ واقعیِ signals/fomo.json هم بی‌صدا «بدون تغییر» شد. فقط مسیرهایی
+# add می‌شوند که روی دیسک یا در ایندکس هستند؛ غایب‌ها با اعلام رد می‌شوند.
+LIVE=()
+for p in "${PATHS[@]}"; do
+  if [ -e "$p" ] || git ls-files --error-unmatch -- "$p" >/dev/null 2>&1; then
+    LIVE+=("$p")
+  else
+    _say "مسیر ناموجود نادیده گرفته شد: $p"
+  fi
+done
+[ ${#LIVE[@]} -gt 0 ] && git add -A -- "${LIVE[@]}"
 if git diff --cached --quiet; then
   _say "بدون تغییر"
   exit 0

@@ -391,6 +391,13 @@ def build_snapshot(market, tradable=None, now_ms=None):
 
 
 def run(quiet=False):
+    # پوشهٔ دفتر همیشه وجود دارد (با .gitkeep) تا مسیر انتشار «brain/fomo»
+    # پیش از اولین شاهد هم معتبر باشد — اجرای ۱ ورک‌فلو (۱۵:۲۵): مسیرِ
+    # ناموجود کل git add را می‌کشت و fomo.json منتشر نمی‌شد.
+    BRAIN.mkdir(parents=True, exist_ok=True)
+    keep = BRAIN / ".gitkeep"
+    if not keep.exists():
+        keep.write_text("")
     ing = ingest()
     scored = score_outcomes()
     market = market_inputs()
