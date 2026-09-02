@@ -220,6 +220,26 @@ def _binance(r):
 
 # ── the guard ──────────────────────────────────────────────────────────────
 
+def sane_why(rows, want):
+    """همان `sane` ولی با دلیلِ رد — برای کاوش منبع تازه (۲ سپتامبر: بیت‌یونیکس
+    ۴۲۰ ردیف داد و «insane» شد بی‌آنکه کسی بداند کدام شرط افتاد)."""
+    if not rows or len(rows) < min(want, 10):
+        return f"کوتاه: {len(rows or [])} ردیف"
+    if len(rows) < want * 0.9:
+        return f"کمتر از ۹۰٪ خواسته: {len(rows)}/{want}"
+    if rows[0][0] >= rows[-1][0]:
+        return "ترتیب قدیمی→جدید نیست"
+    for i, k in enumerate(rows):
+        o, h, l, c = k[1], k[2], k[3], k[4]
+        if not all(x == x for x in (o, h, l, c)):
+            return f"NaN در ردیف {i}"
+        if h < l or min(o, h, l, c) <= 0:
+            return f"ردیف {i}: h<l یا عدد ≤۰ ({o},{h},{l},{c})"
+        if h < max(o, c) or l > min(o, c):
+            return f"ردیف {i}: بدنه بیرون از دامنه ({o},{h},{l},{c})"
+    return ""
+
+
 def sane(rows, want):
     """Same test the panel applies before it charts anything.
 

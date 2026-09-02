@@ -1,48 +1,81 @@
-# کاوش منابع کندل — فقط دستی. هیچ‌چیز منتشر نمی‌کند؛ فقط چاپ می‌کند کدام
-# صرافی برای BTCUSDT/ETHUSDT کندل سالم می‌دهد و بیت‌یونیکس پرپچوال (صرافی
-# اجرا، دستور حمید) دقیقاً چه شکلی برمی‌گرداند. اثبات پارسر روی رانر است،
-# چون شبکهٔ نشستِ ساخت به صرافی‌ها نمی‌رسد.
+# کاوش صرافی نامزد (KCEX) — عمومی، بدون کلید.
+#
+# پرسش حمید (۲۳ اوت): «کارمزد KCEX را ببین... می‌خوای API بگیرم؟»
+# کلید لازم نیست: کارمزد، مشخصات قرارداد و عمق دفتر همه عمومی‌اند و
+# LIVE_EXECUTION=false است، پس دسترسی معامله نمی‌خواهیم. کلیدِ
+# لازم‌نداشته نگرفتن خودش اقدام امنیتی است (قانون ۰۵).
+#
+# چرا این‌جا و نه در نشست: دامنهٔ kcex از محیط نشست توسط پروکسی مسدود
+# است. رانر محدودیت ندارد — همان‌جایی که جمع‌آورندهٔ عمق کار می‌کند.
+#
+# ۲ سپتامبر: حالت «klines» اضافه شد — کاوش منابع کندل پرپچوال (بیت‌یونیکس
+# اول، دستور حمید) و شکل خامِ پاسخ، فقط چاپ. ناشر به ناشر مشترک رفت
+# (قانون ۱۴) و چک‌اوت کم‌عمق شد (تاریخچهٔ ۴.۴ گیگابایتی لازم نیست).
 name: Venue probe
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe (کشف مسیر) · compare (اسپرد/عمق) · docs (اسناد فنی حمید) · klines (منابع کندل پرپ)"
+        default: "probe"
+      symbols:
+        description: "نمادها برای مقایسه"
+        default: "BTCUSDT,ETHUSDT,SOLUSDT,DOGEUSDT,XRPUSDT"
+      depth_url:
+        description: "مسیر عمق KCEX بعد از کشف (با {s} برای نماد)"
+        default: ""
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: venue-probe
+  cancel-in-progress: false
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - name: کاوش
+      - name: محیط مشترک
+        run: pip -q install -r requirements-ci.txt
+      - name: Self-test
         working-directory: claude-liam-signal/python
         run: |
-          python3 - <<'PY'
-          import json, time, urllib.request
+          python3 -m hamid.test_venue_probe
+          python3 -m hamid.test_docs_probe
+          python3 -m hamid.test_candle_source
+      - name: Probe or compare
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          MODE="${{ github.event.inputs.mode || 'probe' }}"
+          if [ "$MODE" = "klines" ]; then
+            python3 - <<'PY' | tee venue.txt
+          import json, os, time
           import sources
-          # ۱) شکل خامِ بیت‌یونیکس
           try:
               raw = sources._json(sources._bitunix_url("BTCUSDT", "15m", 3))
               print("bitunix raw:", json.dumps(raw)[:400])
           except Exception as e:
               print("bitunix raw FAILED:", type(e).__name__, e)
-          # ۲) هر صرافی پرپ جداگانه
           for v in sources.PERP_VENUES:
               t0 = time.time()
               try:
                   rows = v["fetch"]("BTCUSDT", "15m", 420) if v.get("fetch") else v["parse"](sources._json(v["url"]("BTCUSDT", "15m", 420)))
-                  ok = sources.sane(rows, 420)
-                  print(f"{v['id']}: {len(rows)} rows sane={ok} last={rows[-1][:5] if rows else None} {time.time()-t0:.1f}s")
+                  why = sources.sane_why(rows, 420)
+                  print(f"{v['id']}: {len(rows)} rows sane={not why} {('why=' + why) if why else ''} first={rows[0][:5] if rows else None} last={rows[-1][:5] if rows else None} {time.time()-t0:.1f}s")
+                  if v["id"] == "bitunix-perp" and rows:
+                      gaps = sorted({rows[i+1][0]-rows[i][0] for i in range(len(rows)-1)})
+                      print("   bitunix gaps(ms):", gaps[:5], "…", gaps[-3:], "| dup times:", len(rows)-len({r[0] for r in rows}))
               except Exception as e:
                   print(f"{v['id']}: FAILED {type(e).__name__}: {e}")
-          # ۳) مسیر ترجیحی
-          import os
-          os.environ["LIAM9_CANDLES"] = "perp"; sources.CANDLE_SOURCE = "perp"
+          sources.CANDLE_SOURCE = "perp"
           for sym in ("BTCUSDT", "ETHUSDT", "TRUMPUSDT"):
               try:
                   rows = sources.klines_pref(sym, "15m", 420, quiet=False)
@@ -50,3 +83,27 @@ jobs:
               except Exception as e:
                   print(f"pref {sym}: FAILED {e}")
           PY
+          elif [ "$MODE" = "docs" ]; then
+            python3 -m hamid.docs_probe | tee venue.txt
+          elif [ "$MODE" = "probe" ]; then
+            python3 -m hamid.venue_probe --probe | tee venue.txt
+          else
+            D=""
+            if [ -n "${{ github.event.inputs.depth_url }}" ]; then
+              D="--depth-url ${{ github.event.inputs.depth_url }}"
+            fi
+            python3 -m hamid.venue_probe \
+              --compare "${{ github.event.inputs.symbols }}" $D | tee venue.txt
+          fi
+      - name: Summary
+        if: always()
+        working-directory: claude-liam-signal/python
+        run: |
+          { echo '```'; tail -120 venue.txt 2>/dev/null || echo "no output";
+            echo '```'; } >> $GITHUB_STEP_SUMMARY
+      - name: Publish (ناشر مشترک، قانون ۱۴)
+        if: github.event.inputs.mode == 'compare' || github.event.inputs.mode == 'docs'
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+          scripts/publish.sh -m "مقایسهٔ صرافی $(date -u '+%Y-%m-%d %H:%M') UTC" signals/venue-compare.json signals/docs-probe.json

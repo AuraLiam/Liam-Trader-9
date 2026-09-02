@@ -234,11 +234,27 @@ def signal_is_sent_once():
     import telegram, pathlib
     tmp = HERE / ".selftest-sent.json"
     real, telegram.SENT = telegram.SENT, pathlib.Path(tmp)
+    # ۲ سپتامبر: حافظهٔ کناری /tmp و آرشیو ۲۴ساعته (شمارندهٔ سقف روزانه) هم
+    # باید جدا باشند؛ وگرنه ۳۳ ارسالِ واقعیِ روز این خودآزمایی را «۰ ارسال» می‌کند.
+    real_side, real_arch = telegram.SIDECAR, telegram.ARCHIVE_DIR
+    telegram.SIDECAR = pathlib.Path(str(tmp) + ".sidecar")
+    telegram.ARCHIVE_DIR = pathlib.Path(str(tmp) + ".archive")
     os.environ["TELEGRAM_BOT_TOKEN"] = "selftest"
     os.environ["TELEGRAM_CHAT_ID"] = "0"
     calls = []
     post = telegram._post
     telegram._post = lambda *a, **k: (calls.append(1), {"ok": True})[1]
+    # گلوگاه ارسال از ۱۷ اوت دروازهٔ روند (کندل ۴س/۱س) و بازجویی ۱۵د دارد؛
+    # آفلاین این‌ها NO_SIGNAL می‌دهند (قانون ۱) و این بررسی «۰ ارسال» می‌شد.
+    # همان stubهای test_agent_loop: کندل مصنوعی هم‌جهت + بازجوییِ pro>con.
+    import sources as _src
+    from hamid import premortem as _pm, paper as _pp
+    _orig = (_src.klines, _pm.review, _pp.open_from)
+    _src.klines = lambda sym, tf, n, **kw: [
+        [i * 300000, 1, 1.001, 0.999, 1.0, 1.0] for i in range(n)]
+    _pm.review = lambda s, c15: {"pro": ["x"], "con": [], "issue": True,
+                                 "note": "⚖️", "price": 1.0}
+    _pp.open_from = lambda setups, ctx: 0
     try:
         sig = [{"sym": "ONCEUSDT", "tf": "5m", "dir": "LONG", "entry": 1.0,
                 "sl": 0.9, "tp1": 1.2, "rr": 2, "strategy": "smc"}]
@@ -249,7 +265,12 @@ def signal_is_sent_once():
     finally:
         telegram._post = post
         telegram.SENT = real
+        telegram.SIDECAR, telegram.ARCHIVE_DIR = real_side, real_arch
+        _src.klines, _pm.review, _pp.open_from = _orig
         tmp.unlink(missing_ok=True)
+        pathlib.Path(str(tmp) + ".sidecar").unlink(missing_ok=True)
+        import shutil
+        shutil.rmtree(str(tmp) + ".archive", ignore_errors=True)
         os.environ.pop("TELEGRAM_BOT_TOKEN", None)
         os.environ.pop("TELEGRAM_CHAT_ID", None)
     return (first == 1 and second == 1), f"first pass {first} call, second pass {second}"
