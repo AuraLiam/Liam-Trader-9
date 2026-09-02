@@ -7,6 +7,7 @@
 ۳. سوییچ LIAM9_CANDLES=perp اول پرپ می‌رود و در شکست به اسپات برمی‌گردد.
 ۴. پیش‌فرض همان اسپات تاریخی است (هیچ دفتری بی‌سنجش عوض نمی‌شود).
 """
+import json
 import sys
 from pathlib import Path
 
@@ -112,6 +113,11 @@ check("صرافی کمتر از خواسته داد → همان‌قدر برم
 # ── ۳. ترتیب و سوییچ ────────────────────────────────────────────────────
 check("بیت‌یونیکس اولین صرافی پرپ است", S.PERP_VENUES[0]["id"] == "bitunix-perp" and S.PERP_VENUES[0].get("fetch"))
 check("پیش‌فرضِ منبع اسپات است (سوییچ فقط با LIAM9_CANDLES=perp)", S.CANDLE_SOURCE in ("spot", "perp"))
+try:
+    S.perp_klines("币安人生USDT", "1h", 10)
+    check("نماد غیرلاتین در پرپ صریح رد می‌شود (نه UnicodeEncodeError روی سه صرافی)", False)
+except RuntimeError as e:
+    check("نماد غیرلاتین در پرپ صریح رد می‌شود (نه UnicodeEncodeError روی سه صرافی)", "غیرلاتین" in str(e), str(e))
 _saved = (S.CANDLE_SOURCE, S.perp_klines, S.spot_klines)
 try:
     S.CANDLE_SOURCE = "perp"
@@ -143,6 +149,16 @@ try:
     S.spot_klines = lambda sym, tf, n, quiet=True: (_ for _ in ()).throw(RuntimeError("no spot"))
     check("بی‌اسپات = قابل‌راستی‌آزمایی نیست → پرپ پذیرفته (تنها منبع)", S.klines("NEWUSDT", "15m", 5)[0][4] == 1.004 and "NEWUSDT" in S._perp_ok)
     check("آستانهٔ هویت ۱۵٪ است (basis عادی ≤۱٪ هرگز رد نمی‌شود)", S.PERP_IDENTITY_TOL == 0.15)
+    # نمادِ بی‌پرپ فقط یک بار سه صرافی پرپ را امتحان می‌کند (هزینهٔ اسکن ۲۰۰ نمادی)
+    _calls = []
+
+    def _no_perp(sym, tf, n, quiet=True):
+        _calls.append((sym, tf))
+        raise RuntimeError("perp klines NOPEUSDT: bitunix-perp: insane(کوتاه) · mexc-perp: KeyError")
+    S.perp_klines = _no_perp
+    S.spot_klines = lambda sym, tf, n, quiet=True: [_row(1.0)] * n
+    S.klines("NOPEUSDT", "5m", 5); S.klines("NOPEUSDT", "15m", 5); S.klines("NOPEUSDT", "1h", 5)
+    check("نماد بی‌پرپ: سه تایم‌فریم، فقط یک تلاش پرپ، بقیه مستقیم اسپات", len(_calls) == 1 and "NOPEUSDT" in S._perp_bad, str(_calls))
     S._perp_bad.clear(); S._perp_ok.clear()
 finally:
     S.CANDLE_SOURCE, S.perp_klines, S.spot_klines = _saved
@@ -165,9 +181,48 @@ check("کپشن نماد پرپ بیت‌یونیکس در تریدینگ‌وی
 check("کپشن منبع واقعی کندل را چاپ می‌کند", "bitunix-perp" in _cap)
 _cap2 = _tg.caption({"dir": "SHORT", "sym": "XUSDT", "tf": "5m", "entry": 1.0, "sl": 1.02, "tp1": 0.96, "rr": 2.0})
 check("بی‌ردپا: منبع «نامعلوم» یا منبعِ used()، هرگز ادعای بیت‌یونیکس", "BITUNIX:XUSDT.P" in _cap2 and "کندل تحلیل" in _cap2)
+# ── ۳د. هر بازکنندهٔ دفتر ردپای منبع می‌گذارد (یافتهٔ ۲۱:۳۲: exp-short بی‌ردپا) ──
+import tempfile as _tf                                # noqa: E402
+_tmp = Path(_tf.mkdtemp(prefix="liam9-cs-"))
+_saved_open, _saved_log = _paper.OPEN, _paper.brain.room_log
+try:
+    _paper.OPEN = _tmp / "open.jsonl"
+    _paper.brain.room_log = lambda *a, **k: None
+    S._used["klines"] = "bitunix-perp"
+    n = _paper.open_from([{"symbol": "ABCUSDT", "dir": "SHORT", "entry": 1.0, "sl": 1.02, "tp1": 0.96,
+                           "tf": "5m", "stage_tag": "exp-short-b2"}], {"experiment": "b2"})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("ردیف آزمایشی بی‌مسیرِ تلگرام هم candle_src می‌گیرد (از sources.used)",
+          n == 1 and rows and rows[0]["why"].get("candle_src") == "bitunix-perp", str(rows[:1]))
+    S._used["klines"] = None
+    _paper.open_from([{"symbol": "DEFUSDT", "dir": "LONG", "entry": 1.0, "sl": 0.98, "tp1": 1.04,
+                       "tf": "5m", "stage_tag": "exp-short-b2"}], {"candle_src": "mexc-perp"})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("ردپای صریحِ بازکننده (context) بر حدسِ used مقدم است", rows[-1]["why"].get("candle_src") == "mexc-perp")
+    _paper.open_from([{"symbol": "GHIUSDT", "dir": "LONG", "entry": 1.0, "sl": 0.98, "tp1": 1.04,
+                       "tf": "5m", "stage_tag": "exp-short-b2"}], {})
+    rows = [json.loads(l) for l in _paper.OPEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    check("بی‌منبع = None روی ردیف، نه ادعای بیت‌یونیکس", rows[-1]["why"].get("candle_src") is None)
+finally:
+    _paper.OPEN, _paper.brain.room_log = _saved_open, _saved_log
+    import shutil as _sh
+    _sh.rmtree(_tmp, ignore_errors=True)
+
 WF = PY.parent.parent / ".github" / "workflows"
 for wf in ("pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"):
     check(f"{wf}: سوییچ LIAM9_CANDLES=perp روشن است", "LIAM9_CANDLES: perp" in (WF / wf).read_text(encoding="utf-8"))
+
+# ── ۳ج. برچسب منبع = شمارش، نه «آخرین صرافی» (اثبات سوییچ، ۲۱:۲۹) ─────────
+S._used_counts.clear()
+S._note_used("bitunix-perp"); S._note_used("bitunix-perp"); S._note_used("binance")
+check("شمارش هر صرافی نگه داشته می‌شود", S.used_counts() == {"bitunix-perp": 2, "binance": 1})
+check("used() همچنان آخرین صرافی را می‌گوید (سازگاری)", S.used()["klines"] == "binance")
+check("برچسب پرپ از فهرست پرپ خوانده می‌شود، نه شناسهٔ خام", S.venue_label("bitunix-perp") == "Bitunix Perpetual" and S.venue_label("zzz") == "zzz")
+import scan as _scan                                  # noqa: E402
+_lbl = _scan._source_label()
+check("برچسب اسکن، بیت‌یونیکس را با شمار بیشتر جلوتر از بایننس می‌آورد",
+      _lbl.index("Bitunix Perpetual 2") < _lbl.index("Binance 1"), _lbl)
+S._used_counts.clear()
 
 # ── ۴. اسکن هم همین سوییچ را دارد ────────────────────────────────────────
 scan_src = (PY / "scan.py").read_text(encoding="utf-8")

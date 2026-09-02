@@ -181,6 +181,15 @@ def _append_gatelog(sym, stage, why):
         pass
 
 
+def _candle_src_now():
+    """شناسهٔ صرافی‌ای که آخرین سری کندل این فرایند از آن آمد؛ نبود = None (نه حدس)."""
+    try:
+        import sources
+        return sources.used().get("klines")
+    except Exception:                                # noqa: BLE001
+        return None
+
+
 def open_from(setups, context):
     """Place the signals as pending limit orders, with their reasons attached.
 
@@ -270,6 +279,12 @@ def open_from(setups, context):
                 "dir": s["dir"],
                 "stage": s.get("stage_tag") or ("second" if not s.get("waiting") else "first"),
                 **context,
+                # منبع کندل روی هر ردیف، از هر بازکننده‌ای (۲ سپتامبر ۲۱:۳۲):
+                # اثبات سوییچ پرپ نشان داد ردیف‌های نمونه‌گیر شورت (exp-short-*)
+                # بی‌ردپا می‌آمدند چون از مسیر تلگرام نمی‌گذرند. این‌جا تنها
+                # ورودی دفتر است؛ ردپا این‌جا می‌نشیند تا ماشین شبانه هیچ ردیفی
+                # را بی‌منبع نبیند.
+                "candle_src": context.get("candle_src") or s.get("candle_src") or _candle_src_now(),
             },
         })
         have.add(key)

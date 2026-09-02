@@ -309,6 +309,30 @@ def used():
     return dict(_used)
 
 
+# شمارِ سری‌های کندل از هر صرافی در همین فرایند — «آخرین صرافی» (used) برای
+# برچسب گمراه‌کننده بود: اسکنِ اولِ بعد از سوییچ پرپ (۲ سپتامبر ۲۱:۲۹) ۱۰۰+
+# سری از بیت‌یونیکس گرفت و چون آخرین نماد به اسپات بایننس افتاد، پنل «Binance»
+# نوشت. شمارش دروغ نمی‌گوید.
+_used_counts = {}
+
+
+def _note_used(vid):
+    _used["klines"] = vid
+    _used_counts[vid] = _used_counts.get(vid, 0) + 1
+
+
+def used_counts():
+    return dict(_used_counts)
+
+
+def venue_label(vid):
+    """نام خوانای صرافی از هر دو فهرست (اسپات و پرپ)؛ ناشناخته = همان شناسه."""
+    for v in list(VENUES) + list(PERP_VENUES):
+        if v["id"] == vid:
+            return v["label"]
+    return vid
+
+
 PERP_VENUES = []
 
 
@@ -457,6 +481,11 @@ def perp_klines(sym, tf, limit, quiet=True):
     می‌کند. پس فعلاً این تابع **در دسترس** است و مقایسه‌اش اجرا می‌شود؛
     سوییچِ منبعِ تحلیل تصمیم صریح حمید است (قانون ۰۳)."""
     errs = []
+    # اسکن زندهٔ ۳۴۶ (۲ سپتامبر): نمادِ غیرلاتین («币安人生USDT») در سه صرافی
+    # پرپ UnicodeEncodeError داد و بی‌دلیل سه تلاش سوخت. قرارداد پرپ نام
+    # غیرلاتین ندارد؛ صریح رد می‌شود و اسپات (که با این نام‌ها کار می‌کند) می‌ماند.
+    if not str(sym).isascii():
+        raise RuntimeError(f"perp klines {sym} {tf}: نام غیرلاتین — قرارداد پرپ ندارد")
     for v in PERP_VENUES:
         try:
             if v.get("fetch"):
@@ -467,7 +496,7 @@ def perp_klines(sym, tf, limit, quiet=True):
             errs.append(f"{v['id']}: {type(e).__name__}")
             continue
         if sane(rows, limit):
-            _used["klines"] = v["id"]
+            _note_used(v["id"])
             if not quiet:
                 print(f"  perp klines {sym} {tf} ← {v['label']}", flush=True)
             return rows
@@ -500,6 +529,12 @@ def klines(sym, tf, limit, quiet=True):
             if not quiet:
                 print(f"  perp {sym} رد شد ({why}) → اسپات", flush=True)
         except Exception as e:                       # noqa: BLE001 - پشتیبان اسپات
+            # نمادی که پرپ ندارد (یا پرپش خراب است) در همین فرایند دیگر
+            # سراغ سه صرافی پرپ نمی‌رود — هر تایم‌فریم/ماژول بعدی مستقیم
+            # اسپات. اندازه‌گیری: اسکن ۲۰۰ نمادی بعد از سوییچ (اجرای ۳۴۶،
+            # ۲ سپتامبر) ۹ دقیقه طول کشید، همان کادنس قبل؛ این کش فقط
+            # تلاش‌های تکراریِ بی‌حاصل را حذف می‌کند، رفعِ کندی نیست.
+            _perp_bad[sym] = f"perp نشد: {e}"
             if not quiet:
                 print(f"  perp نشد ({e}) → اسپات", flush=True)
     return spot_klines(sym, tf, limit, quiet=quiet)
@@ -565,10 +600,10 @@ def spot_klines(sym, tf, limit, quiet=True):
             _note_failure(v["id"])
             continue
         _note_success(v["id"])
-        if _used["klines"] != v["id"]:
-            _used["klines"] = v["id"]
-            if not quiet:
-                print(f"candles from {v['label']}")
+        changed = _used["klines"] != v["id"]
+        _note_used(v["id"])
+        if changed and not quiet:
+            print(f"candles from {v['label']}")
         return rows
     raise RuntimeError(f"{sym} {tf}: no venue answered — {'; '.join(errs[:8])}")
 

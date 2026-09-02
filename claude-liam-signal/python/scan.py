@@ -100,12 +100,18 @@ def _source_label():
     This line is printed on the panel. It read "real Binance candles" whether or
     not Binance had served them, which is the kind of caption that is true until
     the day it silently is not."""
-    u = sources.used()
-    where = u.get("klines")
-    if where is None:
-        return "کندل واقعی بایننس، اسکن‌شده روی رانر گیت‌هاب"
-    label = next((v["label"] for v in sources.VENUES if v["id"] == where), where)
-    return f"کندل واقعی {label}، اسکن‌شده روی رانر گیت‌هاب"
+    # اثبات سوییچ پرپ (۲ سپتامبر): «آخرین صرافی» گمراه می‌کرد — اسکنِ اولِ
+    # بعد از سوییچ ۱۰۰+ نماد از بیت‌یونیکس گرفت ولی چون آخرین نماد به اسپات
+    # بایننس افتاد، برچسب «Binance» شد. حالا شمارشِ هر صرافی چاپ می‌شود.
+    counts = sources.used_counts()
+    if not counts:
+        where = sources.used().get("klines")
+        if where is None:
+            return "کندل واقعی بایننس، اسکن‌شده روی رانر گیت‌هاب"
+        return f"کندل واقعی {sources.venue_label(where)}، اسکن‌شده روی رانر گیت‌هاب"
+    parts = " · ".join(f"{sources.venue_label(k)} {n}" for k, n in
+                       sorted(counts.items(), key=lambda kv: -kv[1])[:4])
+    return f"کندل واقعی — {parts} (شمار سری‌ها)، اسکن‌شده روی رانر گیت‌هاب"
 
 
 def top_by_48h(n):
