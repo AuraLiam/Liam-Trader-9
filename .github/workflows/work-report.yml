@@ -26,6 +26,10 @@ jobs:
         with: { fetch-depth: 1 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
+      # پاسبان گزارش کار اسکریپتِ گام ناشر را از همین yml می‌خواند → pyyaml
+      # (همان وابستگی‌ای که hamid-cycle و pump-radar هم نصب می‌کنند)
+      - name: وابستگی‌ها
+        run: pip -q install pyyaml
       - name: آزمون آفلاین
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.test_work_report
