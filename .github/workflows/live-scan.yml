@@ -106,7 +106,7 @@ jobs:
           fi
       - if: steps.fresh.outputs.skip != '1'
         name: Charting dependency
-        run: pip install --quiet matplotlib
+        run: pip -q install -r requirements-ci.txt
 
       # Delivery is skipped, loudly, when the secrets are absent — the scan still
       # runs and still publishes to the panel. Add TELEGRAM_BOT_TOKEN and
@@ -164,41 +164,12 @@ jobs:
         env:
           BRANCH: main
         run: |
-          # brain/ as well as signals/: the scan writes the events room and each
-          # room's state too. Staging only signals/ left those modifications
-          # unstaged, and `git rebase` refuses to run with a dirty tree — which
-          # is exactly how the retry died instead of retrying.
-          git add signals brain
-          git diff --cached --quiet && { echo "unchanged"; exit 0; }
-          git commit -q -m "Live scan $(date -u '+%Y-%m-%d %H:%M') UTC"
-          # Another run can land while this one works. Rebasing generated files
-          # conflicts for no good reason, so this merges instead: .gitattributes
-          # union-merges the append-only logs, and for the whole-file room state
-          # the copy this run just produced is the fresher one and wins.
-          for attempt in 1 2 3 4 5 6 7 8; do
-            git push origin "HEAD:$BRANCH" && exit 0
-            git fetch origin "$BRANCH" || true
-            if ! git merge --no-edit --allow-unrelated-histories "origin/$BRANCH"; then
-              # Resolve every generated path, not just rooms: staging brain/
-              # wholesale after a partial resolution once committed a file with
-              # its conflict markers still in it, which left the recall index
-              # unparseable and silently disabled learning.
-              # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
-              # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
-              # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
-              # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
-              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
-                || { git merge --abort || true; }
-              git commit --no-edit || { git merge --abort || true; }
-            fi
-            # Never publish a file carrying conflict markers.
-            if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals; then
-              echo "refusing to push: conflict markers survived the merge"
-              exit 1
-            fi
-            sleep $((attempt * 4 + RANDOM % 7))
-          done
-          exit 1
+          # ناشر مشترک (قانون ۱۴). نسخهٔ قبلی merge می‌کرد و ۲ سپتامبر دو بار
+          # (۰۶:۲۳ و ۱۱:۴۱) روی فایلی که این اجرا اصلاً ننوشته بود
+          # (hamid/test_medic_alert.py — تاریخچهٔ نامرتبط) تعارض گرفت، «دستی
+          # بماند» داد و کل اسکن ۲۰۰تایی را قرمز کرد. ناشر مشترک فقط
+          # فایل‌های همین اجرا را روی نوک origin می‌نشاند؛ بقیه عیناً origin.
+          scripts/publish.sh -m "Live scan $(date -u '+%Y-%m-%d %H:%M') UTC" signals brain
 
       # The panel is served from gh-pages, and it fetches ./signals/latest.json
       # relative to itself, so the file has to be there too or the relay reads

@@ -273,10 +273,10 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
 # تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
 # می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
 import os as _os                                       # noqa: E402
-INLINE_PUSHERS_MAX = 31      # ۲ سپتامبر: hamid-cycle، work-report، scout،
+INLINE_PUSHERS_MAX = 33      # ۲ سپتامبر: hamid-cycle، work-report، scout،
                              # history-ingest، strategy-volume، dominance-report،
                              # pump-review مهاجرت کردند
-NO_SHARED_DEPS_MAX = 31
+NO_SHARED_DEPS_MAX = 30
 _inline, _nodeps, _both = [], [], []
 for f in files:
     try:
@@ -293,7 +293,11 @@ for f in files:
                 uses.append(st.get("uses") or "")
     body = "\n".join(runs)
     shared = "scripts/publish.sh" in body
-    inline = bool(re.search(r"git push\b", body)) and "HEAD:main" in body
+    # «HEAD:main» تحت‌اللفظی کافی نبود: live-scan و backtest و mine با
+    # «HEAD:$BRANCH» می‌نوشتند و از شمارش می‌افتادند (۲ سپتامبر). حلقهٔ
+    # ناشر با هر نامی که main را هدف بگیرد شمرده می‌شود.
+    inline = bool(re.search(r"git push\b", body)) and \
+        bool(re.search(r'HEAD:(main|"?\$\{?BRANCH\}?)', body))
     if inline:
         _inline.append(f.name)
     if shared and inline:
