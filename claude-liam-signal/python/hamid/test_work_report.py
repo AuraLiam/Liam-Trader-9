@@ -177,6 +177,11 @@ def _publish_scenario(script):
     _git("clone", "-q", str(origin), str(work), cwd=td)
     _git("config", "user.email", "t@t", cwd=work)
     _git("config", "user.name", "t", cwd=work)
+    # گام ناشر حالا اسکریپت مشترک را صدا می‌زند؛ همان را داخل مخزن موقت
+    # می‌گذاریم تا اسکریپتِ گام دقیقاً همان‌طور که روی رانر است اجرا شود.
+    (work / "scripts").mkdir()
+    for s in ("publish.sh", "resolve_brain_conflicts.py"):
+        shutil.copy(ROOT / "scripts" / s, work / "scripts" / s)
     (work / "signals").mkdir()
     for f in ("work-report.json", "engine-focus.json", "curriculum.json",
               "trail-arms.json", "other.json"):

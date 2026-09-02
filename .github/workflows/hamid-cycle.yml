@@ -62,7 +62,7 @@ jobs:
       # وابستگی‌ها قبل از خودآزمایی — test_learning به pyyaml نیاز دارد و
       # چارت به matplotlib؛ pip بعد از تست یعنی تست سرخ الکی روی رانر.
       - name: وابستگی‌های پایتون
-        run: pip -q install matplotlib pyyaml
+        run: pip -q install -r requirements-ci.txt
 
       - name: Method self-check
         # The method's own tests run before it is allowed to produce a signal.
@@ -145,13 +145,14 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           python3 -m hamid.test_resolve
+          python3 -m hamid.test_publish
           python3 -m hamid.test_fill_books
           python3 -m hamid.test_workflows
 
       # بدون این، _tg_chart بی‌صدا شکست می‌خورد و سیگنال «بدون چارت» می‌رفت —
       # همان چیزی که حمید دید. چارت اجباری است، متنِ خالی فقط آخرین پناه.
       - name: matplotlib برای چارت سیگنال
-        run: pip -q install matplotlib pyyaml
+        run: pip -q install -r requirements-ci.txt
 
       - name: Run the cycle
         working-directory: claude-liam-signal/python
@@ -286,35 +287,15 @@ jobs:
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
 
+      # ناشر مشترک (۲ سپتامبر). تاریخچهٔ این گام همان تاریخچهٔ خرابی‌های
+      # انتشار است: ۱۵ اوت `--ours` کور ۳۹۰ ردیف دفتر را برد؛ یک بار مارکر
+      # تعارض در index.json منتشر شد و یادگیری ساعت‌ها خاموش ماند؛ ۲ سپتامبر
+      # فایلِ بی‌handler حل‌کننده را کشت و ۸ ساعت هیچ انتشاری نشد. همهٔ این
+      # قواعد حالا در scripts/publish.sh یک‌جا هستند و hamid/test_publish.py
+      # هر کدام را در مخزن موقت بازسازی می‌کند.
       - name: Publish to main
         if: github.ref == 'refs/heads/main'
-        run: |
-          git add signals brain
-          git diff --cached --quiet && { echo "unchanged"; exit 0; }
-          git commit -q -m "Hamid cycle $(date -u '+%Y-%m-%d %H:%M') UTC"
-          for attempt in 1 2 3 4 5 6 7 8; do
-            git push origin HEAD:main && exit 0
-            git fetch origin main || true
-            if ! git merge --no-edit --allow-unrelated-histories origin/main; then
-              # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
-              # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
-              # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
-              # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
-              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
-                || { git merge --abort || true; }
-              git commit --no-edit || { git merge --abort || true; }
-            fi
-            # Never publish a file carrying conflict markers. This has happened:
-            # a retry once committed brain/learning/index.json with the markers
-            # still in it, which left it unparseable and silently disabled
-            # learning for hours.
-            if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals; then
-              echo "refusing to push: conflict markers survived the merge"
-              exit 1
-            fi
-            sleep $((attempt * 4 + RANDOM % 7))
-          done
-          exit 1
+        run: scripts/publish.sh -m "Hamid cycle $(date -u '+%Y-%m-%d %H:%M') UTC" signals brain
 
       # پنل از gh-pages سرو می‌شود و فایل را نسبت به خودش می‌خواند. بدون این
       # مرحله، چرخه فقط روی main منتشر می‌شد و پنل حمید یک فایل ۳۹ ساعته
