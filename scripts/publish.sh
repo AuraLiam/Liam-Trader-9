@@ -45,6 +45,12 @@ done
 cd "$ROOT"
 git config user.name  >/dev/null 2>&1 || git config user.name  "Claude"
 git config user.email >/dev/null 2>&1 || git config user.email "noreply@anthropic.com"
+# هیچ فرمانِ شبکه‌ای بی‌سقف نیست: ۲ سپتامبر دو اجرای گزارش کار در گام
+# انتشار تا سقف ۱۵ دقیقهٔ job بی‌صدا ماندند. حالا هر fetch/push سقف زمانی
+# دارد و هر مرحله با ساعت روی لاگ می‌آید تا «کجا ماند» همیشه معلوم باشد.
+NET_TIMEOUT="${PUBLISH_NET_TIMEOUT:-120}"
+_say() { echo "publish $(date -u +%H:%M:%S): $*"; }
+_net() { timeout "$NET_TIMEOUT" "$@"; }
 
 # ── ۱) فقط خروجیِ همین اجرا ─────────────────────────────────────────────
 git add -A -- "${PATHS[@]}" 2>/dev/null || true
@@ -53,8 +59,8 @@ if git diff --cached --quiet; then
   exit 0
 fi
 CHANGED="$(git diff --cached --name-only)"
-git commit -q -m "$MSG" || { echo "publish: کامیت نشد"; exit 1; }
-echo "publish: $(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد"
+git commit -q -m "$MSG" || { _say "کامیت نشد"; exit 1; }
+_say "$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد (shallow=$(git rev-parse --is-shallow-repository 2>/dev/null))"
 
 # چک‌اوتِ کم‌عمق (fetch-depth: 1) مبنای مشترک ندارد و هر merge را add/add
 # می‌کند. عمیق‌کردنِ **محدود** کافی است: origin معمولاً چند کامیت جلوتر
@@ -64,13 +70,16 @@ echo "publish: $(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامی
 # اگر بعد از سه پله هم مبنا پیدا نشد، merge بی‌ربط می‌شود و همان مسیرِ
 # آزموده (نانوشته → origin، نوشته → ما) جواب می‌دهد.
 _deepen_until_related() {
-  git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || return 0
+  _say "fetch $REMOTE/$BRANCH"
+  _net git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || { _say "fetch ناموفق/دیر (rc=$?)"; return 0; }
   local d
   for d in 50 200 800; do
-    git merge-base HEAD "$REMOTE/$BRANCH" >/dev/null 2>&1 && return 0
+    git merge-base HEAD "$REMOTE/$BRANCH" >/dev/null 2>&1 && { _say "مبنای مشترک پیدا شد"; return 0; }
     [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ] || return 0
-    git fetch -q --deepen="$d" "$REMOTE" "$BRANCH" 2>/dev/null || return 0
+    _say "deepen=$d"
+    _net git fetch -q --deepen="$d" "$REMOTE" "$BRANCH" 2>/dev/null || { _say "deepen ناموفق/دیر (rc=$?)"; return 0; }
   done
+  _say "مبنای مشترک پیدا نشد — merge بی‌ربط"
 }
 _deepen_until_related
 
@@ -120,12 +129,16 @@ _strip_markers() {
 }
 
 for attempt in $(seq 1 "$ATTEMPTS"); do
-  if git push -q "$REMOTE" "HEAD:$BRANCH" 2>/dev/null; then
-    echo "publish: منتشر شد (تلاش $attempt)"
+  _say "push (تلاش $attempt)"
+  if _net git push -q "$REMOTE" "HEAD:$BRANCH" 2>/dev/null; then
+    _say "منتشر شد (تلاش $attempt)"
     exit 0
   fi
-  git fetch -q "$REMOTE" "$BRANCH" || { sleep $((attempt * 4 + RANDOM % 7)); continue; }
+  _say "push رد شد — fetch"
+  _net git fetch -q "$REMOTE" "$BRANCH" 2>/dev/null || { _say "fetch ناموفق/دیر"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
+  _say "merge $REMOTE/$BRANCH ($(git rev-list --count "HEAD..$REMOTE/$BRANCH" 2>/dev/null || echo '?') کامیت جلوتر)"
   if ! git merge -q --no-edit --allow-unrelated-histories "$REMOTE/$BRANCH" 2>/dev/null; then
+    _say "تعارض: $(git diff --name-only --diff-filter=U | wc -l | tr -d ' ') فایل"
     _settle_untouched
     if [ -f "$RESOLVER" ]; then
       python3 "$RESOLVER" || true
@@ -133,7 +146,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     _settle_leftovers
     _strip_markers
     if git -c core.quotepath=false diff --name-only --diff-filter=U | grep -q .; then
-      echo "publish: تعارضِ حل‌نشده ماند — merge لغو شد"; git merge --abort 2>/dev/null || true
+      _say "تعارضِ حل‌نشده ماند — merge لغو شد"; git merge --abort 2>/dev/null || true
       sleep $((attempt * 4 + RANDOM % 7)); continue
     fi
     git commit -q --no-edit 2>/dev/null || git commit -q -m "ادغام $REMOTE/$BRANCH" 2>/dev/null || true
@@ -144,5 +157,5 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
   fi
   sleep $((attempt * 4 + RANDOM % 7))
 done
-echo "publish: بعد از $ATTEMPTS تلاش منتشر نشد"
+_say "بعد از $ATTEMPTS تلاش منتشر نشد"
 exit 1
