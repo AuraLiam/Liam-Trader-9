@@ -347,18 +347,33 @@ def _bitunix_url(sym, tf, n, end_ms=None):
     return BITUNIX_KLINE + q
 
 
+BITUNIX_CLAMP_TOL = 0.001    # ۰.۱٪ — سقفِ رواداری برای «سقف یک تیک زیر open»
+
+
 def _bitunix_parse(r):
+    """کندل بیت‌یونیکس → شکل بایننس. یافتهٔ رانر (کاوش ۵، ۲ سپتامبر): در بعضی
+    ردیف‌ها high یک تیک زیر open است (77864.4 در برابر open 77864.5) — رُندِ
+    خودِ صرافی، نه دادهٔ غلط. تا ۰.۱٪ به open/close چسبانده می‌شود و شمرده؛
+    بزرگ‌تر از آن دست‌نخورده می‌ماند تا `sane()` ردش کند."""
     rows = _rows(r) or []
     out = []
     for x in rows:
         try:
             if isinstance(x, dict):
                 t = x.get("time") or x.get("ts") or x.get("t") or x.get("openTime")
-                out.append(_k(t, x.get("open", x.get("o")), x.get("high", x.get("h")),
-                              x.get("low", x.get("l")), x.get("close", x.get("c")),
-                              x.get("baseVol", x.get("vol", x.get("volume", x.get("v", 0)))) or 0))
+                k = _k(t, x.get("open", x.get("o")), x.get("high", x.get("h")),
+                       x.get("low", x.get("l")), x.get("close", x.get("c")),
+                       x.get("baseVol", x.get("vol", x.get("volume", x.get("v", 0)))) or 0)
             elif isinstance(x, (list, tuple)) and len(x) >= 5:
-                out.append(_k(x[0], x[1], x[2], x[3], x[4], x[5] if len(x) > 5 else 0))
+                k = _k(x[0], x[1], x[2], x[3], x[4], x[5] if len(x) > 5 else 0)
+            else:
+                continue
+            body_hi, body_lo = max(k[1], k[4]), min(k[1], k[4])
+            if k[2] < body_hi and body_hi - k[2] <= body_hi * BITUNIX_CLAMP_TOL:
+                k[2] = body_hi
+            if k[3] > body_lo and k[3] - body_lo <= body_lo * BITUNIX_CLAMP_TOL:
+                k[3] = body_lo
+            out.append(k)
         except Exception:                            # noqa: BLE001 - ردیف خراب = حذف، بقیه می‌مانند
             continue
     out.sort(key=lambda k: k[0])
@@ -382,7 +397,12 @@ def _bitunix_fetch(sym, tf, n, _json_fn=None):
         oldest = rows[0][0]
         if len(got) >= n or len(rows) < min(BITUNIX_PAGE, n):
             break
-        end_ms = oldest - step
+        # کاوش ۵ روی رانر: `oldest - step` در هر مرز صفحه یک کندل جا می‌انداخت
+        # (فاصله‌های ۳۰دقیقه‌ای در سری ۱۵د). یک میلی‌ثانیه پیش از قدیمی‌ترین،
+        # چه endTime شامل باشد چه نباشد، کندلِ قبلی را می‌دهد؛ تکراری با
+        # کلیدِ زمان حذف می‌شود.
+        end_ms = oldest - 1
+    _ = step
     return [got[t] for t in sorted(got)][-int(n):]
 
 

@@ -56,6 +56,13 @@ rows_l = S._bitunix_parse([_row(0, as_list=True), _row(1, as_list=True)])
 check("شکل لیستی هم خوانده می‌شود", len(rows_l) == 2 and rows_l[1][2] == 100.6)
 check("ردیف خراب حذف می‌شود، بقیه می‌مانند", len(S._bitunix_parse({"data": [_row(0), {"time": "x"}, _row(1)]})) == 2)
 check("پاسخ خالی/نامعتبر = لیست خالی، نه استثنا", S._bitunix_parse({"code": 1}) == [] and S._bitunix_parse(None) == [])
+# یافتهٔ رانر (کاوش ۵): high یک تیک زیر open → رُندِ صرافی؛ تا ۰.۱٪ چسبانده می‌شود
+quirk = S._bitunix_parse({"data": [{"time": T0, "open": "77864.5", "high": "77864.4", "low": "77777.7", "close": "77803.8", "baseVol": "1"},
+                                     {"time": T0 + STEP, "open": "77803.8", "high": "77900", "low": "77803.9", "close": "77850", "baseVol": "1"}]})
+check("سقفِ یک‌تیک‌زیرِ open (و کفِ یک‌تیک‌بالای بدنه) چسبانده می‌شود و سری معتبر می‌ماند",
+      quirk[0][2] == 77864.5 and quirk[1][3] == 77803.8 and S.sane_why(quirk, 2) == "", S.sane_why(quirk, 2))
+bad = S._bitunix_parse({"data": [{"time": T0, "open": "100", "high": "90", "low": "80", "close": "95", "baseVol": "1"}]})
+check("انحراف بزرگ (۱۰٪) چسبانده نمی‌شود و sane ردش می‌کند", bad and bad[0][2] == 90.0 and S.sane_why(bad, 1) != "")
 
 # ── ۲. صفحه‌بندی ────────────────────────────────────────────────────────
 calls = []
@@ -78,6 +85,7 @@ got = S._bitunix_fetch("BTCUSDT", "15m", 420, _json_fn=fake_json)
 check("۴۲۰ کندل از صفحه‌های ۲۰۰تایی جمع شد", len(got) == 420, str(len(got)))
 check("سه درخواست (۲۰۰+۲۰۰+۲۰)", len(calls) == 3, str(len(calls)))
 check("یکتا و مرتب، جدیدترین کندل آخر است", got[-1][0] == T0 + (N_ALL - 1) * STEP and all(got[i][0] < got[i + 1][0] for i in range(len(got) - 1)))
+check("بی‌شکاف: هیچ کندلی در مرز صفحه‌ها جا نمی‌افتد (یافتهٔ کاوش ۵)", all(got[i + 1][0] - got[i][0] == STEP for i in range(len(got) - 1)))
 check("sane() این پنجره را می‌پذیرد", S.sane(got, 420))
 check("درخواست اول limit=200 و type=LAST_PRICE دارد", "limit=200" in calls[0] and "LAST_PRICE" in calls[0] and "endTime" not in calls[0])
 calls.clear()
