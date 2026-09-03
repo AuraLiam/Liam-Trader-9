@@ -1,9 +1,40 @@
 {
- "generated": 1788435252888,
+ "generated": 1788439771862,
  "panel": "لیام تریدر ۹",
  "window_h": 24,
- "sig_rows": 26,
+ "sig_rows": 22,
  "escalations": [
+  {
+   "rule": "E1",
+   "sev": "high",
+   "title": "3 استاپ سیگنالِ پیاپی",
+   "rooms": [
+    "post-trade-learning",
+    "order-block",
+    "market-structure"
+   ],
+   "evidence": [
+    "TIAUSDT LONG 09-03 12:42UTC stop",
+    "SPCXBUSDT SHORT 09-03 11:28UTC stop",
+    "LTCUSDT LONG 09-03 10:57UTC stop"
+   ],
+   "directive": "علت‌یابی همگانی: هر سه اتاق پروندهٔ همین معامله‌ها را بخوانند و یافته را در brain/cases ثبت کنند؛ تغییر فقط از مسیر یک-تغییر-در-چرخه."
+  },
+  {
+   "rule": "E2",
+   "sev": "high",
+   "title": "استاپ LONG در 3 ارز مختلف در پنجره",
+   "rooms": [
+    "order-block",
+    "market-structure"
+   ],
+   "evidence": [
+    "HIVEUSDT LONG 09-03 06:24UTC stop",
+    "LTCUSDT LONG 09-03 10:57UTC stop",
+    "TIAUSDT LONG 09-03 12:42UTC stop"
+   ],
+   "directive": "الگوی تکراری بین‌ارزی: کیفیت اردر بلاک‌ها و خطوط روند همین ستاپ‌ها بازبینی شود — همان مثال حمید (OB و ترندلاین دوباره وارد عمل)."
+  },
   {
    "rule": "E2",
    "sev": "high",
