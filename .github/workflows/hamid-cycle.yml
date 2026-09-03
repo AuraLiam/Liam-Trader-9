@@ -105,6 +105,7 @@ jobs:
           python3 -m hamid.test_news_poll
           python3 -m hamid.test_candle_source
           python3 -m hamid.test_shadow_service
+          python3 -m hamid.test_phoenix
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
           python3 -m hamid.test_exec_feed
@@ -242,6 +243,12 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.agent_scores || true
 
+      # شورای ققنوس (دستور حمید ۲ سپتامبر شب): کارنامهٔ ۱۲ مراقب زودیاک از
+      # دفتر بسته + تابلوی وزن‌ها. مشاوره‌ای؛ دروازه نیست (قانون ۰۳).
+      - name: کارنامهٔ شورای ققنوس
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.phoenix --score --write || true
+
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
 
@@ -345,7 +352,7 @@ jobs:
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
-                   experience-effect system-state loop-audit bubbles \
+                   experience-effect system-state loop-audit bubbles phoenix \
                    telegram-feed fomo news-poll \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
