@@ -223,6 +223,12 @@ tg.ARCHIVE_DIR = _tmp2 / "archive"
 # نمادهای جعلی را «قبلاً فرستاده» می‌دید («3 signals, all already sent»).
 tg.SIDECAR = _tmp2 / "sidecar.json"
 tg.FEED = _tmp2 / "feed.json"                   # دفتر پنل هم به پوشهٔ موقت، نه signals/ واقعی
+# شورای ققنوس (۲ سپتامبر شب) در گلوگاه ارسال حکم می‌نویسد — دفتر حکم‌هایش
+# هم موقت، وگرنه آزمون آفلاین ردیف جعلی به brain/phoenix/ می‌ریزد (دیده شد).
+from hamid import phoenix as _phx              # noqa: E402
+_phx.BRAIN = _tmp2 / "phoenix"
+_phx.VERDICTS = _phx.BRAIN / "verdicts.jsonl"
+_phx.SCORES = _phx.BRAIN / "scores.json"
 from hamid import execution_gate as _eg               # noqa: E402
 _eg.OUTBOX = _tmp2 / "exec-outbox.json"  # قصد اجرا هم به sandbox، نه دفتر تولید
 _orig_env = (tg.creds, tg._post, _sources.klines, _pm2.review, _paper2.open_from)
