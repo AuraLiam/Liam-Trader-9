@@ -555,6 +555,13 @@ def caption(s):
     an = s.get("analyzed_at")
     L.append((f"🕐 تحلیل <code>{tehran(an)}</code> · " if an else "🕐 ")
              + f"ارسال <code>{tehran()}</code> — به وقت ایران")
+    # حکم شورای ققنوس — مشاوره‌ای؛ اعداد سیگنال همان‌اند که دروازه‌ها دادند
+    if s.get("phoenix"):
+        try:
+            from hamid import phoenix as _phx
+            L += _phx.caption_lines(s["phoenix"])
+        except Exception:                            # noqa: BLE001
+            pass
     L.append("")
     L.append(f"ورود    <code>{s['entry']:.10g}</code>")
     L.append(f"استاپ   <code>{s['sl']:.10g}</code>")
@@ -764,6 +771,17 @@ def _candle_trace():
         return {"candle_src": _src.used().get("klines")}
     except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
         return {"candle_src": None}
+
+
+def _phoenix_trace(s):
+    """ردپای شورای ققنوس روی دفتر (۲ سپتامبر شب): امتیاز، برچسب، رأی ۱۲ مراقب.
+
+    مشاوره‌ای است (قانون ۰۳): ماشین شبانه اثرش را می‌سنجد؛ دروازه نیست."""
+    try:
+        from hamid import phoenix as _phx
+        return _phx.trace(s.get("phoenix"))
+    except Exception:                                # noqa: BLE001 - ردپا هرگز ارسال را نمی‌کشد
+        return {"phoenix_score": None, "phoenix_label": None, "phoenix_votes": None}
 
 
 def _news_trace(sym, direction):
@@ -996,7 +1014,7 @@ def send_signals(signals, render_chart, limit=8):
                                       # ردپای اتاق فومو (۲ سپتامبر) — فقط ثبت برای
                                       # سنجش شبانه؛ از عکس‌فوری، بدون شبکه
                                       **_fomo_trace(s["sym"]),
-                                      **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
+                                      **_news_trace(s["sym"], s["dir"]), **_candle_trace(), **_phoenix_trace(s),
                                       **(pm.get("tv") or {})})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
@@ -1005,6 +1023,18 @@ def send_signals(signals, render_chart, limit=8):
                 except Exception:                     # noqa: BLE001
                     pass
                 continue
+        # شورای ققنوس (دستور حمید، ۲ سپتامبر شب): ۱۲ مراقب زودیاک سیگنال را
+        # می‌بینند و ققنوس حکم وزنی می‌دهد. حکم روی کپشن و دفتر می‌نشیند و
+        # شبانه سنجیده می‌شود؛ هیچ سیگنالی را حذف و هیچ عددی را عوض نمی‌کند
+        # (قانون ۰۳/۱۲). خطای شورا جلوی ارسال را نمی‌گیرد.
+        try:
+            from hamid import phoenix as _phx
+            s["phoenix"] = _phx.judge(s, write=True)
+            print(f"  🔥 ققنوس {s['sym']}: {s['phoenix']['label']} ({s['phoenix']['score']:+.2f}) — "
+                  f"{s['phoenix']['posture']}", flush=True)
+        except Exception as e:                        # noqa: BLE001
+            s["phoenix"] = None
+            print(f"  ققنوس {s['sym']} رأی نداد ({type(e).__name__}) — سیگنال بی‌حکم می‌رود", flush=True)
         png = None
         try:
             png = render_chart(s, str(tmp / f"{s['sym']}-{s['tf']}.png"))
@@ -1109,7 +1139,7 @@ def send_signals(signals, render_chart, limit=8):
                                   # شاهد اپ fomo — ثبت برای ماشین شبانه، نه امتیاز
                                   **_fomo_trace(s["sym"]),
                                   # اجماع خبری ایجنت‌ها (۲ سپتامبر): فقط ردپا — خبر دیدگاه است، نه تصمیم
-                                  **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
+                                  **_news_trace(s["sym"], s["dir"]), **_candle_trace(), **_phoenix_trace(s),
                                   # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
                                   # سنجش شبانه، نه دروازه (۳۰ اوت)
                                   "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),
