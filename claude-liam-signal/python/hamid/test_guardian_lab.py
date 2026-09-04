@@ -326,5 +326,88 @@ check("ورک‌فلو سه تایم را موازی می‌برد", "matrix:" i
 check("و فقط یک job منتشر می‌کند (قانون ۰۵: یک نویسنده)",
       src_wf.count("scripts/publish.sh") == 1 and "--from-shards" in src_wf)
 
+# ── ۱۲. دو مراقب نباید یک صدا باشند ────────────────────────────────────
+#
+# عیبِ اندازه‌گیری‌شده در بک‌تست ۲ سالهٔ ۴ سپتامبر: سنبله وقتی داده سالم
+# بود `_s_pisces` را برمی‌گرداند، و چون کندلِ پرپِ BTC/ETH/SOL همیشه
+# سالم است، کارنامهٔ حوت و سنبله بیت‌به‌بیت یکی درآمد (هر دو −۴۹٬۰۰۳
+# امتیاز از ۲۶۸٬۵۶۱ رأی). شورا رأی **وزنی** می‌گیرد، پس نظر یک مراقب
+# دو بار شمرده می‌شد — یعنی وزنی که قانون ۱۶ به کارنامهٔ هر مراقب گره
+# زده بود، بی‌سروصدا شکسته بود.
+# روی **چند** سری سنجیده می‌شود نه یکی: نسخهٔ اولِ همین محافظ با یک سری
+# نمایشی، ثور و جدی را هم دوقلو خواند — در حالی که در بک‌تست واقعی
+# عددشان جدا بود (−۲۷٬۲۴۴ در برابر −۲۵٬۰۸۰). سریِ نمایشیِ صاف، دو
+# استراتژیِ واقعاً متفاوت را هم‌رأی نشان می‌دهد. دوقلوی واقعی آن است که
+# روی **هیچ** سری‌ای از هم جدا نشود.
+sig = {g: [] for g in GL.STRATEGIES}
+for _seed in (77, 5, 101, 404):
+    _vcd = GL._demo_series(n=520, seed=_seed)
+    for _gid in GL.STRATEGIES:
+        sig[_gid] += [GL.STRATEGIES[_gid](_vcd[:i + 1], None)
+                      for i in range(GL.WARMUP, len(_vcd) - 2, 7)]
+sig = {g: tuple(v) for g, v in sig.items()}
+twins = [(a, b) for i, a in enumerate(sig) for b in list(sig)[i + 1:]
+         if sig[a] == sig[b] and any(v is not None for v in sig[a])]
+undocumented = [t for t in twins
+                if tuple(sorted(t)) not in {tuple(sorted(k)) for k in GL.NARROWER}]
+check("هر جفتِ هم‌رأی یا رفع شده یا با دلیل ثبت شده — هیچ‌کدام بی‌صدا",
+      not undocumented, str(undocumented))
+check("و دلیلِ ثبت‌شده به قانون و مسیرِ رفع اشاره می‌کند",
+      all("قانون" in v for v in GL.NARROWER.values()))
+
+
+def _twin(a, b, n=520):
+    """آیا این دو روی چهار سریِ نمایشی هم‌رأیِ مطلق‌اند؟"""
+    xs = {a: [], b: []}
+    for s in (77, 5, 101, 404):
+        cd = GL._demo_series(n=n, seed=s)
+        for g in (a, b):
+            xs[g] += [GL.STRATEGIES[g](cd[:i + 1], None)
+                      for i in range(GL.WARMUP, n - 2, 7)]
+    return xs[a] == xs[b] and any(v is not None for v in xs[a])
+
+
+# اثبات منفی: یک مراقب را عمداً نسخهٔ بدلِ مراقبی می‌کنیم که **واقعاً
+# شلیک می‌کند** (ثور)، و همان بررسیِ ارسالی باید بگیردش.
+#
+# چرا با ثور و نه با حوت: حوت روی سریِ نمایشی اصلاً شلیک نمی‌کند، پس
+# بدلش هم همیشه ممتنع می‌ماند — و دو ممتنعِ همیشگی وزنِ دوبار نمی‌سازند.
+# محافظ درست همین را می‌گوید؛ اثباتِ منفی باید روی حالتی باشد که واقعاً
+# مضر است، نه روی حالتی که ضرری ندارد.
+def _undoc(sigmap):
+    return [(a, b) for i, a in enumerate(sigmap) for b in list(sigmap)[i + 1:]
+            if sigmap[a] == sigmap[b] and any(v is not None for v in sigmap[a])
+            and tuple(sorted((a, b))) not in {tuple(sorted(k)) for k in GL.NARROWER}]
+
+
+_saved = GL.STRATEGIES["virgo"]
+try:
+    GL.STRATEGIES["virgo"] = GL._s_taurus          # بدلِ یک مراقبِ فعال
+    bad = {g: [] for g in ("virgo", "taurus")}
+    for _s in (77, 5, 101, 404):
+        _c = GL._demo_series(n=520, seed=_s)
+        for g in bad:
+            bad[g] += [GL.STRATEGIES[g](_c[:i + 1], None)
+                       for i in range(GL.WARMUP, 518, 7)]
+    bad = {g: tuple(v) for g, v in bad.items()}
+    caught = bool(_undoc(bad))
+finally:
+    GL.STRATEGIES["virgo"] = _saved
+check("مراقبِ بدلِ یک مراقبِ فعال، گرفته می‌شود (اثبات منفی اجراشده)", caught)
+check("و بعد از برگرداندن، سنبله دیگر بدل نیست",
+      not _twin("virgo", "taurus"))
+
+check("سنبله جهت پیشنهاد نمی‌دهد — تخصصش داده است نه بازار (قانون ۱۶)",
+      all(v is None for v in sig["virgo"]))
+_clean = GL._demo_series(n=200, seed=5)
+check("و روی دادهٔ سالم ممتنع است، نه موافقِ الکی",
+      GL.predict("virgo", _clean, "long") is None)
+_dirty = [dict(c) for c in _clean]
+_dirty[-3]["o"] = _dirty[-4]["c"] * 1.20          # شکاف ۲۰٪ — دادهٔ خراب
+check("ولی روی دادهٔ خراب مخالف رأی می‌دهد",
+      GL.predict("virgo", _dirty, "long") == -1)
+check("و جهتِ معامله رأیش را عوض نمی‌کند (حرفش دربارهٔ داده است)",
+      GL.predict("virgo", _dirty, "short") == -1)
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
