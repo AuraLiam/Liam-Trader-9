@@ -96,7 +96,10 @@ jobs:
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
           ls -l shards || true
+          SH=$(ls "$GITHUB_WORKSPACE"/shards/*.json 2>/dev/null || true)
+          if [ -z "$SH" ]; then
+            echo "هیچ تکه‌ای نرسید — چیزی برای انتشار نیست"; exit 1
+          fi
           (cd claude-liam-signal/python && \
-            python3 -m hamid.guardian_lab --from-shards \
-              $(ls "$GITHUB_WORKSPACE"/shards/*.json))
+            python3 -m hamid.guardian_lab --from-shards $SH)
           scripts/publish.sh -m "آزمایشگاه مراقبان $(date -u '+%Y-%m-%d %H:%M UTC')" signals brain
