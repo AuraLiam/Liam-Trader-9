@@ -1,7 +1,5 @@
 @echo off
-rem همیشه‌روشن — بعد از این، با هر بار روشن‌شدن ویندوز خودش بالا می‌آید.
-rem یک بار کافی است. برای لغو: در Task Scheduler ویندوز، LiamTrader9 را حذف کن.
-chcp 65001 >nul
+rem Liam Trader 9 - start automatically at every Windows logon.
+rem Run once. To undo:  schtasks /Delete /TN LiamTrader9 /F
 cd /d "%~dp0"
-title لیام تریدر ۹ — همیشه روشن
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0service\liam9.ps1" boot
+call "%~dp0LIAM9.cmd" boot
