@@ -509,33 +509,76 @@ def resample(cd, k):
     return out
 
 
-def run_real(syms, years=2.0, step=1, quiet=False):
+def deep_klines(sym, tf, want, quiet=True):
+    """عمیق‌ترین سریِ **سالم** که منبع می‌دهد — نه «همه یا هیچ».
+
+    دو واقعیتِ اندازه‌گیری‌شده (۴ سپتامبر) این تابع را لازم کرد:
+
+    ۱. مسیر اسپات صفحه‌بندی ندارد (سقف ۱۰۰۰ کندل)، پس هیچ‌کدام از سه
+       تایم‌فریمِ دو ساله را نمی‌تواند بدهد. فقط پرپِ صفحه‌بندی‌شده می‌تواند.
+    ۲. `sources.sane` سریِ کوتاه‌تر از ۹۰٪ خواسته را رد می‌کند. یعنی اگر
+       تاریخچهٔ صرافی به دو سال نرسد، نتیجه **هیچ** می‌شود نه «هرچه هست» —
+       و ما حتی نمی‌فهمیم چقدر تاریخچه وجود داشت.
+
+    پس عمق را نردبانی کم می‌کنیم تا اولین سریِ سالم بیاید، و همان‌جا صریح
+    می‌گوییم واقعاً چند سال گیر آمد. عددِ نیامده جعل نمی‌شود.
+    """
+    import sources
+    tried = []
+    w = int(want)
+    while w >= max(WARMUP + 50, 400):
+        try:
+            cd = sources.perp_klines(sym, tf, w, quiet=quiet)
+            if cd and len(cd) >= WARMUP + 50:
+                return cd, {"asked": int(want), "got": len(cd), "ladder": tried}
+        except Exception as e:                       # noqa: BLE001
+            tried.append(f"{w}:{type(e).__name__}")
+        else:
+            tried.append(f"{w}:کوتاه")
+        w //= 2
+    return None, {"asked": int(want), "got": 0, "ladder": tried}
+
+
+def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None):
     """اجرای واقعی روی کندل بازار — «۲ تا ۳ سال عقب» (بند H7.3).
 
     هر تایم‌فریم سریِ خودش را از منبع می‌گیرد (نه بازنمونه‌گیریِ ۵د)، چون
     عمقِ تاریخیِ در دسترس برای هر تایم فرق می‌کند و بازنمونه‌گیری از سریِ
     کوتاه، «۲ سال ۱ساعته» نمی‌سازد.
+
+    ترتیب از ارزان به گران (۱س → ۱۵د → ۵د) و با بودجهٔ زمانی: دو سالِ ۵د
+    یعنی ~۱۰۵۲ صفحهٔ ۲۰۰تایی برای هر نماد، و اگر اول اجرا شود ممکن است کلِ
+    job را بخورد و هیچ نتیجه‌ای نماند. این‌طوری تایم‌های بالا همیشه تمام
+    می‌شوند و ۵د هرچه وقت ماند برمی‌دارد — با ثبتِ صریحِ آن‌چه نرسید.
     """
-    import sources
-    need = {"1h": int(years * 365 * 24), "15m": int(years * 365 * 96),
-            "5m": int(years * 365 * 288)}
-    trades, got = [], {}
-    for sym in syms:
-        for tf in TFS:
-            try:
-                cd = sources.klines(sym, tf, need[tf], quiet=quiet)
-            except Exception as e:                   # noqa: BLE001
-                print(f"  {sym} {tf}: کندل نیامد ({type(e).__name__}) — کنار گذاشته شد",
+    per_day = {"1h": 24, "15m": 96, "5m": 288}
+    order = ("1h", "15m", "5m")                      # ارزان‌ترین اول
+    t0 = time.time()
+    trades, got, skipped = [], {}, []
+    for tf in order:
+        want = int(years * 365 * per_day[tf])
+        for sym in syms:
+            if budget_s is not None and time.time() - t0 > budget_s:
+                skipped.append({"sym": sym, "tf": tf,
+                                "why": f"بودجهٔ {budget_s}s تمام شد پیش از رسیدن به این سری"})
+                continue
+            cd, info = deep_klines(sym, tf, want, quiet=quiet)
+            if not cd:
+                print(f"  {sym} {tf}: کندل نیامد (نردبان {info['ladder'][:3]}) — کنار گذاشته شد",
                       flush=True)
+                skipped.append({"sym": sym, "tf": tf, "why": "سری سالم نیامد",
+                                "ladder": info["ladder"][:4]})
                 continue
-            if not cd or len(cd) < WARMUP + 50:
-                print(f"  {sym} {tf}: فقط {len(cd or [])} کندل — کم است", flush=True)
-                continue
+            yrs = round(len(cd) / (365 * per_day[tf]), 2)
+            print(f"  {sym} {tf}: {len(cd):,} کندل ≈ {yrs} سال "
+                  f"(خواسته {info['asked']:,}) · {int(time.time() - t0)}s", flush=True)
             got.setdefault(tf, []).append(len(cd))
             trades += run_tf(sym, tf, cd, step=step)
-    span = {tf: {"series": len(v), "bars_median": int(statistics.median(v))}
+    span = {tf: {"series": len(v), "bars_median": int(statistics.median(v)),
+                 "years_median": round(statistics.median(v) / (365 * per_day[tf]), 2)}
             for tf, v in got.items()}
-    return trades, span
+    return trades, {"per_tf": span, "skipped": skipped,
+                    "asked_years": years, "elapsed_s": int(time.time() - t0)}
 
 
 def main(argv=None):
@@ -546,17 +589,26 @@ def main(argv=None):
         for a in argv:
             if a.startswith("--years="):
                 yrs = float(a.split("=", 1)[1])
-        trades, span = run_real(syms, yrs, step=1)
+        budget = None
+        for a in argv:
+            if a.startswith("--budget-min="):
+                budget = float(a.split("=", 1)[1]) * 60
+        trades, span = run_real(syms, yrs, step=1, budget_s=budget)
         res = score(trades)
-        snap = snapshot(res, syms, {"years": yrs, **span})
+        snap = snapshot(res, syms, span)
         append_trades(trades)
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n",
                        encoding="utf-8")
         print(f"آزمایشگاه (واقعی) — {res['trades']} معامله روی {len(syms)} نماد، {yrs} سال")
         for tf, s in res["by_tf"].items():
+            cov = (span.get("per_tf") or {}).get(tf) or {}
             print(f"  {tf}: n={s['n']} · برد {s['win_pct']}٪ · خالص {s['mean_net']}R "
-                  f"· CI {s['ci95_net']} · {s['verdict']}")
+                  f"· CI {s['ci95_net']} · پوشش {cov.get('years_median', '?')} سال "
+                  f"· {s['verdict']}")
+        for sk in span.get("skipped") or []:
+            print(f"  ⚠ {sk['sym']} {sk['tf']}: {sk['why']}")
+        print(f"  زمان: {span.get('elapsed_s')}s · خواسته {span.get('asked_years')} سال")
         return 0
     base = _demo_series(n=3600)
     series = {"5m": base, "15m": resample(base, 3), "1h": resample(base, 12)}
