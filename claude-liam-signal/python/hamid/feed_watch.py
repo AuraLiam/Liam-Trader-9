@@ -154,6 +154,13 @@ def run(write=False, alert=False, quiet=True):
     snap = snapshot(rows)
     if write:
         try:
+            import brain
+            if brain.blocked(OUT):                   # حالت شنی — قانون ۰۵
+                write = False
+        except Exception:                            # noqa: BLE001
+            pass
+    if write:
+        try:
             OUT.parent.mkdir(parents=True, exist_ok=True)
             OUT.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n",
                            encoding="utf-8")

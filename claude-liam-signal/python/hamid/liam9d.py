@@ -294,7 +294,26 @@ def run_job(job, env=None, cwd=None):
             "ts": int(time.time() * 1000)}
 
 
+def _sandboxed(path):
+    """حالت شنی: پاسبان حق ندارد دفتر تولید را بنویسد (۴ سپتامبر).
+
+    عیبِ واقعیِ همین ماژول: اجرای `test_liam9d` فایل
+    `signals/liam9d.json` را در درختِ تولید ساخت — چون این‌جا مستقیم
+    `write_text` صدا زده می‌شد و از `brain.blocked` رد نمی‌شد. دقیقاً
+    همان کلاسی که همان روز برای `paper._write` و `liam9_link` بسته شده
+    بود و این ماژولِ تازه دوباره بازش کرد. مرز از **مسیر** می‌آید، پس
+    هر نویسندهٔ تازه باید از همین‌جا اجازه بگیرد.
+    """
+    try:
+        import brain
+        return brain.blocked(path)
+    except Exception:                                # noqa: BLE001
+        return False
+
+
 def _append_log(rec):
+    if _sandboxed(LOG):
+        return
     try:
         LOG.parent.mkdir(parents=True, exist_ok=True)
         with LOG.open("a", encoding="utf-8") as f:
@@ -516,12 +535,13 @@ def write_state(n, ran, last, tick):
                     "و هیچ دروازه‌ای نسبت به Actions شل نشده — همان فرمان‌ها، "
                     "همان پرچم‌ها، فقط بدون رقصِ گیت.",
     }
-    try:
-        STATE.parent.mkdir(parents=True, exist_ok=True)
-        STATE.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n",
-                         encoding="utf-8")
-    except Exception:                                # noqa: BLE001
-        pass
+    if not _sandboxed(STATE):
+        try:
+            STATE.parent.mkdir(parents=True, exist_ok=True)
+            STATE.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n",
+                             encoding="utf-8")
+        except Exception:                            # noqa: BLE001
+            pass
     return snap
 
 

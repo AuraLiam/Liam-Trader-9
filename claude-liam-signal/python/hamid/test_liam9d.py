@@ -257,9 +257,41 @@ finally:
         srv.shutdown()
 
 # ── ۱۱. تولید آلوده نشد ────────────────────────────────────────────────
-check("این آزمون تابلوی سرویس را در تولید ننوشت (حالت شنی)",
-      os.environ.get("LIAM9_SANDBOX") != "1" or not D.STATE.exists()
-      or json.loads(D.STATE.read_text(encoding="utf-8")).get("engine") == "E23")
+#
+# نسخهٔ اولِ همین بررسی شل بود و چیزی را نگه نمی‌داشت: اجرای آزمون
+# واقعاً `signals/liam9d.json` را در درختِ تولید ساخت و هوکِ گیت گیرش
+# انداخت، نه این آزمون. علتش این بود که این ماژول مستقیم `write_text`
+# می‌زد و از `brain.blocked` رد نمی‌شد — همان کلاسی که همان روز برای
+# `paper._write` بسته شده بود و ماژولِ تازه دوباره بازش کرد.
+#
+# پس حالا روی **رفتار** سنجیده می‌شود: در حالت شنی، نوشتن باید واقعاً
+# اتفاق نیفتد.
+import brain                                         # noqa: E402
+
+_prev = brain.SANDBOX
+_had = D.STATE.exists()
+_before = D.STATE.read_text(encoding="utf-8") if _had else None
+try:
+    brain.SANDBOX = True
+    D.write_state(1, [], {}, 60)
+    D._append_log({"probe": 1})
+    still = (D.STATE.read_text(encoding="utf-8") if D.STATE.exists() else None)
+finally:
+    brain.SANDBOX = _prev
+check("در حالت شنی، تابلوی سرویس روی دیسکِ تولید نوشته نمی‌شود",
+      still == _before and D.STATE.exists() == _had)
+check("و لاگ سرویس هم همین‌طور",
+      "if _sandboxed(LOG):" in SRC and "_sandboxed(STATE)" in SRC)
+check("پاسبان خوراک هم از همان مرز رد می‌شود",
+      "brain.blocked(OUT)" in (HERE / "feed_watch.py").read_text(encoding="utf-8"))
+# اثبات منفی: بی‌سوییچ، همان نوشتن باید انجام شود (وگرنه بررسی توخالی است)
+with tempfile.TemporaryDirectory() as td:
+    _o = D.STATE
+    D.STATE = Path(td) / "b.json"
+    D.write_state(1, [], {}, 60)
+    wrote = D.STATE.exists()
+    D.STATE = _o
+check("و بیرونِ حالت شنی واقعاً می‌نویسد (بررسی توخالی نیست)", wrote)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
