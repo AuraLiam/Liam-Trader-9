@@ -1,0 +1,471 @@
+{
+ "_doc": "سازمان ققنوس — دستور بلند حمید، ۳ سپتامبر ۲۰۲۶. هر بندِ آن پیام این‌جا یک ردیف ماشین‌خوان است. hamid/spec_check.py ادعای وضعیت را با خودِ مخزن می‌سنجد: DONE یعنی ماژول هست، محافظ هست، و محافظ در دروازهٔ یک ورک‌فلو می‌دود. PARTIAL یعنی ماژول هست ولی کار کامل نیست و کمبودش در note نوشته شده. PLANNED یعنی هنوز ساخته نشده و دلیلش نوشته شده. هیچ ردیفی بی‌note حق PARTIAL/PLANNED ندارد.",
+ "_source": "پیام حمید ۳ سپتامبر — «بین این همه حرفام هر چیزی نداریم به پنل و سازمانمون اضافه کن»",
+ "_status_values": [
+  "DONE",
+  "PARTIAL",
+  "PLANNED"
+ ],
+ "clauses": [
+  {
+   "id": "H1.1",
+   "room": "اتاق توزیع اطلاعات (E27)",
+   "text": "پیش از توزیع اطلاعات بین اتاق‌ها، اول همهٔ اطلاعات و نوع ارز دسته‌بندی شود",
+   "module": "claude-liam-signal/python/hamid/router.py",
+   "guard": "claude-liam-signal/python/hamid/test_router.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H1.2",
+   "room": "اتاق توزیع اطلاعات (E27)",
+   "text": "تاکسونومی کامل ارزها: هر نماد جزو چه دسته‌ای است (استیبل، رپد، لایه‌۱، لایه‌۲، میم، دیفای، AI، RWA، گیمینگ، سهام‌توکن، …)",
+   "module": "claude-liam-signal/python/hamid/taxonomy.py",
+   "guard": "claude-liam-signal/python/hamid/test_router.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H1.3",
+   "room": "اتاق توزیع اطلاعات (E27)",
+   "text": "منابع جامع آموزشِ دسته‌بندی در اختیار همین ایجنت",
+   "module": "brain/library/curricula/E27-router.md",
+   "guard": "claude-liam-signal/python/hamid/test_router.py",
+   "status": "PARTIAL",
+   "note": "منابع در صف کتابخانه با وضعیت QUEUED/VERIFIED؛ ادعای «خوانده شد» فقط بعد از راستی‌آزمایی (قانون ۰۳)"
+  },
+  {
+   "id": "H1.4",
+   "room": "اتاق توزیع اطلاعات (E27)",
+   "text": "توزیع درست: هر دادهٔ تازه با دستهٔ مشخص به اتاقِ درست مسیر بگیرد (نگاشت فرمال رویداد→اتاق)",
+   "module": "claude-liam-signal/python/hamid/router.py",
+   "guard": "claude-liam-signal/python/hamid/test_router.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H2.1",
+   "room": "اتاق ساختار (روند/کندل/OB/ستاپ+حجم)",
+   "text": "روند در همهٔ تایم‌فریم‌ها بررسی شود",
+   "module": "claude-liam-signal/python/hamid/structure.py",
+   "guard": "claude-liam-signal/python/hamid/test_structure_room.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.2",
+   "room": "اتاق ساختار",
+   "text": "خط روند با شدو، از یک هفته قبل، بدون دیدن آینده کشیده شود",
+   "module": "claude-liam-signal/python/hamid/lines_wf.py",
+   "guard": "claude-liam-signal/python/hamid/test_lines_wf.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.3",
+   "room": "اتاق ساختار",
+   "text": "کانال موازی اجباری نیست — مثلث متقارن/صعودی/نزولی و بقیهٔ الگوها هم شناسایی شوند",
+   "module": "claude-liam-signal/python/hamid/lines_wf.py",
+   "guard": "claude-liam-signal/python/hamid/test_lines_wf.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.4",
+   "room": "اتاق ساختار",
+   "text": "از ۴س همهٔ کانال‌های منطقی با شدوهای منطقی کشیده و تا ۱۵د ادامه یابد",
+   "module": "claude-liam-signal/python/hamid/lines_wf.py",
+   "guard": "claude-liam-signal/python/hamid/test_lines_wf.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.5",
+   "room": "اتاق ساختار",
+   "text": "در ۱س و ۱۵د همهٔ اردر بلاک‌ها مشخص شوند (روش حمید + بهترین کتاب‌های OB معتبر)",
+   "module": "claude-liam-signal/python/hamid/orderblocks.py",
+   "guard": "claude-liam-signal/python/hamid/test_structure_room.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.6",
+   "room": "اتاق ساختار",
+   "text": "در ۴س همهٔ سقف/کف‌هایی که نقش حمایت/مقاومت داشته‌اند با هوریزنتال ری علامت بخورند",
+   "module": "claude-liam-signal/python/hamid/lines_wf.py",
+   "guard": "claude-liam-signal/python/hamid/test_lines_wf.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.7",
+   "room": "اتاق ساختار",
+   "text": "چارت رو به جلو برده شود؛ خطی که واقعاً سقف/کف/حمایت/مقاومت شد بماند، اضافهٔ غیرمنطقی پاک شود",
+   "module": "claude-liam-signal/python/hamid/lines_wf.py",
+   "guard": "claude-liam-signal/python/hamid/test_lines_wf.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.8",
+   "room": "اتاق ساختار",
+   "text": "هر زیرایجنت (روند، کندل، اردر بلاک، ستاپ و حجم) به منبع اطلاعات روز وصل باشد",
+   "module": "brain/library/curricula/E07-structure-room.md",
+   "guard": "claude-liam-signal/python/hamid/test_structure_room.py",
+   "status": "PLANNED",
+   "note": "منبع = برنامهٔ درسی + حلقهٔ مطالعهٔ ۳ساعته؛ «خواندن» فقط با راستی‌آزمایی وارد قفسه می‌شود"
+  },
+  {
+   "id": "H2.9",
+   "room": "اتاق ساختار",
+   "text": "گزارش یکپارچه به مدیر انجین: ۴س چه، ۱س چه، ۱۵د چه؛ و بازگرداندن نقص به واحد مربوطه",
+   "module": "claude-liam-signal/python/hamid/structure_room.py",
+   "guard": "claude-liam-signal/python/hamid/test_structure_room.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H2.10",
+   "room": "اتاق ساختار",
+   "text": "حافظهٔ دائمی: هر ترید/تحلیل/آموخته به مهارت تبدیل و ذخیره شود",
+   "module": "claude-liam-signal/python/hamid/memory.py",
+   "guard": "claude-liam-signal/python/hamid/test_skill_ledger.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H3.1",
+   "room": "بورد خبر",
+   "text": "تابلوی خبر در پنل که همهٔ ایجنت‌ها و انجین‌ها ببینند",
+   "module": "claude-liam-signal/python/hamid/newsboard.py",
+   "guard": "claude-liam-signal/python/hamid/test_newsboard.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H3.2",
+   "room": "بورد خبر",
+   "text": "بخش گزارش هر واحد: درس/تجربه‌ای که از یک اتفاق گرفته، خلاصه روی بورد برای بقیه",
+   "module": "claude-liam-signal/python/hamid/newsboard.py",
+   "guard": "claude-liam-signal/python/hamid/test_newsboard.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H3.3",
+   "room": "بورد خبر",
+   "text": "فقط خبر سیاسی نه — رویداد مهم کریپتو و نظر افراد مهم دربارهٔ ارز، با تاریخ خبر",
+   "module": "claude-liam-signal/python/hamid/newsboard.py",
+   "guard": "claude-liam-signal/python/hamid/test_newsboard.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H3.4",
+   "room": "بورد خبر",
+   "text": "رویداد آیندهٔ مؤثر بر یک ارز، از یک روز قبل روی بورد بیاید",
+   "module": "claude-liam-signal/python/hamid/newsboard.py",
+   "guard": "claude-liam-signal/python/hamid/test_newsboard.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H3.5",
+   "room": "بورد خبر",
+   "text": "ارز پامپ‌شده: دلیلش بررسی و ارزهای تحت‌تأثیر به واحدها تحویل شود",
+   "module": "claude-liam-signal/python/hamid/pump_profile.py",
+   "guard": "claude-liam-signal/python/hamid/test_pump_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.1",
+   "room": "دامیننس",
+   "text": "دامیننس مهم‌ترین بخش پیش از ترید: نزولی = بازار صعودی، صعودی = بازار نزولی",
+   "module": "claude-liam-signal/python/hamid/dominance.py",
+   "guard": "claude-liam-signal/python/hamid/test_dominance_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.2",
+   "room": "دامیننس",
+   "text": "وقتی ارز در تایم ۵د تحلیل می‌شود، دامیننس هم در همان تایم بررسی شود",
+   "module": "claude-liam-signal/python/hamid/dom_tf.py",
+   "guard": "claude-liam-signal/python/hamid/test_dominance_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.3",
+   "room": "دامیننس",
+   "text": "روند کلی مهم‌تر از ریزتایم: تحلیل ۴س و ۱س به روش حمید و جای دامیننس در کانال",
+   "module": "claude-liam-signal/python/hamid/dominance.py",
+   "guard": "claude-liam-signal/python/hamid/test_dominance_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.4",
+   "room": "دامیننس",
+   "text": "USDC.D هم تحلیل شود — استیبل دومِ اجباری در اروپا و جاهای دیگر",
+   "module": "claude-liam-signal/python/hamid/dom_decomp.py",
+   "guard": "claude-liam-signal/python/hamid/test_dominance_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.5",
+   "room": "دامیننس",
+   "text": "چرخهٔ پول: با حرکت بیت‌کوین و فارکس و بقیهٔ کریپتو، کِی پول به استیبل می‌رود و کِی به کریپتو",
+   "module": "claude-liam-signal/python/hamid/dom_decomp.py",
+   "guard": "claude-liam-signal/python/hamid/test_dominance_desk.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H4.6",
+   "room": "دامیننس",
+   "text": "نظریهٔ چند راهزن مسلح مطالعه و پیاده شود",
+   "module": "claude-liam-signal/python/hamid/bandit.py",
+   "guard": "claude-liam-signal/python/hamid/test_bandit.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H5.1",
+   "room": "شورای ققنوس",
+   "text": "۱۲ تحلیلگر حرفه‌ای با نام زودیاک، هر کدام صاحب یک سبک استراتژی",
+   "module": "claude-liam-signal/python/hamid/phoenix.py",
+   "guard": "claude-liam-signal/python/hamid/test_phoenix.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H5.2",
+   "room": "شورای ققنوس",
+   "text": "هر یک از ۱۲ ایجنت روی هر انجین حاضر باشد، نظارت کند و با رأی تأیید/رد بدهد",
+   "module": "claude-liam-signal/python/hamid/council.py",
+   "guard": "claude-liam-signal/python/hamid/test_council.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H5.3",
+   "room": "شورای ققنوس",
+   "text": "امتیاز و وزن رأی هر متخصص به تفکیک همان انجین حساب شود (در دامیننس خوب، در ریسک ضعیف)",
+   "module": "claude-liam-signal/python/hamid/council.py",
+   "guard": "claude-liam-signal/python/hamid/test_council.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H5.4",
+   "room": "شورای ققنوس",
+   "text": "منابع ارتقای جداگانه: هر ساعت سر بزنند، اطلاعات تازهٔ استراتژی خودشان را ببینند، بک‌تست بگیرند، به حافظه اضافه کنند",
+   "module": "brain/library/curricula/phoenix-guardians.md",
+   "guard": "claude-liam-signal/python/hamid/test_council.py",
+   "status": "PLANNED",
+   "note": "برنامهٔ درسی و حلقهٔ مطالعه هست؛ بک‌تستِ خودکارِ هر متخصص روی استراتژی خودش هنوز اجرا نشده — نیازمند دفتر پیپر ۱۲استراتژی (H7.1) که تازه ساخته شده و هنوز نمونه ندارد"
+  },
+  {
+   "id": "H5.5",
+   "room": "شورای ققنوس",
+   "text": "رأی بیشتر ادامه می‌دهد؛ نتیجه به ققنوس می‌رسد و او دستور نهایی را می‌دهد",
+   "module": "claude-liam-signal/python/hamid/council.py",
+   "guard": "claude-liam-signal/python/hamid/test_council.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H6.1",
+   "room": "ریسک و ورود",
+   "text": "آیا این پوزیشن در این شرایط ارزش ورود دارد (لانگ یا شورت)؟",
+   "module": "claude-liam-signal/python/hamid/risk_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_risk_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H6.2",
+   "room": "ریسک و ورود",
+   "text": "با بررسی شرایط و میزان اطمینان، پول و اهرم این پوزیشن مشخص شود",
+   "module": "claude-liam-signal/python/hamid/risk_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_risk_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H6.3",
+   "room": "ریسک و ورود",
+   "text": "ورودی تصمیم: دامیننس + رویدادها + رأی ۱۲ متخصص",
+   "module": "claude-liam-signal/python/hamid/risk_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_risk_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H6.4",
+   "room": "ریسک و ورود",
+   "text": "رأی‌گیری در همین انجین و وزن‌دهی بر اساس نتیجهٔ همین انجین",
+   "module": "claude-liam-signal/python/hamid/council.py",
+   "guard": "claude-liam-signal/python/hamid/test_council.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H7.1",
+   "room": "پیپر و حافظه",
+   "text": "پیپرمود با ۱۲ استراتژی متخصصان، جدا از استراتژی اصلی",
+   "module": "claude-liam-signal/python/hamid/guardian_lab.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H7.2",
+   "room": "پیپر و حافظه",
+   "text": "در سه تایم‌فریم ۱س و ۱۵د و ۵د، جداگانه",
+   "module": "claude-liam-signal/python/hamid/guardian_lab.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H7.3",
+   "room": "پیپر و حافظه",
+   "text": "برای دادهٔ تاریخی بیشتر، ۲ تا ۳ سال عقب و بدون خبر از فردا ترید شود",
+   "module": "claude-liam-signal/python/hamid/guardian_lab.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PLANNED",
+   "note": "موتور بازپخش بدون-آینده ساخته و آزمون شده؛ اجرای کامل ۲–۳ ساله روی همهٔ ارزها کار سنگین Actions است و هنوز اولین دورش تمام نشده — عدد تا تمام‌شدنش ادعا نمی‌شود"
+  },
+  {
+   "id": "H7.4",
+   "room": "پیپر و حافظه",
+   "text": "برای هر ترید ۱۲ متخصص نتیجه را پیش‌بینی کنند: درست +۱، غلط −۱",
+   "module": "claude-liam-signal/python/hamid/guardian_lab.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H7.5",
+   "room": "پیپر و حافظه",
+   "text": "نتیجه به تفکیک تایم‌فریم و به تفکیک متخصص گزارش شود",
+   "module": "claude-liam-signal/python/hamid/guardian_lab.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H7.6",
+   "room": "پیپر و حافظه",
+   "text": "علت استاپ‌ها و علت تارگت‌ها ثبت شود",
+   "module": "claude-liam-signal/python/hamid/paper.py",
+   "guard": "claude-liam-signal/python/hamid/test_guardian_lab.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H8.1",
+   "room": "حافظهٔ سازمانی",
+   "text": "همه چیز با تاریخ و لحظهٔ اتفاق ثبت و در تصمیم بعدی استفاده شود",
+   "module": "claude-liam-signal/python/hamid/memory.py",
+   "guard": "claude-liam-signal/python/hamid/test_skill_ledger.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H8.2",
+   "room": "حافظهٔ سازمانی",
+   "text": "تجربهٔ تکراری ردیف تازه نمی‌سازد؛ ضریب همان تجربه بالا می‌رود",
+   "module": "claude-liam-signal/python/hamid/skill_ledger.py",
+   "guard": "claude-liam-signal/python/hamid/test_skill_ledger.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H8.3",
+   "room": "حافظهٔ سازمانی",
+   "text": "هر انجین خودش مراقب آسیب باشد و سریع علت‌یابی و رفع کند",
+   "module": "claude-liam-signal/python/hamid/state_bus.py",
+   "guard": "claude-liam-signal/python/hamid/test_state_bus.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H9.1",
+   "room": "انجین پامپ",
+   "text": "ارز پامپ‌شده بلافاصله بررسی و تاریخچه‌اش از روز اول خوانده شود",
+   "module": "claude-liam-signal/python/hamid/pump_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_pump_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H9.2",
+   "room": "انجین پامپ",
+   "text": "چه ارزهایی با آن پامپ شده‌اند و چه ارزهایی در پامپش تأثیر داشته‌اند",
+   "module": "claude-liam-signal/python/hamid/pump_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_pump_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H9.3",
+   "room": "انجین پامپ",
+   "text": "تاپ گینرز پایش شود و روند رشد زیر نظر بماند",
+   "module": "claude-liam-signal/python/hamid/pump_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_pump_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H9.4",
+   "room": "انجین پامپ",
+   "text": "تا وقتی همان ارز در صدر تاپ گینرز است، گزارش تکراری فرستاده نشود",
+   "module": "claude-liam-signal/python/hamid/pump_desk.py",
+   "guard": "claude-liam-signal/python/hamid/test_pump_desk.py",
+   "status": "PLANNED",
+   "note": "در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H10.1",
+   "room": "تحویل",
+   "text": "روی عکس چارت نوشته شود «پنل ققنوس و محافظانش»",
+   "module": "claude-liam-signal/python/chart.py",
+   "guard": "claude-liam-signal/python/hamid/test_brand.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H10.2",
+   "room": "تحویل",
+   "text": "اطلاعات تکمیلیِ کمک‌کننده به حافظه از گذشته به پنل جدید داده شود",
+   "module": "claude-liam-signal/python/telegram.py",
+   "guard": "claude-liam-signal/python/hamid/test_brand.py",
+   "status": "PARTIAL",
+   "note": "ماژولش هست ولی کارِ این بند و محافظش کامل نشده — در همین دستور ۳ سپتامبر ساخته می‌شود؛ هنوز نوبتش نرسیده — وضعیت با هر کامیت به‌روز می‌شود"
+  },
+  {
+   "id": "H10.3",
+   "room": "تحویل",
+   "text": "چارت و داده لایو و بدون تأخیر — با قدرت لپ‌تاپ، نه گیت‌هاب و ورسل",
+   "module": "claude-liam-signal/python/hamid/shadow_service.py",
+   "guard": "claude-liam-signal/python/hamid/test_shadow_service.py",
+   "status": "PARTIAL",
+   "note": "سرویس همیشه‌روشن ساخته و آزمون شده و روی لپ‌تاپ با یک فرمان بالا می‌آید، ولی هنوز روی دستگاه حمید نصب نشده و در حالت سایه است (بدون تحویل تلگرام). ارتقا به تحویل زنده فقط بعد از دورهٔ سایه و تأیید صریح — قانون ۰۳"
+  },
+  {
+   "id": "H11.1",
+   "room": "روش",
+   "text": "همهٔ این‌ها به بهترین پرامپت کدنویسی تبدیل شود و پایتون هم چکش کند",
+   "module": "claude-liam-signal/python/hamid/spec_check.py",
+   "guard": "claude-liam-signal/python/hamid/test_spec_check.py",
+   "status": "DONE"
+  },
+  {
+   "id": "H11.2",
+   "room": "روش",
+   "text": "هر بند محافظ داشته باشد؛ ادعای بی‌محافظ چرخه را سرخ کند",
+   "module": "claude-liam-signal/python/hamid/spec_check.py",
+   "guard": "claude-liam-signal/python/hamid/test_spec_check.py",
+   "status": "DONE"
+  }
+ ]
+}

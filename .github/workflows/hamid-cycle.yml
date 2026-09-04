@@ -106,6 +106,8 @@ jobs:
           python3 -m hamid.test_candle_source
           python3 -m hamid.test_shadow_service
           python3 -m hamid.test_phoenix
+          python3 -m hamid.test_router
+          python3 -m hamid.test_spec_check
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
           python3 -m hamid.test_exec_feed
@@ -248,6 +250,12 @@ jobs:
       - name: کارنامهٔ شورای ققنوس
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.phoenix --score --write || true
+
+      # اتاق توزیع اطلاعات (دستور ۳ سپتامبر): اول دسته‌بندی جهان نمادها،
+      # بعد جدول مسیر رویداد→اتاق. تصمیم معاملاتی نمی‌گیرد.
+      - name: اتاق توزیع اطلاعات (E27)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.router --write || true
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
