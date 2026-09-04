@@ -43,6 +43,7 @@ jobs:
           python3 -m hamid.test_pump_radar
           python3 -m hamid.test_single_bot
           python3 -m hamid.test_pump_budget
+          python3 -m hamid.test_pump_desk
 
       - name: یک نوبت مرور پامپ
         env:
@@ -53,6 +54,9 @@ jobs:
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
           (cd claude-liam-signal/python && python3 -m hamid.pump_radar --min-pct "${MIN:-5}") || true
+          # میز پامپ (دستور ۳ سپتامبر): تاریخچه از روز اول، همراهان، و
+          # ضدتکرارِ گزارش تا وقتی همان ارز در صدر تاپ گینرز است.
+          (cd claude-liam-signal/python && python3 -m hamid.pump_desk --write) || true
 
           # ثبت روی main — ناشر مشترک (قانون ۱۴، ۲ سپتامبر). فهرستِ سفتِ
           # بکاپ/reapply دیگر لازم نیست: ناشر هر فایلِ همین اجرا را با معنای
