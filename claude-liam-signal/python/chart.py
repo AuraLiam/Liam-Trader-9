@@ -44,11 +44,56 @@ def _fmt(v):
     return f"{v:.8f}".rstrip("0").rstrip(".")
 
 
+BRAND_FA = "پنل ققنوس و محافظانش"    # دستور صریح حمید، ۳ سپتامبر
+BRAND = "#c9a227"                     # طلاییِ کم‌رنگ — کنار Trade_Osuli، نه به‌جایش
+_FA_FAMILY = "DejaVu Sans"            # تنها فونتِ موجودِ رانر که حروف فارسی دارد
+
+
+def fa(text):
+    """متن فارسی، آمادهٔ ترسیم.
+
+    matplotlib خودش نه شکل‌های چسبانِ عربی/فارسی می‌سازد و نه راست‌به‌چپ
+    می‌چیند؛ نتیجه‌اش «حروف جدا و برعکس» است. پس متن اول به شکل‌های
+    نمایشی (arabic_reshaper) و بعد به ترتیب دیداری (bidi) تبدیل می‌شود.
+    اگر هیچ‌کدام نصب نبود، همان متن خام برمی‌گردد — عکس بی‌امضا بهتر از
+    عکسِ خراب است، و آزمون همین حالت را هم می‌سنجد.
+    """
+    try:
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+        return get_display(arabic_reshaper.reshape(text))
+    except Exception:                              # noqa: BLE001
+        return text
+
+
 def _watermark(ax):
     """امضای کانال حمید — Trade_Osuli — پشت کندل‌ها، کم‌رنگ، بدون شلوغی."""
     ax.text(0.5, 0.5, "@Trade_Osuli", transform=ax.transAxes,
             fontsize=34, color=DIM, alpha=0.12, ha="center", va="center",
             rotation=15, fontweight="bold", zorder=0)
+
+
+def _brand(ax, phoenix=None):
+    """«پنل ققنوس و محافظانش» روی خودِ عکس — دستور صریح حمید.
+
+    بالا-راست می‌نشیند، دور از ورود/استاپ/تارگت (قانون ۰۴)، و اگر حکم
+    شورا همراه ستاپ آمده باشد یک خط زیرش می‌آید: عکسی که تنها فوروارد
+    می‌شود باید بگوید کدام پنل و با چه حکمی فرستادش.
+    """
+    # ✦ به‌جای 🔥: فونتِ رانر اموجی ندارد و matplotlib جایش مربعِ خالی
+    # می‌گذارد — امضای پنل با مربعِ خالی، امضا نیست.
+    ax.text(1.0, 1.085, "✦ " + fa(BRAND_FA), transform=ax.transAxes,
+            color=BRAND, fontsize=11.5, fontweight="bold",
+            va="bottom", ha="right", family=_FA_FAMILY, zorder=6)
+    if not phoenix:
+        return
+    label = phoenix.get("label")
+    score = phoenix.get("score")
+    if not label:
+        return
+    line = f"{label}" + (f" ({score:+.2f})" if isinstance(score, (int, float)) else "")
+    ax.text(1.0, 1.018, fa(line), transform=ax.transAxes, color=DIM,
+            fontsize=8.6, va="bottom", ha="right", family=_FA_FAMILY, zorder=6)
 
 
 def render(candles, s, path, bars=110):
@@ -181,6 +226,9 @@ def render(candles, s, path, bars=110):
         sub += "   ·   room " + ("clear" if r >= 99 else f"{r}x")
     ax.text(0, 1.018, sub, transform=ax.transAxes, color=DIM, fontsize=8.6,
             va="bottom", ha="left", family="monospace")
+
+    # امضای پنل، بالا-راست. عکس بی‌امضا نمی‌رود (دستور ۳ سپتامبر).
+    _brand(ax, s.get("phoenix"))
 
     ax.grid(color=GRID, linewidth=0.6, alpha=0.6)
     ax.set_axisbelow(True)
