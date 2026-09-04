@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.44 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.45 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -296,6 +296,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>🧠 دفتر مهارت <span class="dim" style="font-size:11px;font-weight:400" id="skMeta">تجربهٔ تکراری ضریب می‌سازد، نه ردیف — حافظه است نه دروازه</span></h3><div id="skillBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>📰 بورد خبر <span class="dim" style="font-size:11px;font-weight:400" id="nbMeta">تابلوی مشترک اتاق‌ها — خبر با تاریخ، رویداد آینده از یک روز قبل، درس واحدها</span></h3><div id="newsBoardBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
@@ -3880,6 +3881,35 @@ function renderNb(){
 }
 setInterval(nbFetch,180000);setTimeout(nbFetch,5800);
 (()=>{const f=DB.get("nb_cache");if(f&&!NBRD.data){NBRD.data=f;setTimeout(renderNb,850);}})();
+/* دفتر مهارت (۳ سپتامبر) — تجربهٔ تکراری ضریب می‌سازد نه ردیف. حافظه است،
+   نه دروازه: هیچ ضریبی آستانه‌ای را جابه‌جا نمی‌کند (قانون ۰۳). */
+const SKL={data:null};
+async function skFetch(){
+  try{
+    const r=await fetch("./signals/skills.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){SKL.data=j;DB.set("sk_cache",j);renderSk();}}
+  }catch(e){}
+}
+function renderSk(){
+  const el=$("#skillBox");if(!el)return;
+  const j=SKL.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین تابلوی مهارت با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const c=j.counts||{};
+  const meta=$("#skMeta");
+  if(meta)meta.textContent=`${c.skills||0} مهارت از ${c.units||0} واحد · ${c.repeated||0} تکرارشده · `+
+    `${c.stale||0} کهنه · `+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const rows=(j.top||[]).slice(0,10).map(r=>
+    `<div style="font-size:11px;padding:1px 0">${r.stale?"⚪":"🟢"}
+      <span style="font-variant-numeric:tabular-nums">×${r.times}</span>
+      <b>ضریب ${r.weight}</b> <span class="dim">${esc(r.unit)}${r.scope?" · "+esc(r.scope):""}</span>
+      — ${esc(r.skill).slice(0,110)}</div>`).join("");
+  el.innerHTML=(rows||`<span class="dim" style="font-size:11px">هنوز مهارتی ثبت نشده.</span>`)+
+    `<div class="dim" style="font-size:11px;margin-top:4px">${esc(j.weight_rule)}</div>`+
+    `<div class="dim" style="font-size:11px">${esc(j.boundary)}</div>`;
+}
+setInterval(skFetch,180000);setTimeout(skFetch,6000);
+(()=>{const f=DB.get("sk_cache");if(f&&!SKL.data){SKL.data=f;setTimeout(renderSk,900);}})();
 /* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
    کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
    یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی

@@ -113,6 +113,7 @@ jobs:
           python3 -m hamid.test_council
           python3 -m hamid.test_risk_desk
           python3 -m hamid.test_brand
+          python3 -m hamid.test_skill_ledger
           python3 -m hamid.test_spec_check
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
@@ -271,6 +272,11 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.council --score --write || true
 
+      # دفتر مهارت (دستور ۳ سپتامبر): تجربهٔ تکراری ضریب می‌سازد نه ردیف.
+      - name: دفتر مهارت (E21)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.skill_ledger --write || true
+
       - name: بورد خبر (E14)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.newsboard --write || true
@@ -378,7 +384,7 @@ jobs:
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
-                   experience-effect system-state loop-audit bubbles phoenix newsboard \
+                   experience-effect system-state loop-audit bubbles phoenix newsboard skills council \
                    telegram-feed fomo news-poll \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
