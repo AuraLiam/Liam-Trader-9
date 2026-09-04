@@ -101,6 +101,26 @@ def _swings(cd, left=2, right=2):
     return hi, lo
 
 
+def to_candles(rows):
+    """ردیفِ خامِ منبع → دیکشنریِ کندل.
+
+    `sources.klines` شکل بایننسی برمی‌گرداند: `[open_ms, o, h, l, c, v,
+    close_ms]` — **لیست**، نه دیکشنری. هر ماژول دیگرِ این مخزن همین
+    تبدیل را دارد؛ اجرای واقعیِ ۴ سپتامبر آن را نداشت و نتیجه‌اش این شد
+    که هر استراتژی روی `c["h"]` خطا داد، خطا بلعیده شد، و ۹ سریِ واقعی
+    با ~۴۹۰٬۰۰۰ کندل **صفر معامله** ساختند بی‌آنکه چیزی گزارش شود.
+    """
+    out = []
+    for k in rows or []:
+        if isinstance(k, dict):
+            out.append(k)
+            continue
+        out.append({"t": k[0], "o": float(k[1]), "h": float(k[2]),
+                    "l": float(k[3]), "c": float(k[4]),
+                    "v": float(k[5]) if len(k) > 5 else 0.0})
+    return out
+
+
 # ── دوازده استراتژی، هر کدام از میدانِ تخصص خودِ همان مراقب ─────────────
 # قرارداد: `f(cd)` که `cd` برشِ **بسته‌شدهٔ** تا همین لحظه است. خروجی
 # "long" / "short" / None. هیچ‌کدام حق دیدن کندل بعدی را ندارد.
@@ -361,6 +381,7 @@ def run_tf(sym, tf, cd, ctx=None, warmup=WARMUP, step=1, now_ms=None):
     """
     ctx = ctx or {}
     trades = []
+    errors, first_error = {}, {}
     for i in range(warmup, len(cd) - 2, step):
         past = cd[:i + 1]
         sub = {"dominance": (ctx.get("dominance") or [])[:i + 1] or None,
@@ -368,7 +389,13 @@ def run_tf(sym, tf, cd, ctx=None, warmup=WARMUP, step=1, now_ms=None):
         for gid, f in STRATEGIES.items():
             try:
                 d = f(past, sub)
-            except Exception:                        # noqa: BLE001
+            except Exception as e:                   # noqa: BLE001
+                # خطا ≠ «بی‌نظر». بلعیدنش همان چیزی بود که نیم‌میلیون کندل
+                # را به صفر معامله تبدیل کرد و هیچ‌کس نفهمید. شمرده و
+                # گزارش می‌شود؛ اجرا نمی‌ایستد ولی ساکت هم نمی‌ماند.
+                errors[gid] = errors.get(gid, 0) + 1
+                if gid not in first_error:
+                    first_error[gid] = f"{type(e).__name__}: {e}"
                 d = None
             if d not in ("long", "short"):
                 continue
@@ -382,6 +409,12 @@ def run_tf(sym, tf, cd, ctx=None, warmup=WARMUP, step=1, now_ms=None):
                     votes[other] = v
             trades.append({"sym": sym, "tf": tf, "i": i, "t": cd[i]["t"],
                            "by": gid, "dir": d, **res, "votes": votes})
+    if errors:
+        tot = sum(errors.values())
+        worst = max(errors, key=errors.get)
+        print(f"  ⚠ {sym} {tf}: {tot} خطای استراتژی روی {len(errors)} مراقب — "
+              f"نمونه [{worst}] {first_error.get(worst)}", flush=True)
+    run_tf.last_errors = dict(errors)
     return trades
 
 
@@ -528,9 +561,10 @@ def deep_klines(sym, tf, want, quiet=True):
     w = int(want)
     while w >= max(WARMUP + 50, 400):
         try:
-            cd = sources.perp_klines(sym, tf, w, quiet=quiet)
-            if cd and len(cd) >= WARMUP + 50:
-                return cd, {"asked": int(want), "got": len(cd), "ladder": tried}
+            rows = sources.perp_klines(sym, tf, w, quiet=quiet)
+            if rows and len(rows) >= WARMUP + 50:
+                return to_candles(rows), {"asked": int(want), "got": len(rows),
+                                          "ladder": tried}
         except Exception as e:                       # noqa: BLE001
             tried.append(f"{w}:{type(e).__name__}")
         else:

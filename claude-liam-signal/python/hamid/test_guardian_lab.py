@@ -97,6 +97,34 @@ check("و معامله‌ای که تمام عمرش در بخش مشترک اس
       safe_keys and all(ta[k] == tb.get(k) for k in safe_keys),
       f"{len(safe_keys)} معامله سنجیده شد")
 
+# ── ۲ب. شکل ردیف: خطا هرگز «بی‌نظر» خوانده نمی‌شود ─────────────────────
+#
+# اجرای واقعیِ ۴ سپتامبر ۹ سری و ~۴۹۰٬۰۰۰ کندل گرفت و **صفر معامله** داد،
+# بی‌هیچ پیامی: `sources.klines` لیست برمی‌گرداند نه دیکشنری، هر استراتژی
+# روی c["h"] خطا می‌داد، و run_tf خطا را «بی‌نظر» حساب می‌کرد.
+RAW = [[1_700_000_000_000 + i * 900_000, 100 + i, 101 + i, 99 + i, 100.5 + i, 5.0, 0]
+       for i in range(200)]
+conv = GL.to_candles(RAW)
+check("ردیف خام به شکل کندل تبدیل می‌شود",
+      conv[0] == {"t": RAW[0][0], "o": 100.0, "h": 101.0, "l": 99.0,
+                  "c": 100.5, "v": 5.0}, str(conv[0]))
+check("و دیکشنریِ از قبل درست، دست‌نخورده رد می‌شود",
+      GL.to_candles(conv)[0] is conv[0])
+check("ورودی خالی هم نمی‌ترکاند", GL.to_candles(None) == [])
+GL.run_tf("X", "15m", conv, step=1)
+check("سری تبدیل‌شده هیچ خطای استراتژی نمی‌دهد",
+      not getattr(GL.run_tf, "last_errors", {}),
+      str(getattr(GL.run_tf, "last_errors", {})))
+GL.run_tf("X", "15m", RAW, step=1)
+errs = getattr(GL.run_tf, "last_errors", {})
+check("ولی سری خام، خطا را **می‌شمارد** — نه سکوت",
+      errs and sum(errs.values()) > 0, str(errs))
+check("و خطا روی چند مراقب دیده می‌شود، نه یکی",
+      len(errs) >= 3, str(len(errs)))
+lab_src = (HERE / "guardian_lab.py").read_text(encoding="utf-8")
+check("اجرای واقعی حتماً از مسیر تبدیل رد می‌شود",
+      "return to_candles(rows)" in lab_src)
+
 # ── ۳. شبیه‌سازی: خروج با دلیل ─────────────────────────────────────────
 up = [{"t": i * 900_000, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100.5 + i,
        "v": 1.0} for i in range(120)]
