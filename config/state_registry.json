@@ -768,6 +768,38 @@
    "kind": "live",
    "optional": true,
    "cadence_note": "سوار زنجیرهٔ سیگنال، بلافاصله بعد از hamid.dominance — همان سقف ۴۵ دقیقهٔ dominance.json که از سنِ مشاهده‌شدهٔ همان زنجیره آمد"
+  },
+  "feed-health.json": {
+   "layer": "L1_market",
+   "owner": "E02",
+   "producer": "hamid/feed_watch.py",
+   "max_age_min": 20,
+   "consumer": "panel+alert",
+   "critical": true,
+   "cadence_note": "سرویس محلی هر ۵ دقیقه؛ سقف ۲۰ با حاشیهٔ دو نوبتِ ازدست‌رفته",
+   "kind": "live",
+   "optional": true
+  },
+  "liam9d.json": {
+   "layer": "L7_health",
+   "owner": "E23",
+   "producer": "hamid/liam9d.py",
+   "max_age_min": 15,
+   "consumer": "panel",
+   "critical": false,
+   "cadence_note": "تابلوی سرویس محلی هر تیک (پیش‌فرض ۶۰ث) نوشته می‌شود؛ سقف ۱۵د یعنی «سرویس روی لپ‌تاپ روشن است یا نه». غیرحیاتی چون تا وقتی Actions پشتیبان است، خاموشی‌اش سامانه را نمی‌خواباند",
+   "kind": "live",
+   "optional": true
+  },
+  "liam9d-log.jsonl": {
+   "layer": "L7_health",
+   "owner": "E23",
+   "producer": "hamid/liam9d.py",
+   "consumer": "diagnostics",
+   "critical": false,
+   "cadence_note": "دفتر اجرای کارها، هرس‌شونده — تازگی بی‌معناست",
+   "kind": "ledger",
+   "optional": true
   }
  }
 }

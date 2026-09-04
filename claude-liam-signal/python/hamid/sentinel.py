@@ -72,7 +72,13 @@ SECRET_PAT = [
     (re.compile(r"(?i)(api[_-]?key|secret|token)\s*[=:]\s*['\"][A-Za-z0-9_\-]{24,}"),
      "کلید/توکن هاردکدشده"),
 ]
-SKIP_DIRS = (".git", "node_modules", "backup", "cycles", "__pycache__")
+SKIP_DIRS = (".git", "node_modules", "backup", "cycles", "__pycache__",
+             # محیط پایتونِ محلی و هر پوشهٔ وابستگیِ شخص ثالث. بدون
+             # این، اولین باری که سرویس محلی `.venv` می‌سازد، پاسبان
+             # کدِ Pillow را «کد زندهٔ ما» می‌شمارد و چرخه سرخ می‌شود
+             # — اندازه‌گیری‌شده روی همین ماشین، ۴ سپتامبر.
+             ".venv", "venv", "env", "site-packages", ".tox",
+             ".mypy_cache", ".pytest_cache", ".ruff_cache")
 SCAN_EXT = (".py", ".js", ".mjs", ".html", ".yml", ".yaml", ".json", ".md")
 
 
