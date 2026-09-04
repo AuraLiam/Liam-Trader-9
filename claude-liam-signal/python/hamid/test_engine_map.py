@@ -41,6 +41,37 @@ def run():
           ids == [f"E{i:02d}" for i in range(len(ids))], str(ids))
     check("و دست‌کم همان ۲۷ انجینِ پایه سر جایشان‌اند",
           len(ids) >= 27, str(len(ids)))
+
+    # ── کلاسِ عیب: انجینِ تازه باید در **همهٔ** دفترها ثبت شود ──────────
+    #
+    # E27 دو بار پشت سر هم زنجیرهٔ سیگنال را خواباند: بار اول چون در نقشه
+    # نبود، بار دوم چون در برنامهٔ درسی نبود — هر بار یک دفترِ دیگر، و هر
+    # بار یک اجرای سرخ تا معلوم شود کدام. این بررسی همهٔ دفترها را با هم
+    # می‌گیرد، پس انجینِ بعدی **یک** پیام می‌گیرد که هر جای کم را نام
+    # می‌برد، نه چند دورِ قرمز پیاپی.
+    _regs = {}
+    try:
+        from hamid.curriculum import TOPICS as _topics
+        _regs["برنامهٔ درسی (curriculum.TOPICS)"] = set(_topics)
+    except Exception as _e:                          # noqa: BLE001
+        _regs["برنامهٔ درسی (curriculum.TOPICS)"] = None
+    try:
+        from hamid.scorecard import build as _sc
+        _regs["کارنامه (scorecard.build)"] = {c["id"] for c in _sc()["cards"]}
+    except Exception:                                # noqa: BLE001
+        _regs["کارنامه (scorecard.build)"] = None
+    _regs["جملهٔ پایش (engine_map.WATCHES)"] = set(M.WATCHES)
+
+    _gaps = []
+    for _name, _have in _regs.items():
+        if _have is None:
+            _gaps.append(f"{_name}: خوانده نشد")
+            continue
+        _missing = [e for e in ids if e not in _have]
+        if _missing:
+            _gaps.append(f"{_name}: {_missing}")
+    check("هر انجینِ نقشه در همهٔ دفترهای لازم ردیف دارد "
+          "(درسی · کارنامه · جملهٔ پایش)", not _gaps, " · ".join(_gaps))
     check("ترتیب مرتب است (E00..E26)", ids == sorted(ids))
     check("هیچ شناسه‌ای تکراری نیست", len(set(ids)) == len(ids))
     check("همهٔ انجین‌ها جملهٔ «چه پایش می‌کند» دارند",

@@ -81,6 +81,8 @@ TOPICS = {
     "E24": ("ui", "contract", "qa"),
     "E25": ("delivery", "messaging", "idempotency"),
     "E26": ("management", "psychology", "economics", "leadership"),
+    # E27 — اتاق توزیع اطلاعات (۳ سپتامبر): دسته‌بندی ارز و مسیر رویداد→اتاق.
+    "E27": ("taxonomy", "classification", "routing", "market-structure"),
 }
 
 
