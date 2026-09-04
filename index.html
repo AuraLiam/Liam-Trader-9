@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.43 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.44 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -296,6 +296,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>📰 بورد خبر <span class="dim" style="font-size:11px;font-weight:400" id="nbMeta">تابلوی مشترک اتاق‌ها — خبر با تاریخ، رویداد آینده از یک روز قبل، درس واحدها</span></h3><div id="newsBoardBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
@@ -3838,6 +3839,47 @@ function renderPhx(){
 }
 setInterval(phxFetch,180000);setTimeout(phxFetch,5600);
 (()=>{const f=DB.get("phx_cache");if(f&&!PHX.data){PHX.data=f;setTimeout(renderPhx,800);}})();
+/* بورد خبر (۳ سپتامبر) — تابلوی مشترکِ همهٔ اتاق‌ها. خبر با تاریخِ خودش،
+   نظر افراد مهم، رویداد آینده فقط از یک روز قبل، و درسِ هر واحد با ضریبِ
+   تکرار. قانون ۱۵: دیدگاه است، نه دروازه — هیچ عددی از این‌جا وارد تصمیم
+   نمی‌شود. */
+const NBRD={data:null};
+async function nbFetch(){
+  try{
+    const r=await fetch("./signals/newsboard.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){NBRD.data=j;DB.set("nb_cache",j);renderNb();}}
+  }catch(e){}
+}
+function renderNb(){
+  const el=$("#newsBoardBox");if(!el)return;
+  const j=NBRD.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین بورد با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const c=j.counts||{};
+  const meta=$("#nbMeta");
+  if(meta)meta.textContent=`${c.now||0} خبر تاریخ‌دار · ${c.voices||0} نظر شخصیت · `+
+    `${c.upcoming||0} رویداد تا ${j.post_ahead_h||24} ساعت · ${c.lessons||0} درس واحدها · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const coinTag=cs=>(cs&&cs.length)?` <span class="dim">${cs.map(esc).join("،")}</span>`:"";
+  const news=(j.now||[]).slice(0,8).map(r=>
+    `<div style="font-size:11px;padding:1px 0">${r.fresh?"🟢":"⚪"} <span class="dim">[${esc(r.cat)}]</span> ${esc(r.title)}${coinTag(r.coins)}
+      <span class="dim">· ${esc(r.when)}</span></div>`).join("");
+  const voices=(j.voices||[]).slice(0,4).map(r=>
+    `<div style="font-size:11px;padding:1px 0">🗣 <b>${esc(r.voice)}</b> — ${esc(r.title)}${coinTag(r.coins)}</div>`).join("");
+  const up=(j.upcoming||[]).slice(0,6).map(r=>
+    `<div style="font-size:11px;padding:1px 0">⏳ <span style="font-variant-numeric:tabular-nums">${r.in_hours}س</span>
+      <span class="dim">${esc(r.scope)}</span> ${esc(r.title)}${coinTag(r.coins)} <span class="dim">· ${esc(r.when)}</span></div>`).join("");
+  const les=(j.lessons||[]).slice(0,6).map(e=>
+    `<div style="font-size:11px;padding:1px 0">📌 <b>${esc(e.unit)}</b> <span class="dim">×${e.times} · ضریب ${e.weight}</span> — ${esc(e.lesson)}${coinTag(e.coins)}</div>`).join("");
+  const und=(c.undated||0)?`<div class="dim" style="font-size:11px;margin-top:4px">${c.undated} خبر بی‌تاریخ جدا نگه داشته شد — کنار خبر امروز چیده نمی‌شود.</div>`:"";
+  const sec=(t,body)=>body?`<div style="margin-top:6px"><div class="dim" style="font-size:11px">${t}</div>${body}</div>`:"";
+  el.innerHTML=sec("خبر تازه",news)+sec("نظر افراد مهم",voices)+
+    sec(`رویداد آینده (از ${j.post_ahead_h||24} ساعت قبل)`,up)+
+    sec("درس واحدها",les)+und+
+    `<div class="dim" style="font-size:11px;margin-top:4px">${esc(j.boundary)}</div>`;
+}
+setInterval(nbFetch,180000);setTimeout(nbFetch,5800);
+(()=>{const f=DB.get("nb_cache");if(f&&!NBRD.data){NBRD.data=f;setTimeout(renderNb,850);}})();
 /* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
    کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
    یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی

@@ -109,6 +109,7 @@ jobs:
           python3 -m hamid.test_router
           python3 -m hamid.test_lines_wf
           python3 -m hamid.test_structure_room
+          python3 -m hamid.test_newsboard
           python3 -m hamid.test_spec_check
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
@@ -259,6 +260,12 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.router --write || true
 
+      # بورد خبر (دستور ۳ سپتامبر): تابلوی مشترکِ همهٔ اتاق‌ها. دیدگاه است،
+      # نه دروازه — قانون ۱۵.
+      - name: بورد خبر (E14)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.newsboard --write || true
+
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
 
@@ -362,7 +369,7 @@ jobs:
           for f in hamid-latest ob-radar classify improve dominance \
                    pump-radar pump-analysis btc-patterns news telegram-log latest \
                    overseer rewards reading loss-analysis experience scalp \
-                   experience-effect system-state loop-audit bubbles phoenix \
+                   experience-effect system-state loop-audit bubbles phoenix newsboard \
                    telegram-feed fomo news-poll \
                    strategy-params; do
             cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
