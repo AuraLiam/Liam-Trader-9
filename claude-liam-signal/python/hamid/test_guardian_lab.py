@@ -125,6 +125,36 @@ lab_src = (HERE / "guardian_lab.py").read_text(encoding="utf-8")
 check("اجرای واقعی حتماً از مسیر تبدیل رد می‌شود",
       "return to_candles(rows)" in lab_src)
 
+# ── ۲ج. پنجرهٔ دید: سریع‌تر، بدون عوض‌شدنِ تصمیم ───────────────────────
+#
+# اجرای واقعی بعد از ۸۰ دقیقه لغو شد چون هزینه درجه‌دو بود: `_s_aries`
+# با `_swings(cd)` هر بار کلِ گذشته را می‌گشت. پنجرهٔ ثابت آن را خطی
+# می‌کند — ولی فقط وقتی مجاز است که **تصمیمی را عوض نکند**، و آن
+# اندازه‌گیری می‌شود نه فرض.
+_w_cd = GL._demo_series(n=2500, seed=9)
+
+
+def _decisions(window):
+    _old = GL.WINDOW
+    GL.WINDOW = window
+    try:
+        return {(t["i"], t["by"], t["dir"]) for t in GL.run_tf("W", "15m", _w_cd, step=1)}
+    finally:
+        GL.WINDOW = _old
+
+
+_bounded, _unbounded = _decisions(GL.WINDOW), _decisions(10 ** 9)
+check("پنجرهٔ دید هیچ تصمیمی را عوض نمی‌کند (سنجیده، نه فرض‌شده)",
+      _bounded == _unbounded,
+      f"{len(_bounded ^ _unbounded)} اختلاف از {len(_unbounded)}")
+check("و آزمون توخالی نیست — تصمیم واقعاً وجود دارد", len(_unbounded) > 200,
+      str(len(_unbounded)))
+check("پنجره از عمیق‌ترین نگاهِ واقعیِ استراتژی‌ها (۱۲۰) بزرگ‌تر است",
+      GL.WINDOW >= 3 * 120, str(GL.WINDOW))
+_src = (HERE / "guardian_lab.py").read_text(encoding="utf-8")
+check("و اجرا واقعاً از پنجره استفاده می‌کند، نه از کلِ گذشته",
+      "past = cd[lo:i + 1]" in _src and "cd[:i + 1]" not in _src.split("def run_tf")[1])
+
 # ── ۳. شبیه‌سازی: خروج با دلیل ─────────────────────────────────────────
 up = [{"t": i * 900_000, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100.5 + i,
        "v": 1.0} for i in range(120)]
