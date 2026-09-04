@@ -264,5 +264,67 @@ check("guardian-lab.json ردیف قرارداد دارد (قانون ۱۳)",
       and reg["guardian-lab.json"]["producer"] == "hamid/guardian_lab.py",
       str(reg.get("guardian-lab.json")))
 
+# ── ۹. بودجه وسطِ سری می‌برد، و تکه‌ها یک نویسنده دارند ────────────────
+#
+# عیبِ اندازه‌گیری‌شدهٔ ۴ سپتامبر: بودجه فقط **بین** سری‌ها سنجیده می‌شد،
+# پس سریِ آخر تا آخر می‌رفت، از سقف ۸۰ دقیقهٔ job رد می‌شد، job کشته
+# می‌شد و هیچ چیز منتشر نمی‌شد. ۸۰ دقیقه محاسبه، خروجی صفر.
+import time                                          # noqa: E402
+
+_bcd = GL._demo_series(n=400, seed=3)
+full = GL.run_tf("B", "15m", _bcd, step=1)
+check("بی‌بودجه، کلِ سری بازپخش می‌شود", GL.run_tf.last_cut is None and full)
+
+cut_now = GL.run_tf("B", "15m", _bcd, step=1, deadline=time.time() - 1)
+c = GL.run_tf.last_cut
+check("بودجهٔ گذشته، بازپخش را همان کندلِ اول می‌برد", cut_now == [] and c)
+check("و بریدن ثبت می‌شود — نه سکوت", c and c["covered_pct"] == 0.0
+      and c["at_bar"] == GL.WARMUP, str(c))
+
+half = GL.run_tf("B", "15m", _bcd, step=1, deadline=time.time() + 10_000)
+check("مهلتِ دور، همان نتیجهٔ بی‌بودجه را می‌دهد (بریدن اثر جانبی ندارد)",
+      [t["i"] for t in half] == [t["i"] for t in full] and GL.run_tf.last_cut is None)
+
+# اثبات منفی که این آزمون واقعاً چیزی را نگه می‌دارد: اگر `deadline` را
+# نادیده بگیریم، بررسی بالا می‌افتد — امتحان شد و افتاد.
+check("run_real تایم‌فریم را فیلتر می‌کند (پایهٔ اجرای موازی)",
+      "tfs is None or t in tfs" in (HERE / "guardian_lab.py").read_text(encoding="utf-8"))
+
+with tempfile.TemporaryDirectory() as td:
+    d = Path(td)
+    sp_a = {"per_tf": {"1h": {"series": 1, "bars_median": 100, "years_median": 2.0}},
+            "skipped": [], "asked_years": 2.0, "elapsed_s": 30}
+    sp_b = {"per_tf": {"5m": {"series": 1, "bars_median": 900, "years_median": 1.0}},
+            "skipped": [{"sym": "X", "tf": "5m", "why": "بودجه"}],
+            "asked_years": 2.0, "elapsed_s": 70}
+    a = [dict(t, tf="1h") for t in trades[:4]]
+    b = [dict(t, tf="5m") for t in trades[4:9]]
+    GL.write_shard(d / "a.json", a, sp_a)
+    GL.write_shard(d / "b.json", b, sp_b)
+    got, span = GL.read_shards([d / "a.json", d / "b.json"])
+    check("تکه‌ها کنار هم می‌نشینند بی‌آنکه چیزی گم شود", len(got) == len(a) + len(b))
+    check("پوشش هر تایم از تکهٔ خودش می‌آید",
+          span["per_tf"]["1h"]["years_median"] == 2.0
+          and span["per_tf"]["5m"]["years_median"] == 1.0)
+    check("آنچه نرسید هم از تکه‌ها جمع می‌شود", len(span["skipped"]) == 1)
+    check("زمان، بیشینهٔ تکه‌هاست نه جمعشان (موازی بودند)", span["elapsed_s"] == 70)
+
+    # همان تکه دو بار: یکتاسازی روی **هویت** معامله، نه متن خط.
+    dup, _ = GL.read_shards([d / "a.json", d / "a.json"])
+    check("تکهٔ تکراری ردیف اضافه نمی‌سازد (درس ۲۴ اوت: CI با تکرار دروغ می‌شود)",
+          len(dup) == len(a))
+
+    # تکه، دفتر و تابلوی تولید را دست نمی‌زند.
+    before = (GL.OUT.exists(), GL.TRADES.exists())
+    GL.write_shard(d / "c.json", a, sp_a)
+    check("نوشتنِ تکه به تابلو/دفتر تولید دست نمی‌زند",
+          (GL.OUT.exists(), GL.TRADES.exists()) == before)
+
+src_wf = (HERE.parents[2] / ".github" / "workflows" / "guardian-lab.yml").read_text(
+    encoding="utf-8")
+check("ورک‌فلو سه تایم را موازی می‌برد", "matrix:" in src_wf and "--tf=" in src_wf)
+check("و فقط یک job منتشر می‌کند (قانون ۰۵: یک نویسنده)",
+      src_wf.count("scripts/publish.sh") == 1 and "--from-shards" in src_wf)
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

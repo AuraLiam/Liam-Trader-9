@@ -385,16 +385,29 @@ def simulate(cd, i, direction, tf, rr=RR, stop_atr=STOP_ATR,
 
 
 # ── اجرای رو-به-جلو روی یک تایم‌فریم ────────────────────────────────────
-def run_tf(sym, tf, cd, ctx=None, warmup=WARMUP, step=1, now_ms=None):
+def run_tf(sym, tf, cd, ctx=None, warmup=WARMUP, step=1, now_ms=None, deadline=None):
     """هر کندل، هر مراقب پیشنهاد می‌دهد؛ همه پیش‌بینی می‌کنند.
 
     برشِ `cd[:i+1]` تنها چیزی است که به استراتژی می‌رسد — پس نشتِ آینده
     ساختاراً ناممکن است، نه «مراقبیم که نشود».
+
+    `deadline` (ثانیهٔ مطلقِ `time.time()`) بازپخش را **وسطِ سری** قطع
+    می‌کند و می‌گوید تا کجا رفت. بدون این، بودجه فقط بین سری‌ها سنجیده
+    می‌شد: سریِ آخر که شروع می‌شد تا آخر می‌رفت، از سقف job رد می‌شد،
+    job کشته می‌شد و **هیچ نتیجه‌ای ذخیره نمی‌شد** — ۸۰ دقیقه محاسبه با
+    خروجیِ صفر. نتیجهٔ ناقصِ اعلام‌شده از نتیجهٔ نداشته بهتر است.
     """
     ctx = ctx or {}
     trades = []
     errors, first_error = {}, {}
-    for i in range(warmup, len(cd) - 2, step):
+    run_tf.last_cut = None
+    bars = range(warmup, len(cd) - 2, step)
+    total = len(bars)
+    for done, i in enumerate(bars):
+        if deadline is not None and time.time() > deadline:
+            run_tf.last_cut = {"at_bar": i, "of_bars": len(cd), "replayed": done,
+                               "covered_pct": round(100 * done / max(1, total), 1)}
+            break
         lo = max(0, i + 1 - WINDOW)                  # پنجرهٔ ثابت — بالا را ببین
         past = cd[lo:i + 1]
         sub = {"dominance": (ctx.get("dominance") or [])[lo:i + 1] or None,
@@ -586,7 +599,7 @@ def deep_klines(sym, tf, want, quiet=True):
     return None, {"asked": int(want), "got": 0, "ladder": tried}
 
 
-def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None):
+def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None, tfs=None):
     """اجرای واقعی روی کندل بازار — «۲ تا ۳ سال عقب» (بند H7.3).
 
     هر تایم‌فریم سریِ خودش را از منبع می‌گیرد (نه بازنمونه‌گیریِ ۵د)، چون
@@ -599,8 +612,10 @@ def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None):
     می‌شوند و ۵د هرچه وقت ماند برمی‌دارد — با ثبتِ صریحِ آن‌چه نرسید.
     """
     per_day = {"1h": 24, "15m": 96, "5m": 288}
-    order = ("1h", "15m", "5m")                      # ارزان‌ترین اول
+    order = tuple(t for t in ("1h", "15m", "5m")     # ارزان‌ترین اول
+                  if tfs is None or t in tfs)
     t0 = time.time()
+    deadline = (t0 + budget_s) if budget_s is not None else None
     trades, got, skipped = [], {}, []
     for tf in order:
         want = int(years * 365 * per_day[tf])
@@ -620,7 +635,13 @@ def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None):
             print(f"  {sym} {tf}: {len(cd):,} کندل ≈ {yrs} سال "
                   f"(خواسته {info['asked']:,}) · {int(time.time() - t0)}s", flush=True)
             got.setdefault(tf, []).append(len(cd))
-            trades += run_tf(sym, tf, cd, step=step)
+            trades += run_tf(sym, tf, cd, step=step, deadline=deadline)
+            cut = getattr(run_tf, "last_cut", None)
+            if cut:
+                why = (f"بودجه وسطِ بازپخش تمام شد — {cut['covered_pct']}٪ سری "
+                       f"({cut['replayed']:,} کندل) بازپخش شد")
+                skipped.append({"sym": sym, "tf": tf, "why": why, "cut": cut})
+                print(f"  ⏹ {sym} {tf}: {why}", flush=True)
     span = {tf: {"series": len(v), "bars_median": int(statistics.median(v)),
                  "years_median": round(statistics.median(v) / (365 * per_day[tf]), 2)}
             for tf, v in got.items()}
@@ -628,34 +649,108 @@ def run_real(syms, years=2.0, step=1, quiet=True, budget_s=None):
                     "asked_years": years, "elapsed_s": int(time.time() - t0)}
 
 
+def _arg(argv, name, cast=str, default=None):
+    for a in argv:
+        if a.startswith(name):
+            return cast(a.split("=", 1)[1])
+    return default
+
+
+# ── تکه‌ها: سه تایم‌فریم موازی، ولی یک نویسنده ─────────────────────────
+#
+# سریِ ۵دِ دو ساله ~۲۱۰ هزار کندل است و کنارِ دو تایمِ دیگر در یک job
+# نمی‌گنجد (اندازه‌گیری ۴ سپتامبر: اجرای یک‌جا از سقف ۸۰ دقیقه رد شد).
+# راهش موازی‌کردن است — ولی سه job که همه روی `signals/guardian-lab.json`
+# بنویسند، همان بی‌نظمی‌ای است که قانون ۰۵ («یک نویسنده برای هر دامنهٔ
+# وضعیت») و قانون ضد-merge منع می‌کنند.
+#
+# پس هر job فقط یک **تکهٔ حمل‌ونقلی** می‌سازد (نه دفتر، نه تابلو) و یک
+# job پایانی همه را کنار هم می‌گذارد، یک بار نمره می‌دهد و یک بار
+# می‌نویسد. یکتاسازی روی **هویتِ معامله** است نه متنِ خط — همان درسِ
+# ۲۴ اوت که CI را با ردیفِ تکراری ساختگی تنگ کرده بود.
+def write_shard(path, trades, span):
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"trades": trades, "span": span},
+                            ensure_ascii=False), encoding="utf-8")
+    return p
+
+
+def trade_key(t):
+    return (t.get("sym"), t.get("tf"), t.get("by"), t.get("t"), t.get("i"))
+
+
+def read_shards(paths):
+    trades, per_tf, skipped, elapsed, asked = [], {}, [], 0, None
+    seen = set()
+    for p in paths:
+        d = json.loads(Path(p).read_text(encoding="utf-8"))
+        for t in d.get("trades") or []:
+            k = trade_key(t)
+            if k in seen:
+                continue
+            seen.add(k)
+            trades.append(t)
+        sp = d.get("span") or {}
+        per_tf.update(sp.get("per_tf") or {})
+        skipped += sp.get("skipped") or []
+        elapsed = max(elapsed, int(sp.get("elapsed_s") or 0))
+        asked = sp.get("asked_years", asked)
+    return trades, {"per_tf": per_tf, "skipped": skipped,
+                    "asked_years": asked, "elapsed_s": elapsed,
+                    "shards": [str(p) for p in paths]}
+
+
+def _report(res, span, syms, yrs):
+    print(f"آزمایشگاه (واقعی) — {res['trades']} معامله روی {len(syms)} نماد، {yrs} سال")
+    for tf, s in res["by_tf"].items():
+        cov = (span.get("per_tf") or {}).get(tf) or {}
+        print(f"  {tf}: n={s['n']} · برد {s['win_pct']}٪ · خالص {s['mean_net']}R "
+              f"· CI {s['ci95_net']} · پوشش {cov.get('years_median', '?')} سال "
+              f"· {s['verdict']}")
+    for sk in span.get("skipped") or []:
+        print(f"  ⚠ {sk['sym']} {sk['tf']}: {sk['why']}")
+    print(f"  زمان: {span.get('elapsed_s')}s · خواسته {span.get('asked_years')} سال")
+
+
 def main(argv=None):
     argv = list(argv if argv is not None else sys.argv[1:])
+    if "--from-shards" in argv:
+        paths = argv[argv.index("--from-shards") + 1:]
+        trades, span = read_shards(paths)
+        syms = sorted({t.get("sym") for t in trades if t.get("sym")})
+        res = score(trades)
+        append_trades(trades)
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(snapshot(res, syms, span), ensure_ascii=False,
+                                  indent=1) + "\n", encoding="utf-8")
+        _report(res, span, syms, span.get("asked_years"))
+        return 0
     if "--real" in argv:
         syms = [a for a in argv if a.endswith("USDT")] or ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
         yrs = 2.0
         for a in argv:
             if a.startswith("--years="):
                 yrs = float(a.split("=", 1)[1])
-        budget = None
-        for a in argv:
-            if a.startswith("--budget-min="):
-                budget = float(a.split("=", 1)[1]) * 60
-        trades, span = run_real(syms, yrs, step=1, budget_s=budget)
+        budget = _arg(argv, "--budget-min=", float)
+        budget = budget * 60 if budget is not None else None
+        tf_only = _arg(argv, "--tf=")
+        tfs = [tf_only] if tf_only else None
+        shard = _arg(argv, "--shard-out=")
+        trades, span = run_real(syms, yrs, step=1, budget_s=budget, tfs=tfs)
+        if shard:
+            # تکه فقط حمل‌ونقل است: نه دفتر می‌نویسد نه تابلو. نوشتنِ
+            # وضعیت کارِ job پایانی است (قانون ۰۵).
+            p = write_shard(shard, trades, span)
+            print(f"تکه نوشته شد: {p} — {len(trades)} معامله")
+            _report(score(trades), span, syms, yrs)
+            return 0
         res = score(trades)
-        snap = snapshot(res, syms, span)
         append_trades(trades)
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n",
-                       encoding="utf-8")
-        print(f"آزمایشگاه (واقعی) — {res['trades']} معامله روی {len(syms)} نماد، {yrs} سال")
-        for tf, s in res["by_tf"].items():
-            cov = (span.get("per_tf") or {}).get(tf) or {}
-            print(f"  {tf}: n={s['n']} · برد {s['win_pct']}٪ · خالص {s['mean_net']}R "
-                  f"· CI {s['ci95_net']} · پوشش {cov.get('years_median', '?')} سال "
-                  f"· {s['verdict']}")
-        for sk in span.get("skipped") or []:
-            print(f"  ⚠ {sk['sym']} {sk['tf']}: {sk['why']}")
-        print(f"  زمان: {span.get('elapsed_s')}s · خواسته {span.get('asked_years')} سال")
+        OUT.write_text(json.dumps(snapshot(res, syms, span), ensure_ascii=False,
+                                  indent=1) + "\n", encoding="utf-8")
+        _report(res, span, syms, yrs)
         return 0
     base = _demo_series(n=3600)
     series = {"5m": base, "15m": resample(base, 3), "1h": resample(base, 12)}

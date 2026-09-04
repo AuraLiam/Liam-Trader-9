@@ -1,6 +1,11 @@
 # آزمایشگاه مراقبان (دستور حمید، ۳ سپتامبر) — بازپخش تاریخیِ ۱۲ استراتژی
 # روی سه تایم‌فریم، بدون خبر از فردا. سنگین است، پس هفتگی و دستی؛ زنجیرهٔ
 # سیگنال را قحطی‌زده نمی‌کند (قانون ۰۷).
+#
+# چرا موازی: سریِ ۵دِ دو ساله ~۲۱۰ هزار کندل است. اجرای هر سه تایم در یک
+# job (۴ سپتامبر) از سقف ۸۰ دقیقه رد شد و job کشته شد — یعنی ۸۰ دقیقه
+# محاسبه با خروجیِ صفر. حالا هر تایم job خودش را دارد و بودجهٔ خودش را،
+# ولی **فقط یک job می‌نویسد** (قانون ۰۵: یک نویسنده برای هر دامنهٔ وضعیت).
 name: Guardian lab
 
 on:
@@ -23,9 +28,13 @@ permissions:
   contents: write
 
 jobs:
-  lab:
+  replay:
+    strategy:
+      fail-fast: false          # ۵د که نرسد، ۱س و ۱۵د نباید هدر بروند
+      matrix:
+        tf: ["1h", "15m", "5m"]
     runs-on: ubuntu-latest
-    timeout-minutes: 80
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,15 +51,52 @@ jobs:
           python3 -m hamid.test_guardian_lab
           python3 -m hamid.test_spec_check
 
-      - name: بازپخش تاریخی
+      - name: بازپخش ${{ matrix.tf }}
         env:
           LIAM9_CANDLES: perp
         run: |
           SYMS=$(jq -r '.inputs.symbols // empty' "$GITHUB_EVENT_PATH")
           YRS=$(jq -r '.inputs.years // empty' "$GITHUB_EVENT_PATH")
+          mkdir -p shards
+          (cd claude-liam-signal/python && \
+            python3 -m hamid.guardian_lab --real --years="${YRS:-2}" \
+              --tf=${{ matrix.tf }} --budget-min=70 \
+              --shard-out="$GITHUB_WORKSPACE/shards/${{ matrix.tf }}.json" \
+              ${SYMS:-BTCUSDT ETHUSDT SOLUSDT})
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.tf }}
+          path: shards/${{ matrix.tf }}.json
+          retention-days: 7
+
+  publish:
+    needs: replay
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: محیط مشترک
+        run: pip -q install -r requirements-ci.txt
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          path: shards
+          merge-multiple: true
+
+      # تکهٔ نیامده (تایمی که نرسید) اجرا را نمی‌خواباند — همان تایم‌هایی
+      # که رسیدند منتشر می‌شوند و نرسیدن، صریح روی تابلو گفته می‌شود.
+      - name: کنار هم گذاشتن و انتشار
+        run: |
           git config user.name "Claude"
           git config user.email "noreply@anthropic.com"
+          ls -l shards || true
           (cd claude-liam-signal/python && \
-            python3 -m hamid.guardian_lab --real --years="${YRS:-2}" --budget-min=55 \
-              ${SYMS:-BTCUSDT ETHUSDT SOLUSDT}) || true
+            python3 -m hamid.guardian_lab --from-shards \
+              $(ls "$GITHUB_WORKSPACE"/shards/*.json))
           scripts/publish.sh -m "آزمایشگاه مراقبان $(date -u '+%Y-%m-%d %H:%M UTC')" signals brain
