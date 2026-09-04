@@ -38,6 +38,8 @@ jobs:
         run: pip -q install pyyaml
 
       - name: خودآزمایی حلقهٔ دانش
+        env:
+          LIAM9_SANDBOX: "1"
         working-directory: claude-liam-signal/python
         run: |
           python3 -m hamid.test_learning

@@ -34,14 +34,57 @@ PATTERNS = BRAIN / "patterns"
 EVENTS = BRAIN / "events"
 ROOMS = BRAIN / "rooms"
 
+# ── حالت شنی: پاسبان‌ها حق ندارند دفترِ تولید را بنویسند (۴ سپتامبر) ────
+#
+# عیبِ اندازه‌گیری‌شده: اجرای کاملِ دروازه، چهار فایلِ runtime را عوض کرد —
+# `signals/viability-gate.json` یک ردیفِ ETHUSDT ساختگی گرفت و
+# `brain/rooms/paper/log.jsonl` یک خط. `test_loop_audit` مسیرهای
+# `paper.OPEN/CLOSED` را به پوشهٔ موقت می‌برد، ولی `_append_gatelog` و
+# `brain.room_log` مسیرِ ثابتِ خودشان را داشتند و از دستِ آن تغییرِ مسیر
+# در می‌رفتند. بعد ناشرِ زنجیره همان آلودگی را روی main می‌نشاند.
+#
+# کلاسِ عیب این است: «آزمون، دادهٔ تولید را آلوده می‌کند». درمانش یک
+# سوییچ مرکزی است نه وصلهٔ هر آزمون: هر گام دروازه با `LIAM9_SANDBOX=1`
+# اجرا می‌شود و در آن حالت هیچ نویسنده‌ای به دیسکِ تولید دست نمی‌زند.
+SANDBOX = os.environ.get("LIAM9_SANDBOX") == "1"
+
+_PROD_DIRS = (BRAIN, ROOT / "signals")
+
+
+def blocked(path):
+    """آیا نوشتن روی این مسیر در حالت شنی ممنوع است؟
+
+    مرزِ درست «مسیر» است نه «تابع». نسخهٔ اولِ همین رفع، تابع‌به‌تابع بست
+    و دو نویسنده از قلم افتادند (`paper._write` و نویسندهٔ خط زنده) — هر
+    دو مستقیم روی `brain/` و `signals/` می‌نوشتند. حالا هر ماژولی که به
+    این دو پوشه دست می‌زند از همین‌جا اجازه می‌گیرد.
+    """
+    if not SANDBOX:
+        return False
+    try:
+        rp = Path(path).resolve()
+    except Exception:                                # noqa: BLE001
+        return False
+    for d in _PROD_DIRS:
+        try:
+            rp.relative_to(d.resolve())
+            return True
+        except ValueError:
+            continue
+    return False
+
 
 def _ensure():
+    if SANDBOX:
+        return
     for d in (LEARNING, PATTERNS, EVENTS, ROOMS, BRAIN / "backtests"):
         d.mkdir(parents=True, exist_ok=True)
 
 
 def append(path, record):
     """One JSON object per line. Append-only, so a torn write costs one line."""
+    if SANDBOX:
+        return
     _ensure()
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as f:
@@ -195,6 +238,8 @@ def room_load(room, default=None):
 
 def room_save(room, state):
     p = room_path(room)
+    if SANDBOX:
+        return
     p.parent.mkdir(parents=True, exist_ok=True)
     state = dict(state)
     state["_saved"] = int(time.time() * 1000)
@@ -209,6 +254,8 @@ def room_log(room, line, level="info"):
 # ── patterns ──────────────────────────────────────────────────────────────────
 def save_pattern(name, pattern):
     """A pattern is only written down once the measurement earns it."""
+    if SANDBOX:
+        return
     PATTERNS.mkdir(parents=True, exist_ok=True)
     (PATTERNS / f"{name}.json").write_text(json.dumps(pattern, ensure_ascii=False, indent=1))
 

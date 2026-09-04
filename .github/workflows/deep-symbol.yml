@@ -43,6 +43,8 @@ jobs:
         run: pip -q install matplotlib
 
       - name: خودآزمایی — انجین قبل از اجرا باید سبز باشد
+        env:
+          LIAM9_SANDBOX: "1"
         working-directory: claude-liam-signal/python
         run: python3 hamid/test_deep.py
 

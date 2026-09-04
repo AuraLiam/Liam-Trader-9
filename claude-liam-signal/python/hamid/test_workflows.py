@@ -21,6 +21,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 WF = ROOT / ".github" / "workflows"
+PY = Path(__file__).resolve().parents[1]
 
 ok = 0
 fail = []
@@ -478,6 +479,42 @@ check(f"هیچ حلقهٔ پوشی با پاک‌سازیِ کشنده نمی‌
       not _loop_bad_abort)
 check(f"هر merge با origin تاریخچهٔ نامرتبط را می‌پذیرد (ریپو دو ریشه دارد) "
       f"{_loop_no_allow or ''}", not _loop_no_allow)
+
+# ── حالت شنی: هیچ گامِ آزمونی حق نوشتن روی دفترِ تولید ندارد (۴ سپتامبر)
+#
+# ریشه: اجرای کاملِ دروازه چهار فایلِ runtime را عوض کرد — `test_loop_audit`
+# مسیرهای paper.OPEN/CLOSED را به پوشهٔ موقت می‌برد، ولی `_append_gatelog`
+# و `brain.room_log` مسیرِ ثابتِ خودشان را داشتند و از آن تغییرِ مسیر در
+# می‌رفتند؛ بعد ناشرِ زنجیره همان آلودگی را روی main می‌نشاند. درمانش
+# سوییچ مرکزی `LIAM9_SANDBOX` است، و این بررسی نگه‌داشتنش را اجباری
+# می‌کند: گامِ آزمونیِ تازه‌ای که آن را نگذارد، چرخه را سرخ می‌کند.
+_GATE_NAMES = ("آزمون آفلاین", "خودآزمایی", "Method self-check")
+_no_sandbox = []
+for _w in sorted(WF.glob("*.yml")):
+    _lines = _w.read_text(encoding="utf-8").splitlines()
+    for _i, _ln in enumerate(_lines):
+        _m = re.match(r"^(\s*)- name: (.*)$", _ln)
+        if not (_m and any(n in _m.group(2) for n in _GATE_NAMES)):
+            continue
+        _ind = _m.group(1)
+        _body = []
+        _j = _i + 1
+        while _j < len(_lines) and (not _lines[_j].strip()
+                                    or _lines[_j].startswith(_ind + "  ")):
+            _body.append(_lines[_j]); _j += 1
+        if "LIAM9_SANDBOX" not in "\n".join(_body):
+            _no_sandbox.append(f"{_w.name}:{_m.group(2).strip()}")
+
+check(f"هر گام آزمون با LIAM9_SANDBOX=1 می‌دود — پاسبان دفترِ تولید را "
+      f"نمی‌نویسد {_no_sandbox or ''}", not _no_sandbox)
+
+_brain = (PY / "brain.py").read_text(encoding="utf-8") if (PY / "brain.py").exists() else ""
+check("حالت شنی در brain.py تعریف شده", 'SANDBOX = os.environ.get("LIAM9_SANDBOX")' in _brain)
+check("و نویسنده‌های brain در حالت شنی ساکت‌اند",
+      _brain.count("if SANDBOX:") >= 4)
+_paper = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
+check("دفترِ دروازهٔ دوام هم حالت شنی را رعایت می‌کند",
+      'getattr(_b, "SANDBOX", False)' in _paper)
 
 print()
 if fail:

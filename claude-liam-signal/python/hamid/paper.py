@@ -127,12 +127,18 @@ def _read(p):
 
 
 def _write(p, rows):
+    import brain as _b
+    if _b.blocked(p):                                # حالت شنی — دفتر تولید دست‌نخورده
+        return
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n"
                  if rows else "")
 
 
 def _append(p, row):
+    import brain as _b
+    if _b.blocked(p):
+        return
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
@@ -170,7 +176,14 @@ GATELOG = ROOT / "signals" / "viability-gate.json"
 
 
 def _append_gatelog(sym, stage, why):
-    """ردِ دروازهٔ دوام — برای قیف یادگیری پنل، نه فقط سکوت."""
+    """ردِ دروازهٔ دوام — برای قیف یادگیری پنل، نه فقط سکوت.
+
+    در حالت شنی (LIAM9_SANDBOX=1) هیچ‌چیز نوشته نمی‌شود: این مسیرِ ثابت،
+    از تغییرِ مسیرِ آزمون‌ها در می‌رفت و دفترِ تولید را آلوده می‌کرد.
+    """
+    import brain as _b
+    if getattr(_b, "SANDBOX", False):
+        return
     try:
         p = GATELOG
         d = json.loads(p.read_text()) if p.exists() else []

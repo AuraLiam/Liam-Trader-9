@@ -69,6 +69,10 @@ jobs:
         # These are cheap and they catch the failure mode that matters here: a
         # level engine that is subtly wrong does not crash, it just draws lines
         # somewhere else and keeps going.
+        #
+        # LIAM9_SANDBOX=1: پاسبان حق نوشتن روی دفترِ تولید ندارد (۴ سپتامبر).
+        env:
+          LIAM9_SANDBOX: "1"
         working-directory: claude-liam-signal/python
         run: |
           python3 -m hamid.selfcheck

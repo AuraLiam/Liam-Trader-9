@@ -239,6 +239,12 @@ class Link:
         doc["events"] = doc["events"][-MAX_EVENTS:]
         doc["updated"] = ev["t"]
         doc["signed"] = bool(sig)
+        try:                                         # حالت شنی: دفتر تولید نه
+            import brain as _b
+            if _b.blocked(self.up):
+                return
+        except Exception:                            # noqa: BLE001
+            pass
         self.up.parent.mkdir(parents=True, exist_ok=True)
         self.up.write_text(json.dumps(doc, ensure_ascii=False))
         return ev

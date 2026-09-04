@@ -30,6 +30,8 @@ jobs:
       - name: وابستگی چارت
         run: pip -q install -r requirements-ci.txt
       - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
         working-directory: claude-liam-signal/python
         run: |
           python3 -m hamid.test_dom_report

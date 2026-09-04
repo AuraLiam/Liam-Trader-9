@@ -74,6 +74,8 @@ jobs:
         run: pip -q install matplotlib pyyaml
 
       - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
         id: selftest
         if: steps.guard.outputs.skip != '1'
         working-directory: claude-liam-signal/python

@@ -15,6 +15,7 @@
 
 اجرا: `python3 -m hamid.test_trail_arms`
 """
+import pathlib
 import sys
 from pathlib import Path
 
@@ -109,6 +110,18 @@ def run():
         P.EXPERIMENT_STAGES = old
 
     # ── ۴) آینه واقعاً جفت است ──────────────────────────────────────────
+    # روی **کپیِ** دفتر کار می‌کنیم، نه خودش: این بخش `mirror_trail_arms`
+    # را صدا می‌زند و آن می‌نویسد. پاسبانی که دفتر تولید را عوض کند، همان
+    # کلاسِ عیبی است که ۴ سپتامبر بسته شد — پس ردیف‌های واقعی خوانده
+    # می‌شوند ولی نوشتن در پوشهٔ موقت می‌افتد.
+    import shutil
+    import tempfile as _tf
+    _td = _tf.mkdtemp()
+    _real_open = P.OPEN
+    _tmp_open = pathlib.Path(_td) / "open.jsonl"
+    if _real_open.exists():
+        shutil.copy(_real_open, _tmp_open)
+    P.OPEN = _tmp_open
     rows = P._read(P.OPEN)
     mir = [r for r in rows if (r.get("why") or {}).get("stage") in P.TRAIL_ARMS]
     idx = {}
@@ -135,6 +148,8 @@ def run():
     before = len(P._read(P.OPEN))
     again = P.mirror_trail_arms(limit=5)
     after = len(P._read(P.OPEN))
+    P.OPEN = _real_open                          # دفتر واقعی برگشت سر جایش
+    shutil.rmtree(_td, ignore_errors=True)
     check("آینه‌گیریِ دوباره ردیفِ تکراری نمی‌سازد",
           after - before == again, f"{again} افزوده، {after-before} رشد")
 
