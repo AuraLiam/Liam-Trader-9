@@ -110,6 +110,8 @@ jobs:
           python3 -m hamid.test_lines_wf
           python3 -m hamid.test_structure_room
           python3 -m hamid.test_newsboard
+          python3 -m hamid.test_council
+          python3 -m hamid.test_risk_desk
           python3 -m hamid.test_spec_check
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
@@ -262,6 +264,12 @@ jobs:
 
       # بورد خبر (دستور ۳ سپتامبر): تابلوی مشترکِ همهٔ اتاق‌ها. دیدگاه است،
       # نه دروازه — قانون ۱۵.
+      # شورای هر انجین (دستور ۳ سپتامبر): ۱۲ متخصص روی هر انجین، وزن به
+      # تفکیک همان انجین. مشاوره‌ای — قانون ۰۳/۱۲.
+      - name: شورای انجین‌ها (E00)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.council --score --write || true
+
       - name: بورد خبر (E14)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.newsboard --write || true
