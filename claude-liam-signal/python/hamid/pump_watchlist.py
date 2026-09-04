@@ -46,6 +46,9 @@ def _load():
 
 
 def _save(d):
+    import brain as _b
+    if _b.blocked(WL):                               # حالت شنی — دفتر تولید نه
+        return
     WL.parent.mkdir(parents=True, exist_ok=True)
     WL.write_text(json.dumps(d, ensure_ascii=False, indent=1))
 
