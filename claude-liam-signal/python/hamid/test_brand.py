@@ -54,11 +54,31 @@ SETUP = {"sym": "BTCUSDT", "tf": "15m", "dir": "LONG", "strategy": "ibs", "rr": 
 check("متن امضا دقیقاً همان جملهٔ حمید است",
       chart.BRAND_FA == "پنل ققنوس و محافظانش", chart.BRAND_FA)
 shaped = chart.fa(chart.BRAND_FA)
-check("متن فارسی به شکل‌های چسبان تبدیل می‌شود (نه حروف جدا)",
-      shaped != chart.BRAND_FA and any(0xFE70 <= ord(c) <= 0xFEFF for c in shaped),
-      repr(shaped))
-check("و راست‌به‌چپ چیده می‌شود — حرف اولِ دیداری آخرِ منطقی است",
-      shaped.strip()[0] != chart.BRAND_FA[0], repr(shaped))
+# اگر کتابخانهٔ شکل‌دهی روی این محیط نباشد، ماژول متن خام برمی‌گرداند.
+# آن حالت **خرابیِ محیط** است نه خرابیِ کد — و نباید زنجیرهٔ سیگنال را
+# بخواباند (درس ۲۴ اوت: پاسبانِ دروازهٔ سخت، محصول را خاموش کرد). پس
+# این‌جا فقط سنجیده می‌شود که یا شکل‌دهی کار کند، یا نبودش صریح اعلام
+# شود و فایل محیطِ مشترک همچنان آن را بخواهد.
+try:
+    import arabic_reshaper                            # noqa: F401
+    from bidi.algorithm import get_display            # noqa: F401
+    _HAVE_FA = True
+except Exception:                                    # noqa: BLE001
+    _HAVE_FA = False
+
+if _HAVE_FA:
+    check("متن فارسی به شکل‌های چسبان تبدیل می‌شود (نه حروف جدا)",
+          shaped != chart.BRAND_FA and any(0xFE70 <= ord(c) <= 0xFEFF for c in shaped),
+          repr(shaped))
+    check("و راست‌به‌چپ چیده می‌شود — حرف اولِ دیداری آخرِ منطقی است",
+          shaped.strip()[0] != chart.BRAND_FA[0], repr(shaped))
+else:
+    print("  ⚠ کتابخانهٔ شکل‌دهی فارسی روی این محیط نیست — امضا خام می‌رود")
+    check("بی‌کتابخانه، ماژول متن خام برمی‌گرداند و نمی‌ترکد",
+          shaped == chart.BRAND_FA)
+_req = (HERE.parents[2] / "requirements-ci.txt").read_text(encoding="utf-8")
+check("محیط مشترک هر دو کتابخانهٔ شکل‌دهی را می‌خواهد (قانون ۱۴)",
+      "arabic-reshaper" in _req and "python-bidi" in _req)
 check("متن انگلیسی دست‌نخورده می‌ماند", chart.fa("LONG BTCUSDT") == "LONG BTCUSDT")
 check("متن خالی موتور را نمی‌ترکاند", chart.fa("") == "")
 

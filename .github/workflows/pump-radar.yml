@@ -71,7 +71,10 @@ jobs:
 
       - name: matplotlib برای چارت پیک و هشدار ریزش
         if: steps.guard.outputs.skip != '1'
-        run: pip -q install matplotlib pyyaml
+        # محیط مشترک (قانون ۱۴) — خط دست‌نویس pip دقیقاً همان چیزی بود که
+        # ۴ سپتامبر زنجیره را خواباند: کتابخانهٔ شکل‌دهی فارسی در
+        # requirements-ci.txt بود ولی این‌جا نصب نمی‌شد.
+        run: pip -q install -r requirements-ci.txt
 
       - name: آزمون آفلاین
         env:
