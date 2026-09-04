@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.45 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.46 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -296,6 +296,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>🪙 اتاق دامیننس <span class="dim" style="font-size:11px;font-weight:400" id="ddMeta">قاعدهٔ پایه، رأی وزنی تایم‌ها، کانال ۴س/۱س، USDC.D و چرخهٔ پول</span></h3><div id="domDeskBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🧠 دفتر مهارت <span class="dim" style="font-size:11px;font-weight:400" id="skMeta">تجربهٔ تکراری ضریب می‌سازد، نه ردیف — حافظه است نه دروازه</span></h3><div id="skillBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>📰 بورد خبر <span class="dim" style="font-size:11px;font-weight:400" id="nbMeta">تابلوی مشترک اتاق‌ها — خبر با تاریخ، رویداد آینده از یک روز قبل، درس واحدها</span></h3><div id="newsBoardBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
@@ -3910,6 +3911,42 @@ function renderSk(){
 }
 setInterval(skFetch,180000);setTimeout(skFetch,6000);
 (()=>{const f=DB.get("sk_cache");if(f&&!SKL.data){SKL.data=f;setTimeout(renderSk,900);}})();
+/* اتاق دامیننس (۳ سپتامبر) — مهم‌ترین بستر پیش از ترید. بستر است نه
+   دروازه: دروازهٔ تصمیم همان trend_gate و قانون ۳ است. */
+const DDSK={data:null};
+async function ddFetch(){
+  try{
+    const r=await fetch("./signals/dominance-desk.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){DDSK.data=j;DB.set("dd_cache",j);renderDd();}}
+  }catch(e){}
+}
+function renderDd(){
+  const el=$("#domDeskBox");if(!el)return;
+  const j=DDSK.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین تابلوی اتاق دامیننس با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const meta=$("#ddMeta");
+  if(meta)meta.textContent=(j.ok?`${j.points||0} نقطه · `:"")+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  if(!j.ok){el.innerHTML=`<div class="dim" style="font-size:12px">${esc(j.why)}</div>`;return;}
+  const dot=m=>m==="UP"?"🟢":m==="DOWN"?"🔴":m==="FLAT"?"⚪":"❔";
+  const w=j.weighted||{};
+  const tfRow=(j.weighted&&j.weighted.used||[]).map(u=>
+    `<span class="dim">${esc(u.tf)}</span> ${u.regime==="BULLISH"?"🟢":u.regime==="BEARISH"?"🔴":"⚪"}
+     <span class="dim">×${u.weight}</span>`).join(" · ");
+  const chan=Object.entries((j.channel||{}).frames||{}).map(([tf,r])=>
+    `<div style="font-size:11px">📐 <b>${esc(tf)}</b> ${r.px} — ${esc(r.where)}`+
+    (r.pos_pct==null?"":` <span class="dim">(${r.pos_pct}٪ ارتفاع کانال)</span>`)+`</div>`).join("");
+  const u=j.usdc||{},m=j.money_cycle||{};
+  el.innerHTML=
+    `<div style="font-size:12px">${dot((j.base_rule||{}).market)} <b>${esc((j.base_rule||{}).why)}</b></div>
+     <div style="font-size:11px;margin-top:4px">⚖️ رأی وزنی: <b>${esc(w.regime)}</b> ${w.score==null?"":`(${w.score})`} — ${tfRow||"<span class='dim'>تایم معتبری نبود</span>"}</div>
+     ${chan}
+     <div style="font-size:11px;margin-top:4px">💵 <b>USDC.D</b> ${u.ok?esc(u.state):""} — ${esc(u.why)}</div>
+     <div style="font-size:11px">🔄 چرخهٔ پول: <b>${esc(m.state||"—")}</b> — ${esc(m.why)}</div>
+     <div class="dim" style="font-size:11px;margin-top:4px">${esc(j.boundary)}</div>`;
+}
+setInterval(ddFetch,180000);setTimeout(ddFetch,6200);
+(()=>{const f=DB.get("dd_cache");if(f&&!DDSK.data){DDSK.data=f;setTimeout(renderDd,950);}})();
 /* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
    کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
    یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی

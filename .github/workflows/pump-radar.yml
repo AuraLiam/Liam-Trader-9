@@ -121,6 +121,7 @@ jobs:
           python3 -m hamid.test_brand
           python3 -m hamid.test_skill_ledger
           python3 -m hamid.test_guardian_lab
+          python3 -m hamid.test_dominance_desk
           python3 -m hamid.test_spec_check
           python3 -m hamid.test_dashboard_build
           python3 -m hamid.test_dash_silence
@@ -197,6 +198,10 @@ jobs:
               # (اندازه‌گیری: ۳۲ نقطه در ۳۲.۷ ساعت یعنی عملاً ساعتی، نه ۵دقیقه‌ای).
               # روی درخت تازهٔ origin/main اجرا می‌شود تا نقطهٔ جدید بی‌تصادم بنشیند.
               (cd claude-liam-signal/python && python3 -m hamid.dominance) || true
+              # اتاق دامیننس (دستور ۳ سپتامبر): قاعدهٔ پایه + رأی وزنی
+              # تایم‌فریم‌ها (۴س سنگین‌تر از ۵د) + جای دامیننس در کانال ۴س/۱س
+              # + خط مستقل USDC.D + چرخهٔ پول. بستر است، نه دروازه.
+              (cd claude-liam-signal/python && python3 -m hamid.dominance_desk --write) || true
               # الگوهای BTC (۱س/۴س/۱روزه) و دامیننس — دستور حمید: پایش دائمی
               (cd claude-liam-signal/python && python3 -m hamid.btc_patterns) || true
               # نقشهٔ یکپارچگی سامانه (قانون ۱۳) — این‌جا و نه فقط در چرخهٔ

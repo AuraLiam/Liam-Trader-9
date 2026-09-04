@@ -1,7 +1,7 @@
 /* Hamid Signal Agent — service worker
    Caches the app shell so the panel opens instantly (even offline),
    while always going to the network for live market data and the cloud API. */
-const CACHE = "auraliam-shell-v21.45";
+const CACHE = "auraliam-shell-v21.46";
 const ASSETS = [
   "./",
   "./index.html",
