@@ -12,6 +12,8 @@
    عددِ غلط بدتر از عددِ نداشته است.)
 """
 import json
+import os
+import subprocess as _sp
 import sys
 import tempfile
 import time
@@ -106,8 +108,7 @@ with tempfile.TemporaryDirectory() as td:
                   _mk("DDDUSDT", "LONG", None, 1, "expired")]  # معامله نبود
         # فقط اولی در دفتر تجربه هست
         (root / "learning" / "experiences.jsonl").write_text(
-            json.dumps({"sym": "AAAUSDT", "dir": "LONG", "r": 1.5}) + "\n",
-            encoding="utf-8")
+            L.exp_line(closed[0]) + "\n", encoding="utf-8")
         dg = L.digested(closed, NOW - L.WINDOW_H * H)
         check("معاملهٔ بیرونِ پنجره شمرده نمی‌شود",
               all(r["sym"] != "CCCUSDT" for r in dg), str([r["sym"] for r in dg]))
@@ -154,6 +155,112 @@ check("اثبات فقط می‌خواند — چیزی جز تابلوی خود
       lsrc.count("write_text") <= 2)
 check("و مرزش صریح است: نرخ‌ها دروازه نیستند",
       "توصیفی‌اند" in lsrc and "قانون ۰۳" in lsrc)
+
+# ── ۳. ادغامِ دفتر، تجربه‌ها را نکوبد (عیبِ ریشه‌ایِ ۵ سپتامبر) ─────────
+#
+# `merge_jsonl` روی «هویتِ معامله» اجتماع می‌گیرد — درست برای
+# closed.jsonl، فاجعه برای experiences.jsonl. کلیدِ تجربه می‌شد
+# (sym, None, None, None) و همهٔ تجربه‌های یک نماد به یک ردیف کوبیده
+# می‌شد. اثر واقعی از تاریخچهٔ مخزن: ۲۵٬۱۵۱ → ۲۱٬۷۷۸ در یک کامیت.
+import importlib.util as _ilu                        # noqa: E402
+
+_spec = _ilu.spec_from_file_location(
+    "rbc", HERE.parents[2] / "scripts" / "resolve_brain_conflicts.py")
+_rbc = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_rbc)
+
+
+def _exp(sym, d, r, outcome, stage):
+    return {"sym": sym, "tf": "15m", "dir": d, "strategy": stage, "r": r,
+            "outcome": outcome, "trend_4h": None, "fear": None,
+            "funding": None, "stop_pct": None, "usdt_dom": None,
+            "mode": None, "liq": None}
+
+
+_rows = [_exp("BTCUSDT", "LONG", 1.5, "target", "scalp"),
+         _exp("BTCUSDT", "SHORT", -1.0, "stop", "practice"),
+         _exp("BTCUSDT", "LONG", 0.3, "trail", "first"),
+         _exp("ETHUSDT", "LONG", 2.0, "target", "scalp")]
+_keys = [_rbc.trade_key(r) for r in _rows]
+check("ردیفِ تجربه هویتِ معامله ندارد (نه opened نه entry)",
+      all(k[1] is None and k[2] is None for k in _keys), str(_keys[0]))
+check("پس کلیدِ هویتی همه را به یک ردیف در هر نماد می‌کوبید",
+      len({k for k in _keys}) == 2, str(set(_keys)))
+
+# اثباتِ رفتاری: ادغامِ دو دفترِ تجربه نباید ردیف گم کند.
+import tempfile as _tf                               # noqa: E402
+with _tf.TemporaryDirectory() as _td:
+    _a = Path(_td) / "a.jsonl"
+    _b = Path(_td) / "b.jsonl"
+    _o = Path(_td) / "o.jsonl"
+    _a.write_text("\n".join(json.dumps(r, ensure_ascii=False)
+                             for r in _rows[:2]) + "\n", encoding="utf-8")
+    _b.write_text("\n".join(json.dumps(r, ensure_ascii=False)
+                             for r in _rows) + "\n", encoding="utf-8")
+    import subprocess as _sp
+    _sp.run(["python3", str(HERE.parents[2] / "scripts" / "publish_merge.py"),
+             "brain/learning/experiences.jsonl", str(_a), str(_b), str(_o)],
+            capture_output=True, timeout=60)
+    _n = len([l for l in _o.read_text(encoding="utf-8").splitlines() if l.strip()]) \
+        if _o.exists() else 0
+    check("ادغامِ دو دفترِ تجربه هر چهار ردیف را نگه می‌دارد (نه یکی در هر نماد)",
+          _n == 4, f"{_n} ردیف")
+
+_trade = {"sym": "BTCUSDT", "dir": "LONG", "opened": 1788559023959,
+          "entry": 0.17282, "closed": 1788559900000, "R": 1.2,
+          "why": {"stage": "scalp"}}
+_tk = _rbc.trade_key(_trade)
+check("ولی ردیفِ معاملهٔ واقعی هویت دارد (opened و entry) — محافظ ۲۴ اوت",
+      _tk[1] is not None and _tk[2] is not None, str(_tk))
+
+_src_rbc = (HERE.parents[2] / "scripts" / "resolve_brain_conflicts.py").read_text(
+    encoding="utf-8")
+check("شرطِ بازگشت به اجتماعِ متنی روی opened است، نه روی sym",
+      "if k[1] is None:" in _src_rbc)
+check("و شرطِ قدیمیِ معیوب دیگر نیست",
+      "if k[1] is None and k[0] is None:" not in _src_rbc)
+# ملاک با شمارشِ واقعیِ دو دفتر انتخاب شد، نه با سلیقه
+check("و دلیلِ عددی‌اش ثبت است (۴۸٬۱۵۶ در برابر صفر)",
+      "۴۸٬۱۵۶" in _src_rbc and "۲۱٬۷۷۸" in _src_rbc)
+check("دلیلش با عددِ اندازه‌گیری‌شده ثبت شده",
+      "۲۵٬۱۵۱" in _src_rbc and "۱.۴٪" in _src_rbc)
+
+_lp = (HERE / "learning_proof.py").read_text(encoding="utf-8")
+check("سنجهٔ یادگیری با خطِ دقیق تطبیق می‌دهد نه کلیدِ ضعیف",
+      "def exp_line(" in _lp)
+check("و ساختارش کپیِ دقیقِ digest_closed است",
+      all(f'"{k}"' in _lp for k in ("strategy", "trend_4h", "usdt_dom", "liq")))
+
+# ── ۴. آزمونِ ادغام نباید دفترِ تولید را بخورد ─────────────────────────
+#
+# ۵ سپتامبر، همین‌جا: آزمونِ بالا `publish_merge` را با مسیرِ واقعی صدا
+# زد و `brain/learning/experiences.jsonl` را از ۲۱٬۷۷۸ خط به **۴ خط**
+# رساند. از گیت برگشت و چیزی کامیت نشد، ولی فاصلهٔ «آزمون» تا «نابودیِ
+# دفتر» یک خط بود. حالا در حالت شنی، فایلِ درخت دست‌نخورده برمی‌گردد.
+_pm = (HERE.parents[2] / "scripts" / "publish_merge.py").read_text(encoding="utf-8")
+check("ادغام‌گر حالت شنی را می‌شناسد",
+      'LIAM9_SANDBOX' in _pm and "backup" in _pm)
+check("و در آن حالت فایلِ درخت را برمی‌گرداند",
+      "target.write_bytes(backup)" in _pm)
+check("نتیجه قبل از بازگرداندن به out می‌رود (وگرنه out نسخهٔ اصلی می‌شود)",
+      _pm.index("shutil.copy(target, out)") < _pm.index("target.write_bytes(backup)"))
+
+with _tf.TemporaryDirectory() as _td2:
+    _tiny = Path(_td2) / "tiny.jsonl"
+    _out2 = Path(_td2) / "o.jsonl"
+    _tiny.write_text(json.dumps(_rows[0], ensure_ascii=False) + "\n",
+                     encoding="utf-8")
+    _live = HERE.parents[2] / "brain" / "learning" / "experiences.jsonl"
+    _before = _live.read_bytes() if _live.exists() else None
+    _env = dict(os.environ, LIAM9_SANDBOX="1")
+    _sp.run(["python3", str(HERE.parents[2] / "scripts" / "publish_merge.py"),
+             "brain/learning/experiences.jsonl", str(_tiny), str(_tiny),
+             str(_out2)], capture_output=True, timeout=60, env=_env)
+    _after = _live.read_bytes() if _live.exists() else None
+    check("دفتر تولید بعد از ادغامِ شنی بیت‌به‌بیت دست‌نخورده است",
+          _before == _after,
+          f"{len(_before or b'')} → {len(_after or b'')} بایت")
+    check("ولی خروجیِ ادغام واقعاً ساخته می‌شود", _out2.exists())
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
