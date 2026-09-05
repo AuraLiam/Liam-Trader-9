@@ -102,6 +102,7 @@ jobs:
           python3 -m hamid.test_gainer_radar
           python3 -m hamid.test_curriculum
           python3 -m hamid.test_skeptic
+          python3 -m hamid.test_signal_audit
           python3 -m hamid.test_trail_lab
           python3 -m hamid.test_trail_arms
           python3 -m hamid.test_pump_profile
@@ -245,6 +246,12 @@ jobs:
               # E25 با سؤال چرخشی. آخرِ همهٔ تولیدکننده‌ها اجرا می‌شود تا
               # خروجیِ تازهٔ همان دور را ببیند، نه دورِ قبل را.
               (cd claude-liam-signal/python && python3 -m hamid.skeptic --write --telegram) || true
+              # بازبینی کامل سیگنال‌های ارسالی (دستور حمید ۵ سپتامبر: «هر
+              # ۱۵ دقیقه سیگنال‌های ارسالی به تلگرام را کامل بررسی می‌کنی»).
+              # روی همین زنجیره می‌نشیند تا کادنسش از ۱۵ دقیقه بدتر نشود.
+              # شکاک محتوای سیگنال را می‌سنجد؛ این یکی **حسابِ** سیگنال را:
+              # آنچه گزارش می‌کنیم با آرشیو ارسال می‌خواند یا نه.
+              (cd claude-liam-signal/python && python3 -m hamid.signal_audit --write --alert) || true
               # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
               # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
               # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و

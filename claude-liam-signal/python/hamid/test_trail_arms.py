@@ -260,6 +260,47 @@ def run():
     check("هر دو خروجی ردیف قرارداد دارند (قانون ۱۳)",
           "trail-arms.json" in files and "trail-lab.json" in files)
 
+    # ── بازوی آزمایش هرگز «سیگنال ارسالی» شمرده نمی‌شود ────────────────
+    #
+    # شکایت حمید ۵ سپتامبر: اعلام دوساعته ۳×ETH و ۳×XRP نشان داد در حالی
+    # که آرشیو ارسال یک ETH و یک XRP داشت. بازوها همان `tg_msg_id` را به
+    # ارث می‌برند، پس هر شمارشی که فقط شناسهٔ پیام را ببیند سه‌برابر
+    # می‌شمارد. اندازهٔ تورم روی کل دفتر: ۳۶۹ پیام یکتا / ۶۰۱ ردیف.
+    from hamid import paper as _P
+    def _row(mid, stage, r):
+        return {"sym": "XRPUSDT", "dir": "LONG", "R": r, "outcome": "trail",
+                "closed": 1_000, "why": {"stage": stage, "tg_msg_id": mid}}
+    # ترتیب عمداً وارونه است: بازوی آزمایش **قبل** از ردیف واقعی می‌آید،
+    # چون در دفتر واقعی ترتیب تضمین‌شده نیست. اگر فقط یکتاسازی بر شناسه
+    # بود، همین ردیفِ آزمایش به‌عنوان «سیگنال» گزارش می‌شد.
+    _trades = [_row(3581, "exp-trail-g65", 0.3427),
+               _row(3581, "exp-trail-g80", 0.4218),
+               _row(3581, "sig-ibs", 0.3198),
+               _row(3545, "exp-trail-g65", -1.0),
+               _row(3545, "sig-ibs", -1.0),
+               {"sym": "AAAUSDT", "dir": "LONG", "R": 0.2, "outcome": "target",
+                "closed": 1_000, "why": {"stage": "practice"}}]   # بی‌شناسه
+    _got = _P.sent_signals(_trades)
+    check("یک پیام = یک سیگنال (سه بازو، یک ردیف)", len(_got) == 2,
+          str([(t["sym"], (t["why"]).get("stage")) for t in _got]))
+    check("و ردیفِ برگزیده همان بازوی واقعی است، نه آزمایش",
+          all((t["why"]["stage"] or "").startswith("sig-") for t in _got),
+          str([t["why"]["stage"] for t in _got]))
+    check("ردیف بی‌شناسهٔ پیام اصلاً سیگنال ارسالی نیست",
+          all(t["sym"] != "AAAUSDT" for t in _got))
+    # حتی اگر روزی بازوی تازه‌ای بیرون از _NOT_SIGNAL ساخته شود، شناسهٔ
+    # تکراری باز هم یک بار شمرده می‌شود — دو فیلتر مستقل.
+    _got2 = _P.sent_signals([_row(7001, "sig-ibs", 0.1),
+                             _row(7001, "exp-brand-new", 0.9)])
+    check("شناسهٔ تکراری با بازوی ناشناخته هم یک بار شمرده می‌شود",
+          len(_got2) == 1, str([t["why"]["stage"] for t in _got2]))
+    check("همهٔ بازوهای تریل در فهرست «سیگنال نیست» هستند",
+          all(a in _P._NOT_SIGNAL for a in _P.TRAIL_ARMS),
+          str(_P._NOT_SIGNAL))
+    cyc_src = (PY / "hamid" / "cycle.py").read_text(encoding="utf-8")
+    check("کلاس: اعلام دوساعته از همین تابع می‌خواند، نه از tg_msg_id خام",
+          "_p.sent_signals(closed)" in cyc_src)
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

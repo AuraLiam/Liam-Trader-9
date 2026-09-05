@@ -822,6 +822,16 @@
    "optional": true,
    "kind": "live",
    "cadence_note": "چراغ لپ‌تاپ هر ۱۰ دقیقه؛ اختیاری چون تا سرویس محلی روشن نشده وجود ندارد"
+  },
+  "signal-audit.json": {
+   "layer": "L5_delivery",
+   "owner": "E25",
+   "producer": "hamid/signal_audit.py",
+   "max_age_min": 45,
+   "consumer": "panel+alert",
+   "cadence_note": "زنجیرهٔ سیگنال هر ~۳-۵ دقیقه؛ سقف ۴۵ همان حاشیهٔ latest.json (دستور «هر ۱۵ دقیقه»، کف واقعی Actions)",
+   "kind": "live",
+   "critical": false
   }
  }
 }
