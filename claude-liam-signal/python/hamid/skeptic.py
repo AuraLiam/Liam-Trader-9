@@ -172,6 +172,56 @@ def q_delivery_id(now):
         f"{leaks} نشتی از {la.get('n_closed_sig') or '?'} بسته")
 
 
+def q_signal_sanity(now):
+    """محتوای خودِ سیگنال‌های رفته — نه فقط این‌که رفتند.
+
+    دستور حمید (۵ سپتامبر): «مرتب سیگنال‌های تلگرام رو چک کن که اگه
+    خطایی توش بود سریع بررسی کنی و برطرف کنی.» دو سؤال قبلیِ E25
+    ردپا و ضدتکرار را می‌سنجیدند — یعنی «رفت یا نه»، نه «درست بود یا
+    نه». این سؤال خودِ عددها را می‌خواند.
+
+    شش شرطِ سختِ همین ریپو، همه از سند خودِ پنل:
+      · تایم‌فریم فقط ۱۵د/۵د (قانون ۱۱، `telegram.ALLOWED_TFS`)
+      · ورود/استاپ/تارگت هر سه عددِ مثبت (قرارداد اجرا، ۲۰ اوت)
+      · ترتیب قیمت‌ها با جهت بخواند (لانگ: استاپ < ورود < تارگت)
+      · RR دست‌کم ۰.۸
+      · وتوی روند: هر دو تایم بالا خلاف جهت = تخلف (دستور ۱۷ اوت)
+
+    عمداً روی پنجرهٔ ۲۴ ساعت است نه کلِ تاریخ: متری که رفعِ ریشه هم
+    سبزش نکند، آموزشِ نادیده‌گرفتن است (قانون ۰۷).
+    """
+    log = (_j("signals/telegram-log.json", {}) or {}).get("sent") or []
+    lo = now - 24 * 3600 * 1000
+    rows = [r for r in log if isinstance(r.get("at"), (int, float)) and r["at"] >= lo]
+    if not rows:
+        return na("سیگنال‌های رفتهٔ ۲۴ ساعت خطا داشتند؟", "ارسالی در پنجره نبود")
+    faults = []
+    for r in rows:
+        e, sl, t1 = r.get("entry"), r.get("sl"), r.get("tp1")
+        d, sym = r.get("dir"), r.get("sym")
+        if r.get("tf") not in ("5m", "15m"):
+            faults.append(f"{sym}: تایم‌فریم {r.get('tf')}")
+        nums = all(isinstance(x, (int, float)) and x > 0 for x in (e, sl, t1))
+        if not nums:
+            faults.append(f"{sym}: ورود/استاپ/تارگت ناقص")
+            continue
+        if d == "LONG" and not sl < e < t1:
+            faults.append(f"{sym}: ترتیب قیمت لانگ")
+        if d == "SHORT" and not sl > e > t1:
+            faults.append(f"{sym}: ترتیب قیمت شورت")
+        if e != sl and abs(t1 - e) / abs(e - sl) < 0.8:
+            faults.append(f"{sym}: RR زیر ۰.۸")
+        opp = {"LONG": "down", "SHORT": "up"}.get(d)
+        if opp and r.get("trend4") == opp and r.get("trend1") == opp:
+            faults.append(f"{sym}: وتوی روند نقض شد")
+    q = "سیگنال‌های رفتهٔ ۲۴ ساعت خطا داشتند؟"
+    if faults:
+        return no(q, f"{len(faults)} خطا در {len(rows)} ارسال",
+                  " · ".join(faults[:4]))
+    return ok(q, f"{len(rows)} ارسال، صفر خطا",
+              "تایم‌فریم · استاپ/تارگت · ترتیب قیمت · RR · وتوی روند")
+
+
 RECENT_H = 24            # پنجرهٔ حکم — پایین‌تر توضیح داده شده
 
 
@@ -320,7 +370,7 @@ BANK = [
                               q_fresh("signals/latest.json", 45, "اسکن")]),
     ("E21", "حافظه", [q_fingerprint("exp_used", "لایهٔ تجربه")]),
     ("E23", "ناظر", [q_state_bus, q_orphans]),
-    ("E25", "تحویل", [q_delivery_id, q_dedupe_contract]),
+    ("E25", "تحویل", [q_delivery_id, q_dedupe_contract, q_signal_sanity]),
     # بازرسیِ نتیجه‌گیری — همان چیزی که حمید گفت باید به آن شک کرد
     ("**", "بازرسیِ نتیجه‌گیری", [q_unique_rows, q_fee_single_source,
                                   q_scorecard_red]),
