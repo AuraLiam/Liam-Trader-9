@@ -17,6 +17,7 @@ origin) بدون این‌که merge واقعیِ گیت لازم باشد. چر
 from __future__ import annotations
 
 import importlib.util
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -70,17 +71,41 @@ def main(argv):
         shutil.copy(theirs, out)
         return 0
     # handlerهای معنادار روی ROOT/path می‌نویسند؛ همان را به out می‌بریم.
+    #
+    # این در انتشارِ واقعی عمدی است (ناشر همان نتیجه را روی درخت هم
+    # می‌خواهد). ولی در حالت شنی فاجعه است: هر آزمونی که این اسکریپت را
+    # با یک مسیرِ واقعی و فیکسچرِ کوچک صدا بزند، **دفتر تولید را با
+    # همان فیکسچر جایگزین می‌کند**.
+    #
+    # این حرف نظری نیست — ۵ سپتامبر همین اتفاق افتاد: آزمونِ تازهٔ
+    # ادغام، `brain/learning/experiences.jsonl` را از ۲۱٬۷۷۸ خط به
+    # **۴ خط** رساند. از گیت برگردانده شد و هیچ نسخهٔ خرابی کامیت نشد،
+    # ولی فاصلهٔ بین «آزمون» و «نابودیِ دفتر» یک خط بود.
+    #
+    # پس در حالت شنی، فایلِ درخت دست‌نخورده برمی‌گردد و فقط `out`
+    # نوشته می‌شود — همان مرزی که `brain.blocked` برای ماژول‌ها گذاشت،
+    # این‌بار برای اسکریپت‌ها.
     target = ROOT / path
     target.parent.mkdir(parents=True, exist_ok=True)
+    sandbox = os.environ.get("LIAM9_SANDBOX") == "1"
+    backup = target.read_bytes() if (sandbox and target.exists()) else None
+    existed = target.exists()
     try:
         fn(path)
+        # نتیجه **قبل از** بازگرداندن برداشته می‌شود، وگرنه `out` نسخهٔ
+        # اصلی را می‌گیرد نه حاصلِ ادغام را.
+        if target.resolve() != out.resolve():
+            shutil.copy(target, out)
     except Exception as e:                 # noqa: BLE001 — هرگز job را نکش
         print(f"publish_merge: {path}: {type(e).__name__}: {e} → مال ما",
               file=sys.stderr)
         shutil.copy(ours, out)
-        return 0
-    if target.resolve() != out.resolve():
-        shutil.copy(target, out)
+    finally:
+        if sandbox:
+            if backup is not None:
+                target.write_bytes(backup)
+            elif not existed and target.exists():
+                target.unlink()
     return 0
 
 

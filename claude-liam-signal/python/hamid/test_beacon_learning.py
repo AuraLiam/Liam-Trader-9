@@ -12,6 +12,8 @@
    عددِ غلط بدتر از عددِ نداشته است.)
 """
 import json
+import os
+import subprocess as _sp
 import sys
 import tempfile
 import time
@@ -228,6 +230,37 @@ check("سنجهٔ یادگیری با خطِ دقیق تطبیق می‌دهد �
       "def exp_line(" in _lp)
 check("و ساختارش کپیِ دقیقِ digest_closed است",
       all(f'"{k}"' in _lp for k in ("strategy", "trend_4h", "usdt_dom", "liq")))
+
+# ── ۴. آزمونِ ادغام نباید دفترِ تولید را بخورد ─────────────────────────
+#
+# ۵ سپتامبر، همین‌جا: آزمونِ بالا `publish_merge` را با مسیرِ واقعی صدا
+# زد و `brain/learning/experiences.jsonl` را از ۲۱٬۷۷۸ خط به **۴ خط**
+# رساند. از گیت برگشت و چیزی کامیت نشد، ولی فاصلهٔ «آزمون» تا «نابودیِ
+# دفتر» یک خط بود. حالا در حالت شنی، فایلِ درخت دست‌نخورده برمی‌گردد.
+_pm = (HERE.parents[2] / "scripts" / "publish_merge.py").read_text(encoding="utf-8")
+check("ادغام‌گر حالت شنی را می‌شناسد",
+      'LIAM9_SANDBOX' in _pm and "backup" in _pm)
+check("و در آن حالت فایلِ درخت را برمی‌گرداند",
+      "target.write_bytes(backup)" in _pm)
+check("نتیجه قبل از بازگرداندن به out می‌رود (وگرنه out نسخهٔ اصلی می‌شود)",
+      _pm.index("shutil.copy(target, out)") < _pm.index("target.write_bytes(backup)"))
+
+with _tf.TemporaryDirectory() as _td2:
+    _tiny = Path(_td2) / "tiny.jsonl"
+    _out2 = Path(_td2) / "o.jsonl"
+    _tiny.write_text(json.dumps(_rows[0], ensure_ascii=False) + "\n",
+                     encoding="utf-8")
+    _live = HERE.parents[2] / "brain" / "learning" / "experiences.jsonl"
+    _before = _live.read_bytes() if _live.exists() else None
+    _env = dict(os.environ, LIAM9_SANDBOX="1")
+    _sp.run(["python3", str(HERE.parents[2] / "scripts" / "publish_merge.py"),
+             "brain/learning/experiences.jsonl", str(_tiny), str(_tiny),
+             str(_out2)], capture_output=True, timeout=60, env=_env)
+    _after = _live.read_bytes() if _live.exists() else None
+    check("دفتر تولید بعد از ادغامِ شنی بیت‌به‌بیت دست‌نخورده است",
+          _before == _after,
+          f"{len(_before or b'')} → {len(_after or b'')} بایت")
+    check("ولی خروجیِ ادغام واقعاً ساخته می‌شود", _out2.exists())
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
