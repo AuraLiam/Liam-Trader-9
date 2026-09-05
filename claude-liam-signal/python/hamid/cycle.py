@@ -764,8 +764,14 @@ def review_cycle():
     # نشده بودند. تفکیک صریح: «سیگنال ارسالی» = معامله‌ای که شناسهٔ پیام
     # تلگرام دارد؛ بقیه دفتر داخلی یادگیری‌اند و با برچسب روشن جمع‌بندی
     # می‌شوند، نه قاطیِ نتایج سیگنال.
-    sent_tr = [t for t in closed if (t.get("why") or {}).get("tg_msg_id")]
-    intern = [t for t in closed if not (t.get("why") or {}).get("tg_msg_id")]
+    # «ارسالی» = پیام یکتای تلگرام، نه ردیف دفتر. بازوهای آزمایش تریل
+    # همان شناسهٔ پیام را به ارث می‌برند و قبلاً یک سیگنال را سه بار
+    # می‌شمردند (شکایت حمید ۵ سپتامبر: ۳×ETH و ۳×XRP از دو ارسال).
+    sent_tr = _p.sent_signals(closed)
+    _sent_ids = {(t.get("why") or {}).get("tg_msg_id") for t in sent_tr}
+    intern = [t for t in closed
+              if (t.get("why") or {}).get("tg_msg_id") not in _sent_ids
+              or (t.get("why") or {}).get("stage") in _p._NOT_SIGNAL]
     if sent_tr:
         parts = []
         for t in sent_tr[:8]:
