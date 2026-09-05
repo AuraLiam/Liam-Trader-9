@@ -112,11 +112,19 @@ def digested(closed, cutoff_ms):
     `expired` عمداً بیرون است: `digest_closed` هم ردش می‌کند، چون
     سفارشِ پرنشده معامله نیست.
     """
-    exp = _rows(BRAIN / "learning" / "experiences.jsonl")
-    # هویت: (ارز، جهت، R گردشده) — دفتر تجربه مهر زمانی ندارد، پس
-    # تطبیق روی همان چیزی است که `digest_closed` واقعاً کپی می‌کند.
-    seen = {(str(e.get("sym", "")).upper(), e.get("dir"),
-             round(float(e.get("r") or 0), 4)) for e in exp}
+    # تطبیقِ **دقیق**: همان ردیفی که `digest_closed` می‌سازد بازسازی
+    # می‌شود و در دفتر تجربه دنبالش می‌گردیم.
+    #
+    # نسخهٔ قبلی کلیدِ سه‌فیلدی (ارز، جهت، R) داشت و ۲۹٪ می‌داد. آن عدد
+    # **بیست برابر متورم** بود: کلیدِ ضعیف با ردیف‌های قدیمیِ ibs/smc
+    # برخوردِ تصادفی می‌کرد. نمونهٔ آشکارش — ۱۰۴۳ معاملهٔ scalp «۲۸٪
+    # تطبیق» گرفتند در حالی که دفتر تجربه **صفر** ردیف با
+    # strategy=scalp دارد. با تطبیق دقیق، عدد واقعی ۱.۴٪ شد.
+    exp = set()
+    p = BRAIN / "learning" / "experiences.jsonl"
+    if p.exists():
+        with p.open(encoding="utf-8") as f:
+            exp = {ln.strip() for ln in f if ln.strip()}
     rows = []
     for t in closed:
         ts = _ms(t, "closed_ms", "closed", "t_close", "t")
@@ -124,14 +132,30 @@ def digested(closed, cutoff_ms):
             continue
         if t.get("outcome") == "expired" or t.get("R") is None:
             continue                                 # معامله نبود
-        key = (str(t.get("sym") or "").upper(), t.get("dir"),
-               round(float(t.get("R") or 0), 4))
         rows.append({
-            "sym": key[0], "dir": key[1], "tf": t.get("tf"),
+            "sym": t.get("sym"), "dir": t.get("dir"), "tf": t.get("tf"),
             "outcome": t.get("outcome"), "R": t.get("R_net", t.get("R")),
-            "closed_ms": int(ts), "digested": key in seen,
+            "closed_ms": int(ts), "digested": exp_line(t) in exp,
         })
     return rows
+
+
+def exp_line(t):
+    """همان خطی که `memory.digest_closed` برای این معامله می‌نویسد.
+
+    عمداً کپیِ دقیقِ همان ساختار است تا تطبیق بی‌ابهام باشد. اگر روزی
+    `digest_closed` شکلش را عوض کند و این‌جا نه، `test_beacon_learning`
+    سرخ می‌شود — چون سنجه‌ای که با کد تراز نباشد، عیبِ خودش را به گردن
+    سامانه می‌اندازد (درسِ ۵ سپتامبر).
+    """
+    w = t.get("why") or {}
+    return json.dumps({"sym": t.get("sym"), "tf": "15m", "dir": t.get("dir"),
+                       "strategy": w.get("stage") or "hamid",
+                       "r": t.get("R") or 0, "outcome": t.get("outcome"),
+                       "trend_4h": w.get("trend_4h"), "fear": w.get("fear"),
+                       "funding": w.get("funding"), "stop_pct": w.get("stop_pct"),
+                       "usdt_dom": w.get("usdt_dom"), "mode": w.get("mode"),
+                       "liq": w.get("liq")}, ensure_ascii=False)
 
 
 # ── پلهٔ ۲: عددی تکان خورد؟ ────────────────────────────────────────────
