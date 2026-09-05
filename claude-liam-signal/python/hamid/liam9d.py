@@ -126,6 +126,14 @@ JOBS = [
          cmd=["python3", "-m", "hamid.trail_alert", "--alert"]),
 
     # ── چرخهٔ حمید ────────────────────────────────────────────────────
+    # اثباتِ یادگیری و چراغِ بیرون‌فرست — دستور حمید ۴ سپتامبر.
+    # چراغ عمداً **بعد از** اثبات می‌آید تا تازه‌ترین حکم را ببرد.
+    dict(key="learning_proof", every=1800, wf="hamid-cycle.yml", timeout=300,
+         desc="اثبات سه‌پلهٔ یادگیری: ثبت شد؟ عدد تکان خورد؟ به کار رفت؟",
+         cmd=["python3", "-m", "hamid.learning_proof", "--write"]),
+    dict(key="beacon", every=600, wf="hamid-cycle.yml", timeout=180,
+         desc="چراغ لپ‌تاپ — گزارش یک‌طرفه روی شاخهٔ laptop-beacon",
+         cmd=["python3", "-m", "hamid.beacon", "--push"]),
     dict(key="cycle", every=1800, wf="hamid-cycle.yml", tg=True, timeout=900,
          desc="چرخهٔ حمید — روش خودش، هضم معاملات بسته",
          cmd=["python3", "-m", "hamid.cycle"]),

@@ -800,6 +800,28 @@
    "cadence_note": "دفتر اجرای کارها، هرس‌شونده — تازگی بی‌معناست",
    "kind": "ledger",
    "optional": true
+  },
+  "learning-proof.json": {
+   "layer": "L6_learning",
+   "owner": "E21",
+   "producer": "hamid/learning_proof.py",
+   "max_age_min": 90,
+   "consumer": "panel+beacon",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "سرویس محلی هر ۳۰ دقیقه؛ سقف ۹۰ با حاشیهٔ دو نوبت"
+  },
+  "beacon.json": {
+   "layer": "L7_health",
+   "owner": "E23",
+   "producer": "hamid/beacon.py",
+   "max_age_min": 30,
+   "consumer": "شاخهٔ laptop-beacon",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "چراغ لپ‌تاپ هر ۱۰ دقیقه؛ اختیاری چون تا سرویس محلی روشن نشده وجود ندارد"
   }
  }
 }
