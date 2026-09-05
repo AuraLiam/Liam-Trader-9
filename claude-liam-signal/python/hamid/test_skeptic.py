@@ -44,6 +44,39 @@ def run():
     check("بازجویی از E01 شروع می‌شود", ids[0] == "E01", str(ids[:3]))
     check("و به E25 (فرستنده) می‌رسد", "E25" in ids, str(ids))
     check("بازرسیِ نتیجه‌گیری هم در بانک هست", "**" in ids)
+
+    # ── محتوای سیگنالِ رفته، نه فقط رفتنش (دستور حمید ۵ سپتامبر) ───────
+    _e25 = [pool for e, _, pool in S.BANK if e == "E25"][0]
+    check("E25 محتوای سیگنال‌های رفته را هم می‌سنجد",
+          S.q_signal_sanity in _e25, str([f.__name__ for f in _e25]))
+    _now = 1_700_000_000_000
+    _good = {"at": _now - 1000, "sym": "AAAUSDT", "dir": "LONG", "tf": "5m",
+             "entry": 100.0, "sl": 95.0, "tp1": 110.0,
+             "trend4": "up", "trend1": "up"}
+    _cases = [
+        ("سالم", _good, "PROVED"),
+        ("تایم‌فریم غیرمجاز", dict(_good, tf="1m"), "UNPROVED"),
+        ("بی‌استاپ", dict(_good, sl=None), "UNPROVED"),
+        ("بی‌تارگت", dict(_good, tp1=0), "UNPROVED"),
+        ("ترتیب قیمت لانگ غلط", dict(_good, sl=105.0), "UNPROVED"),
+        ("RR زیر ۰.۸", dict(_good, tp1=102.0), "UNPROVED"),
+        ("وتوی روند نقض‌شده", dict(_good, trend4="down", trend1="down"), "UNPROVED"),
+        ("شورتِ سالم", dict(_good, dir="SHORT", sl=105.0, tp1=90.0,
+                            trend4="down", trend1="down"), "PROVED"),
+    ]
+    _saved = S._j
+    try:
+        for _name, _row, _want in _cases:
+            S._j = lambda rel, default=None, _r=_row: (
+                {"sent": [_r]} if rel.endswith("telegram-log.json") else default)
+            _got = S.q_signal_sanity(_now)["verdict"]
+            check(f"سیگنال «{_name}» → {_want}", _got == _want, _got)
+        S._j = lambda rel, default=None: ({"sent": []} if rel.endswith(
+            "telegram-log.json") else default)
+        check("بدون ارسال در پنجره: NO_DATA (نه سبزِ دروغین)",
+              S.q_signal_sanity(_now)["verdict"] == "NO_DATA")
+    finally:
+        S._j = _saved
     check("هر انجینِ بانک دست‌کم یک سؤال دارد",
           all(pool for _, _, pool in S.BANK))
 
