@@ -279,8 +279,13 @@ check("شکست تحویل در آرشیو شماره‌دار ثبت می‌ش�
       and "400" in _rows[0]["why"], str(_rows))
 n_fail = sum(1 for ln in src_c.splitlines()
              if "_log_delivery_fail(s," in ln and not ln.startswith("def "))
-check("هر سه مسیر خطا (HTTP، غیر HTTP، دنباله) ثبت می‌کنند",
-      n_fail == 3, str(n_fail))
+# پنج مسیر شکست: HTTP · غیر HTTP · دنباله · استثنای ثبتِ دفتر · ثبتِ
+# صفرردیف. دو تای آخر ۵ سپتامبر اضافه شدند — سه ارسال LOKAUSDT رفتند و
+# هیچ ردیف دفتر نگرفتند، و چون `open_from` استثنا نداده بود (فقط ساکت
+# صفر ردیف ساخت) هیچ‌جا ثبت نشد. عدد فقط بالا می‌رود؛ پایین‌آمدنش یعنی
+# یک مسیرِ شکست دوباره بی‌صدا شده.
+check("هر پنج مسیر خطا ثبت می‌کنند (هیچ شکستی بی‌صدا نیست)",
+      n_fail >= 5, str(n_fail))
 # شکستِ دنباله نباید سیگنالِ رفته را «نرفته» جا بزند — وگرنه دور بعد
 # دوباره می‌رود (همان کلاسِ PAXG×۵). مهر ضدتکرار باید قبل از ارسال
 # دنباله زده شود.
@@ -424,6 +429,106 @@ check("لاگِ خراب حافظه را صفر نمی‌کند", _tg._log_rows(
 
 check("سه ورک‌فلوی ارساله همچنان جدا می‌دوند (سریالی‌کردن ممنوع بود)",
       True, "مستندسازی: رفع از راه حافظهٔ مشترک است نه قفلِ سراسری")
+
+
+# ── دروازهٔ ستاپ یخ‌زده (پروندهٔ LOKAUSDT، ۵ سپتامبر) ───────────────────
+#
+# LOKAUSDT از ۲۳ اوت نُه بار با ورودِ دقیقاً یکسان ۰.۱۲۳۶ فرستاده شد و هر
+# نُه بار منقضی — قیمت هرگز نرسید. ضدتکرارِ ۳ و ۶ ساعته نمی‌گرفتش چون
+# ارسال‌ها ۱۴+ ساعت فاصله داشتند.
+import tempfile as _tf2                              # noqa: E402
+import pathlib as _pl                                # noqa: E402
+
+check("آستانه دو است، نه یک (لبهٔ یک‌بار-منقضی هنوز CI بالای صفر دارد)",
+      _tg.FROZEN_MIN_EXPIRED == 2, str(_tg.FROZEN_MIN_EXPIRED))
+
+with _tf2.TemporaryDirectory() as _td3:
+    from hamid import paper as _P2
+    _old_closed = _P2.CLOSED
+    try:
+        _P2.CLOSED = _pl.Path(_td3) / "closed.jsonl"
+        def _exp(sym, entry, outcome="expired"):
+            return json.dumps({"sym": sym, "entry": entry, "outcome": outcome,
+                                "closed": 1, "why": {"stage": "sig-smc"}},
+                               ensure_ascii=False)
+        _P2.CLOSED.write_text("\n".join([
+            _exp("LOKAUSDT", 0.1236), _exp("LOKAUSDT", 0.1236),
+            _exp("LOKAUSDT", 0.1236),
+            _exp("AAAUSDT", 1.0),                     # فقط یک انقضا
+            _exp("BBBUSDT", 2.0, "stop"),             # اصلاً منقضی نبوده
+            _exp("BBBUSDT", 2.0, "target"),
+        ]) + "\n", encoding="utf-8")
+        _fr = _tg._frozen_entries()
+        check("شمارش انقضا فقط منقضی‌ها را می‌شمارد",
+              _fr.get(("LOKAUSDT", 0.1236)) == 3
+              and _fr.get(("BBBUSDT", 2.0)) is None, str(_fr))
+        check("ورودِ یک‌بار منقضی زیر آستانه می‌ماند",
+              _fr.get(("AAAUSDT", 1.0)) == 1
+              and _fr.get(("AAAUSDT", 1.0)) < _tg.FROZEN_MIN_EXPIRED)
+        check("ورودِ متفاوتِ همان ارز شمرده نمی‌شود (کلید شامل قیمت است)",
+              _fr.get(("LOKAUSDT", 0.2)) is None)
+
+        # اثبات رفتاری: همان ستاپِ LOKA از گلوگاه ارسال رد نمی‌شود.
+        _o3 = (TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR)
+        TG.SENT = TMP / "s-fr.json"
+        TG.SIDECAR = TMP / "sc-fr.json"
+        TG.TGLOG = TMP / "lg-fr.json"
+        TG.ARCHIVE_DIR = TMP / "arc-fr"
+        # آفلاین، دروازه‌های شبکه‌ای (هم‌زمانی/روند) هرچه باشد رد می‌کنند،
+        # پس ملاک «رفت یا نرفت» نیست — ملاکْ **دلیلِ رد** است.
+        import contextlib as _ctx
+        import io as _io
+
+        def _reject_reason(entry, d):
+            _buf = _io.StringIO()
+            _op3, _oc3 = TG._post, TG.creds
+            TG._post = lambda *a, **k: {"result": {"message_id": 7}}
+            TG.creds = lambda: ("tok", "chat")
+            try:
+                with _ctx.redirect_stdout(_buf):
+                    TG.send_signals(
+                        [{"sym": "LOKAUSDT", "tf": "5m", "dir": d,
+                          "strategy": "smc", "entry": entry,
+                          "sl": entry * 0.99, "tp1": entry * 1.02}],
+                        lambda s, p: None)
+            finally:
+                TG._post, TG.creds = _op3, _oc3
+            return _buf.getvalue()
+
+        try:
+            _out_frozen = _reject_reason(0.1236, "LONG")
+            _out_fresh = _reject_reason(0.2, "SHORT")
+        finally:
+            TG.SENT, TG.SIDECAR, TG.TGLOG, TG.ARCHIVE_DIR = _o3
+        check("رفتاری: ستاپِ یخ‌زدهٔ LOKA با همین دروازه رد می‌شود",
+              "دروازهٔ ستاپ یخ‌زده" in _out_frozen, _out_frozen[:200])
+        check("و ورودِ تازهٔ همان ارز از این دروازه رد نمی‌شود "
+              "(دروازه ارز را نمی‌بندد، ورودِ یخ‌زده را می‌بندد)",
+              "دروازهٔ ستاپ یخ‌زده" not in _out_fresh, _out_fresh[:200])
+    finally:
+        _P2.CLOSED = _old_closed
+
+# دفترِ ناخوانا نباید دروازه را سفت کند — «نمی‌دانم» یعنی نبند.
+with _tf2.TemporaryDirectory() as _td4:
+    from hamid import paper as _P3
+    _old2 = _P3.CLOSED
+    try:
+        _P3.CLOSED = _pl.Path(_td4) / "nope.jsonl"    # وجود ندارد
+        check("دفتر ناموجود → دروازهٔ خاموش، نه بستنِ کور",
+              _tg._frozen_entries() == {})
+    finally:
+        _P3.CLOSED = _old2
+
+_src_tg = (HERE.parent / "telegram.py").read_text(encoding="utf-8")
+check("دروازهٔ یخ‌زده در همان حلقهٔ گلوگاه ارسال است",
+      "_frozen_setup(s)" in _src_tg
+      and _src_tg.index("_frozen_setup(s)") < _src_tg.index("fresh.append(s)"))
+check("و دلیلش روی لاگ می‌رود (رد بی‌دلیل ممنوع)",
+      "دروازهٔ ستاپ یخ‌زده" in _src_tg)
+check("عددهای پشتوانه در خودِ کد مستند شده‌اند (نه فقط در گزارش)",
+      "۸۴.۵٪" in _src_tg and "۸۵.۰٪" in _src_tg and "۴۸٬۷۳۲" in _src_tg)
+check("ارسالِ بی‌ردیفِ دفتر دیگر بی‌صدا نیست",
+      "ارسال شد ولی ردیف دفتر ساخته نشد" in _src_tg)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

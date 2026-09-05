@@ -797,6 +797,63 @@ def _news_trace(sym, direction):
         return {"news_align": None, "news_bias_w": None}
 
 
+FROZEN_MIN_EXPIRED = 2    # آستانه — پایین‌تر توضیح داده و اندازه گرفته شده
+
+
+def _frozen_entries():
+    """(ارز، ورود) → چند بار همان ورودِ دقیق منقضی شده (پر نشده).
+
+    پروندهٔ LOKAUSDT (۵ سپتامبر، شکایت حمید «اصلاً منطقی نیست»): از ۲۳
+    اوت **نُه بار** سیگنال شد، هر بار با ورودِ دقیقاً یکسان ۰.۱۲۳۶، و هر
+    نُه بار `expired` — یعنی قیمت هرگز به ورود نرسید. ضدتکرارِ موجود
+    نمی‌گرفتش چون پنجره‌هایش ۳ و ۶ ساعت است و این ارسال‌ها ۱۴+ ساعت
+    فاصله داشتند.
+
+    ### چرا آستانه ۲ است، نه ۱ و نه ۳ — با شمارش، نه سلیقه
+
+    روی کل دفتر بسته (n=۴۸٬۷۳۲ ردیفِ دارای ورودِ عددی)، هر معامله بر
+    اساس «چند بار همین (ارز، ورود) **قبلاً** منقضی شده» دسته شد:
+
+    | منقضیِ قبلی | n | نرخ انقضا | R پرشده‌ها (CI95) |
+    |---|---|---|---|
+    | ۰ | ۴۶٬۰۸۳ | **۶.۳٪** | +۰.۰۶۳ [+۰.۰۵۱, +۰.۰۷۴] |
+    | ۱ | ۱٬۲۸۸ | **۸۴.۵٪** | +۰.۲۳۵ [+۰.۰۸۱, +۰.۳۹۰] |
+    | ۲ | ۶۳۳ | **۸۵.۰٪** | +۰.۱۵۳ [−۰.۰۳۰, +۰.۳۳۷] |
+    | ۳+ | ۷۲۸ | **۸۸.۳٪** | +۰.۰۹۷ [−۰.۱۳۱, +۰.۳۲۴] |
+
+    دو چیز را با هم می‌گوید:
+
+    ۱. ورودِ تکرارشده ~۱۳ برابرِ ورودِ تازه احتمال دارد اصلاً پر نشود.
+    ۲. ولی آن‌هایی که **با یک انقضای قبلی** پر می‌شوند هنوز لبهٔ واقعی
+       دارند (CI کاملاً بالای صفر). پس بستنِ آستانه روی ۱، لبهٔ مثبت را
+       دور می‌ریزد.
+
+    از ۲ به بعد CI صفر را در بر می‌گیرد — یعنی ۸۵٪ نویز دیگر چیزی
+    نمی‌خرد. **آستانه دقیقاً همان‌جا گذاشته شد که داده گفت.**
+
+    ### مرزِ این دروازه
+
+    این دروازهٔ **تحویل** است نه استراتژی: ستاپ ساخته و ارزیابی و در دفتر
+    ثبت می‌شود؛ فقط دوباره برای حمید فرستاده نمی‌شود. هم‌خانوادهٔ
+    ضدتکرارِ ۳ و ۶ ساعته، که آن‌ها هم دروازهٔ تحویل‌اند. هیچ آستانهٔ
+    تصمیمی عوض نشد (قانون ۰۳).
+    """
+    counts = {}
+    try:
+        from hamid import paper as _p
+        for t in _p._read(_p.CLOSED):
+            if t.get("outcome") != "expired":
+                continue
+            e = t.get("entry")
+            if isinstance(e, (int, float)):
+                k = (t.get("sym"), round(float(e), 10))
+                counts[k] = counts.get(k, 0) + 1
+    except Exception as e:                           # noqa: BLE001 - دفتر ناخوانا = دروازهٔ خاموش
+        print(f"telegram: دفتر ستاپ یخ‌زده خوانده نشد ({type(e).__name__}) — "
+              "دروازه خاموش می‌ماند", flush=True)
+    return counts
+
+
 def send_signals(signals, render_chart, limit=8):
     """render_chart(setup, path) -> path, or None when a chart cannot be drawn."""
     token, chat = creds()
@@ -834,6 +891,16 @@ def send_signals(signals, render_chart, limit=8):
             return base in STABLES or base in WRAPPED
         except Exception:                            # noqa: BLE001
             return False
+
+    _frozen = _frozen_entries()
+
+    def _frozen_setup(s):
+        """ستاپِ یخ‌زده: همین ورودِ دقیق قبلاً ۲+ بار منقضی شده."""
+        try:
+            return _frozen.get((s["sym"], round(float(s["entry"]), 10)), 0) \
+                >= FROZEN_MIN_EXPIRED
+        except Exception:                            # noqa: BLE001
+            return False
     # دروازهٔ تایم‌فریم — دستور صریح حمید (۲۶ اوت شب): فقط ۱۵د و ۵د.
     off_tf = [s for s in signals if s.get("tf") not in ALLOWED_TFS]
     for s in off_tf:
@@ -868,6 +935,12 @@ def send_signals(signals, render_chart, limit=8):
 
     fresh = []
     for s in signals:
+        if _frozen_setup(s):
+            n_fr = _frozen.get((s["sym"], round(float(s["entry"]), 10)), 0)
+            print(f"  دروازهٔ ستاپ یخ‌زده: {s['sym']} @ {s['entry']} رد شد — "
+                  f"همین ورود قبلاً {n_fr}× منقضی شده (نرخ انقضا ۸۵٪ روی "
+                  f"n=۱۳۶۱؛ پروندهٔ LOKA ۵ سپتامبر)", flush=True)
+            continue
         if (_key(s) in sent or f"skip|{_key(s)}" in sent
                 or _dup_any(s) or _dup_pair(s)
                 or _sym_worn(s) or _stable(s) or _claimed(s)):
@@ -1115,7 +1188,7 @@ def send_signals(signals, render_chart, limit=8):
             # دفتر نیست، با برچسب sig-<استراتژی> ثبت و تا نتیجه دنبال می‌شود.
             try:
                 from hamid import paper as _paper
-                _paper.open_from([{"symbol": s["sym"], "dir": s["dir"],
+                _n_open = _paper.open_from([{"symbol": s["sym"], "dir": s["dir"],
                                    "entry": s["entry"], "sl": s["sl"],
                                    "tp1": s.get("tp1") or s["entry"], "tp2": s.get("tp2"),
                                    "stage_tag": f"sig-{s.get('strategy', '?')}",
@@ -1153,8 +1226,19 @@ def send_signals(signals, render_chart, limit=8):
                                   "exp_used": any(("تمرین تاریخی" in x or "حافظه" in x
                                                    or "قانون تأییدشده" in x)
                                                   for x in (s.get("premortem") or {}).get("pro", []))})
+                # سیگنالی که ردیف دفتر نگیرد، هرگز نتیجه نمی‌گیرد: نه
+                # ریپلای نتیجه می‌خورد، نه هضم می‌شود، نه در کارنامه
+                # می‌آید. تا امشب این حالت **بی‌صدا** بود — فقط وقتی
+                # `open_from` استثنا می‌داد چیزی چاپ می‌شد، نه وقتی
+                # ساکت صفر ردیف می‌ساخت (کلید تکراری در دفتر باز).
+                # سه ارسال LOKAUSDT در ۵ سپتامبر دقیقاً همین‌طور گم شدند.
+                if not _n_open:
+                    print(f"  ثبت نشد: {s['sym']} ارسال شد ولی ردیف دفتر "
+                          "نگرفت (کلید تکراری در دفتر باز؟)", flush=True)
+                    _log_delivery_fail(s, "ارسال شد ولی ردیف دفتر ساخته نشد")
             except Exception as e:                    # noqa: BLE001 - ثبت نشدن، ارسال را نمی‌کشد
                 print(f"  paper log failed for {s['sym']}: {type(e).__name__}", flush=True)
+                _log_delivery_fail(s, f"paper.open_from: {type(e).__name__}")
         except urllib.error.HTTPError as e:
             body = scrub(e.read()[:200])
             print(f"  telegram rejected {s['sym']}: {e.code} {body}", flush=True)
