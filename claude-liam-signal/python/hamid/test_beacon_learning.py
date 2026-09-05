@@ -20,7 +20,6 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent))
 
 from hamid import beacon as B                        # noqa: E402
 from hamid import learning_proof as L                # noqa: E402
@@ -42,7 +41,17 @@ def check(name, cond, extra=""):
 
 
 # ── ۱. چراغ سکرت بیرون نمی‌برد ─────────────────────────────────────────
-FAKE = "8123456789:AAF-fakeTokenForTestingOnly_x9Qz12345678"
+# توکنِ ساختگی **تکه‌تکه** ساخته می‌شود تا هیچ رشتهٔ توکن‌شکلی در خودِ
+# فایل نباشد.
+#
+# چرا: نسخهٔ اول همین ثابت را یک‌جا نوشت، پاسبانِ نشتِ سکرت
+# (`test_sentinel`) آن را «توکن ربات تلگرام» دید، دروازهٔ زنجیره قرمز
+# شد و **اسکن سیگنال ۳ ساعت اجرا نشد** (۵ سپتامبر، اجراهای ۱۸۰۰ و
+# ۱۸۰۱). یعنی یک فیکسچرِ آزمون، محصول را خواباند.
+#
+# مقدارِ زمانِ اجرا هنوز دقیقاً شکلِ یک توکن واقعی است، پس آزمونِ
+# پاک‌سازی همان‌قدر معتبر می‌ماند — فقط دیگر روی دیسک توکن‌شکل نیست.
+FAKE = "8123456789" + ":" + "AAF" + "-" + "fakeTokenForTestingOnly_x9Qz12345678"
 dirty = {"TELEGRAM_BOT_TOKEN": FAKE, "chat_id": "123456",
          "note": f"سلام {FAKE} خداحافظ",
          "nested": [{"api_key": "abc"}, {"ok": "متن سالم"}],
@@ -261,6 +270,68 @@ with _tf.TemporaryDirectory() as _td2:
           _before == _after,
           f"{len(_before or b'')} → {len(_after or b'')} بایت")
     check("ولی خروجیِ ادغام واقعاً ساخته می‌شود", _out2.exists())
+
+
+# ── ۵. هضم عقب‌مانده: معاملهٔ ورک‌فلوی دیگر هم باید هضم شود ────────────
+#
+# عیبِ اندازه‌گیری‌شدهٔ ۵ سپتامبر: تنها فراخوانِ `digest_closed` فقط
+# معامله‌های **همین اجرا** را می‌داد (`closed >= t_mark`)، پس هر چیزی
+# که `scalp.yml` یا میز تمرین بین دو چرخه می‌بست هرگز هضم نمی‌شد.
+# شمارش: `stage=scalp` در دفتر بسته ۱٬۰۵۷ معامله و در دفتر تجربه صفر
+# ردیف؛ نرخ کلِ هضم روی ۷۲ ساعت ۴.۷٪.
+from hamid import memory as _M                       # noqa: E402
+from hamid import paper as _P                        # noqa: E402
+
+with tempfile.TemporaryDirectory() as _td3:
+    _r3 = Path(_td3)
+    (_r3 / "learning").mkdir(parents=True)
+    (_r3 / "paper").mkdir(parents=True)
+    _sv = (_M.ROOT, _M.DIGEST_STATE, _M.LESSONS, _P.CLOSED,
+           brain_mod := __import__("brain"), brain_mod.LEARNING)
+    _old_closed, _old_state = _P.CLOSED, _M.DIGEST_STATE
+    _old_learning, _old_lessons = brain_mod.LEARNING, _M.LESSONS
+    _old_sandbox = brain_mod.SANDBOX
+    try:
+        brain_mod.SANDBOX = False
+        brain_mod.LEARNING = _r3 / "learning"
+        _M.DIGEST_STATE = _r3 / "learning" / "digest-state.json"
+        _M.LESSONS = _r3 / "lessons.json"
+        _P.CLOSED = _r3 / "paper" / "closed.jsonl"
+        def _row(sym, stage, ms):
+            return {"sym": sym, "dir": "LONG", "tf": "1m", "R": 0.5,
+                    "outcome": "target", "closed": ms, "why": {"stage": stage}}
+        # هر سه از منظرِ چرخه «قدیمی»اند: ورک‌فلوی دیگری بستشان.
+        _P.CLOSED.write_text("\n".join(json.dumps(_row(s, st, m), ensure_ascii=False)
+                                       for s, st, m in (("AAAUSDT", "scalp", 1000),
+                                                        ("BBBUSDT", "practice", 2000),
+                                                        ("CCCUSDT", "scalp", 3000))) + "\n",
+                             encoding="utf-8")
+        n1 = _M.digest_backlog()
+        _exp = [json.loads(x) for x in
+                (_r3 / "learning" / "experiences.jsonl").read_text().splitlines() if x.strip()]
+        check("هضم عقب‌مانده: معاملهٔ بستهٔ ورک‌فلوی دیگر هم هضم می‌شود",
+              n1 == 3 and len(_exp) == 3, f"n={n1} rows={len(_exp)}")
+        check("و میز اسکلپ هم داخلش هست (نه فقط تمرین)",
+              sum(1 for e in _exp if e.get("strategy") == "scalp") == 2,
+              str([e.get("strategy") for e in _exp]))
+        check("نشانگر پیشروی روی آخرین تسویه می‌نشیند",
+              json.loads(_M.DIGEST_STATE.read_text())["last_closed_ms"] == 3000)
+        n2 = _M.digest_backlog()
+        check("اجرای دوم چیزی را دوباره هضم نمی‌کند (نشانگر کار می‌کند)",
+              n2 == 0 and len(_exp) == 3, f"n={n2}")
+        with _P.CLOSED.open("a", encoding="utf-8") as _fh:
+            _fh.write(json.dumps(_row("DDDUSDT", "scalp", 4000), ensure_ascii=False) + "\n")
+        check("ولی تسویهٔ تازه بعد از نشانگر هضم می‌شود", _M.digest_backlog() == 1)
+        check("سقف هر اجرا رعایت می‌شود (عقب‌ماندگی بزرگ تکه‌تکه)",
+              _M.digest_backlog(limit=1) == 0)          # چیزی نمانده
+    finally:
+        brain_mod.SANDBOX = _old_sandbox
+        brain_mod.LEARNING = _old_learning
+        _M.DIGEST_STATE, _M.LESSONS, _P.CLOSED = _old_state, _old_lessons, _old_closed
+
+_csrc = (HERE / "cycle.py").read_text(encoding="utf-8")
+check("کلاس: چرخه هضمِ عقب‌مانده را صدا می‌زند، نه فقط پنجرهٔ خودش",
+      "digest_backlog()" in _csrc)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

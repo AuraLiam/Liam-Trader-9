@@ -140,6 +140,66 @@ def merge_jsonl(path):
     return f"{len(rows)} معاملهٔ یکتا{extra}"
 
 
+def merge_archive_jsonl(path):
+    """آرشیو شماره‌دارِ `signals/archive/*.jsonl` → اجتماع بر هویت ردیف.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۵ سپتامبر: مسیرِ `signals/` یک‌جا به `take_ours`
+    می‌رفت، یعنی «عکس‌فوریِ بازتولیدشدنی». برای `signals/latest.json` درست
+    است؛ برای `signals/archive/telegram-sent-<روز>.jsonl` فاجعه — این دفتر
+    **append-only شماره‌دار** است (قانون ضد-merge، ۲۶ اوت) و هر بار که دو
+    اجرا در یک روز روی همان فایل بنویسند، نسخهٔ کاملِ یکی روی دیگری
+    می‌نشیند و ردیف‌های اضافیِ آن یکی **بی‌صدا گم می‌شوند**.
+
+    اثبات با شمارش، نه با حدس (۵ سپتامبر، پنجرهٔ ۲۴ ساعته):
+    `signals/telegram-log.json` ۲۴ ارسال داشت و آرشیو ۲۳؛ ردیفِ گم‌شده
+    DOGEUSDT ساعت ۲۱:۲۴:۳۵ UTC بود. شمارهٔ ردیف‌های همان روز هیچ حفره‌ای
+    نداشت (۱..۲۳ پیوسته) — یعنی ردیف بعد از نوشتن پاک نشده، بلکه نسخهٔ
+    کاملِ فایل جایگزین شده.
+
+    چرا مهم است: شمارندهٔ سقف روزانه (`telegram._archive_sent_in`) دقیقاً
+    از همین فایل می‌خواند. هر ردیفِ گم‌شده یعنی سقف `DAILY_CAP=24` کمتر از
+    واقعیت می‌شمارد و بیشتر از سقف سیگنال می‌رود.
+
+    هویت ردیف: `tg_msg_id` (یکتای پیام تلگرام) وگرنه `(at, sym, dir)`
+    وگرنه خودِ متن. `n` بعد از اجتماع بر پایهٔ `at` از نو پیاپی می‌شود —
+    چون هر اجرا `n` را از شمارِ فایلِ خودش می‌سازد و بعد از اجتماع دو
+    ردیف می‌توانند `n` یکسان داشته باشند؛ شمارهٔ تکراری یعنی شماره‌گذاری
+    از کار افتاده.
+    """
+    best, order = {}, []
+    for st in (2, 3):
+        for line in (_stage(st, path) or "").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except Exception:                        # noqa: BLE001 - خط خراب رد
+                rec = None
+            if isinstance(rec, dict):
+                k = (("mid", rec["tg_msg_id"]) if rec.get("tg_msg_id")
+                     else ("row", rec.get("at"), rec.get("sym"), rec.get("dir")))
+            else:
+                rec, k = None, ("__raw__", line)
+            if k in best:
+                continue
+            best[k] = (rec, line)
+            order.append(k)
+    rows = [best[k] for k in order]
+    dated = [r for r in rows if r[0] is not None
+             and isinstance(r[0].get("at"), (int, float))]
+    rest = [r for r in rows if r not in dated]
+    dated.sort(key=lambda r: r[0]["at"])
+    out = []
+    for i, (rec, _line) in enumerate(dated, 1):
+        rec = dict(rec)
+        rec["n"] = i
+        out.append(json.dumps(rec, ensure_ascii=False))
+    out += [line for _rec, line in rest]
+    (ROOT / path).write_text("\n".join(out) + "\n", encoding="utf-8")
+    return f"{len(out)} ردیف آرشیو (شماره‌گذاری از نو)"
+
+
 def merge_gz_minutes(path):
     """دفتر دقیقه‌ایِ gzip (عمق دفتر) → اجتماع بر مهر زمان سطل.
 
@@ -341,6 +401,10 @@ def handler_for(path):
         return merge_frontier                         # مرز پیشروی هر انجین
     if path.startswith("brain/research/") and path.endswith("last-seen.json"):
         return merge_frontier                         # {url: وضعیت} — کلیدها جمع
+    # آرشیو شماره‌دار **قبل از** قاعدهٔ فراگیرِ signals/ — دفتر است نه
+    # عکس‌فوری؛ take_ours روی آن یعنی گم‌شدنِ بی‌صدای ردیف (درس ۵ سپتامبر).
+    if path.startswith("signals/archive/") and path.endswith(".jsonl"):
+        return merge_archive_jsonl
     if path.startswith("signals/"):
         return take_ours
     # آرشیو بک‌تست — ۱۷ اوت: heartbeat و hamid-backtest هر دو این پوشه را

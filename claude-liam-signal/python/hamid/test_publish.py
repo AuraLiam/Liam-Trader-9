@@ -292,6 +292,50 @@ check("مرز پیشروی (-state.json) → اجتماع کلیدهای هر د
 check("فایلِ نانوشته → نسخهٔ origin", w.on_origin("signals/other.json") == '{"o": 5}')
 w.close()
 
+# ── ۸ب) آرشیو شماره‌دارِ signals/archive → دفتر است، نه عکس‌فوری ──────────
+#
+# عیبِ ۵ سپتامبر: `signals/` یک‌جا take_ours می‌گرفت، پس وقتی دو اجرا در
+# یک روز روی `telegram-sent-<روز>.jsonl` می‌نوشتند نسخهٔ کامل یکی روی
+# دیگری می‌نشست و ردیف‌های اضافیِ آن یکی گم می‌شدند. اندازه‌گیری: دفتر
+# ارسال ۲۴ ردیف در ۲۴ ساعت داشت و آرشیو ۲۳ (DOGEUSDT گم شده بود) —
+# و همین آرشیو منبعِ شمارندهٔ سقف روزانه است.
+w = World()
+_row = lambda n, at, sym, mid: json.dumps(          # noqa: E731
+    {"n": n, "at": at, "sym": sym, "tf": "5m", "dir": "LONG",
+     "entry": 1.0, "sl": 0.9, "tp1": 1.2, "strategy": "ibs",
+     "tg_msg_id": mid}, ensure_ascii=False)
+w.other_push({"signals/archive/telegram-sent-20260904.jsonl":
+              _row(1, 1000, "AAAUSDT", 11) + "\n" + _row(2, 3000, "CCCUSDT", 13) + "\n"})
+(w.work / "signals/archive").mkdir(parents=True, exist_ok=True)
+(w.work / "signals/archive/telegram-sent-20260904.jsonl").write_text(
+    _row(1, 1000, "AAAUSDT", 11) + "\n" + _row(2, 2000, "BBBUSDT", 12) + "\n")
+r = w.publish("signals")
+_arc = [json.loads(x) for x in (w.on_origin(
+    "signals/archive/telegram-sent-20260904.jsonl") or "").splitlines() if x.strip()]
+check("انتشار آرشیو: خروج ۰", r.returncode == 0, (r.stdout + r.stderr)[-500:])
+check("آرشیو ارسال: هیچ ردیفی از هیچ طرف گم نشد (اجتماع، نه take_ours)",
+      [a["sym"] for a in _arc] == ["AAAUSDT", "BBBUSDT", "CCCUSDT"], str(_arc))
+check("آرشیو ارسال: ردیف مشترک دوبار نمی‌شود",
+      sum(1 for a in _arc if a["tg_msg_id"] == 11) == 1, str(_arc))
+check("آرشیو ارسال: شماره‌گذاری بعد از اجتماع پیاپی و بی‌تکرار",
+      [a["n"] for a in _arc] == [1, 2, 3], str([a["n"] for a in _arc]))
+w.close()
+
+# کلاسِ عیب: هیچ دفتر jsonl زیر signals/ نباید عکس‌فوری فرض شود.
+sys.path.insert(0, str(REPO / "scripts"))
+import importlib.util as _ilu                                   # noqa: E402
+_spec = _ilu.spec_from_file_location("rbc_guard", RESOLVER)
+_rbc = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_rbc)
+check("کلاس: هر jsonl زیر signals/archive → اجتماع، نه take_ours",
+      all(_rbc.handler_for(p) is _rbc.merge_archive_jsonl for p in (
+          "signals/archive/telegram-sent-20260904.jsonl",
+          "signals/archive/telegram-feed-20260904.jsonl",
+          "signals/archive/delivery-failures-20260904.jsonl")),
+      str([_rbc.handler_for("signals/archive/telegram-feed-20260904.jsonl")]))
+check("مرز: عکس‌فوریِ signals همچنان take_ours می‌ماند",
+      _rbc.handler_for("signals/latest.json") is _rbc.take_ours)
+
 # ── ۹) ریموتِ مرده → خروج ۱ بعد از تلاش‌ها، نه سکوت ───────────────────────
 w = World()
 (w.work / "signals/latest.json").write_text('{"generated": 4}')

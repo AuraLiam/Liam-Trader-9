@@ -127,6 +127,53 @@ def digest_closed(trades):
     return fed
 
 
+DIGEST_STATE = ROOT / "brain" / "learning" / "digest-state.json"
+DIGEST_LIMIT = 6000
+
+
+def digest_backlog(limit=DIGEST_LIMIT, now_ms=None):
+    """هر معاملهٔ بسته را هضم کن — فارغ از این‌که **کدام** ورک‌فلو بستش.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۵ سپتامبر: تنها فراخوانِ `digest_closed` در
+    `cycle.py` بود و فقط معامله‌هایی را می‌داد که **همان اجرا** بسته بود
+    (`closed >= t_mark`). هر چیزی که ورک‌فلوی دیگری بین دو چرخه می‌بست
+    برای همیشه هضم‌نشده می‌ماند.
+
+    اندازهٔ نشتی، با شمارش روی ۷۲ ساعت: از ۴٬۳۰۰ معاملهٔ بستهٔ واجد شرایط،
+    دفتر تجربه فقط ۲۰۰ ردیفِ متناظر داشت (۴.۷٪). تفکیکش گویاتر است —
+    `stage=scalp` در دفتر بسته ۱٬۰۵۷ معامله دارد و در دفتر تجربه
+    **صفر** ردیف؛ `practice` ۲٬۰۶۴ معامله در برابر ۲۲۵ ردیف در کلِ دفتر.
+    یعنی میز اسکلپ از روز اول هیچ‌چیز به حافظه نداده بود.
+
+    این نقضِ مستقیم تعهد ۱ قانون ۰۳ است: «هر معاملهٔ بسته در همان چرخه
+    هضم می‌شود». پس ملاک از «پنجرهٔ این اجرا» به **نشانگر پیشروی** عوض
+    می‌شود: هر بار از آخرین `closed`ِ هضم‌شده به بعد خوانده می‌شود، هرکه
+    بسته باشد. نشانگر در `brain/learning/digest-state.json` می‌نشیند —
+    پسوند `-state.json` یعنی ادغامش «بیشینهٔ هر کلید» است، پس دو رانرِ
+    هم‌زمان نشانگر را عقب نمی‌برند.
+    """
+    from hamid import paper                          # noqa: PLC0415 - چرخهٔ ایمپورت
+    try:
+        st = json.loads(DIGEST_STATE.read_text())
+    except Exception:                                # noqa: BLE001 - اولین بار
+        st = {}
+    mark = st.get("last_closed_ms") or 0
+    rows = [t for t in paper._read(paper.CLOSED)
+            if isinstance(t.get("closed"), (int, float)) and t["closed"] > mark]
+    rows.sort(key=lambda t: t["closed"])
+    if len(rows) > limit:                            # عقب‌ماندگیِ بزرگ، تکه‌تکه
+        rows = rows[:limit]
+    if not rows:
+        return 0
+    fed = digest_closed(rows)
+    st["last_closed_ms"] = max(t["closed"] for t in rows)
+    st["at"] = int(now_ms or time.time() * 1000)
+    if not brain.blocked(DIGEST_STATE):
+        DIGEST_STATE.parent.mkdir(parents=True, exist_ok=True)
+        DIGEST_STATE.write_text(json.dumps(st, ensure_ascii=False), encoding="utf-8")
+    return fed
+
+
 def history(sym, direction):
     """تمرین تاریخی — آمار ریپلیِ همین ارز/جهت روی کندل واقعی (backtest.py).
 
