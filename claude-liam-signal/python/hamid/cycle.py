@@ -725,9 +725,15 @@ def settle_books(report):
         newly = [t for t in paper._read(paper.CLOSED)
                  if (t.get("closed") or 0) >= t_mark]
         fed = _mem2.digest_closed(newly)
-        if fed:
-            act(f"حافظه: {fed} معاملهٔ بسته هضم شد — تصمیم‌های همین چرخه با دانش تازه گرفته می‌شود")
-        report["memory"] = {"fed_now": fed, "lessons": _mem2.lessons(limit=6)}
+        # و هر چیزی که ورک‌فلوی دیگری بسته و هنوز هضم نشده (اسکلپ، تمرین،
+        # زنجیرهٔ پامپ…). ملاک نشانگر پیشروی است نه پنجرهٔ این اجرا —
+        # اندازه‌گیری ۵ سپتامبر: ۱٬۰۵۷ معاملهٔ scalp بسته و صفر ردیف تجربه.
+        back = _mem2.digest_backlog()
+        if fed or back:
+            act(f"حافظه: {fed} معاملهٔ همین چرخه + {back} عقب‌ماندهٔ ورک‌فلوهای "
+                "دیگر هضم شد — تصمیم‌های همین چرخه با دانش تازه گرفته می‌شود")
+        report["memory"] = {"fed_now": fed, "fed_backlog": back,
+                            "lessons": _mem2.lessons(limit=6)}
     except Exception as e:                           # noqa: BLE001
         print(f"هضم حافظه: {type(e).__name__}: {e}")
     try:
