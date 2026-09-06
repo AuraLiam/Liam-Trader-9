@@ -288,6 +288,17 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.newsboard --write || true
 
+      # اثباتِ یادگیری (E21). تا ۶ سپتامبر تنها تولیدکننده‌اش `liam9d.py`
+      # بود — سرویس محلی لپ‌تاپ — و چون آن سرویس مستقر نیست، فایل ۲۴ ساعت
+      # کهنه ماند و گذرگاه وضعیت DEGRADED می‌داد. علت، نه حادثه: فایلی که
+      # پنل مصرفش می‌کند نباید تنها تولیدکننده‌اش چیزی باشد که اجرا
+      # نمی‌شود. تا استقرار آن سرویس، Actions مرجع عملیاتی است (CLAUDE.md).
+      # وقتی سرویس محلی مستقر شد، یکی از این دو نویسنده برداشته می‌شود
+      # (قانون ۰۵: یک نویسنده برای هر دامنهٔ وضعیت).
+      - name: اثباتِ یادگیری (E21)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.learning_proof --write || true
+
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
 
