@@ -400,20 +400,44 @@ def load_scores(path=None):
         return {"generated": None, "guardians": {}}
 
 
-def weight_of(gid, scores):
-    """وزن = پایه × (۱ + باند از کارنامه). زیر MIN_N هیچ حرکتی."""
+def weight_of(gid, scores, base_rate=None):
+    """وزن = پایه × (۱ + باند از کارنامه). زیر MIN_N هیچ حرکتی.
+
+    ── مبنا، نه ۵۰٪ (رفع ۶ سپتامبر) ──────────────────────────────────────
+    تا امروز دقتِ هر مراقب با **۰.۵** سنجیده می‌شد، انگار سکه می‌اندازد.
+    ولی نرخِ بردِ خودِ دفتر ۷۱.۷٪ است (دفترِ تریل-سنگین). یعنی مراقبی که
+    **همیشه** «+» بگوید و هیچ تحلیلی نکند، دقت ~۷۲٪ می‌گیرد و بیشینهٔ
+    وزن (۱.۴) را می‌بَرد — رأی‌دهنده‌ای که هیچ تمایزی نمی‌سازد، پاداشِ
+    کامل می‌گیرد. این دقیقاً همان کلاسی است که حمید از پنل دیگر آورد:
+    رأیی که همیشه یک عدد است و فقط سقفِ اعتماد را جابه‌جا می‌کند.
+
+    اندازه‌گیریِ همان روز: از ۱۲ مراقب، **جوزا** (۱۴/۱۴ رأی = +۰.۷) و
+    **جدی** (۳۶/۳۶ رأی یک‌مقدار) انحراف معیارِ صفر دارند — و هر دو
+    وزن بالا گرفته بودند.
+
+    درمان: مبنا نرخِ واقعیِ همان دفتر است، نه ۰.۵. مراقب فقط برای
+    **بهترشدن از مبنا** پاداش می‌گیرد. مبنای ناموجود → همان ۰.۵ (رفتار
+    قبلی، تا وقتی دفتر عددش را بدهد).
+    """
     g = BY_ID[gid]
     rec = (scores.get("guardians") or {}).get(gid) or {}
     n, k = rec.get("n") or 0, rec.get("correct") or 0
     if n < MIN_N:
         return g["base"], f"n={n} < {MIN_N} — وزن پایه"
+    if base_rate is None:
+        base_rate = scores.get("base_rate")
+    b = float(base_rate) if isinstance(base_rate, (int, float)) else 0.5
+    b = min(max(b, 0.05), 0.95)                  # مبنای افراطی وزن را نترکاند
     acc = k / n
     ci = rec.get("ci95") or _wilson(k, n)
-    confirmed = ci is not None and (ci[0] > 0.5 or ci[1] < 0.5)
+    confirmed = ci is not None and (ci[0] > b or ci[1] < b)
     band = BAND_CONFIRMED if confirmed else BAND_EXPLORATORY
-    adj = max(-band, min(band, (acc - 0.5) * 2))
-    return round(g["base"] * (1 + adj), 4), (f"دقت {acc*100:.0f}٪ n={n} CI {ci} — "
-                                               + ("باند کامل" if confirmed else "باند اکتشافی"))
+    # تقسیم بر بیشینهٔ فاصلهٔ ممکن تا مقیاس مثل قبل در [−۱,+۱] بماند
+    span = max(1 - b, b)
+    adj = max(-band, min(band, (acc - b) / span))
+    return round(g["base"] * (1 + adj), 4), (
+        f"دقت {acc*100:.0f}٪ در برابر مبنای {b*100:.0f}٪ · n={n} CI {ci} — "
+        + ("باند کامل" if confirmed else "باند اکتشافی"))
 
 
 def weights(scores=None):
@@ -529,7 +553,19 @@ def score_outcomes(closed_path=None, now_ms=None):
     """هر مراقب چند بار درست گفت: رأی هم‌علامت با R = درست؛ ممتنع شمرده نمی‌شود."""
     p = Path(closed_path or CLOSED)
     acc = {gid: {"n": 0, "correct": 0} for gid in BY_ID}
-    used = 0
+    used = wins = 0
+    # ── یکتاسازی بر هویت معامله (رفع ۶ سپتامبر) ──────────────────────────
+    #
+    # این تابع ردیف‌ها را می‌شمرد، نه معامله‌ها را — و بازوهای آزمایشِ تریل
+    # (`exp-trail-g65`/`exp-trail-g80`) همان معامله را آینه می‌کنند. پس هر
+    # معامله سه بار در کارنامه می‌آمد. اندازه‌گیریِ همان روز: **۱۷۸ ردیف =
+    # ۶۰ معاملهٔ یکتا** (۵۹ تا ×۳ + یک تکی).
+    #
+    # این دقیقاً همان کلاسی است که ۲۴ اوت یک بار تصحیح شد («قبل از هر CI،
+    # یکتاییِ ردیف‌ها باید اثبات‌شده باشد») و در ماژول تازه دوباره رویید.
+    # تکرار، هم n را چند برابر می‌کند و هم بازهٔ اطمینان را ساختگی تنگ —
+    # یعنی مراقبی زودتر از حقش «تأییدشده» می‌شود و وزن می‌گیرد.
+    seen = set()
     if p.exists():
         for line in p.read_text(encoding="utf-8").splitlines():
             if not line.strip():
@@ -549,14 +585,26 @@ def score_outcomes(closed_path=None, now_ms=None):
                 continue
             if R == 0:
                 continue
+            try:
+                ident = (r.get("sym"), r.get("dir"),
+                         round(float(r.get("entry") or 0), 10), r.get("opened"))
+            except (TypeError, ValueError):
+                ident = (r.get("sym"), r.get("dir"), r.get("entry"), r.get("opened"))
+            if ident in seen:
+                continue
+            seen.add(ident)
             used += 1
+            wins += 1 if R > 0 else 0
             for gid, v in pv.items():
                 if gid not in acc or v is None or abs(v) <= 0.05:
                     continue
                 acc[gid]["n"] += 1
                 if (v > 0) == (R > 0):
                     acc[gid]["correct"] += 1
+    # نرخِ بردِ همین دفتر — مبنایی که وزن با آن سنجیده می‌شود، نه ۰.۵.
+    # بدون این، رأی‌دهندهٔ «همیشه مثبت» بیشینهٔ وزن را مجانی می‌برد.
     out = {"generated": int(now_ms or time.time() * 1000), "trades_used": used, "min_n": MIN_N,
+           "base_rate": round(wins / used, 4) if used else None,
            "guardians": {}}
     for gid, a in acc.items():
         n, k = a["n"], a["correct"]

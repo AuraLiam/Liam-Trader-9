@@ -160,7 +160,7 @@ setups = [
      "quality": 80, "candles": _liq_cd},
     {"sym": "XUSDT", "dir": "SHORT", "tf": "5m", "stage": "WATCH"},
 ]
-n_dem = SC.gate_stages(setups, kget=_kget_up)
+n_dem, _dirs = SC.gate_stages(setups, kget=_kget_up)
 check("اسکن: ARMED خلاف هر دو تایم بالا به WATCH تنزل می‌کند",
       setups[0]["stage"] == "WATCH" and "وتوی مطلق" in setups[0].get("skip", ""),
       str(setups[0].get("skip")))
@@ -216,6 +216,39 @@ check("پیام رادار پامپ صریح می‌گوید «سیگنال ور
       "سیگنال ورود نیست" in _pr_src)
 check("پیام دفتر انتظار صریح می‌گوید «سیگنال ورود نیست»",
       "سیگنال ورود نیست" in _pw_src)
+
+# ── قیف باید جهت را بشمرد، و پیش از دروازه (۶ سپتامبر) ───────────────────
+#
+# سؤال حمید: «علت اینکه سیگنال شورت پیدا نمیشود باید دقیق بررسی شود.»
+# با فیلدهای قبلی جواب‌دادنی نبود: قیف فقط شمارِ کلِ ستاپ را داشت. و چون
+# `funnel_report` **بعد از** `gate_stages` صدا زده می‌شود، وضعیتِ
+# پیش-دروازه بازیابی‌ناپذیر بود — یعنی نمی‌شد فهمید موتور شورت نمی‌سازد
+# یا می‌سازد و دروازه می‌کشدش. اثباتِ محصول، نه اثباتِ اسکریپت:
+from collections import Counter as _FC
+_st = [{"stage": "SIGNAL", "dir": "LONG"}, {"stage": "SIGNAL", "dir": "SHORT"},
+       {"stage": "ARMED", "dir": "SHORT"}]
+_pre = _FC((s["stage"], s["dir"]) for s in _st)
+_st[1]["stage"] = "WATCH"                      # دروازه شورت را تنزل داد
+_st[2]["stage"] = "WATCH"
+_fn = SC.funnel_report(_st, sent=1, demoted=2, held=0, series=9, failed=0,
+                       pre_gate=_pre, demoted_dirs={"SHORT": 2})
+check("قیف جهتِ همهٔ ستاپ‌ها را می‌شمرد",
+      _fn.get("dirs") == {"LONG": 1, "SHORT": 2}, str(_fn.get("dirs")))
+check("قیف عکسِ پیش از دروازه را نگه می‌دارد",
+      (_fn.get("stage_dir_pre_gate") or {}).get("SIGNAL|SHORT") == 1,
+      str(_fn.get("stage_dir_pre_gate")))
+check("و پس از دروازه با آن فرق دارد (وگرنه عکس بی‌فایده است)",
+      "SIGNAL|SHORT" not in (_fn.get("stage_dir_post_gate") or {}),
+      str(_fn.get("stage_dir_post_gate")))
+check("تنزلِ دروازهٔ روند به تفکیک جهت ثبت می‌شود",
+      (_fn.get("trend_gate_demoted_dirs") or {}).get("SHORT") == 2,
+      str(_fn.get("trend_gate_demoted_dirs")))
+check("و دروازه خودش جهت‌ها را برمی‌گرداند، نه فقط یک عدد",
+      isinstance(SC.gate_stages([], kget=_kget_up), tuple))
+_scan_src = (Path(__file__).resolve().parents[1] / "scan.py").read_text(
+    encoding="utf-8")
+check("کلاس: عکسِ پیش-دروازه قبل از gate_stages گرفته می‌شود",
+      0 <= _scan_src.find("_pre_gate = _PC(") < _scan_src.find("gate_stages(setups)"))
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

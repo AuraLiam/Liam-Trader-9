@@ -164,6 +164,63 @@ check("پنل phoenix.json را می‌خواند", "./signals/phoenix.json" in 
 check("و مرحلهٔ انتشار هرچه را پنل می‌خواند می‌فرستد (فهرست مشتق)",
       "grep -oE '\\./signals/" in wf and "for f in $WANTED" in wf)
 
+# ── محافظ ATIO: رأی‌دهندهٔ بی‌تمایز نباید وزن بگیرد (۶ سپتامبر) ──────────
+#
+# حمید یافته‌ای از پنل دیگری آورد: یک رأی در ۶۶ از ۶۷ سیگنال دقیقاً یک
+# عدد بود — رأی‌دهنده‌ای که هیچ تمایزی نمی‌ساخت و فقط سقف اعتماد را
+# می‌خورد. همان کلاس این‌جا هم بود، در دو شکل:
+#
+#   ۱. کارنامه ردیف می‌شمرد نه معامله — بازوهای آینهٔ تریل هر معامله را
+#      سه بار می‌آوردند (اندازه‌گیری: ۱۷۸ ردیف = ۶۰ معاملهٔ یکتا). تکرار،
+#      CI را ساختگی تنگ می‌کند و مراقب زودتر از حقش «تأییدشده» می‌شود.
+#   ۲. دقت با ۰.۵ سنجیده می‌شد در حالی که نرخِ بردِ خودِ دفتر ۷۱.۷٪ است.
+#      یعنی رأی‌دهندهٔ «همیشه مثبت» بدون هیچ تحلیلی بیشینهٔ وزن (۱.۴) را
+#      می‌بُرد. چهار مراقب دقیقاً همین وضع را داشتند.
+_pj = HERE.parents[2] / "brain" / "paper" / "closed.jsonl"
+if _pj.exists():
+    _sc = P.score_outcomes()
+    check("کارنامه نرخِ پایهٔ دفتر را اعلام می‌کند",
+          isinstance(_sc.get("base_rate"), float), str(_sc.get("base_rate")))
+    check("و مبنا معنادار است (نه ۰.۵ فرضی)",
+          0.0 < (_sc.get("base_rate") or 0) < 1.0)
+    # اثباتِ رفتاری: مراقبِ «همیشه مثبت» با دقتِ برابرِ مبنا نباید
+    # وزنِ بیشتر از پایه بگیرد.
+    _b = _sc["base_rate"]
+    _fake = {"base_rate": _b,
+             "guardians": {"taurus": {"n": 60, "correct": round(60 * _b),
+                                      "ci95": [_b - 0.12, _b + 0.12]}}}
+    _w, _why = P.weight_of("taurus", _fake)
+    check("مراقبِ هم‌سطحِ مبنا وزنِ اضافه نمی‌گیرد",
+          _w <= P.BY_ID["taurus"]["base"] + 0.02, f"{_w} · {_why}")
+    _good = {"base_rate": _b,
+             "guardians": {"taurus": {"n": 60, "correct": 60,
+                                      "ci95": [0.94, 1.0]}}}
+    check("و مراقبِ واقعاً بهتر از مبنا هنوز پاداش می‌گیرد",
+          P.weight_of("taurus", _good)[0] > P.BY_ID["taurus"]["base"])
+    # یکتاسازی: همان معامله سه بار = یک بار شمرده شود
+    _src = (HERE / "phoenix.py").read_text(encoding="utf-8")
+    check("کارنامه بر هویت معامله یکتا می‌کند",
+          "if ident in seen:" in _src and "seen.add(ident)" in _src)
+    # رأی‌دهندهٔ تک‌مقدار روی نمونهٔ بزرگ = عیب، و باید دیده شود
+    import statistics as _st
+    _votes = {}
+    for _ln in _pj.read_text(encoding="utf-8").splitlines():
+        if not _ln.strip():
+            continue
+        try:
+            _r = json.loads(_ln)
+        except Exception:                             # noqa: BLE001
+            continue
+        for _g, _v in ((_r.get("why") or {}).get("phoenix_votes") or {}).items():
+            if _v is not None and abs(_v) > 0.05:
+                _votes.setdefault(_g, []).append(_v)
+    _flat = [g for g, v in _votes.items() if len(v) >= 30 and len(set(v)) == 1]
+    # این بررسی **نمی‌افتد**، فقط گزارش می‌دهد: تک‌مقدار بودن گاهی
+    # صادقانه است (شاخهٔ مخالف هنوز پیش نیامده). چیزی که نباید بشود،
+    # وزن‌گرفتنِ چنین رأیی است — و آن را دو بررسی بالا می‌بندند.
+    if _flat:
+        print(f"  ⚠️ رأی‌دهندهٔ تک‌مقدار (n≥۳۰): {_flat} — وزنشان از مبنا سنجیده می‌شود")
+
 import shutil                                         # noqa: E402
 shutil.rmtree(tmp, ignore_errors=True)
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))

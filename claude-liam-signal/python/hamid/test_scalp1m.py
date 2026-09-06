@@ -74,15 +74,36 @@ check("دفتر خالیِ کندل → NO_SIGNAL نه crash",
 print("\n— دروازهٔ دامیننس اجباری است (قانون ۳):")
 ok, why, reg = S1.dominance_gate("LONG", dom={})
 check("نبودِ رژیم → رد", not ok, why)
-ok, _, _ = S1.dominance_gate("LONG", {"structural": {"regime": "INSUFFICIENT"}})
+# ── شکلِ محصول، نه دیکشنری دست‌ساز (۶ سپتامبر) ────────────────────────
+#
+# تا امروز همهٔ فیکسچرهای این بخش کلید `structural` می‌ساختند، در حالی که
+# تولیدکننده (`dominance.py:280`) `structure` می‌نویسد. آزمون سبز بود و
+# دروازه روی فایل واقعی **همیشه** INSUFFICIENT می‌داد — یعنی میز اسکلپ
+# ۱د صددرصد رد می‌کرد. کلاسِ «اسکریپت سبز ≠ محصول درست» (قانون ۶ سپتامبر):
+# آزمون باید شکلِ خروجیِ واقعی را بخواند، نه شکلی که آرزو می‌کنیم.
+_real = HERE.parents[2] / "signals" / "dominance.json"
+if _real.exists():
+    import json as _j
+    _dom = _j.loads(_real.read_text(encoding="utf-8"))
+    _reg = (_dom.get("structure") or {}).get("regime")
+    check("فایل واقعی دامیننس رژیم را زیر کلید structure دارد",
+          isinstance(_dom.get("structure"), dict) and _reg is not None, str(_reg))
+    _ok, _why, _got = S1.dominance_gate("SHORT", _dom)
+    check("دروازه روی فایلِ واقعی رژیم را می‌بیند، نه INSUFFICIENT",
+          _got == _reg and _got not in ("INSUFFICIENT", "UNKNOWN"),
+          f"{_got} · {_why}")
+_src1m = (HERE / "scalp1m.py").read_text(encoding="utf-8")
+check("و کد کلیدِ تولیدکننده را اول می‌خواند",
+      'dom.get("structure") or dom.get("structural")' in _src1m)
+ok, _, _ = S1.dominance_gate("LONG", {"structure": {"regime": "INSUFFICIENT"}})
 check("رژیم INSUFFICIENT → رد، نه عبور", not ok)
-ok, why, _ = S1.dominance_gate("LONG", {"structural": {"regime": "UNSAFE"}})
+ok, why, _ = S1.dominance_gate("LONG", {"structure": {"regime": "UNSAFE"}})
 check("رویداد کلان UNSAFE → رد", not ok and "معلق" in why)
-ok, _, _ = S1.dominance_gate("LONG", {"structural": {"regime": "BEARISH"}})
+ok, _, _ = S1.dominance_gate("LONG", {"structure": {"regime": "BEARISH"}})
 check("LONG در رژیم BEARISH → تعارض، رد", not ok)
-ok, _, _ = S1.dominance_gate("SHORT", {"structural": {"regime": "BULLISH"}})
+ok, _, _ = S1.dominance_gate("SHORT", {"structure": {"regime": "BULLISH"}})
 check("SHORT در رژیم BULLISH → تعارض، رد", not ok)
-ok, _, _ = S1.dominance_gate("LONG", {"structural": {"regime": "BULLISH"}})
+ok, _, _ = S1.dominance_gate("LONG", {"structure": {"regime": "BULLISH"}})
 check("جهتِ هم‌سو با رژیم عبور می‌کند", ok)
 d = S1.decide("XUSDT", candles(300), kget, dom={}, now_ms=NOW)
 check("موتور بدون دادهٔ دامیننس سیگنال نمی‌سازد",

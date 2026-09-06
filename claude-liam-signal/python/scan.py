@@ -298,7 +298,8 @@ def apply_learned_rules(setups, jobs, rules):
     return n
 
 
-def funnel_report(setups, sent, demoted, held, series, failed):
+def funnel_report(setups, sent, demoted, held, series, failed,
+                  pre_gate=None, demoted_dirs=None):
     """قیف سلامت سیگنال — قانون ۰۷ (E23). سکوت باید با شواهد توضیح داده شود.
 
     تا امروز دلیل رد فقط در لاگ Actions چاپ می‌شد و بعد گم می‌شد؛ هر بار
@@ -327,6 +328,23 @@ def funnel_report(setups, sent, demoted, held, series, failed):
         "classification": cls,
         "series_fetched": series, "series_failed": failed,
         "setups": len(setups), "stages": dict(stages),
+        # ── جهت، و مهم‌تر: جهتِ **پیش از دروازه** (۶ سپتامبر) ──────────
+        #
+        # سؤال حمید: «علت اینکه سیگنال شورت پیدا نمیشود باید دقیق بررسی
+        # شود.» با فیلدهای قبلی اصلاً قابل جواب نبود: قیف فقط شمارِ کلِ
+        # ستاپ را داشت، نه جهتش — پس معلوم نمی‌شد موتور شورت **نمی‌سازد**
+        # یا می‌سازد و دروازه **می‌کشدش**. بدتر، این تابع بعد از
+        # `gate_stages` صدا زده می‌شود، یعنی وضعیتِ پیش-دروازه تا امروز
+        # بازیابی‌ناپذیر بود. حالا عکسِ پیش-دروازه در `main` گرفته و
+        # همین‌جا ثبت می‌شود. هیچ آستانه‌ای عوض نشد — فقط شمردنی شد.
+        "dirs": dict(Counter((s.get("dir") or "?") for s in setups)),
+        "stage_dir_post_gate": {f"{k[0]}|{k[1]}": v for k, v in
+                                Counter((s.get("stage"), s.get("dir") or "?")
+                                        for s in setups).items()},
+        "stage_dir_pre_gate": ({f"{k[0]}|{k[1]}": v
+                                for k, v in (pre_gate or {}).items()}
+                               if pre_gate else None),
+        "trend_gate_demoted_dirs": dict(demoted_dirs or {}) or None,
         "learning_held": held, "trend_gate_demoted": demoted,
         "telegram_sent": sent,
         "top_reasons": dict(reasons.most_common(10)),
@@ -360,6 +378,10 @@ def gate_stages(setups, kget=None):
         return cache[(sym, tf)]
 
     demoted = 0
+    # تفکیک جهت (۶ سپتامبر): بدون این، «۶۴ تنزل» نمی‌گوید چند شورت
+    # کشته شد و چند لانگ — و همان عدد است که سؤال حمید را جواب می‌دهد.
+    from collections import Counter as _C
+    dmt_dirs = _C()
     for s in setups:
         if s.get("stage") not in ("SIGNAL", "ARMED", "PULLBACK_1"):
             continue
@@ -375,6 +397,7 @@ def gate_stages(setups, kget=None):
             s["stage"] = "WATCH"
             s["skip"] = a["reason"]
             demoted += 1
+            dmt_dirs[s.get('dir') or '?'] += 1
             continue
         # نقشهٔ نقدینگی اجباری (دستور حمید، ۲۳ اوت: «نقشهٔ نقدینگی ارزها
         # حتماً بررسی بشه»). از کندل‌هایی که همین ستاپ از قبل دارد ساخته
@@ -390,13 +413,14 @@ def gate_stages(setups, kget=None):
             s["stage"] = "WATCH"
             s["skip"] = "نقشهٔ نقدینگی ساخته نشد — بررسی نقدینگی اجباری است"
             demoted += 1
+            dmt_dirs[s.get('dir') or '?'] += 1
             continue
         s["liq_map"] = {"magnet": lm["magnet"], "above": lm["above"][:2],
                         "below": lm["below"][:2]}
         ln = liqmap.note(lm, s.get("dir"))
         if ln:
             s["liqmap_note"] = ln
-    return demoted
+    return demoted, dict(dmt_dirs)
 
 
 def main():
@@ -530,8 +554,15 @@ def main():
             held += 1
     print(f"learning room consulted on {consulted} setups, held back {held}", flush=True)
 
+    # عکسِ جهت **پیش از** دروازه (۶ سپتامبر). باید این‌جا گرفته شود، چون
+    # `gate_stages` خودِ `stage` را عوض می‌کند و بعدش دیگر بازیابی‌پذیر
+    # نیست — تا امروز همین باعث شده بود سؤال «موتور شورت نمی‌سازد یا
+    # دروازه می‌کشدش؟» اصلاً جواب نداشته باشد.
+    from collections import Counter as _PC
+    _pre_gate = _PC((s.get("stage"), s.get("dir") or "?") for s in setups)
+
     # دروازهٔ روند روی هرچه منتشر می‌شود، نه فقط سیگنال (دستور ۲۰ اوت)
-    demoted = gate_stages(setups)
+    demoted, _dmt_dirs = gate_stages(setups)
     print(f"trend gate demoted {demoted} published-stage setups", flush=True)
 
     # نمونه‌گیر شورت (دستور حمید ۳۰ اوت: «اون ۱۳۰ و ۱۵۰ شورت رو تو
@@ -641,7 +672,8 @@ def main():
 
     # قیف سلامت (قانون ۰۷) — پاسخ «چرا سیگنال نیامد» با شواهد، نه حدس
     _fn = funnel_report(setups, sent=_sent_n, demoted=demoted, held=held,
-                        series=len(jobs), failed=failed)
+                        series=len(jobs), failed=failed,
+                        pre_gate=_pre_gate, demoted_dirs=_dmt_dirs)
     (OUT / "funnel.json").write_text(json.dumps(_fn, ensure_ascii=False, indent=1))
     print(f"funnel: {_fn['classification']} · {_fn['setups']} setups · "
           f"{_fn['telegram_sent']} sent", flush=True)

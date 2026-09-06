@@ -127,7 +127,14 @@ def dominance_gate(direction, dom=None):
             dom = json.loads(DOM_FILE.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return False, "دادهٔ دامیننس در دسترس نیست — قانون ۳", None
-    reg = ((dom.get("structural") or {}).get("regime")
+    # کلیدِ مرده، رفع ۶ سپتامبر: این‌جا `structural` خوانده می‌شد ولی
+    # تولیدکننده (`dominance.py:280`) `structure` می‌نویسد. روی فایل واقعی
+    # همیشه به fallback می‌افتاد و `INSUFFICIENT` می‌داد — یعنی دروازهٔ
+    # ۲/۳ میز اسکلپ ۱د **صددرصد رد** می‌کرد، با دلیلی که می‌گفت داده نیست.
+    # آزمونش سبز بود چون دیکشنری دست‌ساز با همان کلیدِ غلط می‌ساخت: همان
+    # کلاسِ «اسکریپت سبز ≠ محصول درست» (قانون ۶ سپتامبر). هر دو کلید
+    # خوانده می‌شود تا اگر جایی شکل قدیمی مانده باشد نشکند.
+    reg = ((dom.get("structure") or dom.get("structural") or {}).get("regime")
            or dom.get("regime") or "INSUFFICIENT")
     if reg in ("INSUFFICIENT", "UNKNOWN"):
         return False, f"رژیم دامیننس {reg} — دادهٔ ناقص = NO_SIGNAL", reg

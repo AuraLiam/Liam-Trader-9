@@ -185,7 +185,7 @@ def run():
     scan = (PY / "scan.py").read_text(encoding="utf-8")
     check("اسکن نمونه‌گیر را صدا می‌زند", "short_sampler.sample(setups)" in scan)
     check("و شکستش اسکن را نمی‌کشد", "نمونه‌گیری اختیاری است" in scan)
-    i_gate = scan.find("demoted = gate_stages(setups)")
+    i_gate = scan.find("gate_stages(setups)")
     i_samp = scan.find("short_sampler.sample")
     check("نمونه‌گیری بعد از دروازه‌هاست (هیچ دروازه‌ای دور زده نمی‌شود)",
           0 <= i_gate < i_samp, f"gate={i_gate} sampler={i_samp}")
