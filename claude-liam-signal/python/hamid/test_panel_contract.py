@@ -97,5 +97,29 @@ check("فهرست کپی مرحلهٔ انتشار پیدا می‌شود", bool
 check("هر signals/*.json که پنل می‌خواند در فهرست انتشار /aura/ هست",
       bool(fetched) and not not_deployed, f"کپی‌نشده: {not_deployed}")
 
+
+# ── ۶) ریشه هم باید ناشر داشته باشد، نه فقط /aura/ ─────────────────────
+#
+# عیبِ اندازه‌گیری‌شدهٔ ۶ سپتامبر — و علتِ این‌که ۱۹ روز کسی نفهمید:
+# همهٔ پنج بررسی بالا فقط `/aura/` را می‌سنجیدند. مرحلهٔ انتشار هم فقط
+# آن‌جا می‌نوشت، پس `index.html` **ریشه** روی gh-pages از ۱۸ اوت
+# ۲۰:۱۷ UTC دست‌نخورده ماند (کش v21.35 در برابر v21.46 روی main) در
+# حالی که `signals/` ریشه هر ۳ دقیقه تازه می‌شد — عددِ تازه در کارتِ
+# کهنه، بدون هیچ خطایی.
+#
+# کلاسِ عیب: **پاسبانی که فقط یک آدرس را می‌بیند، آدرس دیگر را
+# نامرئی می‌کند.** حالا هر دو اجباری‌اند.
+check("پنل به ریشه هم منتشر می‌شود (آدرس اصلی حمید)",
+      "cp index.html /tmp/ghp/index.html" in wf
+      and "cp sw.js      /tmp/ghp/sw.js" in wf,
+      "ریشه ناشر ندارد — همان عیبِ ۱۹روزهٔ ۶ سپتامبر")
+_root_pub = wf.split("cp index.html /tmp/ghp/index.html", 1)[-1].split(
+    "cd /tmp/ghp", 1)[0]
+_missing_root = [f for f in needed if f not in _root_pub and f != "sw.js"]
+check("دارایی‌های نسبیِ پنل به ریشه هم می‌روند (وگرنه ۴۰۴ و کشِ ردشده)",
+      not _missing_root, f"کپی‌نشده در ریشه: {_missing_root}")
+check("فهرست signals هم به ریشه کپی می‌شود",
+      'cp "signals/$f.json" /tmp/ghp/signals/' in wf)
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
