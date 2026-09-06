@@ -365,6 +365,32 @@ def run():
     check("کلاس: اعلام دوساعته از همین تابع می‌خواند، نه از tg_msg_id خام",
           "_p.sent_signals(closed)" in cyc_src)
 
+    # ── کارنامهٔ تریل فقط قاعدهٔ فعلی را داوری می‌کند (۶ سپتامبر) ────────
+    #
+    # کلاسِ عیب: سنجه‌ای که رفعِ ریشه هم سبزش نکند (قانون ۰۷). E19 کلِ
+    # تاریخ را می‌شمرد، پس بعد از اصلاح قاعده ۲۱ روز سرخ می‌ماند. حتی
+    # پنجرهٔ ۷روزه هم کافی نبود (همان روز ۸۰.۳٪ می‌داد). راه‌حل: اثرانگشتِ
+    # قاعده روی خودِ ردیف، مثل `scalp_verdict`.
+    check("قاعدهٔ تریل یک منبع دارد", _P._trail_frac({}) == _P.PROD_TRAIL_FRAC)
+    check("و بازوی آزمایش سهمِ خودش را می‌گیرد",
+          _P._trail_frac({"why": {"stage": "exp-trail-g65"}}) == 0.65)
+    pap_src = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
+    check("ردیفِ بستهٔ تریل اثرانگشتِ قاعده را ثبت می‌کند",
+          'p["trail_frac"] = _trail_frac(p)' in pap_src)
+    sc_src = (PY / "hamid" / "scorecard.py").read_text(encoding="utf-8")
+    check("E19 فقط ردیف‌های قاعدهٔ فعلی را می‌شمرد",
+          'r.get("trail_frac") == _frac19' in sc_src)
+    check("و سهمِ قاعده را از خودِ paper می‌خواند، نه عددِ دست‌نویس",
+          "from hamid.paper import PROD_TRAIL_FRAC as _frac19" in sc_src)
+    # اثباتِ رفتاری: ردیفِ قاعدهٔ بازنشسته (بی‌اثرانگشت) نباید داوری شود.
+    _old = [{"outcome": "trail", "R_net": 0.0} for _ in range(50)]
+    _new = [{"outcome": "trail", "R_net": 0.0, "trail_frac": _P.PROD_TRAIL_FRAC}
+            for _ in range(3)]
+    _judged = [r for r in _old + _new
+               if r.get("trail_frac") == _P.PROD_TRAIL_FRAC]
+    check("۵۰ ردیفِ قاعدهٔ قدیم + ۳ ردیفِ جدید ⇒ فقط ۳ تا داوری می‌شود",
+          len(_judged) == 3, str(len(_judged)))
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

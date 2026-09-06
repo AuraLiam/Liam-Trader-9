@@ -379,14 +379,25 @@ TRAIL_ARMS = {"exp-trail-g65": 0.65, "exp-trail-g80": 0.80}
 PROD_TRAIL_FRAC = 0.80
 
 
+def _trail_frac(p):
+    """سهمی از بهترین سود که استاپِ این ردیف رویش می‌نشیند.
+
+    بازوهای آزمایشی سهمِ خودشان را دارند؛ بقیه سهمِ تولید. همین عدد روی
+    ردیفِ بسته ثبت می‌شود (`trail_frac`) تا کارنامه بداند هر معامله زیر
+    **کدام قاعده** بسته شده — همان اصلِ `scalp_verdict`: عوض‌شدن قاعده
+    یعنی دفترِ حکم از صفر.
+    """
+    return TRAIL_ARMS.get((p.get("why") or {}).get("stage")
+                          or p.get("stage_tag") or "", PROD_TRAIL_FRAC)
+
+
 def _trail_dist(p, gain, tp_dist, fee_px):
     """فاصلهٔ استاپِ تریل از ورود (قیمتی، مثبت = در سود)، یا None.
 
     `gain` بهترین سودِ دیده‌شده تا کندلِ **قبل** است (بدون خوش‌بینی
     درون-کندلی).
     """
-    frac = TRAIL_ARMS.get((p.get("why") or {}).get("stage")
-                          or p.get("stage_tag") or "", PROD_TRAIL_FRAC)
+    frac = _trail_frac(p)
     # زیر سربه‌سرِ کارمزددار اصلاً مسلح نمی‌شود، وگرنه در نوسانِ اولِ
     # معامله ضررِ کارمزد قفل می‌شود — بدتر از استاپِ اولیه.
     if gain < fee_px:
@@ -571,6 +582,11 @@ def _settle_one(p, now, still, box):
         return
 
     p["outcome"], p["R"] = done[0], round(done[1], 4)
+    if done[0] == "trail":
+        # اثرانگشتِ قاعده روی خودِ ردیف. بدون این، کارنامهٔ تریل معاملاتِ
+        # قاعدهٔ بازنشسته را با قاعدهٔ فعلی یک‌کاسه می‌کند و هفته‌ها بعد از
+        # رفعِ ریشه هنوز سرخ می‌ماند — همان چیزی که قانون ۰۷ منع کرده.
+        p["trail_frac"] = _trail_frac(p)
     if sl_eff != p["sl"]:
         p["sl_eff"] = round(sl_eff, 10)
     p["mfe_r"], p["mae_r"] = round(mfe, 3), round(mae, 3)
