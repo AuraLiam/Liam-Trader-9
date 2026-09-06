@@ -94,6 +94,7 @@ jobs:
           python3 -m hamid.test_single_bot
           python3 -m hamid.test_exec_contract
           python3 -m hamid.test_trail_arms
+          python3 -m hamid.test_gate_verdict
           python3 -m hamid.test_signal_audit
           python3 -m hamid.test_dash_backtest
           python3 -m hamid.test_publish_top_liquidity
@@ -298,6 +299,13 @@ jobs:
       - name: اثباتِ یادگیری (E21)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.learning_proof --write || true
+
+      # دفترِ ضدواقعیتِ دروازهٔ روند (دستور حمید ۶ سپتامبر). دروازه‌ای که
+      # بیشترین شورت را می‌کشد تنها دروازه‌ای بود که کارنامه نداشت. این
+      # قدم فقط **می‌خواند و داوری می‌کند** — هیچ آستانه‌ای عوض نمی‌شود.
+      - name: داوری دروازهٔ روند (E17)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.gate_verdict --write || true
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
