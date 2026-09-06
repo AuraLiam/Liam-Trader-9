@@ -64,7 +64,15 @@ sys.path.insert(0, str(PY))
 CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
 OUT = ROOT / "signals" / "gate-verdict.json"
 
-STAGE = "gate-vetoed"
+# دو جمعیتِ **جدا** — هرگز جمع نمی‌شوند (دستور حمید، ۶ سپتامبر).
+#   delivery — ستاپی که تا گلوگاه ارسال رفت و فقط دروازهٔ روند نگذاشت.
+#              ضدواقعِ تمیز: «سیگنالی که می‌رفت».
+#   stage    — ستاپی که در مرحلهٔ انتشار تنزل خورد. پرحجم‌تر و سریع‌تر پر
+#              می‌شود، ولی از دروازه‌های پایین‌دست رد نشده؛ پس حکمش
+#              دربارهٔ «انتشار» است نه «ارسال».
+# پول‌کردنشان حکمی می‌سازد که معلوم نیست دربارهٔ چیست — به‌عمد جدا ماندند.
+STAGES = {"delivery": "gate-vetoed", "stage": "stage-vetoed"}
+STAGE = STAGES["delivery"]
 MIN_N = 150                    # قاعدهٔ توقف، از پیش ثبت‌شده
 HALF_WIDTH_TARGET = 0.10       # برای برآوردِ «چند نمونهٔ دیگر»
 
@@ -87,8 +95,9 @@ def _fee_r(row):
             return None
 
 
-def rows(path=None):
-    """ردیف‌های بستهٔ ضدواقع، یکتا بر هویت معامله."""
+def rows(path=None, stage=None):
+    """ردیف‌های بستهٔ ضدواقعِ یک جمعیت، یکتا بر هویت معامله."""
+    want = stage or STAGE
     p = Path(path or CLOSED)
     out, seen = [], set()
     if not p.exists():
@@ -101,7 +110,7 @@ def rows(path=None):
         except Exception:                            # noqa: BLE001
             continue
         w = r.get("why") or {}
-        if (w.get("stage") or r.get("stage_tag")) != STAGE:
+        if (w.get("stage") or r.get("stage_tag")) != want:
             continue
         if r.get("outcome") in ("expired", "no_fill", None):
             continue
@@ -151,8 +160,8 @@ def _need(vals):
     return max(0, MIN_N - n, by_width - n)
 
 
-def judge(path=None, now_ms=None):
-    rs = rows(path)
+def judge(path=None, now_ms=None, stage=None):
+    rs = rows(path, stage=stage or STAGE)
     net = [r["_net"] for r in rs if r["_net"] is not None]
     gross = [r["_gross"] for r in rs]
     c_net, c_gross = _ci(net), _ci(gross)
@@ -195,7 +204,7 @@ def judge(path=None, now_ms=None):
     return {
         "generated": int(now_ms or time.time() * 1000),
         "panel": "لیام تریدر ۹",
-        "stage": STAGE, "min_n": MIN_N,
+        "stage": stage or STAGE, "min_n": MIN_N,
         "verdict": verdict, "why": why,
         "gross": c_gross, "net": c_net,
         "by_dir": slice_by(lambda r: (r.get("dir") or "").upper() or None),
@@ -232,10 +241,34 @@ def render(v):
     return "\n".join(L)
 
 
+LABELS = {"delivery": "گلوگاه ارسال (ضدواقعِ تمیز)",
+          "stage": "مرحلهٔ انتشار (پرحجم‌تر)"}
+
+
+def judge_all(path=None, now_ms=None):
+    """هر دو جمعیت، **کنار هم و جدا** — نه جمع‌شده (دستور ضد-merge)."""
+    pops = {k: judge(path, now_ms, stage=st) for k, st in STAGES.items()}
+    return {"generated": pops["delivery"]["generated"],
+            "panel": "لیام تریدر ۹", "min_n": MIN_N,
+            "populations": pops,
+            # حکمِ مرجع همان ضدواقعِ تمیز است؛ برشِ مرحله شاهدِ زودرس است
+            # نه جایگزین. هرگز جای هم نمی‌نشینند.
+            "verdict": pops["delivery"]["verdict"],
+            "note": ("دو جمعیتِ جدا: «گلوگاه ارسال» یعنی سیگنالی که واقعاً "
+                     "می‌رفت و فقط دروازهٔ روند نگذاشت — حکمِ مرجع همین "
+                     "است. «مرحلهٔ انتشار» سریع‌تر پر می‌شود ولی از "
+                     "دروازه‌های پایین‌دست رد نشده، پس شاهدِ زودرس است. "
+                     "جمعشان نکن."),
+            "boundary": pops["delivery"]["boundary"]}
+
+
 def main(argv=None):
     argv = argv if argv is not None else sys.argv[1:]
-    v = judge()
-    print(render(v))
+    v = judge_all()
+    for k, pv in v["populations"].items():
+        print(f"\n══ {LABELS[k]} — stage={STAGES[k]}")
+        print(render(pv))
+    print(f"\n⚖️ {v['note']}")
     if "--write" in argv:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(v, ensure_ascii=False, indent=1),

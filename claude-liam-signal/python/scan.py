@@ -353,6 +353,84 @@ def funnel_report(setups, sent, demoted, held, series, failed,
     }
 
 
+# ── برشِ دومِ دفترِ ضدواقع: مرحلهٔ منتشرشونده (دستور حمید، ۶ سپتامبر) ──────
+#
+# «اون برش جدا رو هم بساز که سریع‌تر پر بشه.»
+#
+# دو جمعیتِ **جدا**، چون دو سؤال جدا هستند:
+#   `gate-vetoed`  — ستاپی که تا گلوگاه ارسال رفت و فقط دروازهٔ روند
+#                    نگذاشت. ضدواقعِ تمیز، ولی کم‌حجم.
+#   `stage-vetoed` — ستاپی که در مرحلهٔ انتشار تنزل خورد. پرحجم‌تر، ولی
+#                    از دروازه‌های پایین‌دست (ضدتکرار، بازجویی، سقف روزانه)
+#                    رد نشده — پس نمونه‌اش «سیگنالی که می‌رفت» نیست.
+#
+# **هرگز با هم جمع نمی‌شوند.** پول‌کردنشان یعنی حکمی که معلوم نیست دربارهٔ
+# چیست. `gate_verdict` هر کدام را جدا داوری می‌کند.
+#
+# سه مهارِ سیل — بدون این‌ها روزی ~۲۰٬۰۰۰ ردیف می‌شد (۲۰۵ تنزل × ۹۶ اسکن):
+#   ۱. فقط ستاپی که **SIGNAL** بوده؛ ARMED/PULLBACK ضعیف‌ترند و قرار
+#      نبود سیگنال شوند.
+#   ۲. ضدتکرار روی دفترِ **باز**: تا ردیفِ قبلیِ همان (نماد، جهت) بسته
+#      نشده، ردیف تازه باز نمی‌شود. حافظهٔ تازه‌ای لازم ندارد — از همان
+#      وضعیتی می‌خواند که از قبل هست (قانون ۰۵: نویسندهٔ تازه نساز).
+#   ۳. سقف سختِ هر اجرا.
+STAGE_VETO_CAP = 12
+
+
+def _stage_veto_open_keys():
+    """(نماد، جهت)هایی که همین حالا ردیفِ بازِ برشِ مرحله دارند."""
+    out = set()
+    try:
+        from hamid import paper as _p
+        p = Path(_p.OPEN)
+        if not p.exists():
+            return out
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:                        # noqa: BLE001
+                continue
+            st = (r.get("why") or {}).get("stage") or r.get("stage_tag")
+            if st == "stage-vetoed":
+                out.add((r.get("sym"), (r.get("dir") or "").upper()))
+    except Exception:                                # noqa: BLE001
+        pass
+    return out
+
+
+def _stage_veto_ledger(s, a, was_stage, sv):
+    """ردیفِ ضدواقعِ برشِ مرحله — بی‌صدا نمی‌افتد، ولی تنزل را هم نمی‌گیرد."""
+    if was_stage != "SIGNAL" or sv["n"] >= STAGE_VETO_CAP:
+        return
+    key = (s.get("sym"), (s.get("dir") or "").upper())
+    if key in sv["open"]:
+        return
+    if not (s.get("entry") and s.get("sl")):
+        return
+    try:
+        from hamid import paper as _p
+        n = _p.open_from(
+            [{"symbol": s["sym"], "dir": s["dir"], "entry": s["entry"],
+              "sl": s["sl"], "tp1": s.get("tp1") or s["entry"],
+              "tp2": s.get("tp2"), "stage_tag": "stage-vetoed",
+              "tf": s.get("tf")}],
+            {"veto_why": "trend_gate_stage",
+             "gate_reason": str(a.get("reason") or "")[:120],
+             "trend_4h": a.get("t4"), "trend_1h": a.get("t1"),
+             "trend_mode": a.get("mode"), "quality": s.get("quality"),
+             "was_stage": was_stage})
+        if n:
+            sv["n"] += 1
+            sv["open"].add(key)
+        else:
+            print(f"  ⚠️ برشِ مرحله {s.get('sym')}: ردیف ساخته نشد", flush=True)
+    except Exception as e:                           # noqa: BLE001
+        print(f"  ⚠️ برشِ مرحله {s.get('sym')}: {type(e).__name__}: {e}",
+              flush=True)
+
+
 def gate_stages(setups, kget=None):
     """دروازهٔ روند روی مراحل منتشرشونده — دستور حمید، ۲۰ اوت.
 
@@ -382,6 +460,7 @@ def gate_stages(setups, kget=None):
     # کشته شد و چند لانگ — و همان عدد است که سؤال حمید را جواب می‌دهد.
     from collections import Counter as _C
     dmt_dirs = _C()
+    _sv = {"n": 0, "open": _stage_veto_open_keys()}
     for s in setups:
         if s.get("stage") not in ("SIGNAL", "ARMED", "PULLBACK_1"):
             continue
@@ -394,10 +473,12 @@ def gate_stages(setups, kget=None):
         s["trend4"], s["trend1"] = a.get("t4"), a.get("t1")
         s["trend_mode"] = a.get("mode")
         if not a["ok"]:
+            was = s.get("stage")
             s["stage"] = "WATCH"
             s["skip"] = a["reason"]
             demoted += 1
             dmt_dirs[s.get('dir') or '?'] += 1
+            _stage_veto_ledger(s, a, was, _sv)
             continue
         # نقشهٔ نقدینگی اجباری (دستور حمید، ۲۳ اوت: «نقشهٔ نقدینگی ارزها
         # حتماً بررسی بشه»). از کندل‌هایی که همین ستاپ از قبل دارد ساخته

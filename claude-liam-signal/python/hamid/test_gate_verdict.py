@@ -156,5 +156,107 @@ _wf = (ROOT / ".github" / "workflows" / "hamid-cycle.yml").read_text(
 check("چرخه هر نوبت داوری را اجرا می‌کند",
       "hamid.gate_verdict --write" in _wf)
 
+# ── برشِ دوم: مرحلهٔ انتشار، جدا و مهارشده (دستور حمید، ۶ سپتامبر) ────────
+#
+# «اون برش جدا رو هم بساز که سریع‌تر پر بشه.» — با سه مهارِ سیل، چون
+# بی‌مهار روزی ~۲۰٬۰۰۰ ردیف می‌شد (۲۰۵ تنزل × ~۹۶ اسکن).
+import scan as SC                                     # noqa: E402
+
+check("مرحلهٔ برشِ دوم «سیگنال نیست» است",
+      "stage-vetoed" in P._NOT_SIGNAL, str(P._NOT_SIGNAL))
+check("دو جمعیت جدا تعریف شده‌اند",
+      set(GV.STAGES.values()) == {"gate-vetoed", "stage-vetoed"},
+      str(GV.STAGES))
+check("حکمِ مرجع همان ضدواقعِ تمیزِ گلوگاه ارسال است",
+      GV.STAGE == GV.STAGES["delivery"])
+check("سقفِ هر اجرا تعریف شده", isinstance(SC.STAGE_VETO_CAP, int)
+      and 0 < SC.STAGE_VETO_CAP <= 50, str(SC.STAGE_VETO_CAP))
+
+_kg = lambda sym, tf, n: [                            # noqa: E731
+    {"t": 1_788_000_000_000 + i * 60000,
+     "o": (100 + (i // 6) * 3 + (2.0 if i % 6 < 4 else 0.5)) - 0.2,
+     "h": (100 + (i // 6) * 3 + (2.0 if i % 6 < 4 else 0.5)) + 0.5,
+     "l": (100 + (i // 6) * 3 + (2.0 if i % 6 < 4 else 0.5)) - 0.5,
+     "c": (100 + (i // 6) * 3 + (2.0 if i % 6 < 4 else 0.5)) + 0.2,
+     "v": 1000} for i in range(n)]
+
+
+def _mk(sym, stage="SIGNAL"):
+    return {"sym": sym, "dir": "SHORT", "tf": "15m", "stage": stage,
+            "entry": 100.0, "sl": 102.0, "tp1": 96.0, "quality": 72,
+            "candles": _kg(sym, "15m", 60)}
+
+
+_d = Path(tempfile.mkdtemp(prefix="liam9-sv-"))
+_oldO, _oldC = P.OPEN, P.CLOSED
+P.OPEN, P.CLOSED = _d / "open.jsonl", _d / "closed.jsonl"
+try:
+    def _sv():
+        if not P.OPEN.exists():
+            return []
+        return [r for r in (json.loads(x) for x in
+                            P.OPEN.read_text(encoding="utf-8").splitlines()
+                            if x.strip())
+                if (r.get("why") or {}).get("stage") == "stage-vetoed"]
+
+    _n, _dirs = SC.gate_stages([_mk(f"A{i}") for i in range(3)]
+                               + [_mk(f"B{i}", "ARMED") for i in range(2)],
+                               kget=_kg)
+    check("دروازه ستاپ‌های خلافِ روند را تنزل می‌دهد", _n == 5, str(_n))
+    check("فقط ستاپِ SIGNAL وارد دفتر می‌شود (ARMED نه)",
+          len(_sv()) == 3, str(len(_sv())))
+    _w = (_sv()[0].get("why") or {})
+    check("ردیف علتِ خودش را دارد (جدا از گلوگاه ارسال)",
+          _w.get("veto_why") == "trend_gate_stage"
+          and _w.get("was_stage") == "SIGNAL", str(_w.get("veto_why")))
+    check("و هر دو خوانشِ روند ثبت می‌شود",
+          _w.get("trend_4h") == "up" and _w.get("trend_1h") == "up")
+    SC.gate_stages([_mk(f"A{i}") for i in range(3)], kget=_kg)
+    check("ضدتکرار: همان نماد تا بسته‌نشدن ردیفِ تازه نمی‌سازد",
+          len(_sv()) == 3, str(len(_sv())))
+    # دو لایهٔ مستقلِ ضدتکرار — و هر کدام **جدا** سنجیده می‌شود، وگرنه
+    # بررسی برای دلیلِ اشتباه سبز می‌ماند. (همین‌جا افتادم: اثبات منفیِ
+    # اول، لایهٔ من را برداشت و آزمون سبز ماند، چون `paper.open_from`
+    # خودش هم ضدتکرار دارد — یعنی آن بررسی رفتارِ paper را می‌سنجید نه
+    # کدِ مرا. حالا لایهٔ خودم مستقیم سنجیده می‌شود.)
+    _sv2 = {"n": 0, "open": {("AAA", "SHORT")}}
+    SC._stage_veto_ledger({"sym": "AAA", "dir": "SHORT", "entry": 100.0,
+                           "sl": 102.0, "tp1": 96.0, "tf": "15m"},
+                          {"reason": "x"}, "SIGNAL", _sv2)
+    check("لایهٔ ضدتکرارِ خودِ برش: کلیدِ بازِ موجود ردیف نمی‌سازد",
+          _sv2["n"] == 0, str(_sv2))
+    _sv3 = {"n": 0, "open": set()}
+    SC._stage_veto_ledger({"sym": "BBB", "dir": "SHORT", "entry": 100.0,
+                           "sl": 102.0, "tp1": 96.0, "tf": "15m"},
+                          {"reason": "x"}, "SIGNAL", _sv3)
+    check("و کلیدِ تازه ردیف می‌سازد", _sv3["n"] == 1, str(_sv3))
+    check("paper.open_from هم لایهٔ دومِ ضدتکرار است (پشت‌بند)",
+          P.open_from([{"symbol": "BBB", "dir": "SHORT", "entry": 100.0,
+                        "sl": 102.0, "tp1": 96.0, "tp2": None,
+                        "stage_tag": "stage-vetoed", "tf": "15m"}],
+                      {"veto_why": "x"}) == 0)
+    _before = len(_sv())          # نسبی، نه عددِ ثابت — وگرنه هر بررسیِ
+    SC.gate_stages([_mk(f"C{i}") for i in range(30)], kget=_kg)   # تازه‌ای
+    check("سقفِ هر اجرا سیل را می‌گیرد",                          # می‌شکندش
+          len(_sv()) - _before == SC.STAGE_VETO_CAP,
+          f"{_before} → {len(_sv())}")
+finally:
+    P.OPEN, P.CLOSED = _oldO, _oldC
+
+# دو جمعیت هرگز پول نمی‌شوند
+_mix = ([_row(i) for i in range(40)]
+        + [_row(900 + i, stage="stage-vetoed") for i in range(40)])
+_led = _ledger(_mix)
+check("خواندنِ یک جمعیت، ردیفِ جمعیتِ دیگر را برنمی‌دارد",
+      len(GV.rows(_led, stage="gate-vetoed")) == 40
+      and len(GV.rows(_led, stage="stage-vetoed")) == 40)
+_all = GV.judge_all(path=_led)
+check("خروجی هر دو را جدا نگه می‌دارد",
+      set(_all["populations"]) == {"delivery", "stage"})
+check("و حکمِ بالادست از جمعیتِ تمیز می‌آید",
+      _all["verdict"] == _all["populations"]["delivery"]["verdict"])
+check("و صریح می‌گوید جمعشان نکن", "جمعشان نکن" in _all["note"])
+
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

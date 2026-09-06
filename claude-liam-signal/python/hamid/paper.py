@@ -63,8 +63,10 @@ EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
 # `gate-vetoed` (۶ سپتامبر): ستاپی که فقط دروازهٔ **روند** جلویش را گرفت.
 # ضدواقع است نه سیگنال — اگر این‌جا نباشد، هر ستاپِ وتوشده «سیگنال ارسالی»
 # شمرده می‌شود و آمار محصول را دو برابر می‌کند (همان درسِ ۳×ETH).
+# `stage-vetoed` (۶ سپتامبر): برشِ دومِ ضدواقع — تنزلِ مرحلهٔ منتشرشونده.
+# جدا از `gate-vetoed` می‌ماند و هرگز با آن جمع نمی‌شود (دو سؤال جدا).
 _NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "gate-vetoed",
-               "v2", "scalp", "shock") + EXPERIMENT_STAGES
+               "stage-vetoed", "v2", "scalp", "shock") + EXPERIMENT_STAGES
 
 START_BALANCE = 1000.0
 RISK_FRACTION = 0.01          # 1% of balance per trade
