@@ -227,7 +227,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
 <body dir="ltr" data-active="signals">
 <header>
   <div class="bar">
-    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.32 · فضای جدا برای هر پنل</span><span class="v" id="nsChip" style="display:none"></span></div>
+    <div class="brand"><b>لیام تریدر ۹</b><span class="v" id="ver">cycle v21.46 · موتور داشبورد v2.9 · حلقهٔ بسته</span><span class="v" id="nsChip" style="display:none"></span></div>
     <div class="regime" id="regime"><span class="dot"></span><span id="regimeTxt">رژیم بازار: نامشخص</span></div>
     <span class="mono" id="syncPill" style="font-size:11px;color:var(--dim)">ابری: خاموش</span>
     <label class="switch" id="autoSw"><span>اسکن خودکار</span><i></i></label>
@@ -291,6 +291,15 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <p class="muted" style="margin-top:-6px;max-width:760px">هر اتاق یک بخش از موتور است که مستقل کار می‌کند. اینجا لحظه‌به‌لحظه می‌بینی هرکدام الان مشغول چه کاری‌ست و چند ارز را پایش می‌کند.</p>
     <div id="opsRooms" class="grid" style="margin-top:12px"></div>
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>🪙 اتاق دامیننس <span class="dim" style="font-size:11px;font-weight:400" id="ddMeta">قاعدهٔ پایه، رأی وزنی تایم‌ها، کانال ۴س/۱س، USDC.D و چرخهٔ پول</span></h3><div id="domDeskBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>🧠 دفتر مهارت <span class="dim" style="font-size:11px;font-weight:400" id="skMeta">تجربهٔ تکراری ضریب می‌سازد، نه ردیف — حافظه است نه دروازه</span></h3><div id="skillBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>📰 بورد خبر <span class="dim" style="font-size:11px;font-weight:400" id="nbMeta">تابلوی مشترک اتاق‌ها — خبر با تاریخ، رویداد آینده از یک روز قبل، درس واحدها</span></h3><div id="newsBoardBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>آنچه به تلگرام رفت <span class="dim" style="font-size:11px;font-weight:400" id="tgFeedMeta">هر پیامی که پنل برایت فرستاده</span></h3><div id="tgFeedBox" style="max-height:420px;overflow:auto"></div></div>
     <div class="box" style="margin-top:12px"><h3>گزارش تعمیرها <span class="dim" style="font-size:11px;font-weight:400">هر خرابی و اینکه چطور برطرف شد</span></h3><div id="opsRepairs"></div></div>
     <div class="box" style="margin-top:12px"><h3>جریان زندهٔ رویدادها <span class="dim" style="font-size:11px;font-weight:400" id="opsRate"></span></h3><div id="opsFeed" style="max-height:420px;overflow:auto"></div></div>
   </section>
@@ -316,10 +325,10 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
   </section>
 
   <section id="view-scalp" style="display:none">
-    <div class="section-title"><span class="eyebrow">1m scalp · sessions · lev 45-90 (paper)</span><h2>میز اسکلپ ۱ دقیقه</h2></div>
+    <div class="section-title"><span class="eyebrow">1m scalp · sessions · lev 15-39 (paper)</span><h2>میز اسکلپ ۱ دقیقه</h2></div>
     <p class="muted" style="margin-top:-6px;max-width:760px;font-size:13.5px">
       همان IBS+پولبک‌پلاس روی تایم ۱ دقیقه — پیپرمود حرفه‌ای با دفتر جدا، سشن‌ها،
-      بدنه/شدوی کندل‌های قبلی و اهرم ۴۵–۹۰ (فقط کاغذی). عدد پیپر سقف خوش‌بینانه است.
+      بدنه/شدوی کندل‌های قبلی و اهرم ۱۵–۳۹ به‌اطمینان (قانون واحد ۲۳ اوت؛ فقط کاغذی). عدد پیپر سقف خوش‌بینانه است.
       تایم ۳۰ ثانیه با سرویس محلی فعال می‌شود؛ عدد ۳۰ثانیه جعل نمی‌شود.</p>
     <div id="scalpBox" class="muted">در حال خواندن signals/scalp.json …</div>
   </section>
@@ -1975,7 +1984,7 @@ function smcCardHTML(r){
       ${s.swept?chip(`نقدینگی جمع شد (${s.swept.n} برخورد)`,true):chip("بدون جمع‌آوری نقدینگی",false)}
       ${s.thin?chip(`کندل داخلی ${Math.round(s.thin.insideRatio*100)}٪ · حجم ${s.thin.volRatio}×`,!s.thin.thin):""}
       ${chip(`اعتماد ${s.conf}٪${confReady()?"":" (در حال یادگیری)"}`,s.p>=0.45)}
-      ${chip(`انتظار ریاضی ${(s.ev||0).toFixed(2)}R`,(s.ev||0)>=evMin())}
+      ${s.ev==null?"":chip(`انتظار ریاضی ${s.ev.toFixed(2)}R`,s.ev>=evMin())}
       ${s.goOnFirst?chip("هم‌سویی قوی — نیازی به پولبک دوم نیست",true):""}
     </div>
     <div class="lvls">
@@ -3077,7 +3086,7 @@ function tgSignal(r,s){
     `تارگت۱ <code>${fmt(s.tp1)}</code>`,
     s.tp2?`تارگت۲ <code>${fmt(s.tp2)}</code>`:``,
     ``,
-    `ریسک/ریوارد <b>${s.rr}</b> · اعتماد <b>${s.conf}%</b> · انتظار <b>${(s.ev||0).toFixed(2)}R</b>`,
+    `ریسک/ریوارد <b>${s.rr}</b> · اعتماد <b>${s.conf}%</b> · انتظار <b>${s.ev==null?"—":s.ev.toFixed(2)+"R"}</b>`,
     s.ob?`اردر بلاک <code>${fmt(s.ob.low)} — ${fmt(s.ob.high)}</code>`:``,
     s.channel?`کانال ${s.channel.dir} (${s.channel.drift}%)`:``,
     s.fvg?`FVG هم‌جهت ✓`:``,
@@ -3525,10 +3534,10 @@ function relayCard(s){
     <h3>🚨 ${s.sym} — ${s.dir==="LONG"?"خرید":"فروش"} <span class="mono dim" style="font-size:11px">${s.tf}</span></h3>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px">
       ${chip(`ریسک به ریوارد ${s.rr}`,s.rr>=1.5)}
-      ${chip(`اعتماد ${s.conf}٪`,s.conf>=45)}
-      ${chip(`انتظار ریاضی ${(s.ev||0).toFixed(2)}R`,(s.ev||0)>0)}
+      ${s.conf==null?"":chip(`اعتماد ${s.conf}٪`,s.conf>=45)}
+      ${s.ev==null?"":chip(`انتظار ریاضی ${s.ev.toFixed(2)}R`,s.ev>0)}
       ${s.adx!=null?chip(`ADX ${s.adx}`,s.adx>=25):""}
-      ${chip(`پولبک ${s.visits} بار`,s.visits>=2)}
+      ${s.visits==null?"":chip(`پولبک ${s.visits} بار`,s.visits>=2)}
       ${s.fvg?chip("FVG هم‌جهت ✓",true):""}
       ${s.level?chip(`روی ${s.level.type==="R"?"مقاومت":"حمایت"} (${s.level.touches} برخورد)`,true):""}
       ${s.room?chip(s.room.r>=99?"مانعی تا تارگت نیست":`جای حرکت ${s.room.r}× تا ${s.room.blocker}`,s.room.r>=1.5):""}
@@ -3693,6 +3702,325 @@ async function domjFetch(){
 }
 setInterval(domjFetch,120000);setTimeout(domjFetch,5500);
 (()=>{const d=DB.get("domj_cache");if(d&&!DOMJ.data)DOMJ.data=d;})();
+/* یکپارچگی سامانه — هفت لایه، مالک هر کدام، و تازگی داده‌اش (۲۸ اوت).
+   ریشه‌ای که این را لازم کرد: ۵۴ فایل وضعیت با سنین ۳۱د تا ۱۸ روز، همه
+   با اعتبار ظاهراً برابر روی پنل. حالا هر لایه قرارداد کهنگی دارد و
+   پنل تخطی را نشان می‌دهد به‌جای اینکه پنهانش کند. */
+const SYS={data:null};
+async function sysFetch(){
+  try{
+    const r=await fetch("./signals/system-state.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.rows){SYS.data=j;DB.set("sys_cache",j);renderSys();}}
+  }catch(e){}
+}
+function renderSys(){
+  const el=$("#sysStateBox");if(!el)return;
+  const j=SYS.data;
+  if(!j||!(j.rows||[]).length){el.innerHTML=`<div class="dim" style="font-size:12px">
+    نقشهٔ وضعیت هنوز ساخته نشده — چرخهٔ بعدی می‌سازدش.</div>`;return;}
+  const V={HEALTHY:["🟢","همهٔ لایه‌ها داخل قرارداد"],
+           DEGRADED:["🟡","چند لایه از قرارداد بیرون‌اند"],
+           SICK:["🔴","یک لایهٔ حیاتی از قرارداد بیرون است"]}[j.verdict]||["⚪",j.verdict];
+  const meta=$("#sysStateMeta");
+  if(meta)meta.textContent=`${j.n_files} فایل · ${j.n_faults} عیب · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const groups={};
+  (j.rows||[]).forEach(r=>{(groups[r.layer]=groups[r.layer]||[]).push(r)});
+  const order=["L1_market","L2_context","L3_structure","L4_decision",
+               "L5_delivery","L6_learning","L7_health"];
+  const body=order.filter(k=>groups[k]).map(k=>{
+    const rows=groups[k];
+    const bad=rows.filter(r=>r.status!=="ok"&&r.status!=="absent_ok");
+    const dot=bad.length?(bad.some(b=>b.critical)?"🔴":"🟡"):"🟢";
+    const det=rows.map(r=>{
+      const age=r.age_min==null?"—":(r.age_min<90?Math.round(r.age_min)+"د":
+        Math.round(r.age_min/60)+"س");
+      const cap=r.max_age_min==null?"":` / سقف ${r.max_age_min}د`;
+      const ok=r.status==="ok"||r.status==="absent_ok";
+      return `<div style="display:flex;gap:8px;padding:2px 0;font-size:11px">
+        <span style="min-width:14px">${ok?"·":"✗"}</span>
+        <span style="min-width:180px" class="${ok?"":"warn"}">${r.file}</span>
+        <span class="dim" style="min-width:74px">${r.owner||"—"}</span>
+        <span class="dim" style="min-width:96px">${age}${cap}</span>
+        <span class="dim">${r.producer||""}</span></div>`;}).join("");
+    return `<details style="margin:6px 0"><summary style="cursor:pointer;font-size:12px">
+      ${dot} <b>${rows[0].layer_fa}</b> <span class="dim">— ${rows.length-bad.length}/${rows.length} داخل قرارداد</span>
+      </summary><div style="margin:4px 0 8px 0">${det}</div></details>`;}).join("");
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${V[0]} <b>${V[1]}</b></div>${body}`;
+}
+setInterval(sysFetch,120000);setTimeout(sysFetch,4800);
+(()=>{const s=DB.get("sys_cache");if(s&&!SYS.data){SYS.data=s;setTimeout(renderSys,600);}})();
+/* اتاق فومو (۲ سپتامبر) — داغی جمعیت از دادهٔ عمومی + شاهدِ دستی از اپ fomo
+   (که API ندارد). فقط نمایش و ثبت؛ هیچ امتیاز/دروازه‌ای از این کارت نمی‌آید. */
+const FOMO={data:null};
+async function fomoFetch(){
+  try{
+    const r=await fetch("./signals/fomo.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){FOMO.data=j;DB.set("fomo_cache",j);renderFomo();}}
+  }catch(e){}
+}
+function renderFomo(){
+  const el=$("#fomoBox");if(!el)return;
+  const j=FOMO.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اتاق فومو هنوز عکس‌فوری نساخته.</div>`;return;}
+  const m=j.market||{};
+  const heat=m.heat==null?"بی‌داده":m.heat;
+  const dot=m.heat==null?"⚪":(m.heat>=70?"🔴":(m.heat<=30?"🔵":"🟡"));
+  const meta=$("#fomoMeta");
+  if(meta)meta.textContent=`داغی ${heat} (${m.label||"—"}) · شاهد ۲۴س ${(j.witness_recent||[]).length} · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const comp=m.components||{};
+  const parts=Object.keys(comp).map(k=>`${{fear_greed:"ترس/طمع",funding:"فاندینگ",trending:"ترند"}[k]||k} ${Math.round(comp[k])}`).join(" · ");
+  const trend=(j.trending||[]).slice(0,8).map(t=>`<span style="margin-inline-end:8px" class="${t.tradable?"":"dim"}">${t.sym.replace("USDT","")}${t.tradable?"":"×"}</span>`).join("");
+  const wit=(j.witness_recent||[]).slice(-6).reverse().map(w=>`<div style="font-size:11px">${w.sym.replace("USDT","")} <b>${w.kind}</b>${w.rank?" #"+w.rank:""} <span class="dim">${w.note||""}</span></div>`).join("");
+  const tr=(j.track_record||{})["4h"]||{};
+  const rec=tr.hit==null?`<span class="dim">کارنامه: ${tr.why||"n کافی نیست"}</span>`:
+    `کارنامهٔ ۴س: اصابت ${Math.round(tr.hit*100)}٪ CI [${tr.ci[0]},${tr.ci[1]}] n=${tr.n}`;
+  const errs=Object.keys(m.errors||{}).length?`<div class="dim" style="font-size:11px">منبع ناموجود: ${Object.keys(m.errors).join("، ")}</div>`:"";
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:4px">${dot} داغی جمعیت <b>${heat}</b> <span class="dim" style="font-size:11px">${parts}</span></div>
+    ${errs}<div style="font-size:12px;margin:4px 0"><span class="dim">ترند (× = در بیت‌یونیکس نیست):</span> ${trend||"—"}</div>
+    <div style="margin:4px 0">${wit||`<span class="dim" style="font-size:11px">شاهدی ثبت نشده — از اپ fomo با پیام «fomo نماد buy|sell|trend [رتبه]» به بات بفرست.</span>`}</div>
+    <div style="font-size:11px">${rec}</div>`;
+}
+setInterval(fomoFetch,180000);setTimeout(fomoFetch,5200);
+(()=>{const f=DB.get("fomo_cache");if(f&&!FOMO.data){FOMO.data=f;setTimeout(renderFomo,700);}})();
+/* نظرسنجی خبر (۲ سپتامبر) — هر ایجنت دربارهٔ هر خبر چه گفت و چند بار درست
+   بود. وزن فقط از کارنامه و با سقف ۵٪؛ این کارت هیچ امتیاز/دروازه‌ای نمی‌سازد. */
+const NPOLL={data:null};
+async function npFetch(){
+  try{
+    const r=await fetch("./signals/news-poll.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){NPOLL.data=j;DB.set("np_cache",j);renderNp();}}
+  }catch(e){}
+}
+function renderNp(){
+  const el=$("#npBox");if(!el)return;
+  const j=NPOLL.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین نظرسنجی با شکار خبر بعدی می‌آید.</div>`;return;}
+  const cons=(j.consensus||{}).BTC||{};
+  const meta=$("#npMeta");
+  if(meta)meta.textContent=`اجماع BTC: ${cons.bias||"بی‌وزن"} (وزن ${cons.weight==null?"—":cons.weight}) · llm ${j.llm&&j.llm.enabled?"فعال":"خاموش"} · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const board=Object.entries(j.scoreboard||{}).sort((a,b)=>(b[1].n||0)-(a[1].n||0)).slice(0,12).map(([k,v])=>
+    `<div style="display:flex;gap:8px;font-size:11px"><span style="min-width:74px">${k}</span><span style="min-width:40px">n=${v.n}</span>`+
+    `<span style="min-width:110px">${v.hit==null?`<span class="dim">${v.why||""}</span>`:`اصابت ${Math.round(v.hit*100)}٪ [${v.ci[0]},${v.ci[1]}]`}</span>`+
+    `<span class="dim">وزن ${v.weight}</span></div>`).join("");
+  const recent=(j.recent||[]).slice(-8).reverse().map(r=>`<div style="font-size:11px"><b>${r.agent}</b><span class="dim">/${r.method}</span> ${r.stance} ${r.scope} ${r.horizon_h}س <span class="dim">— ${(r.title||"").slice(0,60)}</span></div>`).join("");
+  const items=(j.items||[]).slice(0,6).map(i=>`<div style="font-size:11px" class="dim">${i.kind}: ${(i.title||"").slice(0,70)}</div>`).join("");
+  el.innerHTML=`<div style="font-size:12px;margin-bottom:4px"><b>کارنامه</b> ${board?"":'<span class="dim">هنوز نمره‌ای نیست</span>'}</div>${board}
+    <div style="font-size:12px;margin:6px 0 2px 0"><b>برداشت‌های اخیر</b></div>${recent||'<span class="dim" style="font-size:11px">هنوز برداشتی ثبت نشده</span>'}
+    <div style="font-size:12px;margin:6px 0 2px 0"><b>آیتم‌های این نوبت</b></div>${items||'<span class="dim" style="font-size:11px">—</span>'}
+    ${j.llm&&!j.llm.enabled?`<div class="dim" style="font-size:11px;margin-top:4px">روش llm: ${j.llm.note||""}</div>`:""}`;
+}
+setInterval(npFetch,180000);setTimeout(npFetch,5400);
+(()=>{const f=DB.get("np_cache");if(f&&!NPOLL.data){NPOLL.data=f;setTimeout(renderNp,750);}})();
+/* شورای ققنوس (۲ سپتامبر شب) — ۱۲ مراقب زودیاک با وزن کارنامه‌ای؛ حکم ققنوس
+   روی هر سیگنال. مشاوره‌ای: هیچ سیگنالی حذف و هیچ عددی عوض نمی‌شود (قانون ۰۳). */
+const PHX={data:null};
+async function phxFetch(){
+  try{
+    const r=await fetch("./signals/phoenix.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){PHX.data=j;DB.set("phx_cache",j);renderPhx();}}
+  }catch(e){}
+}
+function renderPhx(){
+  const el=$("#phoenixBox");if(!el)return;
+  const j=PHX.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین تابلوی شورا با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const meta=$("#phxMeta");
+  if(meta)meta.textContent=`${j.trades_scored||0} معاملهٔ سنجیده · سقف لایهٔ اجتماعی ${Math.round((j.social_cap||0)*100)}٪ · `+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const rows=(j.guardians||[]).map(g=>{
+    const acc=g.acc==null?`<span class="dim">n=${g.n}</span>`:`${Math.round(g.acc*100)}٪ <span class="dim">n=${g.n}</span>`;
+    return `<tr title="${(g.order||"").replace(/"/g,"'")}"><td>${g.sign} ${g.name}</td><td class="dim">${g.specialty}</td><td>${(g.weight||0).toFixed(2)}</td><td>${acc}</td></tr>`;}).join("");
+  const rec=(j.recent||[]).slice().reverse().slice(0,6).map(v=>{
+    const c=v.label==="تأیید قوی"?"🟢":(v.label==="تأیید"?"🟡":(v.label==="مخالف"?"🔴":"⚪"));
+    return `<div style="font-size:11px">${c} ${(v.sym||"").replace("USDT","")} ${v.tf||""} ${v.dir||""} — <b>${v.label}</b> (${v.score>0?"+":""}${v.score}) · ${v.posture||""}</div>`;}).join("");
+  el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:12px;border-collapse:collapse;width:100%"><thead><tr class="dim"><th style="text-align:right">مراقب</th><th style="text-align:right">تخصص</th><th>وزن</th><th>دقت</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="margin-top:6px">${rec||`<span class="dim" style="font-size:11px">هنوز حکمی ثبت نشده — با اولین سیگنال می‌آید.</span>`}</div>
+    <div class="dim" style="font-size:11px;margin-top:4px">${j.boundary||""}</div>`;
+}
+setInterval(phxFetch,180000);setTimeout(phxFetch,5600);
+(()=>{const f=DB.get("phx_cache");if(f&&!PHX.data){PHX.data=f;setTimeout(renderPhx,800);}})();
+/* بورد خبر (۳ سپتامبر) — تابلوی مشترکِ همهٔ اتاق‌ها. خبر با تاریخِ خودش،
+   نظر افراد مهم، رویداد آینده فقط از یک روز قبل، و درسِ هر واحد با ضریبِ
+   تکرار. قانون ۱۵: دیدگاه است، نه دروازه — هیچ عددی از این‌جا وارد تصمیم
+   نمی‌شود. */
+const NBRD={data:null};
+async function nbFetch(){
+  try{
+    const r=await fetch("./signals/newsboard.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){NBRD.data=j;DB.set("nb_cache",j);renderNb();}}
+  }catch(e){}
+}
+function renderNb(){
+  const el=$("#newsBoardBox");if(!el)return;
+  const j=NBRD.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین بورد با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const c=j.counts||{};
+  const meta=$("#nbMeta");
+  if(meta)meta.textContent=`${c.now||0} خبر تاریخ‌دار · ${c.voices||0} نظر شخصیت · `+
+    `${c.upcoming||0} رویداد تا ${j.post_ahead_h||24} ساعت · ${c.lessons||0} درس واحدها · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const coinTag=cs=>(cs&&cs.length)?` <span class="dim">${cs.map(esc).join("،")}</span>`:"";
+  const news=(j.now||[]).slice(0,8).map(r=>
+    `<div style="font-size:11px;padding:1px 0">${r.fresh?"🟢":"⚪"} <span class="dim">[${esc(r.cat)}]</span> ${esc(r.title)}${coinTag(r.coins)}
+      <span class="dim">· ${esc(r.when)}</span></div>`).join("");
+  const voices=(j.voices||[]).slice(0,4).map(r=>
+    `<div style="font-size:11px;padding:1px 0">🗣 <b>${esc(r.voice)}</b> — ${esc(r.title)}${coinTag(r.coins)}</div>`).join("");
+  const up=(j.upcoming||[]).slice(0,6).map(r=>
+    `<div style="font-size:11px;padding:1px 0">⏳ <span style="font-variant-numeric:tabular-nums">${r.in_hours}س</span>
+      <span class="dim">${esc(r.scope)}</span> ${esc(r.title)}${coinTag(r.coins)} <span class="dim">· ${esc(r.when)}</span></div>`).join("");
+  const les=(j.lessons||[]).slice(0,6).map(e=>
+    `<div style="font-size:11px;padding:1px 0">📌 <b>${esc(e.unit)}</b> <span class="dim">×${e.times} · ضریب ${e.weight}</span> — ${esc(e.lesson)}${coinTag(e.coins)}</div>`).join("");
+  const und=(c.undated||0)?`<div class="dim" style="font-size:11px;margin-top:4px">${c.undated} خبر بی‌تاریخ جدا نگه داشته شد — کنار خبر امروز چیده نمی‌شود.</div>`:"";
+  const sec=(t,body)=>body?`<div style="margin-top:6px"><div class="dim" style="font-size:11px">${t}</div>${body}</div>`:"";
+  el.innerHTML=sec("خبر تازه",news)+sec("نظر افراد مهم",voices)+
+    sec(`رویداد آینده (از ${j.post_ahead_h||24} ساعت قبل)`,up)+
+    sec("درس واحدها",les)+und+
+    `<div class="dim" style="font-size:11px;margin-top:4px">${esc(j.boundary)}</div>`;
+}
+setInterval(nbFetch,180000);setTimeout(nbFetch,5800);
+(()=>{const f=DB.get("nb_cache");if(f&&!NBRD.data){NBRD.data=f;setTimeout(renderNb,850);}})();
+/* دفتر مهارت (۳ سپتامبر) — تجربهٔ تکراری ضریب می‌سازد نه ردیف. حافظه است،
+   نه دروازه: هیچ ضریبی آستانه‌ای را جابه‌جا نمی‌کند (قانون ۰۳). */
+const SKL={data:null};
+async function skFetch(){
+  try{
+    const r=await fetch("./signals/skills.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){SKL.data=j;DB.set("sk_cache",j);renderSk();}}
+  }catch(e){}
+}
+function renderSk(){
+  const el=$("#skillBox");if(!el)return;
+  const j=SKL.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین تابلوی مهارت با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const c=j.counts||{};
+  const meta=$("#skMeta");
+  if(meta)meta.textContent=`${c.skills||0} مهارت از ${c.units||0} واحد · ${c.repeated||0} تکرارشده · `+
+    `${c.stale||0} کهنه · `+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const rows=(j.top||[]).slice(0,10).map(r=>
+    `<div style="font-size:11px;padding:1px 0">${r.stale?"⚪":"🟢"}
+      <span style="font-variant-numeric:tabular-nums">×${r.times}</span>
+      <b>ضریب ${r.weight}</b> <span class="dim">${esc(r.unit)}${r.scope?" · "+esc(r.scope):""}</span>
+      — ${esc(r.skill).slice(0,110)}</div>`).join("");
+  el.innerHTML=(rows||`<span class="dim" style="font-size:11px">هنوز مهارتی ثبت نشده.</span>`)+
+    `<div class="dim" style="font-size:11px;margin-top:4px">${esc(j.weight_rule)}</div>`+
+    `<div class="dim" style="font-size:11px">${esc(j.boundary)}</div>`;
+}
+setInterval(skFetch,180000);setTimeout(skFetch,6000);
+(()=>{const f=DB.get("sk_cache");if(f&&!SKL.data){SKL.data=f;setTimeout(renderSk,900);}})();
+/* اتاق دامیننس (۳ سپتامبر) — مهم‌ترین بستر پیش از ترید. بستر است نه
+   دروازه: دروازهٔ تصمیم همان trend_gate و قانون ۳ است. */
+const DDSK={data:null};
+async function ddFetch(){
+  try{
+    const r=await fetch("./signals/dominance-desk.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){DDSK.data=j;DB.set("dd_cache",j);renderDd();}}
+  }catch(e){}
+}
+function renderDd(){
+  const el=$("#domDeskBox");if(!el)return;
+  const j=DDSK.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اولین تابلوی اتاق دامیننس با چرخهٔ بعدی می‌آید.</div>`;return;}
+  const esc=s=>String(s==null?"":s).replace(/[<>&]/g,ch=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[ch]));
+  const meta=$("#ddMeta");
+  if(meta)meta.textContent=(j.ok?`${j.points||0} نقطه · `:"")+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  if(!j.ok){el.innerHTML=`<div class="dim" style="font-size:12px">${esc(j.why)}</div>`;return;}
+  const dot=m=>m==="UP"?"🟢":m==="DOWN"?"🔴":m==="FLAT"?"⚪":"❔";
+  const w=j.weighted||{};
+  const tfRow=(j.weighted&&j.weighted.used||[]).map(u=>
+    `<span class="dim">${esc(u.tf)}</span> ${u.regime==="BULLISH"?"🟢":u.regime==="BEARISH"?"🔴":"⚪"}
+     <span class="dim">×${u.weight}</span>`).join(" · ");
+  const chan=Object.entries((j.channel||{}).frames||{}).map(([tf,r])=>
+    `<div style="font-size:11px">📐 <b>${esc(tf)}</b> ${r.px} — ${esc(r.where)}`+
+    (r.pos_pct==null?"":` <span class="dim">(${r.pos_pct}٪ ارتفاع کانال)</span>`)+`</div>`).join("");
+  const u=j.usdc||{},m=j.money_cycle||{};
+  el.innerHTML=
+    `<div style="font-size:12px">${dot((j.base_rule||{}).market)} <b>${esc((j.base_rule||{}).why)}</b></div>
+     <div style="font-size:11px;margin-top:4px">⚖️ رأی وزنی: <b>${esc(w.regime)}</b> ${w.score==null?"":`(${w.score})`} — ${tfRow||"<span class='dim'>تایم معتبری نبود</span>"}</div>
+     ${chan}
+     <div style="font-size:11px;margin-top:4px">💵 <b>USDC.D</b> ${u.ok?esc(u.state):""} — ${esc(u.why)}</div>
+     <div style="font-size:11px">🔄 چرخهٔ پول: <b>${esc(m.state||"—")}</b> — ${esc(m.why)}</div>
+     <div class="dim" style="font-size:11px;margin-top:4px">${esc(j.boundary)}</div>`;
+}
+setInterval(ddFetch,180000);setTimeout(ddFetch,6200);
+(()=>{const f=DB.get("dd_cache");if(f&&!DDSK.data){DDSK.data=f;setTimeout(renderDd,950);}})();
+/* حلقهٔ بسته — آیا هر سیگنالِ رفته، تجربه هم ساخته؟ (۲۸ اوت شب)
+   کشفِ همان شب: ۲۸ از ۴۰ سیگنالِ ارسالی کارمزد ≥۰.۲۵R داشتند و دفتر
+   یادگیری بی‌صدا ردشان می‌کرد — یعنی از ۷۰٪ آنچه فرستاده شد هیچ درسی
+   ساخته نمی‌شد و کارنامه از زیرمجموعه‌ای خوش‌بینانه می‌آمد. */
+const LOOPA={data:null};
+async function loopFetch(){
+  try{
+    const r=await fetch("./signals/loop-audit.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){LOOPA.data=j;DB.set("loop_cache",j);renderLoop();}}
+  }catch(e){}
+}
+function renderLoop(){
+  const el=$("#loopBox");if(!el)return;
+  const j=LOOPA.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">
+    اولین ممیزی از زنجیره در راه است.</div>`;return;}
+  const tot=j.n_sent||0, ok=j.closed_loop||0;
+  const pct=tot?Math.round(100*ok/tot):null;
+  const dot=pct==null?"⚪":(pct>=95?"🟢":pct>=80?"🟡":"🔴");
+  const meta=$("#loopMeta");
+  if(meta)meta.textContent=`پنجرهٔ ${j.window_h||72} ساعت · `+
+    Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const bars=[["ارسال",j.n_sent],["روی پنل",j.n_feed],["در یادگیری",j.n_ledger_with_msgid],
+              ["نتیجه ثبت‌شده",j.n_digested]].map(([k,v])=>
+    `<div style="display:flex;gap:8px;font-size:12px;padding:2px 0">
+      <span class="dim" style="min-width:110px">${k}</span>
+      <span style="font-variant-numeric:tabular-nums">${v==null?"—":v}</span></div>`).join("");
+  const leaks=(j.leaks||[]).slice(0,8).map(l=>{
+    const t=new Date(l.at).toLocaleString("fa-IR",{timeZone:"Asia/Tehran",
+      month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    return `<div style="font-size:11px;padding:2px 0" class="warn">
+      ✗ ${t} ${l.sym} ${l.tf||""} ${l.dir||""} — بدون: ${(l.missing||[]).join("، ")}</div>`;}).join("");
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${dot}
+    <b>${pct==null?"—":pct+"٪"}</b> از سیگنال‌های ارسالی هر سه رد را دارند
+    <span class="dim">(${ok} از ${tot})</span></div>${bars}
+    ${leaks?`<div style="margin-top:6px">${leaks}</div>`:""}`;
+}
+setInterval(loopFetch,120000);setTimeout(loopFetch,5000);
+(()=>{const l=DB.get("loop_cache");if(l&&!LOOPA.data){LOOPA.data=l;setTimeout(renderLoop,600);}})();
+/* دفتر تلگرام — همان چیزی که برای حمید فرستاده شده، روی پنل (۲۸ اوت) */
+const TGF={data:null};
+const TGF_LABEL={signal:"📣 سیگنال",outcome:"📊 نتیجه",outcome_batch:"📊 نتیجهٔ جمعی",
+  dom_report:"🧭 نظریهٔ دامیننس",work_report:"🗂 گزارش کار",pump_report:"🚀 گزارش پامپ"};
+async function tgfFetch(){
+  try{
+    const r=await fetch("./signals/telegram-feed.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.rows){TGF.data=j;DB.set("tgf_cache",j);renderTgFeed();}}
+  }catch(e){}
+}
+function renderTgFeed(){
+  const el=$("#tgFeedBox");if(!el)return;
+  const j=TGF.data;
+  if(!j||!(j.rows||[]).length){el.innerHTML=`<div class="dim" style="font-size:12px">
+    هنوز ردیفی ثبت نشده — دفتر از اولین ارسالِ بعدی پر می‌شود.</div>`;return;}
+  const rows=j.rows.slice().reverse().slice(0,60);
+  const cnt={};rows.forEach(r=>{cnt[r.kind]=(cnt[r.kind]||0)+1});
+  const meta=$("#tgFeedMeta");
+  if(meta)meta.textContent=Object.entries(cnt)
+    .map(([k,n])=>`${(TGF_LABEL[k]||k).replace(/^\S+\s/,"")} ${n}`).join(" · ");
+  el.innerHTML=rows.map(r=>{
+    const t=new Date(r.at).toLocaleString("fa-IR",{timeZone:"Asia/Tehran",
+      month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    const x=r.extra||{};
+    const nums=[x.entry!=null?`ورود ${x.entry}`:"",x.sl!=null?`استاپ ${x.sl}`:"",
+      x.tp1!=null?`تارگت ${x.tp1}`:"",x.r!=null?`${x.r}R`:""].filter(Boolean).join(" · ");
+    return `<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span class="dim" style="font-size:11px;min-width:86px">${t}</span>
+      <span style="font-size:12px;min-width:104px">${TGF_LABEL[r.kind]||r.kind}</span>
+      <span style="font-size:12px;flex:1">${(r.title||"").replace(/</g,"&lt;")}
+        ${nums?`<span class="dim" style="font-size:11px"> — ${nums}</span>`:""}</span>
+    </div>`;}).join("");
+}
+setInterval(tgfFetch,120000);setTimeout(tgfFetch,5200);
+(()=>{const t=DB.get("tgf_cache");if(t&&!TGF.data){TGF.data=t;setTimeout(renderTgFeed,600);}})();
 /* شکار خبر ۳ساعته — خبر دسته‌بندی‌شده + رویدادها */
 const NEWSJ={data:null};
 async function newsjFetch(){
@@ -5249,7 +5577,11 @@ $("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)se
 (async()=>{try{
   try{(await (navigator.serviceWorker?.getRegistrations?.()||[])).forEach(r=>r.update());}catch(e){}
   const t=await (await fetch("sw.js?nc="+Date.now(),{cache:"no-store"})).text();
-  const server=(t.match(/hsa-shell-v([\d.]+)/)||[])[1];
+  // نام کش از hsa-shell به auraliam-shell عوض شده بود و این regex قدیمی
+  // مانده بود؛ یعنی server همیشه undefined می‌شد و محافظِ «پنل کهنه است»
+  // — همان که برای شکایت «کلیک می‌کنم هیچ اتفاقی نمی‌افتد» ساخته شده بود —
+  // کاملاً خاموش بود (ممیزی ۲۷ اوت).
+  const server=(t.match(/(?:hsa|auraliam)-shell-v([\d.]+)/)||[])[1];
   const here=(($("#ver")||{}).textContent||"").match(/v([\d.]+)/)?.[1];
   if(server&&here&&server!==here){
     if(!sessionStorage.getItem("vreload")){
