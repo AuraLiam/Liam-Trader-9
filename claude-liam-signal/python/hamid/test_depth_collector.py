@@ -407,6 +407,38 @@ check("نمونهٔ پاسخ کوتاه نگه داشته می‌شود (لاگ 
       len(_why) < 220, str(len(_why)))
 
 
+
+# ── بودجهٔ زمان: پنجرهٔ برداشت باید از زمانِ باقی‌مانده بیاید ──────────
+#
+# عیبِ اندازه‌گیری‌شدهٔ ۶ سپتامبر: `depth-health.json` ۲۳ ساعت کهنه بود و
+# سه اجرای پیاپی (۱۴۵، ۱۴۶، ۱۴۷) **cancelled** شدند — هر سه حوالی دقیقهٔ
+# ۵۹. حساب: `fetch-depth: 0` روی مخزنِ ۴.۴ گیگابایتی ~۹ دقیقه + ۵۰ دقیقه
+# برداشت = ۵۹ > سقف ۵۸ → کنسل، **درست قبل از مرحلهٔ انتشار**. یعنی هر
+# ساعت ۵۰ دقیقه برداشتِ واقعی انجام و بعد دور ریخته می‌شد.
+#
+# دو چیز قفل می‌شود تا برنگردد: تاریخچهٔ کامل کشیده نشود، و پنجرهٔ
+# برداشت عددِ ثابت نباشد.
+import re as _re                                     # noqa: E402
+_wf_p = HERE.parent.parent.parent / ".github" / "workflows" / "depth-collect.yml"
+_wf = _wf_p.read_text(encoding="utf-8")
+_cmds = [l.strip() for l in _wf.splitlines()
+         if l.strip() and not l.strip().lstrip("-").strip().startswith("#")]
+check("تاریخچهٔ کامل کشیده نمی‌شود (۹ دقیقه از بودجه برمی‌گردد)",
+      not any("fetch-depth: 0" in c for c in _cmds), "fetch-depth: 0 برگشته")
+check("ساعت شروع قبل از checkout ثبت می‌شود",
+      _wf.index("JOB_T0=$(date +%s)") < _wf.index("actions/checkout"))
+check("پنجرهٔ برداشت از زمانِ باقی‌مانده مشتق می‌شود، نه عددِ ثابت",
+      "LEFT=$(( JOB_BUDGET_MIN - ELAPSED - PUBLISH_RESERVE_MIN ))" in _wf
+      and '--minutes "$MIN"' in _wf)
+check("و رزروِ انتشار از پنجره کم می‌شود", "PUBLISH_RESERVE_MIN" in _wf)
+check("زمانِ خیلی کم = برداشت نکن (بهتر از برداشتِ کنسل‌شده)",
+      '[ "$MIN" -lt 5 ]' in _wf and "exit 0" in _wf)
+_m_to = _re.search(r"timeout-minutes:\s*(\d+)", _wf)
+_m_bg = _re.search(r'JOB_BUDGET_MIN:\s*"(\d+)"', _wf)
+check("بودجهٔ داخل شل با سقفِ واقعیِ job یکی است (سند و کد جدا نیفتند)",
+      bool(_m_to and _m_bg) and _m_to.group(1) == _m_bg.group(1),
+      f"timeout={_m_to and _m_to.group(1)} budget={_m_bg and _m_bg.group(1)}")
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
