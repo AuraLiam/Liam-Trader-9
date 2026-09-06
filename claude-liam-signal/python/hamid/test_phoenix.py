@@ -150,7 +150,19 @@ reg = json.loads((P.ROOT / "config" / "state_registry.json").read_text(encoding=
 check("phoenix.json ردیف قرارداد دارد (قانون ۱۳)", "phoenix.json" in reg and reg["phoenix.json"]["producer"] == "hamid/phoenix.py")
 wf = (P.ROOT / ".github" / "workflows" / "hamid-cycle.yml").read_text(encoding="utf-8")
 check("چرخهٔ حمید سنجش شبانه و عکس‌فوری ققنوس را می‌سازد", "hamid.phoenix --score --write" in wf)
-check("phoenix.json به پنل منتشر می‌شود (فهرست انتشار)", "bubbles phoenix" in wf)
+# ملاکِ «منتشر می‌شود» عوض شد (۶ سپتامبر). نسخهٔ قبلی دنبال رشتهٔ
+# `"bubbles phoenix"` در ورک‌فلو می‌گشت — یعنی به **ترتیبِ کلماتِ یک
+# فهرست دست‌نویس** گره خورده بود. وقتی آن فهرست حذف شد و جایش استخراج
+# از خودِ `index.html` نشست، این بررسی افتاد و **کلِ چرخه را خواباند**
+# — پس انتشار پنل هم اجرا نشد. آزمونی که به شکلِ پیاده‌سازی چسبیده
+# باشد، خودش تبدیل به مانعِ رفع می‌شود.
+#
+# حالا همان چیزی سنجیده می‌شود که واقعاً مهم است: پنل این فایل را
+# می‌خواند، و مرحلهٔ انتشار هرچه را پنل بخواند می‌فرستد.
+_html = (P.ROOT / "index.html").read_text(encoding="utf-8")
+check("پنل phoenix.json را می‌خواند", "./signals/phoenix.json" in _html)
+check("و مرحلهٔ انتشار هرچه را پنل می‌خواند می‌فرستد (فهرست مشتق)",
+      "grep -oE '\\./signals/" in wf and "for f in $WANTED" in wf)
 
 import shutil                                         # noqa: E402
 shutil.rmtree(tmp, ignore_errors=True)

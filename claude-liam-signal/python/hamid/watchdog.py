@@ -15,6 +15,7 @@
 """
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -70,6 +71,38 @@ def c_panel_loads():
     if i > 0:
         ver = html[i:i + 20].split("<")[0].strip()
     return "ok", f"صفحه سالم است ({ver})"
+
+
+def c_panel_version():
+    """نسخهٔ پنلِ منتشرشده باید با نسخهٔ مخزن یکی باشد.
+
+    این بررسی نبود، و نبودنش **۱۹ روز** طول کشید تا دیده شود.
+
+    ۶ سپتامبر معلوم شد `index.html` روی ریشهٔ gh-pages از ۱۸ اوت
+    دست‌نخورده مانده، در حالی که همین دیده‌بان هر چرخه «۹ سالم · ۰
+    خراب» می‌داد. چرا؟ چون همهٔ بررسی‌هایش **تازگیِ داده** را می‌سنجیدند
+    و `signals/` هر ۳ دقیقه تازه می‌شد. پس پنل عددهای امروز را در
+    کارت‌های ۱۸ اوت نشان می‌داد و هیچ سنجه‌ای این را نمی‌دید.
+    `c_panel_loads` هم نسخه را فقط **چاپ** می‌کرد، نه مقایسه.
+
+    درسِ کلاس: تازگیِ داده، تازگیِ **برنامه** را اثبات نمی‌کند. هرجا
+    داده و کد جدا منتشر می‌شوند، هر کدام سنجهٔ خودش را می‌خواهد.
+    """
+    try:
+        src = (ROOT / "index.html").read_text(encoding="utf-8")
+    except Exception as e:                           # noqa: BLE001
+        return "warn", f"نسخهٔ مبدأ خوانده نشد ({type(e).__name__})"
+    m = re.search(r'id="ver">cycle v([\d.]+)', src)
+    if not m:
+        return "warn", "نشانهٔ نسخه در index.html مخزن پیدا نشد"
+    want = m.group(1)
+    html = _get(f"{PAGES}/index.html", as_json=False)
+    m2 = re.search(r'cycle v([\d.]+)', html)
+    got = m2.group(1) if m2 else "?"
+    if got == want:
+        return "ok", f"نسخهٔ پنل با مخزن یکی است (v{want})"
+    return "down", (f"پنلِ منتشرشده v{got} است ولی مخزن v{want} — "
+                    "کدِ پنل منتشر نشده (همان عیبِ ۱۹روزهٔ ۶ سپتامبر)")
 
 
 def c_hamid_fresh():
@@ -207,6 +240,7 @@ def c_telegram_ready():
 
 CHECKS = [
     ("صفحهٔ پنل", c_panel_loads),
+    ("نسخهٔ پنلِ منتشرشده", c_panel_version),
     ("سیگنال روش حمید روی پنل", c_hamid_fresh),
     ("اسکن زنده روی پنل", c_scan_fresh),
     ("هماهنگی پنل با آخرین چرخه", c_pages_matches_main),
