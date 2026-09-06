@@ -145,6 +145,40 @@ def run():
     check("دفتر پوشش ردیف قرارداد دارد (قانون ۱۳)",
           "scan-coverage.json" in reg)
 
+    # ── شناسایی ارز: کلاس مشتق می‌شود، فهرست‌وار نیست (۶ سپتامبر) ────────
+    #
+    # حمید: «باید تو شناسایی ارزها دقت بیشتری بکنی.» فهرستِ دست‌نویس
+    # `WETH` را داشت ولی `WBETH` را نه، و WBETHUSDT سیگنال گرفت؛ طلای
+    # توکنی (XAUT×۱۴ · PAXG×۱۰) در هیچ فهرستی نبود. علتِ کلاس همان است
+    # که ۶ سپتامبر ثبت شد: فهرستی که آدم باید به‌خاطر بسپارد.
+    from hamid.universe import sym_class, structureless
+    # ۱) چیزهایی که باید گرفته شوند — از جمله همان‌هایی که فهرست جا انداخت
+    for s in ("WBETHUSDT", "USD1USDT", "BETHUSDT", "RETHUSDT", "BNSOLUSDT",
+              "SOLVBTCUSDT", "WBTCUSDT", "STETHUSDT", "RLUSDUSDT",
+              "BFUSDUSDT", "USDGOUSDT", "BRLUSDT"):
+        check(f"«{s}» ساختارِ معامله‌پذیر ندارد", structureless(s), sym_class(s))
+    # ۲) و مهم‌تر: مثبتِ کاذب نسازد. این‌ها ارزهای واقعی‌اند که با پیشوندِ
+    #    رپینگ شروع می‌شوند یا به نام مِیجر ختم می‌شوند.
+    for s in ("WIFUSDT", "BCHUSDT", "STXUSDT", "RENDERUSDT", "BONKUSDT",
+              "WLDUSDT", "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT",
+              "PUMPUSDT", "TRUMPUSDT", "ASTERUSDT"):
+        check(f"«{s}» ارز عادی است و بلاک نمی‌شود",
+              not structureless(s) and sym_class(s) == "crypto", sym_class(s))
+    # ۳) کالا کلاسِ خودش را دارد و **بسته نیست** — چون n=۲۴ و
+    #    میانگین +۰.۰۱۶R چیزی را اثبات نمی‌کند (قانون ۰۳).
+    for s in ("XAUTUSDT", "PAXGUSDT"):
+        check(f"«{s}» کالاست، نه بلاک‌شده",
+              sym_class(s) == "commodity" and not structureless(s))
+    # ۴) گلوگاه ارسال از همین منبع می‌خواند، نه از فهرستِ خودش
+    tg = (PY / "telegram.py").read_text(encoding="utf-8")
+    check("گلوگاه ارسال کلاس را از universe می‌گیرد",
+          "from hamid.universe import structureless" in tg)
+    check("کلاسِ نماد روی دفتر ثبت می‌شود",
+          '"sym_class": _sym_class(' in tg)
+    pap = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
+    check("و ماشین شبانه شرطش را دارد",
+          'w.get("sym_class") == "commodity"' in pap)
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

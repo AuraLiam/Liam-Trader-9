@@ -27,6 +27,77 @@ STABLES = {"USDC", "FDUSD", "TUSD", "BUSD", "DAI", "USDP", "USDD", "PYUSD",
 WRAPPED = {"WBTC", "WETH", "WBNB", "WSOL", "STETH", "WSTETH", "CBBTC", "CBETH",
            "RETH", "WEETH"}
 
+# ── شناسایی ارز: مشتق، نه فهرستِ دست‌نویس (دستور حمید، ۶ سپتامبر) ──────────
+#
+# حمید: «باید تو شناسایی ارزها دقت بیشتری بکنی.» علت، نه حادثه: دو فهرستِ
+# بالا دست‌نویس‌اند، پس هر گونهٔ تازه باید یادِ کسی بماند. اندازه‌گیریِ همان
+# روز روی ۴۴۰ سیگنالِ ارسالی نشان داد چه چیزی از لایشان رد شده:
+#   WBETHUSDT×۱ — چون `WETH` در فهرست هست ولی `WBETH` نبود
+#   USD1USDT×۱  — پیش از افزوده‌شدنِ USD1 به فهرست
+#   XAUT×۱۴ + PAXG×۱۰ — طلای توکنی، در هیچ فهرستی نبود
+#
+# همان کلاسی که ۶ سپتامبر ثبت شد: «فهرستِ دست‌نویس، خودش یک علت است.»
+# درمان، اضافه‌کردن سه ردیفِ دیگر نیست — مشتق‌کردنِ کلاس از خودِ نماد است.
+# فهرست‌ها می‌مانند، ولی فقط به‌عنوان پشت‌بند.
+
+_FIAT = {"EUR", "GBP", "JPY", "TRY", "BRL", "ARS", "AUD", "ZAR"}
+_MAJORS = ("BTC", "ETH", "BNB", "SOL")
+# پیشوندهای رپینگ/استیکینگ. عمداً کوتاه و بسته: پسوند باید **خودش** یکی از
+# چهار مِیجر باشد، وگرنه هر نمادی که تصادفاً با B یا W شروع شود قربانی
+# می‌شود. آزمون‌شده روی نمادهای واقعی: WIF · BCH · STX · RENDER · BONK ·
+# WLD هیچ‌کدام نمی‌افتند، چون بعد از برداشتنِ پیشوند مِیجر نمی‌مانَد.
+_WRAP_PREFIX = ("W", "B", "R", "S", "M", "L", "WB", "WST", "ST", "CB", "BN",
+                "SOLV", "LS", "RS")
+
+
+def is_stable(base):
+    """استیبل/فیات — مشتق از خودِ نام، نه فهرست."""
+    b = (base or "").upper()
+    return b in STABLES or b in _FIAT or "USD" in b
+
+
+def is_wrapped(base):
+    """رپد یا استیکِ یکی از چهار مِیجر — یعنی تکرارِ همان دارایی."""
+    b = (base or "").upper()
+    if b in WRAPPED:
+        return True
+    if b in _MAJORS:                       # خودِ مِیجر رپد نیست
+        return False
+    for m in _MAJORS:
+        if b.endswith(m) and b[: -len(m)] in _WRAP_PREFIX:
+            return True
+    return False
+
+
+def is_commodity(base):
+    """کالای توکنی (طلا/نقره). ممنوع نیست — فقط کلاسش فرق دارد."""
+    b = (base or "").upper()
+    return b in {"XAUT", "PAXG", "XAGX"} or b.startswith(("XAU", "XAG"))
+
+
+def sym_class(sym):
+    """کلاسِ نماد: crypto | stable | wrapped | commodity.
+
+    روی هر سیگنال ثبت می‌شود تا ماشین شبانه بتواند بسنجد هر کلاس چقدر
+    می‌ارزد — به‌جای این‌که کسی از روی حدس کلاسی را ببندد (قانون ۰۳).
+    """
+    b = _base(str(sym or "").upper())
+    if is_stable(b):
+        return "stable"
+    if is_wrapped(b):
+        return "wrapped"
+    if is_commodity(b):
+        return "commodity"
+    return "crypto"
+
+
+def structureless(sym):
+    """نمادی که ساختارِ قابل‌معامله ندارد — استیبل یا تکرارِ یک مِیجر.
+
+    کالا این‌جا نیست: طلا ساختار دارد؛ مسئله‌اش بسترِ BTC است نه ساختار.
+    """
+    return sym_class(sym) in ("stable", "wrapped")
+
 
 def _base(sym):
     return sym[:-4] if sym.endswith("USDT") else sym

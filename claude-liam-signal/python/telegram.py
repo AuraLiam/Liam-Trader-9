@@ -791,6 +791,15 @@ def _candle_trace():
         return {"candle_src": None}
 
 
+def _sym_class(sym):
+    """کلاسِ نماد برای ردپای دفتر — خطایش هرگز ارسال را نمی‌خواباند."""
+    try:
+        from hamid.universe import sym_class
+        return sym_class(sym)
+    except Exception:                                # noqa: BLE001
+        return None
+
+
 def _phoenix_trace(s):
     """ردپای شورای ققنوس روی دفتر (۲ سپتامبر شب): امتیاز، برچسب، رأی ۱۲ مراقب.
 
@@ -903,10 +912,14 @@ def send_signals(signals, render_chart, limit=8):
         # استیبل/رپد سیگنال نمی‌شود — کشف ۱۲ اوت: RLUSD دو جای سهمیهٔ ۱۶تایی
         # را سوزاند. حرکت استیبل چند صدم درصد است؛ «سیگنال» رویش یعنی سهمیهٔ
         # کمتر برای ارز واقعی. همان فیلتر دفتر کاغذی، این‌جا در گلوگاه ارسال.
+        #
+        # ۶ سپتامبر: از فهرستِ دست‌نویس به کلاسِ مشتق منتقل شد. فهرست
+        # `WETH` را داشت ولی `WBETH` را نه، و WBETHUSDT رد شد. حالا
+        # `universe.structureless` کلاس را از خودِ نماد درمی‌آورد
+        # (اثبات: ۸۷۹ نماد واقعی، ۱۵ غیرکریپتو، صفر مثبتِ کاذب).
         try:
-            from hamid.universe import STABLES, WRAPPED
-            base = s["sym"][:-4] if s["sym"].endswith("USDT") else s["sym"]
-            return base in STABLES or base in WRAPPED
+            from hamid.universe import structureless
+            return structureless(s["sym"])
         except Exception:                            # noqa: BLE001
             return False
 
@@ -1106,6 +1119,13 @@ def send_signals(signals, render_chart, limit=8):
                                       # سنجش شبانه؛ از عکس‌فوری، بدون شبکه
                                       **_fomo_trace(s["sym"]),
                                       **_news_trace(s["sym"], s["dir"]), **_candle_trace(), **_phoenix_trace(s),
+                                  # کلاسِ نماد (۶ سپتامبر — «در شناسایی
+                                  # ارزها دقت بیشتری بکن»). فقط ردپا: طلای
+                                  # توکنی (XAUT/PAXG) بسته نمی‌شود چون n=۲۴
+                                  # و میانگین +۰.۰۱۶R هیچ‌چیز را اثبات
+                                  # نمی‌کند. ماشین شبانه با همین فیلد
+                                  # می‌سنجدش؛ بستنش فقط با CI و تأیید حمید.
+                                  "sym_class": _sym_class(s["sym"]),
                                       **(pm.get("tv") or {})})
                     from hamid import memory as _mem
                     _mem.remember("بررسی", s["sym"],
@@ -1231,6 +1251,13 @@ def send_signals(signals, render_chart, limit=8):
                                   **_fomo_trace(s["sym"]),
                                   # اجماع خبری ایجنت‌ها (۲ سپتامبر): فقط ردپا — خبر دیدگاه است، نه تصمیم
                                   **_news_trace(s["sym"], s["dir"]), **_candle_trace(), **_phoenix_trace(s),
+                                  # کلاسِ نماد (۶ سپتامبر — «در شناسایی
+                                  # ارزها دقت بیشتری بکن»). فقط ردپا: طلای
+                                  # توکنی (XAUT/PAXG) بسته نمی‌شود چون n=۲۴
+                                  # و میانگین +۰.۰۱۶R هیچ‌چیز را اثبات
+                                  # نمی‌کند. ماشین شبانه با همین فیلد
+                                  # می‌سنجدش؛ بستنش فقط با CI و تأیید حمید.
+                                  "sym_class": _sym_class(s["sym"]),
                                   # شاهد دامیننسِ هم‌ترازِ تایم‌فریم — ثبت برای
                                   # سنجش شبانه، نه دروازه (۳۰ اوت)
                                   "dom_tf_aligned": ((s.get("premortem") or {}).get("dom_tf") or {}).get("aligned"),

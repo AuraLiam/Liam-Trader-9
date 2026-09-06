@@ -529,12 +529,27 @@ def build(now_ms=None):
                        f"{'کهنه' if ed.get('stale') else 'تازه'}"))
 
     # E23 — ناظر: تخلفِ پابرجا
-    viol = len(cf.get("violations") or [])
-    checks = len(cf.get("checks") or []) or 1
-    C.append(_ops("E23", "تخلفِ انطباق", viol, checks,
+    #
+    # عیبِ مخرج، رفع ۶ سپتامبر: این‌جا شمارِ **نمونه‌های** تخلف بر شمارِ
+    # **نام قواعد** تقسیم می‌شد — ۲۲ بر ۶ — و ۳۶۶٪ می‌داد. نرخی که از
+    # ۱۰۰ رد شود اصلاً نرخ نیست؛ همان «عددِ نامحتمل» که قانون گزارش
+    # می‌گوید اول باید به خودِ سنجه شک کرد. مخرجِ درست، خودِ قواعد است و
+    # صورتِ درست، قواعدی که تخلفِ باز دارند: عددی که همیشه در [۰,۱۰۰] است.
+    # شمارِ نمونه‌ها و شدت‌ها در یادداشت می‌مانند تا چیزی پنهان نشود.
+    _vio = cf.get("violations") or []
+    _rules = cf.get("checks") or []
+    _hit = {str(v.get("rule")) for v in _vio if isinstance(v, dict)}
+    _sev = collections.Counter(str(v.get("sev")) for v in _vio
+                               if isinstance(v, dict))
+    _high = _sev.get("high", 0)
+    C.append(_ops("E23", "قاعده‌های انطباق با تخلفِ باز",
+                  len(_hit), len(_rules) or 1,
                   "تخلفِ باز یعنی زنجیره از قرارداد خودش بیرون است",
                   ["signals/conformance.json", "signals/sentinel.json"],
-                  f"پاسبان: {sn.get('verdict') or '—'} · "
+                  f"{len(_vio)} نمونه روی {len(_hit)} قاعده از {len(_rules)} "
+                  f"(شدت: {_high} high · {_sev.get('med', 0)} med · "
+                  f"{_sev.get('low', 0)} low) · پاسبان: "
+                  f"{sn.get('verdict') or '—'} · "
                   f"{len(sn.get('findings') or [])} یافته"))
 
     # E24 — قرارداد پنل.
