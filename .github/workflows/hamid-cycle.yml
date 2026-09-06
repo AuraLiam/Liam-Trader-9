@@ -359,72 +359,56 @@ jobs:
         run: |
           git fetch origin gh-pages
           rm -rf /tmp/ghp && git worktree add /tmp/ghp origin/gh-pages --detach
-          # ── آدرس جدا برای این پنل (دستور حمید، ۱۶ اوت) ─────────────────
+          # ── انتشار پنل: فهرست‌ها مشتق می‌شوند، دست‌نویس نیستند ──────────
           #
-          # «قطعاً آدرس پنل تو باید با آدرس پنل لیام تریدر ۹ متفاوت باشد.»
+          # این مرحله سه بار یک عیب داد و هر بار وصلهٔ موضعی خورد:
+          #   · ۲۷ اوت — `lightweight-charts.js` زیر /aura/ نبود → ۴۰۴؛
+          #     چون sw.js از addAll اتمی استفاده می‌کند، همان یک ۴۰۴ کلِ
+          #     کش را رد کرد و چارت بی‌صدا رندر نشد.
+          #   · ۲ سپتامبر — پنج فایل signals در فهرست دست‌نویس نبودند →
+          #     دو کارت پنل روی آدرس واقعی همیشه «هنوز ساخته نشده».
+          #   · ۶ سپتامبر — **کل مقصد ریشه** ناشر نداشت → پنل حمید از
+          #     ۱۸ اوت (۱۹ روز) همان بیلد قدیمی ماند، در حالی که
+          #     `signals/` ریشه هر ۳ دقیقه تازه می‌شد: عددِ امروز در
+          #     کارتِ ۱۸ اوت، بدون هیچ خطایی.
           #
-          # تا امروز هر دو پنل روی همان index.html ریشه می‌نوشتند و عملاً
-          # همدیگر را بازنویسی می‌کردند — یک بار همین‌جا سرِ نام پنل تعارض
-          # واقعی خورد. حالا این پنل زیر /aura/ خانهٔ خودش را دارد و به
-          # index.html ریشه دست نمی‌زند.
+          # علتِ مشترکِ هر سه، خودِ حادثه نیست: **فهرستِ دست‌نویس**. هر
+          # دارایی تازه، هر کارت تازه و هر مقصد تازه باید در یک اسکریپت
+          # شل به‌خاطر سپرده می‌شد؛ و اولین چیزی که آدم فراموش می‌کند
+          # همین است. پس درمان، اضافه‌کردن یک `cp` دیگر نیست — برداشتنِ
+          # حافظهٔ انسانی از این مسیر است:
           #
-          # signals هم داخل /aura/signals/ کپی می‌شود چون پنل مسیرها را
-          # نسبت به خودش می‌خواند؛ اگر به ریشه تکیه کند، همان درهم‌ریختگی
-          # از راه داده برمی‌گردد.
-          mkdir -p /tmp/ghp/aura/signals /tmp/ghp/signals
-          cp index.html /tmp/ghp/aura/index.html
-          cp sw.js      /tmp/ghp/aura/sw.js
-          cp manifest.webmanifest /tmp/ghp/aura/ 2>/dev/null || true
-          # ── و ریشه، که آدرسِ اصلیِ حمید است (رفع ۶ سپتامبر) ─────────────
+          #   ۱. مقصدها یک فهرست‌اند و حلقه می‌خورند (ریشه + /aura/)، پس
+          #      هیچ مقصدی نمی‌تواند نیمه‌کاره بماند.
+          #   ۲. دارایی‌های پنل از خودِ `index.html` استخراج می‌شوند.
+          #   ۳. فهرست `signals/*.json` هم از خودِ `index.html` — پنل
+          #      اعلام می‌کند چه می‌خواند، ما همان را می‌فرستیم.
+          #   ۴. و در پایان **محصول** راستی‌آزمایی می‌شود نه اسکریپت:
+          #      هشِ فایلِ منتشرشده باید با مبدأ یکی باشد. این تنها
+          #      بررسی‌ای است که علتِ *بعدی* را هم می‌گیرد، بی‌آنکه لازم
+          #      باشد از قبل حدسش بزنیم.
           #
-          # جداسازیِ /aura/ بالا یادگارِ دورانی است که این مخزن **دو** پنل
-          # داشت (دستور ۱۶ اوت: «آدرس پنل تو باید متفاوت باشد»). ۱۷ اوت
-          # مخزن خانهٔ انحصاری لیام تریدر ۹ شد و آن پنلِ دیگر رفت — ولی
-          # این مرحله همچنان فقط زیر /aura/ می‌نوشت و **ریشه هیچ
-          # ناشری نداشت**.
-          #
-          # اندازه‌گیری ۶ سپتامبر: `index.html` ریشه روی gh-pages از
-          # **۱۸ اوت ۲۰:۱۷ UTC** دست‌نخورده بود — ۱۹ روز. کش ریشه v21.35
-          # در برابر v21.46 روی main. یعنی هر کارتی که از ۱۸ اوت به بعد
-          # ساخته شد (شورای ققنوس، اتاق فومو، نظرسنجی خبر، یکپارچگی
-          # سامانه، بورد خبر، دفتر مهارت) هرگز به صفحهٔ حمید نرسید.
-          #
-          # چرا دیده نشد: `signals/` ریشه **هر ۳ دقیقه** تازه می‌شد، پس
-          # پنل عددهای تازه را در کارت‌های کهنه نشان می‌داد — «به‌روز
-          # نمی‌شود» بدون هیچ خطایی.
-          #
-          # /aura/ دست‌نخورده می‌ماند تا بوکمارک‌های قبلی نشکنند.
-          cp index.html /tmp/ghp/index.html
-          cp sw.js      /tmp/ghp/sw.js
-          cp manifest.webmanifest /tmp/ghp/ 2>/dev/null || true
-          cp lightweight-charts.js /tmp/ghp/ 2>/dev/null || true
-          for ic in icon-192.png icon-512.png apple-touch-icon.png; do
-            cp "$ic" /tmp/ghp/ 2>/dev/null || true
-          done
-          # کتابخانهٔ چارت و آیکون‌ها هم باید کنار پنل باشند (ممیزی ۲۷ اوت):
-          # index.html خط ۸ مسیر نسبی ./lightweight-charts.js را لود می‌کند و
-          # این فایل زیر /aura/ نبود → ۴۰۴. چون sw.js از addAll اتمی استفاده
-          # می‌کند، همان یک ۴۰۴ کل کش را رد می‌کرد (پس آفلاین هم مرده بود) و
-          # چارتِ پنل بی‌صدا رندر نمی‌شد.
-          cp lightweight-charts.js /tmp/ghp/aura/ 2>/dev/null || true
-          for ic in icon-192.png icon-512.png apple-touch-icon.png; do
-            cp "$ic" /tmp/ghp/aura/ 2>/dev/null || true
-          done
-          # فهرست باید هر فایلی را که index.html با ./signals/… می‌خواند
-          # داشته باشد — ۲ سپتامبر معلوم شد پنجِ آن‌ها (system-state،
-          # loop-audit، bubbles، telegram-feed، fomo) هرگز به /aura/ نمی‌رسید
-          # و دو کارت پنل روی آدرس واقعی کور بودند. محافظ: test_panel_contract.
-          for f in hamid-latest ob-radar classify improve dominance \
-                   pump-radar pump-analysis btc-patterns news telegram-log latest \
-                   overseer rewards reading loss-analysis experience scalp \
-                   experience-effect system-state loop-audit bubbles phoenix newsboard skills council dominance-desk pump-desk \
-                   telegram-feed fomo news-poll \
-                   strategy-params; do
-            cp "signals/$f.json" /tmp/ghp/aura/signals/ 2>/dev/null || true
-            cp "signals/$f.json" /tmp/ghp/signals/ 2>/dev/null || true
+          # /aura/ می‌ماند تا بوکمارک‌های قبلی نشکنند (یادگار دستور ۱۶ اوت،
+          # از دورانی که این مخزن دو پنل داشت).
+          PANEL_DESTS="/tmp/ghp /tmp/ghp/aura"
+          ASSETS=$(grep -oE '(src|href)="\./[A-Za-z0-9_.-]+\.(js|png|webmanifest)"' index.html \
+                   | sed -E 's/.*"\.\/(.*)"/\1/' | sort -u)
+          ASSETS="$ASSETS sw.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png"
+          WANTED=$(grep -oE '\./signals/[A-Za-z0-9_-]+\.json' index.html \
+                   | sed -E 's#\./signals/##' | sort -u)
+          echo "مقصدها: $PANEL_DESTS"
+          echo "دارایی: $(echo $ASSETS | wc -w) فایل · signals: $(echo $WANTED | wc -w) فایل"
+          for d in $PANEL_DESTS; do
+            mkdir -p "$d/signals"
+            cp index.html "$d/index.html"
+            for a in $ASSETS; do cp "$a" "$d/" 2>/dev/null || true; done
+            for f in $WANTED; do cp "signals/$f" "$d/signals/" 2>/dev/null || true; done
           done
           cd /tmp/ghp
-          git add aura signals
+          # `git add aura signals` بود — و دقیقاً به همین دلیل، وصلهٔ اولِ
+          # ۶ سپتامبر کار نمی‌کرد: `index.html` ریشه کپی می‌شد و بعد
+          # **هرگز stage نمی‌شد**. مسیرِ دست‌نویس، این‌بار در stage.
+          git add -A
           git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
           git commit -q -m "چرخهٔ حمید $(date -u '+%Y-%m-%d %H:%M') UTC"
           for a in 1 2 3 4 5 6 7 8; do
@@ -435,6 +419,43 @@ jobs:
             sleep $((a * 4 + RANDOM % 7))
           done
           exit 1
+
+      # ── راستی‌آزماییِ محصول، نه اسکریپت (رفعِ کلاس، ۶ سپتامبر) ──────────
+      #
+      # هر سه حادثهٔ این مرحله (۲۷ اوت، ۲ سپتامبر، ۶ سپتامبر) یک ویژگی
+      # مشترک داشتند: **اسکریپت موفق بود، محصول غلط بود.** `cp` با
+      # `|| true` سبز می‌ماند، `git add` مسیرِ نبوده را بی‌صدا رد می‌کند،
+      # و آزمونِ متنِ ورک‌فلو هم فقط می‌گوید «این خط نوشته شده» نه «این
+      # فایل واقعاً رسید».
+      #
+      # پس شرطِ پایانی روی خودِ چیزی است که منتشر شد: هشِ فایلِ روی
+      # gh-pages باید بیت‌به‌بیت با مبدأ یکی باشد. این بررسی لازم نیست
+      # علتِ بعدی را حدس بزند — هر علتی که پنل را کهنه کند، همین‌جا
+      # قرمز می‌شود.
+      - name: راستی‌آزمایی پنلِ منتشرشده
+        if: always() && github.ref == 'refs/heads/main' && steps.ghp.conclusion == 'success'
+        run: |
+          set -o pipefail
+          git fetch origin gh-pages
+          SRC=$(git hash-object index.html)
+          BAD=0
+          for p in index.html aura/index.html; do
+            GOT=$(git rev-parse "origin/gh-pages:$p" 2>/dev/null || echo "-")
+            if [ "$GOT" = "$SRC" ]; then
+              echo "✓ $p روی پنل با مبدأ یکی است ($SRC)"
+            else
+              echo "✗ $p روی پنل با مبدأ یکی نیست — مبدأ=$SRC منتشرشده=$GOT"
+              BAD=1
+            fi
+          done
+          SW=$(git hash-object sw.js)
+          for p in sw.js aura/sw.js; do
+            GOT=$(git rev-parse "origin/gh-pages:$p" 2>/dev/null || echo "-")
+            [ "$GOT" = "$SW" ] || { echo "✗ $p کهنه است (کش بامپ‌نشده روی پنل)"; BAD=1; }
+          done
+          [ "$BAD" = "0" ] || {
+            echo "پنلِ منتشرشده با مبدأ یکی نیست — همان کلاسِ عیبِ ۱۹روزهٔ ۶ سپتامبر"
+            exit 1; }
 
       # (۱۷ اوت، ریپوی جدید) دیسپچ pages.yml برداشته شد: این‌جا Pages در حالت
       # «deploy از شاخهٔ gh-pages» است و هر پوش خودش همان لحظه دیپلوی می‌شود

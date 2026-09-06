@@ -72,10 +72,32 @@ if m_re and m_cache:
 needed = set(re.findall(r'(?:src|href)="\./([A-Za-z0-9_.-]+\.(?:js|png|webmanifest))"', html))
 check("پنل دست‌کم کتابخانهٔ چارت را با مسیر نسبی لود می‌کند",
       "lightweight-charts.js" in needed, str(sorted(needed)))
-pub = wf.split("mkdir -p /tmp/ghp/aura", 1)[-1].split("cd /tmp/ghp", 1)[0]
-missing = [f for f in needed if f not in pub and f not in ("sw.js",)]
-check("همهٔ دارایی‌های نسبیِ پنل در مرحلهٔ انتشار /aura/ کپی می‌شوند",
-      not missing, f"کپی‌نشده: {missing}")
+
+# ── ۳ب) فهرست‌ها مشتق باشند، نه دست‌نویس (رفعِ کلاس، ۶ سپتامبر) ────────
+#
+# سه حادثهٔ این مرحله (۲۷ اوت چارت، ۲ سپتامبر پنج فایل signals، ۶ سپتامبر
+# کلِ مقصد ریشه) یک علت داشتند: **فهرستِ دست‌نویس**. تا وقتی فهرست
+# دست‌نویس است، بررسیِ «آیا فلان اسم در متن هست؟» فقط حادثهٔ گذشته را
+# می‌گیرد، نه حادثهٔ بعدی. پس ملاک عوض شد: فهرست باید از خودِ
+# `index.html` استخراج شود و مقصدها حلقه بخورند.
+pub = wf.split("PANEL_DESTS=", 1)[-1].split("cd /tmp/ghp", 1)[0]
+check("مقصدهای پنل یک فهرست‌اند و حلقه می‌خورند (نه بلوکِ جدا برای هرکدام)",
+      'PANEL_DESTS="/tmp/ghp /tmp/ghp/aura"' in wf and "for d in $PANEL_DESTS" in pub,
+      pub[:200])
+check("دارایی‌ها از خودِ index.html استخراج می‌شوند، نه تایپ‌شده",
+      "grep -oE '(src|href)=" in pub)
+check("فهرست signals هم از خودِ index.html می‌آید",
+      "grep -oE '\\./signals/" in pub)
+check("هر مقصد هم صفحه، هم دارایی، هم signals می‌گیرد",
+      'cp index.html "$d/index.html"' in pub
+      and 'for a in $ASSETS' in pub and 'for f in $WANTED' in pub)
+# فقط خطوطِ فرمان سنجیده می‌شوند، نه توضیحات — پاسبانی که مستنداتِ
+# خودش را جریمه کند، سه بار در همین مخزن آلارم کاذب داده.
+_cmds = [ln.strip() for ln in wf.splitlines()
+         if ln.strip() and not ln.strip().startswith("#")]
+check("stage کامل است (مسیرِ دست‌نویس در git add، عیبِ وصلهٔ اولِ ۶ سپتامبر)",
+      any(c == "git add -A" for c in _cmds)
+      and not any(c.startswith("git add aura") for c in _cmds))
 
 # ── ۴) عددِ ساخته‌نشده چاپ نمی‌شود ──────────────────────────────────────
 check("انتظار ریاضیِ نداشته دیگر ۰.۰۰R نشان داده نمی‌شود",
@@ -90,12 +112,39 @@ check("چیپ اعتماد/انتظار/پولبک روی مقدار null ساخ
 # انتشار آن‌ها را نداشت — روی آدرس واقعی (/aura/) دو کارت همیشه «هنوز
 # ساخته نشده» نشان می‌دادند. کلاس عیب: کارت تازه بی‌فهرست.
 fetched = sorted(set(re.findall(r'\./signals/([A-Za-z0-9_-]+)\.json', html)))
-m_wl = re.search(r'for f in (.*?); do\s*\n\s*cp "signals/\$f\.json" /tmp/ghp/aura', wf, re.S)
-whitelist = set(m_wl.group(1).replace("\\\n", "").split()) if m_wl else set()
-not_deployed = [f for f in fetched if f not in whitelist]
-check("فهرست کپی مرحلهٔ انتشار پیدا می‌شود", bool(m_wl))
-check("هر signals/*.json که پنل می‌خواند در فهرست انتشار /aura/ هست",
-      bool(fetched) and not not_deployed, f"کپی‌نشده: {not_deployed}")
+check("پنل دست‌کم چند فایل signals می‌خواند", len(fetched) >= 10, str(len(fetched)))
+# فهرست دیگر تایپ نمی‌شود، پس چیزی برای «جا افتادن» نمانده — ولی همان
+# regexِ استخراج باید واقعاً روی خودِ index.html جواب بدهد، وگرنه فهرست
+# خالی می‌شود و هیچ فایلی منتشر نمی‌شود (خرابیِ ساکتِ تازه).
+# استخراج باید روی خودِ صفحه جواب بدهد — فهرستِ خالی یعنی هیچ فایلی
+# منتشر نمی‌شود، و آن خرابیِ ساکتِ تازه‌ای است که مشتق‌کردن می‌تواند
+# بسازد. پس همان دو الگو این‌جا هم روی `index.html` اجرا می‌شوند.
+_wf_signals = [c for c in _cmds if "grep -oE" in c and "signals/" in c]
+_wf_assets = [c for c in _cmds if "grep -oE" in c and "src|href" in c]
+check("ورک‌فلو فهرست signals را با grep از index.html می‌سازد",
+      bool(_wf_signals), str(_cmds[:0]))
+check("و فهرست دارایی را هم", bool(_wf_assets))
+check("استخراجِ signals روی خودِ صفحه خالی درنمی‌آید",
+      len(re.findall(r'\./signals/[A-Za-z0-9_-]+\.json', html)) >= 10)
+check("استخراجِ دارایی روی خودِ صفحه خالی درنمی‌آید",
+      len(re.findall(r'(?:src|href)="\./[A-Za-z0-9_.-]+\.(?:js|png|webmanifest)"',
+                     html)) >= 1)
+
+# ── ۵ب) شرطِ پایانی روی محصول است، نه اسکریپت ─────────────────────────
+#
+# هر سه حادثه یک ویژگی مشترک داشتند: اسکریپت سبز، محصول غلط. `cp` با
+# `|| true` هرگز قرمز نمی‌شود و آزمونِ متنِ ورک‌فلو فقط می‌گوید «این خط
+# نوشته شده»، نه «این فایل رسید». تنها بررسی‌ای که علتِ *بعدی* را هم
+# می‌گیرد، مقایسهٔ هشِ منتشرشده با مبدأ است.
+check("مرحلهٔ راستی‌آزمایی پنلِ منتشرشده وجود دارد",
+      "راستی‌آزمایی پنلِ منتشرشده" in wf)
+check("و هش را با مبدأ مقایسه می‌کند (نه صرفاً وجود فایل)",
+      "git hash-object index.html" in wf
+      and 'git rev-parse "origin/gh-pages:$p"' in wf)
+check("هر دو آدرس راستی‌آزمایی می‌شوند (ریشه و /aura/)",
+      "for p in index.html aura/index.html" in wf)
+check("کهنه‌بودنِ پنل مرحله را قرمز می‌کند، نه اینکه فقط چاپ شود",
+      re.search(r'\[ "\$BAD" = "0" \] \|\|.*?exit 1', wf, re.S) is not None)
 
 
 # ── ۶) ریشه هم باید ناشر داشته باشد، نه فقط /aura/ ─────────────────────
@@ -109,17 +158,12 @@ check("هر signals/*.json که پنل می‌خواند در فهرست انت�
 #
 # کلاسِ عیب: **پاسبانی که فقط یک آدرس را می‌بیند، آدرس دیگر را
 # نامرئی می‌کند.** حالا هر دو اجباری‌اند.
-check("پنل به ریشه هم منتشر می‌شود (آدرس اصلی حمید)",
-      "cp index.html /tmp/ghp/index.html" in wf
-      and "cp sw.js      /tmp/ghp/sw.js" in wf,
+check("ریشه (آدرس اصلی حمید) یکی از مقصدهاست",
+      "/tmp/ghp " in wf.split("PANEL_DESTS=", 1)[-1][:60]
+      or 'PANEL_DESTS="/tmp/ghp ' in wf,
       "ریشه ناشر ندارد — همان عیبِ ۱۹روزهٔ ۶ سپتامبر")
-_root_pub = wf.split("cp index.html /tmp/ghp/index.html", 1)[-1].split(
-    "cd /tmp/ghp", 1)[0]
-_missing_root = [f for f in needed if f not in _root_pub and f != "sw.js"]
-check("دارایی‌های نسبیِ پنل به ریشه هم می‌روند (وگرنه ۴۰۴ و کشِ ردشده)",
-      not _missing_root, f"کپی‌نشده در ریشه: {_missing_root}")
-check("فهرست signals هم به ریشه کپی می‌شود",
-      'cp "signals/$f.json" /tmp/ghp/signals/' in wf)
+check("و /aura/ هم می‌ماند (بوکمارک‌های قبلی نمی‌شکنند)",
+      "/tmp/ghp/aura" in wf.split("PANEL_DESTS=", 1)[-1][:60])
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
