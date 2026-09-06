@@ -1078,7 +1078,7 @@ def send_signals(signals, render_chart, limit=8):
                 # آمار محصول را آلوده نمی‌کند (همان درسِ ۳×ETH).
                 try:
                     from hamid import paper as _paper
-                    _paper.open_from(
+                    _gv_n = _paper.open_from(
                         [{"symbol": s["sym"], "dir": s["dir"],
                           "entry": s["entry"], "sl": s["sl"],
                           "tp1": s.get("tp1") or s["entry"],
@@ -1095,8 +1095,16 @@ def send_signals(signals, render_chart, limit=8):
                          **_fomo_trace(s["sym"]),
                          **_news_trace(s["sym"], s["dir"]), **_candle_trace(),
                          "sym_class": _sym_class(s["sym"])})
-                except Exception:                    # noqa: BLE001
-                    pass                             # دفتر اختیاری است؛ وتو نه
+                    if not _gv_n:
+                        print(f"  ⚠️ دفتر ضدواقع برای {s['sym']} ساخته نشد "
+                              f"(open_from صفر برگرداند)", flush=True)
+                except Exception as _gv_e:           # noqa: BLE001
+                    # دفتر اختیاری است؛ وتو نه — ولی شکستش باید **دیده**
+                    # شود. `except: pass` خاموش، خرابیِ نوشتن را دقیقاً
+                    # شبیه «وتویی رخ نداد» نشان می‌دهد و همان کلاسِ
+                    # «اسکریپت سبز ≠ محصول درست» را می‌سازد.
+                    print(f"  ⚠️ دفتر ضدواقع {s['sym']}: "
+                          f"{type(_gv_e).__name__}: {_gv_e}", flush=True)
                 sent[f"skip|{_key(s)}"] = now_ms
                 continue
             _cl = _tg_gate.caption_line(_ta)
