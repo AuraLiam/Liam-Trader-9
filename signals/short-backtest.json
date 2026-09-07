@@ -2,28 +2,68 @@
  "verdict": "UNDECIDED",
  "why": "CI هنوز شاملِ صفر است یا نمونه کافی نیست",
  "net": {
-  "n": 15,
-  "mean": -0.8513,
-  "sd": 0.4826,
-  "lo": -1.0955,
-  "hi": -0.607
+  "n": 47,
+  "mean": -0.5804,
+  "sd": 0.6631,
+  "lo": -0.77,
+  "hi": -0.3909
  },
  "gross": {
-  "n": 15,
-  "mean": -0.7678,
-  "sd": 0.4808,
-  "lo": -1.0111,
-  "hi": -0.5245
+  "n": 47,
+  "mean": -0.5019,
+  "sd": 0.6636,
+  "lo": -0.6916,
+  "hi": -0.3121
  },
- "need_more": 485,
- "generated": 1788811112765,
+ "need_more": 453,
+ "compare": {
+  "trainer_filtered": {
+   "n": 29,
+   "mean": -0.4601,
+   "sd": 0.7462,
+   "lo": -0.7317,
+   "hi": -0.1885
+  },
+  "trainer_all_shorts": {
+   "n": 454,
+   "mean": -0.1487,
+   "sd": 1.0437,
+   "lo": -0.2447,
+   "hi": -0.0527
+  },
+  "engine_outcomes": {
+   "stop": 27,
+   "trail": 16,
+   "timeout": 3,
+   "target": 1
+  },
+  "trainer_filtered_outcomes": {
+   "trail": 10,
+   "stop": 15,
+   "timeout": 3,
+   "target": 1
+  },
+  "note": "سه جمعیت روی **همان** کندل‌ها. اگر trainerِ فیلترشده هم نزدیکِ موتور باشد، اختلاف با دفتر از رژیم/جهانِ نماد است نه از کد؛ اگر نزدیکِ دفتر باشد، موتور هنوز جایی فرق دارد."
+ },
+ "generated": 1788812390448,
  "strategy": "liam9_short",
  "version": "v2.0",
  "fingerprint": "min_stop_pct=1.0·max_stop_pct=3.3·rr_target=2.0·min_net_rr=1.5·min_chan_pos=0.7·max_hold_bars=120",
  "tf": "15m",
- "symbols": 20,
+ "symbols": 100,
  "bars": 1000,
- "skipped": [],
+ "skipped": [
+  "DGAIUSDT: RuntimeError",
+  "PONSUSDT: RuntimeError",
+  "UPCUSDT: RuntimeError",
+  "CASHCATUSDT: RuntimeError",
+  "ANTFUNUSDT: RuntimeError",
+  "MXUSDT: RuntimeError",
+  "SLCWUSDT: RuntimeError",
+  "KIIUSDT: RuntimeError",
+  "MEMEROBINHOODUSDT: RuntimeError",
+  "GOLD(PAXG)USDT: RuntimeError"
+ ],
  "stopping_rule": {
   "promote_min_n": 200,
   "reject_min_n": 500,
