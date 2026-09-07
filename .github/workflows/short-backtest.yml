@@ -22,6 +22,9 @@ on:
       universe:
         description: "N نمادِ برتر به حجم — همان جهانِ میز تمرین (خالی = فهرست پیش‌فرض)"
         required: false
+      bars:
+        description: "تعداد کندل بر نماد (۱۰۰۰ پیش‌فرض؛ پهنای نمونه: ۲۰۰۰)"
+        required: false
   schedule:
     - cron: "41 3 * * *"
 
@@ -68,6 +71,9 @@ jobs:
           fi
           if [ -n "${{ github.event.inputs.universe }}" ]; then
             ARGS="$ARGS --universe ${{ github.event.inputs.universe }}"
+          fi
+          if [ -n "${{ github.event.inputs.bars }}" ]; then
+            ARGS="$ARGS --bars ${{ github.event.inputs.bars }}"
           fi
           python3 -m hamid.short_backtest $ARGS
 

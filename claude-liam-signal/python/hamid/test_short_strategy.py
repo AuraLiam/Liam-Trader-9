@@ -53,8 +53,15 @@ check("سناریوی مرجع به SHORT می‌رسد", d["action"] == "SHORT"
 
 # ── ۳. مرزِ قانون ۰۳/۱۲ — بی‌CI وارد تولید نمی‌شود ───────────────────────
 check("مجوز تولید ندارد", S.PRODUCTION_APPROVED is False)
-check("وضعیت ادعا صریح ثبت است",
-      S.VALIDATION_STATUS.startswith("PAPER"), S.VALIDATION_STATUS)
+# خاصیت، نه شکل: وضعیت باید یکی از حالت‌های **غیرِتولیدیِ** قانون ۰۳ باشد.
+# نسخهٔ قبل فقط «PAPER…» را می‌شناخت و وقتی فرضیه REJECTED شد، افتاد —
+# یعنی محافظ به اسم چسبیده بود نه به معنا.
+_NON_PROD = ("UNVERIFIED", "RESEARCHED", "BACKTESTED", "PAPER", "SHADOW",
+             "REJECTED")
+check("وضعیت ادعا از واژگان قانون ۰۳ و غیرِتولیدی است",
+      S.VALIDATION_STATUS.startswith(_NON_PROD)
+      and not S.VALIDATION_STATUS.startswith("PRODUCTION"),
+      S.VALIDATION_STATUS)
 check("و روی هر خروجی هم می‌آید",
       d["production_approved"] is False
       and d["validation_status"] == S.VALIDATION_STATUS)

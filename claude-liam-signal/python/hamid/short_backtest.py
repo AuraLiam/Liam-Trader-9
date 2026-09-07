@@ -431,7 +431,8 @@ def main(argv):
         syms = TR.top_symbols(n)
         print(f"جهان نماد: {len(syms)} نمادِ برتر به حجم")
     tf = argv[argv.index("--tf") + 1] if "--tf" in argv else "15m"
-    v, trades = run(syms, tf=tf)
+    bars = int(argv[argv.index("--bars") + 1]) if "--bars" in argv else 1000
+    v, trades = run(syms, tf=tf, bars=bars)
     print(render(v))
     if "--write" in argv:
         OUT.parent.mkdir(parents=True, exist_ok=True)
