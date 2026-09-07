@@ -251,9 +251,8 @@ def _selftest():
 
     S.decide = spy
     try:
-        cd = S._mk([1.003] * 150 + [0.985] * 3 + [1.002] * 3 + [1.001] * 60,
-                   end=now)
-        cd4 = S._mk([0.997] * 120, end=now, tf_ms=14_400_000)
+        cd = S._zig(legs=14, down=12, up=6, end=now)
+        cd4 = S._zig(legs=6, down=10, up=5, end=now, tf_ms=14_400_000)
         tr = replay("AAAUSDT", cd, cd4, tf="15m", warmup=200)
     finally:
         S.decide = real
@@ -262,7 +261,8 @@ def _selftest():
         f"{seen[:5]}…")
 
     # ── کندلِ تایمِ بالا فقط تا لحظهٔ جاری ──
-    htf = S._mk([1.0] * 10, t0=0, tf_ms=1000)
+    htf = S._zig(legs=1, down=5, up=5, tf_ms=1000,
+                 end=9000)
     chk("کندلِ HTF بازِ لحظهٔ جاری حذف می‌شود",
         len(_htf_upto(htf, 5000)) == 5, str(len(_htf_upto(htf, 5000))))
     chk("و پیش از اولین کندل، خالی برمی‌گردد",
@@ -272,9 +272,23 @@ def _selftest():
     # نماد عمداً BTCUSDT است: برای آلت، نبودِ بسترِ BTC یعنی NO_SIGNAL
     # (قانون ۰۱ بند ۳) و آن‌وقت این سناریو هیچ‌وقت به معامله نمی‌رسید —
     # آزمون سبز می‌ماند بی‌آنکه چیزی را سنجیده باشد.
-    dn = S._mk([1.003] * 200 + [0.985] * 3 + [1.002] * 3 + [0.99] * 40,
-               end=now)
-    t2 = replay("BTCUSDT", dn, cd4, btc4h=None, btc1h=None, warmup=200)
+    #
+    # مسیر از **همان ستاپِ مرجع** ساخته می‌شود و بعد ریزش ادامه پیدا
+    # می‌کند. در زیگزاگِ دوره‌ای کانال روی کلِ ریزش برازش می‌شود و
+    # `chan_pos` وسطِ دامنه می‌ماند، پس دروازهٔ مکان هرگز باز نمی‌شد و
+    # این آزمون **بی‌آنکه چیزی بسنجد سبز می‌ماند** — دقیقاً همان تلهٔ
+    # «اسکریپتِ سبز ≠ محصولِ درست».
+    ref = S._zig(end=now, **S.REF)
+    px, t_last, tail = S._ohlc(ref[-1])[3], S._ts(ref[-1]), []
+    for j in range(1, 41):
+        o = px
+        c = o * 0.994
+        tail.append([t_last + j * 900_000, o, max(o, c) * 1.001,
+                     min(o, c) * 0.999, c, 1000.0])
+        px = c
+    dn = list(ref) + tail
+    t2 = replay("BTCUSDT", dn, cd4, btc4h=None, btc1h=None,
+                warmup=len(ref) - 1)
     if t2:
         chk("در ریزشِ ادامه‌دار به تارگت می‌رسد",
             any(t["R"] > 0 for t in t2), str(t2[0]))
@@ -288,8 +302,8 @@ def _selftest():
 
     # ── بدترین حالت داخل کندل: استاپ قبل از تارگت ──
     # کندلی که هر دو را لمس می‌کند باید −۱R بدهد، نه سود.
-    up = S._mk([1.003] * 200 + [0.985] * 3 + [1.002] * 3, end=now)
-    d = real("BTCUSDT", up, cd_4h=cd4, now_ms=now)
+    up = S._zig(end=now, **S.REF)
+    d = real("BTCUSDT", up, cd_4h=None, now_ms=now)
     if d["action"] == "SHORT":
         wide = list(up) + [[S._ts(up[-1]) + 900_000, d["entry"],
                             d["sl"] * 1.01, d["tp1"] * 0.99,

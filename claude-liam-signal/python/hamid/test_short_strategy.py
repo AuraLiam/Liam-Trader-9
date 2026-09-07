@@ -45,8 +45,8 @@ check('هیچ‌جا "LONG" برنمی‌گرداند',
       '"action": "LONG"' not in _src and "'action': 'LONG'" not in _src)
 
 now = 1788800000000
-cd = S._mk([1.003] * 150 + [0.985] * 3 + [1.002] * 3, end=now)
-cd4 = S._mk([0.997] * 120, end=now, tf_ms=14_400_000)
+cd = S._zig(end=now, **S.REF)
+cd4 = S._zig(legs=6, down=10, up=5, end=now, tf_ms=14_400_000)
 d = S.decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="down", btc_1h="down",
              equity=1000, now_ms=now)
 check("سناریوی مرجع به SHORT می‌رسد", d["action"] == "SHORT", d.get("why"))
@@ -88,7 +88,8 @@ check("هر دو تایمِ BTC صعودی = وتوی مطلق",
                now_ms=now)["action"] == "NO_SIGNAL")
 check("۴س صعودی = رد",
       S.decide("AAAUSDT", cd,
-               cd_4h=S._mk([1.004] * 120, end=now, tf_ms=14_400_000),
+               cd_4h=S._zig(legs=6, down=10, up=5, direction="up",
+                            end=now, tf_ms=14_400_000),
                btc_4h="down", btc_1h="down",
                now_ms=now)["action"] == "NO_SIGNAL")
 check("قیفِ دروازه‌ها روی هر خروجی هست — رد هم دلیلِ ساختاری دارد",
@@ -102,6 +103,16 @@ _i = _src.index('"""')
 doc = _src[_i + 3:_src.index('"""', _i + 3)]
 check("کفِ استاپِ سند با کد یکی است",
       "استاپ ≥ ۱٪" in doc and S.P["min_stop_pct"] == 1.00)
+# سه تعریفِ کلیدی باید **قرض گرفته** شوند، نه بازنویسی — ریشهٔ شکستِ
+# نسخهٔ ۱.۰ همین بود و بی‌این بررسی، بی‌صدا برمی‌گردد.
+check("ساختار از hamid.structure می‌آید، نه بازنویسی",
+      "from hamid.structure import trend" in _src
+      and "from hamid.structure import channel" in _src)
+check("اردر بلاک از hamid.orderblocks می‌آید",
+      "from hamid.orderblocks import near" in _src)
+check("استاپ از ارتفاعِ باکس است نه ATR",
+      'P["ob_buffer"] * max(ob["height"]' in _src and "0.25 * a" not in _src)
+check("RR با trainer یکی است (۲.۰)", S.P["rr_target"] == 2.00)
 check("آستانهٔ کانالِ سند با کد یکی است",
       "۰.۷۰" in doc and S.P["min_chan_pos"] == 0.70)
 check("عددِ پایهٔ سند (−۰.۳۱۲R) نوشته شده", "−۰.۳۱۲R" in doc)
