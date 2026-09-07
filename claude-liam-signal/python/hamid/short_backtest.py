@@ -432,7 +432,11 @@ def main(argv):
         print(f"جهان نماد: {len(syms)} نمادِ برتر به حجم")
     tf = argv[argv.index("--tf") + 1] if "--tf" in argv else "15m"
     bars = int(argv[argv.index("--bars") + 1]) if "--bars" in argv else 1000
-    v, trades = run(syms, tf=tf, bars=bars)
+    # `--no-compare`: بازپخشِ دومِ trainer را رد می‌کند. وفاداریِ موتور یک بار
+    # با مقایسهٔ سیب‌باسیب اثبات شد (۷ سپتامبر: −۰.۵۸ در برابر −۰.۴۶، CI
+    # هم‌پوشان)؛ در اجرای پهن فقط وقت می‌خورد. کرونِ روزانه مقایسه را نگه
+    # می‌دارد تا واگراییِ تازه، اگر پیش آمد، دیده شود.
+    v, trades = run(syms, tf=tf, bars=bars, compare="--no-compare" not in argv)
     print(render(v))
     if "--write" in argv:
         OUT.parent.mkdir(parents=True, exist_ok=True)
