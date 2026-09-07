@@ -104,6 +104,7 @@ jobs:
           python3 -m hamid.test_signal_flow
           python3 -m hamid.test_telegram_dedupe
           python3 -m hamid.test_telegram_feed
+          python3 -m hamid.test_msg_budget
           python3 -m hamid.test_state_bus
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
@@ -306,6 +307,15 @@ jobs:
       - name: داوری دروازهٔ روند (E17)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.gate_verdict --write || true
+
+      # بودجهٔ پیام (E25) — شمارش از دفترِ append-only محصول، نه از متنِ
+      # کد. شکایت حمید ۷ سپتامبر: «روزانه بارها پیام می‌آید». آن شکایت
+      # تا امروز قابلِ شمارش نبود؛ حالا هست و شکستنِ بودجه چرخه را سرخ
+      # می‌کند. پنجره از EFFECTIVE_FROM شروع می‌شود، پس دفترِ پیش از رفع
+      # دروازه را نمی‌بندد.
+      - name: بودجهٔ پیام (E25)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.msg_budget --write --check
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
