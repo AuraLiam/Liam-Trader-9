@@ -1,0 +1,89 @@
+# بک‌تستِ کندلِ واقعیِ موتور شورت (دستور حمید، ۷ سپتامبر)
+#
+# دفترِ پیپر فقط شاهد بود: ردیف‌هایش با قواعدِ دیگری تولید و بعد با
+# فیلترهای این موتور فقط برچسب‌گذاری شده بودند. حکمِ واقعی از بازپخشِ
+# بار-به-بارِ خودِ موتور روی کندلِ واقعی می‌آید — که شبکه لازم دارد و
+# فقط روی رانر ممکن است.
+#
+# قاعدهٔ توقف از پیش داخل ماژول ثبت است (PROMOTE n≥۲۰۰ · REJECT n≥۵۰۰).
+# PROMOTE فقط **پیشنهاد** است؛ ورودش به تولید تأیید صریح حمید می‌خواهد
+# (قانون ۰۳/۱۲) و `PRODUCTION_APPROVED` دستی عوض می‌شود، نه خودکار.
+name: Short backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "نمادها، با کاما — خالی یعنی فهرست پیش‌فرض"
+        required: false
+      tf:
+        description: "تایم‌فریم (۱۵m پیش‌فرض)"
+        required: false
+  schedule:
+    - cron: "41 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: short-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: محیط یگانه (قانون ۱۴)
+        run: pip -q install -r requirements-ci.txt
+
+      # دروازهٔ سخت: بک‌تستی که موتورش آزمون‌نداده باشد، عددِ بی‌سند
+      # تولید می‌کند. هر دو خودآزمایی آفلاین‌اند.
+      - name: آزمون آفلاین
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_SANDBOX: "1"
+        run: |
+          python3 -m hamid.test_short_strategy
+          python3 -m hamid.short_backtest --selftest
+
+      - name: بازپخش روی کندل واقعی
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: |
+          ARGS="--write"
+          if [ -n "${{ github.event.inputs.symbols }}" ]; then
+            ARGS="$ARGS --symbols ${{ github.event.inputs.symbols }}"
+          fi
+          if [ -n "${{ github.event.inputs.tf }}" ]; then
+            ARGS="$ARGS --tf ${{ github.event.inputs.tf }}"
+          fi
+          python3 -m hamid.short_backtest $ARGS
+
+      # اثباتِ محصول، نه اثباتِ اسکریپت (درس ۶ سپتامبر): اگر فایل ساخته
+      # نشد یا حکمش خالی بود، این مرحله قرمز می‌شود — نه اینکه بی‌صدا
+      # رد شود و فردا یک عکس‌فوریِ کهنه گزارش شود.
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, sys, pathlib
+          p = pathlib.Path("signals/short-backtest.json")
+          if not p.exists():
+              sys.exit("short-backtest.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          if d.get("verdict") not in ("PROMOTE", "REJECT", "UNDECIDED"):
+              sys.exit(f"حکمِ نامعتبر: {d.get('verdict')}")
+          if not d.get("fingerprint"):
+              sys.exit("اثرانگشتِ پارامترها روی خروجی نیست")
+          net = d.get("net") or {}
+          print(f"حکم {d['verdict']} · n={net.get('n')} · "
+                f"خالص {net.get('mean')} CI[{net.get('lo')},{net.get('hi')}]")
+          PY
+
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "بک‌تست شورت $(date -u +%Y-%m-%d)" signals
