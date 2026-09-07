@@ -136,6 +136,7 @@ def poll(kc=None, cap=3):
                       "reply_to_message_id": msg.get("message_id"),
                       "text": (f"🏷 <b>{tg.PANEL_NAME}</b>\n{body}\n"
                                f"🕐 <code>{tg.tehran()}</code> به وقت ایران")})
+            tg.logged("reply", f"پاسخ به پیام حمید — {sym}", {"sym": sym})
         answered += 1
 
     INBOX.parent.mkdir(exist_ok=True)

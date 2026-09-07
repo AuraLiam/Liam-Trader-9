@@ -85,6 +85,8 @@ class Alarm:
             if token:
                 tg._post(token, "sendMessage",
                          {"chat_id": chat, "text": text})
+                tg.logged("alert", f"حلقهٔ زنده — {kind}",
+                          {"src": "live_service", "kind": kind})
         except Exception:                            # noqa: BLE001
             pass
 

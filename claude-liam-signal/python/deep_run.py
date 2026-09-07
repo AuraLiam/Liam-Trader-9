@@ -203,6 +203,8 @@ def run(sym, send=True):
     if not (resp or {}).get("ok"):
         raise RuntimeError(f"تلگرام نپذیرفت: {resp}")
     mid = ((resp or {}).get("result") or {}).get("message_id")
+    tg.logged("deep", f"تحلیل عمیق {d['symbol']}",
+              {"sym": d["symbol"], "chart": bool(png)}, msg_id=mid)
     print(f"✓ رفت به تلگرام (message_id={mid})")
     d["tg_msg_id"] = mid
     deep.save(d)

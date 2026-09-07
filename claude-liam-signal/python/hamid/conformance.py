@@ -174,6 +174,9 @@ def run():
             tg._post(token, "sendMessage",
                      {"chat_id": chat, "text": head + body,
                       "parse_mode": "HTML"})
+            tg.logged("alert",
+                      f"پاسبان نتیجه‌گیری‌ها — {len(rep['violations'])} نقض",
+                      {"src": "conformance", "n": len(rep["violations"])})
     except Exception as e:                           # noqa: BLE001
         print(f"تلگرام پاسبان: {type(e).__name__}")
     return rep

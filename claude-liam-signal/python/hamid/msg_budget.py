@@ -62,7 +62,21 @@ BUDGET = {
 # نتیجهٔ معامله ریپلای همان سیگنال است و تعدادش را پوزیشن‌های باز تعیین
 # می‌کند، نه یک کادنس. شمرده می‌شود، بودجه ندارد — بودجهٔ ساختگی برایش
 # یعنی یا نتیجه‌ای گم می‌شود یا سقف بی‌معنا می‌شود.
+#
+# یازده فرستندهٔ تازه‌دفتردار (۷ سپتامبر) هم فعلاً همین‌جااند — ولی به
+# دلیلِ دیگری: **تاریخچه ندارند.** تا دیروز هیچ ردی نمی‌گذاشتند، پس
+# عددی وجود ندارد که بشود بودجه را از آن درآورد. بودجهٔ حدسی برایشان
+# دقیقاً همان کاری است که «قانون عددِ درست» منع می‌کند. اول شمرده
+# می‌شوند، بعد بودجه‌شان از دادهٔ خودشان نوشته می‌شود.
 NO_BUDGET = {"outcome"}
+OBSERVE_ONLY = {
+    "pump_probe": "کاوش پامپ (فقط با dispatch)",
+    "deep": "تحلیل عمیق نماد (فقط با dispatch)",
+    "btc_pattern": "الگوی تازهٔ بیت‌کوین (زنجیرهٔ سیگنال)",
+    "reply": "پاسخ به پیام حمید",
+    "ignition": "شلیک دفتر انتظار",
+    "health": "کاوش سلامت تلگرام",
+}
 
 
 def rows(now_ms=None, window_h=WINDOW_H, archive=None):
@@ -127,13 +141,16 @@ def judge(now_ms=None, window_h=WINDOW_H, archive=None,
                      "over": (not warming) and n > cap, "why": why}
     for kind in sorted({r.get("kind") for r in counted} - set(BUDGET)):
         n = sum(1 for r in counted if r.get("kind") == kind)
+        if kind in NO_BUDGET:
+            why = "بدون بودجه — تعدادش را پوزیشن‌های باز تعیین می‌کند"
+        elif kind in OBSERVE_ONLY:
+            why = f"فقط شمارش تا جمع‌شدن تاریخچه — {OBSERVE_ONLY[kind]}"
+        else:
+            why = "نوعِ ثبت‌نشده — بودجه‌اش را در BUDGET بنویس"
         per[kind] = {"n": n, "budget": None, "warming": covered_h < window_h,
                      "rate_per_day": (round(n * 24.0 / covered_h, 1)
                                       if covered_h >= 1 else None),
-                     "over": False,
-                     "why": ("بدون بودجه — تعدادش را پوزیشن‌های باز تعیین می‌کند"
-                             if kind in NO_BUDGET else
-                             "نوعِ ثبت‌نشده — بودجه‌اش را در BUDGET بنویس")}
+                     "over": False, "why": why}
     over = sorted(k for k, v in per.items() if v["over"])
     return {
         "generated": now,

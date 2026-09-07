@@ -98,6 +98,8 @@ def run(sym):
     if tok:
         tg._post(tok, "sendMessage", {"chat_id": chat, "parse_mode": "HTML",
                                       "text": "\n".join(L1)})
+        tg.logged("pump_probe", f"کاوش پامپ {sym} — علت و کاندیداها",
+                  {"sym": sym, "part": 1})
         print("پیام ۱ (علت + کاندیداها) رفت")
 
     # ── پیام ۲: تحلیل خود ارز، همهٔ تایم‌فریم‌ها ──────────────────────────
@@ -161,6 +163,8 @@ def run(sym):
         else:
             tg._post(tok, "sendMessage", {"chat_id": chat, "parse_mode": "HTML",
                                           "text": cap})
+        tg.logged("pump_probe", f"کاوش پامپ {sym} — تحلیل کامل",
+                  {"sym": sym, "part": 2, "chart": bool(buf)})
         print("پیام ۲ (تحلیل کامل + چارت) رفت")
     try:
         from hamid import memory

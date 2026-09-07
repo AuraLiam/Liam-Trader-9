@@ -253,6 +253,14 @@ def main():
                 print(f"  ارسال {s['sym']} شکست: {type(e2).__name__}")
                 continue
         if j.get("ok"):
+            try:
+                import telegram as _tg
+                _tg.logged("signal", f"{s['sym']} {s.get('tf','')} {s['dir']}",
+                           {"sym": s["sym"], "dir": s["dir"],
+                            "src": "tg_batch"},
+                           msg_id=((j.get("result") or {}).get("message_id")))
+            except Exception as e:                   # noqa: BLE001
+                print(f"  دفترِ پنل نوشته نشد ({type(e).__name__})")
             seen.add(s["key"])
             delivered += 1
             log.insert(0, {"at": int(time.time() * 1000),

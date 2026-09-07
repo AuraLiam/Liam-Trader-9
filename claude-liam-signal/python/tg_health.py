@@ -95,6 +95,11 @@ def probe(label, token, chat, send=True, text=None):
         mid = r["result"]["message_id"]
         out["message_id"] = mid
         out["ok"] = True
+        try:
+            import telegram as _tg
+            _tg.logged("health", "کاوش سلامت تلگرام", None, msg_id=mid)
+        except Exception as e:                       # noqa: BLE001
+            print(f"tg_health: دفتر نوشته نشد ({type(e).__name__})")
         print(f"  ✓ پیام رسید — شناسهٔ پیام {mid}")
     else:
         print(f"  ✗ پیام نرفت: {r.get('error')}")
