@@ -121,7 +121,7 @@ def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
         fee_r = fees.cost_in_r(entry, sl, symbol=symbol)
         trades.append({"sym": symbol, "t": t, "entry": entry, "sl": sl,
                        "tp1": tp1, "R": round(out_r, 4),
-                       "outcome": outcome,
+                       "outcome": outcome, "btc_4h": b4, "btc_1h": b1,
                        "fee_r": round(fee_r, 4),
                        "net": round(out_r - fee_r, 4),
                        "stop_pct": d["stop_pct"], "bars": bars,
@@ -207,7 +207,38 @@ def trainer_shorts(symbol, cd15, tf="15m"):
     return filt, allsh
 
 
-def run(symbols, tf="15m", bars=1000, fetch=None, compare=True):
+def _src_fetch(src):
+    """لودرِ آرشیو سه‌سالهٔ درایو (aura-history) به‌جای صرافی — همان
+    `history_ingest.load_klines` + `history_backtest.resample`، تا ۴س از
+    خودِ ۱۵د با برچسبِ بی‌آینده ساخته شود (درایو تایم بالا ندارد)."""
+    from hamid import history_ingest
+    from hamid.history_backtest import resample
+    inv_path = Path(src) / "inventory_short.json"
+    inv = history_ingest.ingest(src, out_path=inv_path, quiet=True)
+    cache = {}
+
+    def fetch(sym, tf, n):
+        if sym not in cache:
+            cache[sym] = history_ingest.load_klines(sym, "15m", inv_path) or []
+        c15 = cache[sym]
+        if tf == "15m":
+            return c15[-n:] if n else c15
+        mins = {"1h": 60, "4h": 240}.get(tf)
+        if not mins:
+            return []
+        r = resample(c15, mins)
+        return r[-n:] if n else r
+
+    syms = sorted(k.rsplit("_", 1)[0] for k, e in inv["klines"].items()
+                  if e.get("status") == "OK" and k.endswith("_15m"))
+    return fetch, syms
+
+
+def run(symbols, tf="15m", bars=1000, fetch=None, compare=True,
+        shard=0, shards=1):
+    """`shard/shards`: تکه‌بندیِ قطعی روی فهرستِ مرتبِ نمادها — همان الگوی
+    `history_backtest` تا اجرای عمیق روی ماتریسِ رانر تقسیم شود."""
+    symbols = sorted(symbols)[shard::shards] if shards > 1 else list(symbols)
     if fetch is None:
         import sources
         fetch = lambda s, t, n: sources.klines(s, t, n)   # noqa: E731
@@ -224,7 +255,7 @@ def run(symbols, tf="15m", bars=1000, fetch=None, compare=True):
         except Exception as e:                       # noqa: BLE001
             skipped.append(f"{sym}: {type(e).__name__}")
             continue
-        if not cd or len(cd) < 260:
+        if not cd or len(cd) < 260:                 # bars=0 → کلِ سری از لودر
             skipped.append(f"{sym}: کندل کم ({len(cd or [])})")
             continue
         t = replay(sym, cd, cd4, btc1h=btc1h, btc4h=btc4h, tf=tf)
@@ -237,6 +268,7 @@ def run(symbols, tf="15m", bars=1000, fetch=None, compare=True):
         else:
             print(f"  {sym}: {len(t)} معامله")
     v = judge(all_t)
+    v["shard"], v["shards"] = shard, shards
     if compare:
         v["compare"] = {
             "trainer_filtered": _ci([x["net"] for x in cmp_f]),
@@ -264,6 +296,69 @@ def run(symbols, tf="15m", bars=1000, fetch=None, compare=True):
         "panel": "لیام تریدر ۹",
     })
     return v, all_t
+
+
+def _year(ms):
+    return time.gmtime(ms / 1000).tm_year
+
+
+def merge(shards_dir, out=None):
+    """ادغام تکه‌ها → حکم با قاعدهٔ توقفِ از پیش ثبت‌شده + برشِ سال و رژیمِ
+    BTC (قانون ۰۳: تغییرِ آستانه بدون out-of-sample و regime split ممنوع).
+
+    تکه‌ها باید یک اثرانگشت داشته باشند؛ وگرنه ادغامشان دروغ است."""
+    out = Path(out) if out else OUT
+    trades, fps, files, nsym, skipped = [], set(), 0, 0, []
+    for p in sorted(Path(shards_dir).rglob("*.json")):
+        try:
+            j = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:                            # noqa: BLE001
+            continue
+        if "trades" not in j or "fingerprint" not in j:
+            continue
+        files += 1
+        trades += j["trades"]
+        fps.add(j["fingerprint"])
+        nsym += j.get("symbols", 0)
+        skipped += j.get("skipped", [])
+    if not files:
+        raise SystemExit(f"هیچ تکه‌ای در {shards_dir} نیست")
+    if len(fps) > 1:
+        raise SystemExit("تکه‌ها اثرانگشتِ یکسان ندارند — ادغامشان دروغ است: "
+                         + " | ".join(sorted(fps)))
+    v = judge(trades)
+    years = sorted({_year(t["t"]) for t in trades})
+    v.update({
+        "generated": int(time.time() * 1000),
+        "strategy": S.STRATEGY_ID, "version": S.STRATEGY_VERSION,
+        "fingerprint": sorted(fps)[0], "shards": files, "symbols": nsym,
+        "skipped": skipped[:10], "n_skipped": len(skipped),
+        "trade_span": ([time.strftime("%Y-%m-%d", time.gmtime(min(t["t"] for t in trades) / 1000)),
+                        time.strftime("%Y-%m-%d", time.gmtime(max(t["t"] for t in trades) / 1000))]
+                       if trades else None),
+        "per_year": {str(y): _ci([t["net"] for t in trades if _year(t["t"]) == y])
+                     for y in years},
+        # رژیمِ بسترِ BTC در لحظهٔ ورود — برشی که برای شورت معنا دارد
+        "per_btc_4h": {r: _ci([t["net"] for t in trades if t.get("btc_4h") == r])
+                       for r in ("down", "range", "up", None)},
+        "outcomes": _count(trades),
+        "stopping_rule": {"promote_min_n": MIN_N_PROMOTE,
+                          "reject_min_n": MIN_N_REJECT,
+                          "metric": "خالص از کارمزد (hamid/fees)"},
+        "boundary": ("بازپخشِ کندلِ واقعی با فیلِ کامل و بی‌لغزش (سقفِ خوش‌بینانه). "
+                     "حکم فقط برای همین اثرانگشت. برشِ سال/رژیم برای قانون ۰۳ "
+                     "است، نه برای گزینشِ پنجرهٔ خوش‌عکس."),
+        "panel": "لیام تریدر ۹",
+    })
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(v, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(render(v))
+    for k in ("per_year", "per_btc_4h"):
+        for lab, c in v[k].items():
+            if c:
+                print(f"    {k} {lab}: n={c['n']} {c['mean']:+.4f}R CI[{c['lo']:+.4f},{c['hi']:+.4f}]")
+    print(f"نوشته شد: {out} ({len(trades)} معامله از {files} تکه)")
+    return v
 
 
 def render(v):
@@ -402,11 +497,36 @@ def _selftest():
                                           "engine_outcomes"})
     chk("مقایسه، trainer را روی همان کندل‌ها می‌دواند نه دفتر",
         "همان" in (v_cmp.get("compare") or {}).get("note", ""))
+    # تکه‌بندی قطعی و ادغام: دو تکه روی یک فهرست ⇒ اجتماعِ بی‌هم‌پوشان؛
+    # merge روی اثرانگشتِ متفاوت باید خطا بدهد (ادغامِ دروغ).
+    import tempfile as _tmp
+    d = Path(_tmp.mkdtemp(prefix="liam9-sb-"))
+    fake = lambda s_, t_, n_: ref_cd if t_ == "15m" else cd4    # noqa: E731
+    seen = []
+    for k in (0, 1):
+        vk, tk = run(["AAAUSDT", "BBBUSDT", "CCCUSDT"], fetch=fake,
+                     compare=False, shard=k, shards=2)
+        seen.append(vk["symbols"])
+        (d / f"shard{k}.json").write_text(json.dumps({**vk, "trades": tk}))
+    chk("تکه‌بندی بی‌هم‌پوشان است (۳ نماد → ۲+۱)", sorted(seen) == [1, 2], str(seen))
+    vm = merge(d, out=d / "merged.json")
+    chk("merge حکم و برشِ سال/رژیم می‌دهد",
+        "per_year" in vm and "per_btc_4h" in vm and vm["shards"] == 2)
+    bad = json.loads((d / "shard1.json").read_text()); bad["fingerprint"] = "x"
+    (d / "shard1.json").write_text(json.dumps(bad))
+    try:
+        merge(d, out=d / "m2.json"); _raised = False
+    except SystemExit:
+        _raised = True
+    chk("merge روی اثرانگشتِ متفاوت خطا می‌دهد", _raised)
     chk("اثرانگشت شامل هندسه است",
         "rr_target" in fingerprint() and "min_stop_pct" in fingerprint())
-    v, _ = {"verdict": "UNDECIDED"}, None
-    chk("مرزِ صادقانه در متنِ ماژول هست",
-        "سقفِ خوش‌بینانه" in run.__doc__ if run.__doc__ else True)
+    # خاصیت، نه شکل: مرزِ صادقانه باید روی **خروجی** باشد (همان چیزی که
+    # پنل و حمید می‌بینند)، نه در docstring — نسخهٔ قبل docstring را
+    # می‌خواند و با تغییرِ متن افتاد بی‌آنکه چیزی خراب شده باشد.
+    chk("مرزِ صادقانه روی خروجیِ اجرا و ادغام هست",
+        "خوش‌بینانه" in (v_cmp.get("boundary") or "")
+        and "خوش‌بینانه" in (vm.get("boundary") or ""))
 
     print(f"{ok} بررسی گذشت" + (f"، {len(fail)} افتاد: {fail}" if fail else ""))
     return not fail
@@ -436,8 +556,26 @@ def main(argv):
     # با مقایسهٔ سیب‌باسیب اثبات شد (۷ سپتامبر: −۰.۵۸ در برابر −۰.۴۶، CI
     # هم‌پوشان)؛ در اجرای پهن فقط وقت می‌خورد. کرونِ روزانه مقایسه را نگه
     # می‌دارد تا واگراییِ تازه، اگر پیش آمد، دیده شود.
-    v, trades = run(syms, tf=tf, bars=bars, compare="--no-compare" not in argv)
+    if "--merge" in argv:
+        merge(argv[argv.index("--merge") + 1],
+              out=argv[argv.index("--out") + 1] if "--out" in argv else None)
+        return 0
+    fetch = None
+    if "--src" in argv:                              # آرشیو سه‌سالهٔ درایو
+        fetch, syms = _src_fetch(argv[argv.index("--src") + 1])
+        bars = 0                                     # کلِ سری
+    shard = int(argv[argv.index("--shard") + 1]) if "--shard" in argv else 0
+    shards = int(argv[argv.index("--shards") + 1]) if "--shards" in argv else 1
+    v, trades = run(syms, tf=tf, bars=bars, fetch=fetch,
+                    compare="--no-compare" not in argv,
+                    shard=shard, shards=shards)
     print(render(v))
+    if "--out" in argv:                              # تکه: با معامله‌ها
+        o = Path(argv[argv.index("--out") + 1])
+        o.parent.mkdir(parents=True, exist_ok=True)
+        o.write_text(json.dumps({**v, "trades": trades}, ensure_ascii=False),
+                     encoding="utf-8")
+        print(f"تکهٔ {shard}/{shards}: {o} ({len(trades)} معامله)")
     if "--write" in argv:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(json.dumps(v, ensure_ascii=False, indent=1),

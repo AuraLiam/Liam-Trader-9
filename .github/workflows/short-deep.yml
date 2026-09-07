@@ -1,0 +1,131 @@
+# بک‌تستِ عمیقِ موتور شورت — پهنای نمونه (دستور حمید، ۷ سپتامبر:
+# «اول علت ریشه‌ای، بعد پهنای نمونه»)
+#
+# کرونِ روزانه ~۲.۵ ورود در روز می‌سازد؛ رسیدن به n≥۵۰۰ از آن راه ۱۸۰ روز
+# طول می‌کشد. پهنا از عمقِ تاریخ می‌آید: بیت‌یونیکس تا هر تعداد کندل
+# صفحه‌بندی می‌کند (۲۰۰/صفحه) — ۲۰٬۰۰۰ کندل ۱۵د ≈ ۷ ماه × ۱۰۰ نماد، روی
+# ۸ تکهٔ موازی (همان الگوی history-backtest). اگر آرشیوِ سه‌سالهٔ درایو
+# (aura-history) تازه شده باشد، run_id آن را بده تا همان را بخورد.
+#
+# حکم با قاعدهٔ توقفِ از پیش ثبت‌شده (PROMOTE n≥۲۰۰ / REJECT n≥۵۰۰) و
+# برشِ سال + رژیمِ BTC (قانون ۰۳). PROMOTE فقط پیشنهاد است؛ تولید فقط با
+# تأیید صریح حمید.
+name: Short backtest (deep)
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "N نمادِ برتر به حجم (پیش‌فرض ۱۰۰)"
+        default: "100"
+      bars:
+        description: "کندل بر نماد از صرافی (پیش‌فرض ۲۰۰۰۰ ≈ ۷ ماهِ ۱۵د)"
+        default: "20000"
+      tf:
+        description: "تایم‌فریم"
+        default: "15m"
+      history_run_id:
+        description: "run_id ورودیِ history-ingest با artifact تازهٔ aura-history (خالی = صرافی)"
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: short-deep
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_short_strategy
+          python3 -m hamid.short_backtest --selftest
+
+  shard:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آرشیو سه‌ساله (اختیاری)
+        if: ${{ github.event.inputs.history_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: aura-history
+          path: /tmp/aura-history
+          run-id: ${{ github.event.inputs.history_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: اجرای تکه
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: |
+          ARGS="--no-compare --shard ${{ matrix.shard }} --shards 8 --tf ${{ github.event.inputs.tf || '15m' }} --out /tmp/sd/shard${{ matrix.shard }}.json"
+          if [ -n "${{ github.event.inputs.history_run_id }}" ]; then
+            K=$(find /tmp/aura-history -maxdepth 4 -type d -name klines | head -1 || true)
+            SRC=/tmp/aura-history; [ -n "$K" ] && SRC=$(dirname "$K")
+            ARGS="$ARGS --src $SRC"
+          else
+            ARGS="$ARGS --universe ${{ github.event.inputs.universe || '100' }} --bars ${{ github.event.inputs.bars || '20000' }}"
+          fi
+          echo "python3 -m hamid.short_backtest $ARGS"
+          python3 -m hamid.short_backtest $ARGS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: short-deep-shard-${{ matrix.shard }}
+          path: /tmp/sd/shard${{ matrix.shard }}.json
+          retention-days: 7
+
+  merge:
+    needs: shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: short-deep-shard-*
+          path: /tmp/sd
+          merge-multiple: true
+      - name: ادغام و حکم
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.short_backtest --merge /tmp/sd --out "$GITHUB_WORKSPACE/signals/short-backtest-deep.json"
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, sys, pathlib
+          p = pathlib.Path("signals/short-backtest-deep.json")
+          if not p.exists(): sys.exit("short-backtest-deep.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          assert d.get("verdict") in ("PROMOTE", "REJECT", "UNDECIDED"), d.get("verdict")
+          assert d.get("fingerprint") and "per_year" in d and "per_btc_4h" in d
+          n = (d.get("net") or {}).get("n")
+          print(f"حکم {d['verdict']} · n={n} · خالص {(d.get('net') or {}).get('mean')}")
+          PY
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "بک‌تست عمیق شورت $(date -u +%Y-%m-%d)" signals
