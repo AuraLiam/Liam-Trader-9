@@ -113,14 +113,23 @@ def judge(now_ms=None, window_h=WINDOW_H, archive=None,
     per = {}
     for kind, (cap, why) in BUDGET.items():
         n = sum(1 for r in counted if r.get("kind") == kind)
-        # سقفِ متناسب با سهمِ پوشش‌داده‌شدهٔ پنجره؛ کفِ ۱ تا یک پیامِ تنها
-        # در دقیقهٔ اول، تخلف حساب نشود.
-        scaled = max(1, round(cap * covered_h / window_h)) if covered_h < window_h else cap
-        per[kind] = {"n": n, "budget": cap, "effective_budget": scaled,
-                     "over": n > scaled, "why": why}
+        # تا وقتی پنجره کامل نشده، **حکم داده نمی‌شود**.
+        #
+        # نسخهٔ اولِ همین تابع سقف را با سهمِ پوشش مقیاس می‌کرد: در ساعتِ
+        # اول می‌شد ۱، و دو پیام — که یک لرزشِ زمان‌بند هم می‌سازدش —
+        # چرخه را سرخ می‌کرد. یعنی دقیقاً همان آلارمِ کاذبِ ۲۵ اوت که
+        # کلِ زنجیره را خواباند، این‌بار از دستِ خودِ محافظ. پس گرم‌شدن
+        # صریح است: می‌شمارد، نرخِ برآوردی را چاپ می‌کند، و نمی‌بندد.
+        warming = covered_h < window_h
+        per[kind] = {"n": n, "budget": cap, "warming": warming,
+                     "rate_per_day": (round(n * 24.0 / covered_h, 1)
+                                      if covered_h >= 1 else None),
+                     "over": (not warming) and n > cap, "why": why}
     for kind in sorted({r.get("kind") for r in counted} - set(BUDGET)):
         n = sum(1 for r in counted if r.get("kind") == kind)
-        per[kind] = {"n": n, "budget": None, "effective_budget": None,
+        per[kind] = {"n": n, "budget": None, "warming": covered_h < window_h,
+                     "rate_per_day": (round(n * 24.0 / covered_h, 1)
+                                      if covered_h >= 1 else None),
                      "over": False,
                      "why": ("بدون بودجه — تعدادش را پوزیشن‌های باز تعیین می‌کند"
                              if kind in NO_BUDGET else
@@ -131,7 +140,8 @@ def judge(now_ms=None, window_h=WINDOW_H, archive=None,
         "window_h": window_h,
         "covered_h": round(covered_h, 2),
         "effective_from": eff,
-        "verdict": "OVER" if over else "OK",
+        "verdict": ("OVER" if over else
+                    ("WARMING" if covered_h < window_h else "OK")),
         "over": over,
         "kinds": per,
         "total": len(counted),
@@ -149,10 +159,12 @@ def render(v):
     L = [f"### بودجهٔ پیام — {v['verdict']} · {v['total']} پیام در "
          f"{v['covered_h']}ساعتِ سنجیده"]
     for kind, d in sorted(v["kinds"].items(), key=lambda kv: -kv[1]["n"]):
-        cap = d["effective_budget"]
-        mark = "✗" if d["over"] else "✓"
+        cap = d["budget"]
+        mark = "✗" if d["over"] else ("…" if d.get("warming") else "✓")
         cap_s = "—" if cap is None else str(cap)
-        L.append(f"  {mark} {kind:<12} {d['n']:>3} / {cap_s:<4} {d['why']}")
+        r = d.get("rate_per_day")
+        rate = f" (~{r}/روز)" if r is not None else ""
+        L.append(f"  {mark} {kind:<12} {d['n']:>3} / {cap_s:<4}{rate}  {d['why']}")
     L.append(f"  {v['note']}")
     L.append(f"  مرز: {v['boundary']}")
     return "\n".join(L)

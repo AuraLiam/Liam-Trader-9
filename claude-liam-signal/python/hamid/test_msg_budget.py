@@ -159,6 +159,25 @@ check("ردیف‌های پیش از لحظهٔ رفع شمرده نمی‌شو�
       v["kinds"]["dom_report"]["n"] <= 1, str(v["kinds"]["dom_report"]["n"]))
 check("و سهمِ سنجیده‌شدهٔ پنجره صریح گزارش می‌شود",
       v["covered_h"] < 0.1, str(v["covered_h"]))
+
+# پنجرهٔ ناقص هرگز حکمِ سرخ نمی‌دهد — وگرنه یک لرزشِ زمان‌بند در ساعتِ
+# اول، کلِ زنجیره را می‌خواباند (همان آلارمِ کاذبِ ۲۵ اوت، این‌بار از
+# دستِ خودِ محافظ).
+d5 = _tmp()
+# تعداد عمداً از بودجه بیشتر است — وگرنه این بررسی چیزی را قفل نمی‌کند
+# و با حذفِ warming هم سبز می‌ماند (اثبات منفی نمی‌دهد).
+_feed(d5, [{"at": NOW - i * 30_000, "kind": "dom_report", "title": f"w{i}"}
+           for i in range(1, 31)])
+v = MB.judge(now_ms=NOW, archive=d5, effective_from=NOW - 30 * 60_000)
+check("پنجرهٔ ناقص = WARMING، نه OVER",
+      v["verdict"] == "WARMING" and not v["over"],
+      f"{v['verdict']}/{v['over']}")
+check("ولی نرخِ برآوردی گفته می‌شود، نه پنهان",
+      v["kinds"]["dom_report"]["n"] == 30
+      and v["kinds"]["dom_report"]["rate_per_day"] is None)
+v = MB.judge(now_ms=NOW, archive=d5, effective_from=NOW - 24 * HOUR)
+check("و با پنجرهٔ کامل، همان دفتر حکمِ OVER می‌گیرد",
+      v["verdict"] == "OVER" and "dom_report" in v["over"], v["verdict"])
 check("EFFECTIVE_FROM روی خودِ فایل عدد ثابت است",
       isinstance(MB.EFFECTIVE_FROM, int) and MB.EFFECTIVE_FROM > 1_700_000_000_000)
 
