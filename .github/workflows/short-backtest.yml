@@ -22,6 +22,12 @@ on:
       universe:
         description: "N نمادِ برتر به حجم — همان جهانِ میز تمرین (خالی = فهرست پیش‌فرض)"
         required: false
+      bars:
+        description: "تعداد کندل بر نماد (۱۰۰۰ پیش‌فرض؛ پهنای نمونه: ۲۰۰۰)"
+        required: false
+      compare:
+        description: "بازپخشِ دومِ trainer برای مقایسه (yes پیش‌فرض؛ no در اجرای پهن — وفاداری از قبل اثبات شده)"
+        required: false
   schedule:
     - cron: "41 3 * * *"
 
@@ -35,7 +41,7 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60   # اجرای پهن (۲۰۰۰ کندل × ۱۰۰ نماد) از ۳۰ رد می‌شود
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
@@ -68,6 +74,12 @@ jobs:
           fi
           if [ -n "${{ github.event.inputs.universe }}" ]; then
             ARGS="$ARGS --universe ${{ github.event.inputs.universe }}"
+          fi
+          if [ -n "${{ github.event.inputs.bars }}" ]; then
+            ARGS="$ARGS --bars ${{ github.event.inputs.bars }}"
+          fi
+          if [ "${{ github.event.inputs.compare }}" = "no" ]; then
+            ARGS="$ARGS --no-compare"
           fi
           python3 -m hamid.short_backtest $ARGS
 
