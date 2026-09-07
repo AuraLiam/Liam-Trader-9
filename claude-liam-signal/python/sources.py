@@ -506,6 +506,47 @@ def perp_klines(sym, tf, limit, quiet=True):
     raise RuntimeError(f"perp klines {sym} {tf}: " + " · ".join(errs))
 
 
+def klines_deep(sym, tf, want, floor=260, quiet=True):
+    """کندلِ عمیق: **تا** `want`، **دست‌کم** `floor` — برای بک‌تست، نه اسکن زنده.
+
+    چرا جدا (۷ سپتامبر، بک‌تست عمیق شورت): `sane(rows, want)` هر پاسخی را که
+    کمتر از ۹۰٪ِ درخواست باشد رد می‌کند. برای اسکنِ زنده درست است («کوتاه
+    یعنی اسکنِ دیگری است»)، ولی برای عمقِ تاریخ غلط: نمادی با ۹٬۰۰۰ کندلِ
+    سالم وقتی ۲۰٬۰۰۰ خواسته شود «insane» می‌شود، به اسپات می‌افتد که عمق
+    ندارد، و با RuntimeError کنار می‌رود. اندازه‌گیری: ۷۷ از ۱۰۰ نماد رد
+    شدند و فقط نمادهای قدیمی ماندند — یعنی نمونهٔ «پهن» عملاً ۲۳ نمادِ
+    قدیمی بود، با سوگیریِ بقا.
+
+    این‌جا سلامت روی **کف** سنجیده می‌شود، نه روی درخواست: هر چه صرافی
+    واقعاً دارد، تا سقفِ خواسته، می‌آید. فقط صرافی‌هایی که صفحه‌بندی
+    دارند (`fetch`) امتحان می‌شوند؛ اگر هیچ‌کدام نداد، به `klines` معمولی
+    با سقفِ ۱۰۰۰ برمی‌گردد تا رفتارِ قبلی حفظ شود.
+    """
+    want, floor = int(want), int(min(floor, want))
+    errs = []
+    if str(sym).isascii():
+        for v in PERP_VENUES:
+            if not v.get("fetch"):
+                continue
+            try:
+                rows = v["fetch"](sym, tf, want)[-want:]
+            except Exception as e:                   # noqa: BLE001 - صرافی بعدی
+                errs.append(f"{v['id']}: {type(e).__name__}")
+                continue
+            if sane(rows, floor):
+                _note_used(v["id"])
+                if not quiet:
+                    print(f"  deep klines {sym} {tf} ← {v['label']} ({len(rows)})",
+                          flush=True)
+                return rows
+            errs.append(f"{v['id']}: insane({sane_why(rows, floor)})")
+    try:
+        return klines(sym, tf, min(want, 1000), quiet=quiet)
+    except Exception as e:                           # noqa: BLE001
+        errs.append(f"fallback: {type(e).__name__}")
+    raise RuntimeError(f"deep klines {sym} {tf}: " + " · ".join(errs))
+
+
 CANDLE_SOURCE = os.environ.get("LIAM9_CANDLES", "spot").strip().lower()
 
 

@@ -234,24 +234,45 @@ def _src_fetch(src):
     return fetch, syms
 
 
+def htf_depth(bars, tf="15m"):
+    """عمقِ تایمِ بالا متناسب با عمقِ ۱۵د، به‌اضافهٔ حاشیهٔ پنجره.
+
+    عیبِ ۷ سپتامبر: بسترِ BTC و ۴سِ نماد همیشه ۵۰۰ کندل بود (≈۸۳ روزِ ۴س).
+    در بازپخشِ ۷ماهه، آلت‌ها در ماه‌های اول بسترِ BTC نداشتند و بی‌صدا
+    NO_SIGNAL می‌شدند — نمونه‌ای که فقط انتهای تاریخ را می‌دید و اسمش
+    «عمیق» بود."""
+    ms = TF_MS.get(tf, 900_000)
+    span = bars * ms
+    return {"1h": int(span / 3_600_000) + 300,
+            "4h": int(span / 14_400_000) + 300}
+
+
 def run(symbols, tf="15m", bars=1000, fetch=None, compare=True,
         shard=0, shards=1):
     """`shard/shards`: تکه‌بندیِ قطعی روی فهرستِ مرتبِ نمادها — همان الگوی
-    `history_backtest` تا اجرای عمیق روی ماتریسِ رانر تقسیم شود."""
+    `history_backtest` تا اجرای عمیق روی ماتریسِ رانر تقسیم شود.
+
+    عمقِ بیش از ۱۰۰۰ کندل از `sources.klines_deep` می‌آید («تا N، دست‌کم
+    کف») و تایمِ بالا هم به همان نسبت عمیق گرفته می‌شود."""
     symbols = sorted(symbols)[shard::shards] if shards > 1 else list(symbols)
     if fetch is None:
         import sources
-        fetch = lambda s, t, n: sources.klines(s, t, n)   # noqa: E731
+        if bars and bars > 1000:
+            fetch = lambda s, t, n: sources.klines_deep(s, t, n)   # noqa: E731
+        else:
+            fetch = lambda s, t, n: sources.klines(s, t, n)        # noqa: E731
+    dep = htf_depth(bars or 1000, tf)
+    n1h, n4h = max(500, dep["1h"]), max(500, dep["4h"])
     btc1h = btc4h = None
     try:
-        btc1h, btc4h = fetch("BTCUSDT", "1h", 500), fetch("BTCUSDT", "4h", 500)
+        btc1h, btc4h = fetch("BTCUSDT", "1h", n1h), fetch("BTCUSDT", "4h", n4h)
     except Exception as e:                           # noqa: BLE001
         print(f"بسترِ BTC گرفته نشد ({type(e).__name__}) — آلت‌ها رد می‌شوند")
     all_t, skipped, cmp_f, cmp_a = [], [], [], []
     for sym in symbols:
         try:
             cd = fetch(sym, tf, bars)
-            cd4 = fetch(sym, "4h", 500)
+            cd4 = fetch(sym, "4h", n4h)
         except Exception as e:                       # noqa: BLE001
             skipped.append(f"{sym}: {type(e).__name__}")
             continue
@@ -519,6 +540,35 @@ def _selftest():
     except SystemExit:
         _raised = True
     chk("merge روی اثرانگشتِ متفاوت خطا می‌دهد", _raised)
+    # عمقِ تایمِ بالا باید با عمقِ ۱۵د بزرگ شود — وگرنه «عمیق» فقط ته را می‌بیند
+    chk("عمقِ HTF با عمقِ ۱۵د بزرگ می‌شود",
+        htf_depth(20000)["4h"] > 1200 and htf_depth(1000)["4h"] < 500)
+    calls = []
+    def spy(s_, t_, n_):
+        calls.append((t_, n_))
+        return ref_cd if t_ == "15m" else cd4
+    run(["BTCUSDT"], bars=20000, fetch=spy, compare=False)
+    chk("در اجرای عمیق، ۴س هم عمیق خواسته می‌شود",
+        any(t_ == "4h" and n_ > 1200 for t_, n_ in calls), str(calls[:4]))
+    # klines_deep: سلامت روی کف، نه روی درخواست (ریشهٔ ردشدنِ ۷۷ نماد)
+    import sources as _src
+    short_ok = S._zig(legs=20, down=12, up=6, end=now)   # ۳۶۰ کندلِ سالم
+    fake_venue = {"id": "fake-perp", "label": "Fake", "fetch": lambda s_, t_, n_: short_ok}
+    _old = _src.PERP_VENUES
+    _src.PERP_VENUES = [fake_venue]
+    try:
+        got = _src.klines_deep("AAAUSDT", "15m", 20000, floor=260)
+        chk("klines_deep سریِ کوتاه‌ولی‌سالم را می‌پذیرد (۳۶۰ از ۲۰۰۰۰ خواسته)",
+            len(got) == len(short_ok))
+        _src.PERP_VENUES = [{"id": "fake-perp", "label": "Fake",
+                             "fetch": lambda s_, t_, n_: short_ok[:50]}]
+        try:
+            _src.klines_deep("AAAUSDT", "15m", 20000, floor=260); _r = False
+        except RuntimeError:
+            _r = True
+        chk("ولی زیرِ کف رد می‌کند", _r)
+    finally:
+        _src.PERP_VENUES = _old
     chk("اثرانگشت شامل هندسه است",
         "rr_target" in fingerprint() and "min_stop_pct" in fingerprint())
     # خاصیت، نه شکل: مرزِ صادقانه باید روی **خروجی** باشد (همان چیزی که
