@@ -264,6 +264,34 @@ def decide(window, tf="15m"):
     return None
 
 
+def is_censored(row):
+    """ردیفی که به **انتهای داده** خورد، نه به استاپ/تارگت/سقفِ نگه‌داری.
+
+    کشفِ ۷ سپتامبر: ۹۷٪ از timeoutهای میز تمرین (۹٬۹۸۵ از ۱۰٬۲۹۱ — ۴۶٪
+    کلِ دفترِ تمرین) با میانهٔ ۵ کندل بسته شده بودند، در حالی که سقف
+    ۴۸ تا ۱۴۴ است. مکانیزم: هر اجرا فقط کندل‌های بعد از مرزِ قبلی را
+    می‌بیند؛ آخرین معامله‌های هر اجرا به تهِ سری می‌خورند و با قیمتِ
+    همان لحظه «timeout» می‌شوند، و در اجرای بعد دیگر بازبینی نمی‌شوند.
+
+    اثرش: نویزِ دورِ صفر که هر میانگینی را به سمت صفر می‌کشد و CI را
+    به‌دروغ تنگ می‌کند. اندازه‌گیری روی همان دفتر — با/بدون بریده:
+    شورت‌ها −۰.۲۳ → −۰.۳۶R، لانگ‌ها −۰.۰۴ → −۰.۰۸R.
+
+    دادهٔ runtime بازنویسی نمی‌شود (قانون ۰۵/ضد-merge)؛ به‌جایش هر
+    لودر با همین تابع ردیف‌های بریده را کنار می‌گذارد. ردیفِ تازه از
+    این‌جا به بعد اصلاً ثبت نمی‌شود (`replay_symbol`).
+    """
+    if row.get("outcome") != "timeout":
+        return False
+    w = row.get("why") or {}
+    if not w.get("trainer"):
+        return False
+    tf = row.get("tf") or w.get("tf") or "15m"
+    cap = (TFS.get(tf) or {}).get("max_hold", MAX_HOLD)
+    hb = row.get("hold_bars")
+    return hb is not None and hb < cap
+
+
 def resolve(c15, i, s, max_hold=MAX_HOLD):
     """از کندل i+1 جلو برو تا استاپ/تارگت/تایم‌اوت. برخورد هم‌زمان = استاپ.
 
@@ -334,6 +362,7 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m"):
     trades = []
     i = warmup
     last_entry = None                                 # برای ضدتکرار پلهٔ ۳
+    censored_at = None                                # ورودی که به تهِ داده خورد
     while i < len(c15) - 2 and len(trades) < cap:
         if c15[i]["t"] <= after_ms:
             i += 1
@@ -349,8 +378,15 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m"):
         if stage < MIN_STAGE:
             i += 1
             continue
-        last_entry = i                                # فقط ورودِ ثبت‌شده «قبلی» است
         j, outcome, r, excursion = resolve(c15, i, s, max_hold=max_hold)
+        if outcome == "timeout" and j >= len(c15) - 1 and (j - i) < max_hold:
+            # به تهِ داده خورد، نه به سقف: نتیجه هنوز معلوم نیست. ثبت
+            # نمی‌شود و مرز **پیش از همین ورود** می‌ماند تا اجرای بعد، با
+            # کندلِ بیشتر، همین ستاپ را دوباره داوری کند. (کشف ۷ سپتامبر:
+            # ۴۶٪ دفترِ تمرین همین ردیف‌های نیمه‌کاره بود.)
+            censored_at = i
+            break
+        last_entry = i                                # فقط ورودِ ثبت‌شده «قبلی» است
         why = dict(s["why"])
         why["gate_stage"] = stage                     # برچسب پله — بدون این،
         # سؤال «سخت‌کردن دروازه کمک کرد؟» اصلاً قابل پرسیدن نیست
@@ -362,8 +398,14 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m"):
                        "hold_bars": j - i, "tf": tf,
                        "closed": c15[j]["t"]})
         i = j + 1                                     # بدون معاملهٔ هم‌پوشان
-    frontier = c15[min(i, len(c15) - 1)]["t"] if len(trades) < cap \
-        else trades[-1]["closed"]
+    if censored_at is not None:
+        # مرز = آخرین کندلِ **قبل از** ورودِ بریده؛ کمتر از آن هم نمی‌شود
+        # (فراخوان با max() نگه می‌دارد)، پس هیچ معاملهٔ ثبت‌شده‌ای دوباره
+        # ساخته نمی‌شود و فقط همان ستاپِ نیمه‌کاره بازبینی می‌شود.
+        frontier = c15[max(0, censored_at - 1)]["t"]
+    else:
+        frontier = c15[min(i, len(c15) - 1)]["t"] if len(trades) < cap \
+            else trades[-1]["closed"]
     return trades, frontier
 
 

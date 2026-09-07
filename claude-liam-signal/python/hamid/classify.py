@@ -54,6 +54,15 @@ FA_STAGE = {"practice": "میز تمرین", "first": "پولبک اول",
             "sig-ibs": "سیگنال IBS", "sig-alarm": "سیگنال آلارم"}
 
 
+
+def _censored(row):
+    """ردیفِ میز تمرین که به تهِ داده خورد — تعریفِ واحد در `trainer.is_censored`."""
+    try:
+        from hamid.trainer import is_censored
+        return is_censored(row)
+    except Exception:                                # noqa: BLE001
+        return False
+
 def load(path=None):
     """ردیف‌های بسته‌شدهٔ دارای R — تنها چیزی که قابل شمارش است."""
     p = Path(path or CLOSED)
@@ -69,6 +78,8 @@ def load(path=None):
         except Exception:                             # noqa: BLE001 - ردیف خراب رد
             continue
         if t.get("R") is None or t.get("outcome") == "expired":
+            continue
+        if _censored(t):                             # ته‌داده، نه نتیجه (۷ سپتامبر)
             continue
         rows.append(t)
     return rows

@@ -98,6 +98,15 @@ CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
 STOP_BANDS = ((0, 0.5), (0.5, 0.8), (0.8, 1.5), (1.5, 99))
 
 
+
+def _censored(row):
+    """ردیفِ میز تمرین که به تهِ داده خورد — تعریفِ واحد در `trainer.is_censored`."""
+    try:
+        from hamid.trainer import is_censored
+        return is_censored(row)
+    except Exception:                                # noqa: BLE001
+        return False
+
 def _identity(r):
     """هویت معامله برای یکتاسازی — **همان کلید قطعیِ دفتر**، نه نسخهٔ دست‌ساز.
 
@@ -138,6 +147,8 @@ def load(stage_prefix="sig-"):
         stage = str((r.get("why") or {}).get("stage")
                     or r.get("stage_tag") or "")
         if not stage.startswith(stage_prefix) or r.get("R_net") is None:
+            continue
+        if _censored(r):                             # ته‌داده، نه نتیجه (۷ سپتامبر)
             continue
         k = _identity(r)
         if k in seen:

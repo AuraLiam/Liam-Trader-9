@@ -46,6 +46,7 @@ ROOT = HERE.parents[2]
 OUT = ROOT / "signals" / "short-backtest.json"
 
 import liam9_short_strategy as S                     # noqa: E402
+from hamid import trainer as TR                      # noqa: E402
 
 MIN_N_PROMOTE = 200
 MIN_N_REJECT = 500
@@ -105,31 +106,27 @@ def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
             i += 1
             continue
         entry, sl, tp1 = d["entry"], d["sl"], d["tp1"]
-        risk = sl - entry
-        out_r, bars = None, 0
-        for j in range(i + 1, min(n, i + 1 + S.P["max_hold_bars"])):
-            _, h, lo, _, _ = S._ohlc(cd15[j])
-            if h is None or lo is None:
-                continue
-            bars = j - i
-            if h >= sl:                              # بدترین حالت اول
-                out_r = -1.0
-                break
-            if lo <= tp1:
-                out_r = S.P["rr_target"]
-                break
-        if out_r is None:                            # سقفِ نگهداری
-            close = S._ohlc(cd15[min(n - 1, i + S.P["max_hold_bars"])])[3]
-            out_r = (entry - close) / risk if (close and risk) else 0.0
-            bars = S.P["max_hold_bars"]
+        # خروج از **همان** `trainer.resolve` که دفترِ سنجیده‌شده را ساخته
+        # (استاپ قبل از تارگت داخل کندل · تریلِ ⅓ مسیر → +۰.۱۵R · سقف).
+        # نسخهٔ قبل خروجِ خودش را داشت و تریل نداشت؛ ۱۰۳ از ۲۶۶ ردیفِ
+        # واقعیِ دفتر با تریل بسته شده بودند — یعنی سومین جایی که اجرا از
+        # اندازه‌گیری جدا افتاده بود.
+        dcd = S._dicts(cd15)
+        j, outcome, out_r, exc = TR.resolve(
+            dcd, i, {"entry": entry, "sl": sl, "tp1": tp1, "dir": "SHORT"},
+            max_hold=S.P["max_hold_bars"])
+        bars = j - i
+        if outcome == "timeout" and j >= n - 1 and bars < S.P["max_hold_bars"]:
+            break                                    # ته‌داده: ثبت نمی‌شود (بریده)
         fee_r = fees.cost_in_r(entry, sl, symbol=symbol)
         trades.append({"sym": symbol, "t": t, "entry": entry, "sl": sl,
                        "tp1": tp1, "R": round(out_r, 4),
+                       "outcome": outcome,
                        "fee_r": round(fee_r, 4),
                        "net": round(out_r - fee_r, 4),
                        "stop_pct": d["stop_pct"], "bars": bars,
-                       "chan_pos": d["chan_pos"]})
-        i += bars + 1                                # یک پوزیشن در هر لحظه
+                       "chan_pos": d["chan_pos"], **exc})
+        i = j + 1                                    # یک پوزیشن در هر لحظه
     return trades
 
 

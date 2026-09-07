@@ -64,6 +64,15 @@ TIGHT_STOP_PCT = 0.50  # استاپِ تنگ‌تر از این، مظنونِ �
 MIN_N = 60             # کف نمونه برای نمره‌دادن به یک کلاس
 
 
+
+def _censored(row):
+    """ردیفِ میز تمرین که به تهِ داده خورد — تعریفِ واحد در `trainer.is_censored`."""
+    try:
+        from hamid.trainer import is_censored
+        return is_censored(row)
+    except Exception:                                # noqa: BLE001
+        return False
+
 def _f(v):
     return float(v) if isinstance(v, (int, float)) else None
 
@@ -180,6 +189,8 @@ def rows(path=None):
         try:
             r = json.loads(line)
         except Exception:                            # noqa: BLE001
+            continue
+        if _censored(r):                             # ته‌داده، نه نتیجه (۷ سپتامبر)
             continue
         ident = (r.get("sym"), r.get("dir"), r.get("entry"), r.get("opened"))
         if ident in seen:

@@ -23,14 +23,14 @@ ok = 0
 fail = []
 
 
-def check(name, cond):
+def check(name, cond, extra=""):
     global ok
     if cond:
         ok += 1
         print(f"  ✓ {name}")
     else:
         fail.append(name)
-        print(f"  ✗ {name}")
+        print(f"  ✗ {name}" + (f"  ↳ {extra}" if extra else ""))
 
 
 def synth15(n=800, seed=1, start=10.0):
@@ -197,8 +197,73 @@ check("آزمون در پوشهٔ موقت نوشت", trainer.STATE.exists()
 check("دفتر آزمون هم جدا بود", paper.CLOSED != (
     Path(__file__).resolve().parents[3] / "brain" / "paper" / "closed.jsonl"))
 
+# ── ۸. ته‌داده ≠ نتیجه (کشف ۷ سپتامبر: ۴۶٪ دفترِ تمرین بریده بود) ─────────
+print("── بریده‌شدن در انتهای داده ──")
+from hamid.trainer import is_censored                          # noqa: E402
+
+_w = {"trainer": 1, "stage": "practice", "tf": "15m"}
+check("timeout زودتر از سقف = بریده",
+      is_censored({"outcome": "timeout", "hold_bars": 5, "tf": "15m", "why": _w}))
+check("timeout دقیقاً در سقف = واقعی",
+      not is_censored({"outcome": "timeout", "hold_bars": 96, "tf": "15m", "why": _w}))
+check("استاپ هرگز بریده نیست",
+      not is_censored({"outcome": "stop", "hold_bars": 3, "tf": "15m", "why": _w}))
+check("ردیفِ غیرِ میز تمرین بریده حساب نمی‌شود",
+      not is_censored({"outcome": "timeout", "hold_bars": 3, "tf": "15m",
+                       "why": {"stage": "sig-ibs"}}))
+check("سقف از تایم‌فریمِ خودِ ردیف می‌آید (۵د: ۱۴۴)",
+      is_censored({"outcome": "timeout", "hold_bars": 100, "tf": "5m", "why": _w})
+      and not is_censored({"outcome": "timeout", "hold_bars": 100, "tf": "1h",
+                           "why": _w}))
+
+# سناریوی مکانیکی: سری کامل → آخرین معاملهٔ ثبت‌شده را پیدا کن؛ سری را
+# چند کندل بعد از ورودش ببُر → آن معامله نباید ثبت شود و مرز باید قبل از
+# ورودش بماند؛ بعد با سری کامل، همان معامله باید ثبت شود (بازبینی).
+full = synth15(800, seed=77)
+t_full, _f = trainer.replay_symbol("CENS", full, after_ms=0, cap=400)
+check("سری کامل معامله می‌سازد", len(t_full) >= 3)
+if len(t_full) >= 3:
+    last = t_full[-1]
+    i_open = next(i for i, c in enumerate(full) if c["t"] == last["opened"])
+    cut = full[:i_open + 3]                       # ۲ کندل بعد از ورود، بریده
+    t_cut, f_cut = trainer.replay_symbol("CENS", cut, after_ms=0, cap=400)
+    check("معاملهٔ خورده به ته‌داده ثبت نمی‌شود",
+          all(t["opened"] != last["opened"] for t in t_cut))
+    check("و هیچ ردیفِ بریده‌ای در خروجی نیست",
+          not any(is_censored({**t, "tf": "15m"}) for t in t_cut))
+    check("مرز قبل از ورودِ بریده می‌ماند", f_cut < last["opened"], f"{f_cut} vs {last['opened']}")
+    # اجرای بعد، با دادهٔ کامل و از همان مرز: همان ستاپ حالا داوری می‌شود
+    t_next, _ = trainer.replay_symbol("CENS", full, after_ms=f_cut, cap=400)
+    check("اجرای بعد همان ستاپ را با نتیجهٔ واقعی ثبت می‌کند",
+          any(t["opened"] == last["opened"] and t["outcome"] == last["outcome"]
+              for t in t_next),
+          f"{[(t['opened'], t['outcome']) for t in t_next][:3]} · انتظار {last['opened']}/{last['outcome']}")
+    check("و معامله‌های قبل از مرز دوباره ساخته نمی‌شوند",
+          all(t["opened"] > f_cut for t in t_next))
+
+# لودرهای مشترک ردیفِ بریده را کنار می‌گذارند — سه لودر، یک تعریف
+from hamid import classify, direction_autopsy, direction_lessons  # noqa: E402
+_tmp = TMP / "closed-cens.jsonl"
+_real = {"sym": "X", "dir": "SHORT", "entry": 10, "sl": 10.2, "tp1": 9.6,
+         "opened": 1, "filled": 1, "closed": 2, "outcome": "stop", "R": -1.0,
+         "R_net": -1.1, "hold_bars": 4, "tf": "15m",
+         "why": {"trainer": 1, "stage": "practice", "tf": "15m"}}
+_cens = {**_real, "opened": 5, "closed": 6, "outcome": "timeout", "R": 0.02,
+         "R_net": -0.08, "hold_bars": 3}
+_tmp.write_text("\n".join(json.dumps(r) for r in (_real, _cens)) + "\n")
+check("classify.load بریده را کنار می‌گذارد",
+      [r["opened"] for r in classify.load(_tmp)] == [1])
+check("direction_lessons.rows بریده را کنار می‌گذارد",
+      [r["opened"] for r in direction_lessons.rows(_tmp)] == [1])
+_old = direction_autopsy.CLOSED
+direction_autopsy.CLOSED = _tmp
+try:
+    check("direction_autopsy.load بریده را کنار می‌گذارد",
+          [r["opened"] for r in direction_autopsy.load("practice")] == [1])
+finally:
+    direction_autopsy.CLOSED = _old
+
 print()
-if fail:
-    print(f"✗ {len(fail)} آزمون شکست: {fail}")
-    raise SystemExit(1)
-print(f"✓ همهٔ {ok} آزمون میز تمرین گذشت")
+print(f"✓ همهٔ {ok} آزمون میز تمرین گذشت" if not fail else
+      f"✗ {len(fail)} آزمون افتاد: {fail}")
+sys.exit(1 if fail else 0)
