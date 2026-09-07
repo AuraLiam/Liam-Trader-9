@@ -19,7 +19,7 @@ line saying so — never a silent success.
 
     TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=... python3 scan.py --telegram
 """
-import json, os, time, urllib.error, urllib.request, uuid
+import json, os, re, time, urllib.error, urllib.request, uuid
 from pathlib import Path
 
 API = "https://api.telegram.org"
@@ -645,7 +645,16 @@ def send_text(text, quiet=True):
     نمی‌گرفت چون تلگرام را جعلی کرده بود. حالا رابط واقعی این‌جاست و آزمون،
     وجودِ همین تابع را روی ماژول واقعی می‌سنجد.
 
-    امضای پنل (دستور ۱۶ اوت) اگر در متن نبود، اضافه می‌شود."""
+    امضای پنل (دستور ۱۶ اوت) اگر در متن نبود، اضافه می‌شود.
+
+    **دفتر (۷ سپتامبر، شکایت حمید «روزانه بارها پیام خطا می‌آید»)**: تا
+    امروز آلارم‌ها هیچ ردی نمی‌گذاشتند. نُه پاسبان از `alert_gate` رد
+    می‌شدند و همه از همین تابع می‌فرستادند — و چون `record_out` صدا
+    نمی‌شد، نه پنل خبر داشت نه هیچ سنجه‌ای می‌توانست بشمردشان. یعنی
+    شکایتِ درستِ حمید **قابل اندازه‌گیری نبود**، و ادعای «رفع شد» هم
+    قابل اثبات نبود. حالا هر آلارم یک ردیف `kind="alert"` می‌گذارد؛
+    `hamid.msg_budget` از همان می‌شمارد.
+    """
     token, chat = creds()
     if not token:
         if not quiet:
@@ -655,6 +664,19 @@ def send_text(text, quiet=True):
         text = f"{text}\n{BRAND}"
     r = _post(token, "sendMessage",
               {"chat_id": chat, "text": text, "parse_mode": "HTML"})
+    if r:
+        # عنوان = اولین خطِ معنادار، بی‌تگ — برای شمارش کافی است و متنِ
+        # کاملِ آلارم را روی دفترِ عمومی نمی‌ریزد.
+        head = ""
+        for ln in text.splitlines():
+            ln = re.sub(r"<[^>]+>", "", ln).strip()
+            if ln and PANEL_NAME not in ln:
+                head = ln
+                break
+        try:
+            record_out("alert", head or "آلارم", {"chars": len(text)})
+        except Exception as e:                       # noqa: BLE001
+            print(f"telegram: دفترِ آلارم نوشته نشد ({type(e).__name__})")
     return bool(r)
 
 

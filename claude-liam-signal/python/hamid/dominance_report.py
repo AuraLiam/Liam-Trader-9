@@ -213,16 +213,32 @@ def build():
 
 
 def already_sent_recently():
-    try:
-        last = json.loads(STATE.read_text()).get("last_sent") or 0
-    except Exception:                                # noqa: BLE001
-        last = 0
-    return (time.time() * 1000 - last) < MIN_GAP_MIN * 60 * 1000
+    """ضدتکرار از سه منبع، نه از یک نشانگرِ جهش‌پذیر.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۷ سپتامبر: همین تابع فقط `STATE` را می‌خواند —
+    فایلی در `signals/` که هر اجرا با چک‌اوتِ کم‌عمق تازه می‌شود و با
+    هر تلاشِ ناموفقِ push به نسخهٔ origin برمی‌گردد. دو تولیدکنندهٔ
+    هم‌زمان (ورک‌فلوی ساعتی + زنجیرهٔ پیوسته) یعنی هیچ‌کدام مهرِ آن یکی
+    را نمی‌دید. نتیجه روی محصول: ۲۰۶ گزارش در ۱۳۶ ساعت — ۵۹ ساعت با
+    ۲+ پیام، کمینهٔ فاصله ۳۰ ثانیه.
+
+    حالا `cadence_gate` بیشینهٔ سه منبع را می‌گیرد (نشانگر + کنارگذاشتهٔ
+    /tmp + دفترِ append-only فید) — همان الگویی که برای سیگنال بعد از
+    PAXG×۵ جواب داد.
+    """
+    from hamid import cadence_gate
+    ok, why, age = cadence_gate.allow("dom_report", MIN_GAP_MIN,
+                                      marker_path=STATE)
+    if not ok:
+        print(f"dominance_report: {age:.0f} دقیقه از گزارش قبلی ({why})")
+    return not ok
 
 
 def mark_sent():
+    from hamid import cadence_gate
+    now = cadence_gate.mark("dom_report")
     STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(json.dumps({"last_sent": int(time.time() * 1000)}))
+    STATE.write_text(json.dumps({"last_sent": now}))
 
 
 def main(argv):
