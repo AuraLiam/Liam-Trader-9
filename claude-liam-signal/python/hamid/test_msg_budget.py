@@ -183,6 +183,17 @@ check("EFFECTIVE_FROM روی خودِ فایل عدد ثابت است",
 
 check("«نتیجه» بودجهٔ ساختگی نمی‌گیرد", "outcome" in MB.NO_BUDGET
       and "outcome" not in MB.BUDGET)
+# نوعِ بی‌تاریخچه بودجهٔ حدسی نمی‌گیرد، ولی «ثبت‌نشده» هم اعلام نمی‌شود —
+# دلیلش صریح روی خروجی است.
+check("نوعِ تازه‌دفتردار بودجهٔ حدسی نمی‌گیرد",
+      MB.OBSERVE_ONLY and not (set(MB.OBSERVE_ONLY) & set(MB.BUDGET)))
+d6 = _tmp()
+_feed(d6, [{"at": NOW - HOUR, "kind": "btc_pattern", "title": "الگو"}])
+v6 = MB.judge(now_ms=NOW, archive=d6, effective_from=NOW - 24 * HOUR)
+check("و دلیلش «فقط شمارش» است نه «ثبت‌نشده»",
+      "فقط شمارش" in v6["kinds"]["btc_pattern"]["why"],
+      v6["kinds"]["btc_pattern"]["why"])
+check("و حکم را سرخ نمی‌کند", v6["verdict"] == "OK", v6["verdict"])
 check("هر بودجه دلیلِ نوشته دارد",
       all(len(w) > 10 for _, w in MB.BUDGET.values()))
 check("مرز صادقانه روی خروجی هست",
@@ -199,9 +210,11 @@ for p in sorted(PY.rglob("*.py")):
     if p.name.startswith("test_"):
         continue
     s = p.read_text(encoding="utf-8", errors="ignore")
-    if _SEND.search(s) and "record_out" not in s:
+    if _SEND.search(s) and "record_out" not in s and "logged(" not in s:
         ledgerless.append(p.relative_to(PY).as_posix())
-LEDGERLESS_MAX = 11        # اندازه‌گیری ۷ سپتامبر؛ فقط پایین می‌رود
+# ۷ سپتامبر ۱۱ بود؛ همان روز صفر شد (دستور حمید). عدد فقط پایین می‌رود —
+# اولین فرستندهٔ بی‌دفترِ تازه، همین‌جا چرخه را سرخ می‌کند.
+LEDGERLESS_MAX = 0
 check(f"فرستندهٔ بی‌دفتر ≤ {LEDGERLESS_MAX}",
       len(ledgerless) <= LEDGERLESS_MAX,
       f"{len(ledgerless)}: {ledgerless}")

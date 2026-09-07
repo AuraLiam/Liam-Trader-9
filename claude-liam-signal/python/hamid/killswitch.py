@@ -64,6 +64,8 @@ def _alarm(reason):
         if token:
             tg._post(token, "sendMessage",
                      {"chat_id": chat, "text": f"🏷 {tg.PANEL_NAME}\n{txt}"})
+            tg.logged("alert", f"کیل‌سوییچ — {reason}",
+                      {"src": "killswitch"})
     except Exception:                                # noqa: BLE001
         pass
 

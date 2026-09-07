@@ -139,6 +139,9 @@ def run():
                           "text": (f"{tg.BRAND}\n"
                                    + "\n".join(fresh_msgs)
                                    + f"\n🕐 <code>{tg.tehran()}</code> به وقت ایران")})
+                tg.logged("btc_pattern",
+                          f"{len(fresh_msgs)} الگوی تازهٔ بیت‌کوین",
+                          {"n": len(fresh_msgs)})
                 print(f"اعلام {len(fresh_msgs)} الگوی تازهٔ BTC به تلگرام")
         except Exception as e:                       # noqa: BLE001
             print(f"اعلام تلگرام نشد: {type(e).__name__}")

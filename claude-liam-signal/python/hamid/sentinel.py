@@ -278,6 +278,12 @@ def alert(res):
     lines.append("\nاگر کار خودت نبوده، همین حالا دسترسی‌های گیت‌هاب را بررسی کن.")
     _post(token, "sendMessage",
           {"chat_id": chat, "text": "\n".join(lines), "parse_mode": "HTML"})
+    try:
+        import telegram as _tg
+        _tg.logged("alert", f"نگهبان یکپارچگی — {len(high)} یافتهٔ مهم",
+                   {"src": "sentinel", "n": len(high)})
+    except Exception as e:                           # noqa: BLE001
+        print(f"sentinel: دفترِ آلارم نوشته نشد ({type(e).__name__})")
     return True
 
 

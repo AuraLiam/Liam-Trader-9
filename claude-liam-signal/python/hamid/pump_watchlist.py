@@ -215,7 +215,11 @@ def send_ignitions(ignited, kc=None):
                          {"chat_id": chat, "text": msg, "parse_mode": "HTML",
                           "disable_web_page_preview": "true"})
                 # درس ۲۶ اوت: شلیک دفتر انتظار تارگت ندارد → سیگنال نیست
-                # و در دفتر سیگنال ثبت نمی‌شود (قرارداد اجرا).
+                # و در دفتر **سیگنال** ثبت نمی‌شود (قرارداد اجرا). ولی
+                # دفترِ پنل چیز دیگری است: آن‌جا فقط «چه پیامی رفت» شمرده
+                # می‌شود، و نبودش یعنی نابینایی (۷ سپتامبر).
+                tg.logged("ignition", f"شلیک دفتر انتظار — {ig['symbol']}",
+                          {"sym": ig["symbol"]})
                 n += 1
             except Exception as e:                   # noqa: BLE001
                 print(f"تلگرام شلیک {ig['symbol']}: {type(e).__name__}")
