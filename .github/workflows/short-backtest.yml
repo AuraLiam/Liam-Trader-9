@@ -19,6 +19,9 @@ on:
       tf:
         description: "تایم‌فریم (۱۵m پیش‌فرض)"
         required: false
+      universe:
+        description: "N نمادِ برتر به حجم — همان جهانِ میز تمرین (خالی = فهرست پیش‌فرض)"
+        required: false
   schedule:
     - cron: "41 3 * * *"
 
@@ -62,6 +65,9 @@ jobs:
           fi
           if [ -n "${{ github.event.inputs.tf }}" ]; then
             ARGS="$ARGS --tf ${{ github.event.inputs.tf }}"
+          fi
+          if [ -n "${{ github.event.inputs.universe }}" ]; then
+            ARGS="$ARGS --universe ${{ github.event.inputs.universe }}"
           fi
           python3 -m hamid.short_backtest $ARGS
 

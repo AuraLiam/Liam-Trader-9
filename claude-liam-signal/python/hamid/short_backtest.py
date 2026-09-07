@@ -130,6 +130,14 @@ def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
     return trades
 
 
+def _count(trades):
+    out = {}
+    for t in trades:
+        k = t.get("outcome") or "?"
+        out[k] = out.get(k, 0) + 1
+    return out
+
+
 def _ci(vals):
     if len(vals) < 2:
         return None
@@ -165,7 +173,41 @@ def judge(trades):
             "need_more": max(0, need)}
 
 
-def run(symbols, tf="15m", bars=1000, fetch=None):
+def trainer_shorts(symbol, cd15, tf="15m"):
+    """همان کندل‌ها، از دیدِ خودِ `trainer.replay_symbol` — یعنی دقیقاً همان
+    کدی که دفترِ سنجیده‌شده را ساخته. → (فیلترشده، همهٔ شورت‌ها).
+
+    چرا: بعد از سه رفع (تعریف‌های قرضی، خروجِ trainer، بی‌بریده) موتور روی
+    کندلِ واقعی هنوز −۰.۸۵R می‌داد و ردیف‌های واقعیِ دفتر −۰.۱۰R. این دو
+    را فقط یک آزمون از هم جدا می‌کند: trainer را روی **همین** داده بدوان.
+    اگر trainer هم این‌جا ~−۰.۸ بدهد، موتور وفادار است و اختلاف از رژیم/
+    جهانِ نماد است؛ اگر ~−۰.۱ بدهد، هنوز جایی از موتور با اندازه‌گیری
+    فرق دارد.
+    """
+    from hamid import fees
+    d = S._dicts(cd15)
+    trades, _ = TR.replay_symbol(symbol, d, after_ms=0, cap=10_000, tf=tf)
+    allsh, filt = [], []
+    for t in trades:
+        if t.get("dir") != "SHORT" or TR.is_censored({**t, "tf": tf}):
+            continue
+        w = t.get("why") or {}
+        fee_r = fees.cost_in_r(t["entry"], t["sl"], symbol=symbol)
+        row = {"sym": symbol, "t": t["opened"], "R": t["R"],
+               "net": round(t["R"] - fee_r, 4), "outcome": t["outcome"],
+               "stop_pct": w.get("stop_pct"), "chan_pos": w.get("chan_pos"),
+               "ob_align": w.get("ob_align"), "trend": w.get("trend_4h")}
+        allsh.append(row)
+        # همان چهار فیلتر، پس‌ازواقعه — همان‌طور که روی دفتر زده شد
+        if (S.P["min_stop_pct"] <= (w.get("stop_pct") or 0) <= S.P["max_stop_pct"]
+                and w.get("ob_align") == "with"
+                and (w.get("chan_pos") or 0) > S.P["min_chan_pos"]
+                and w.get("trend_4h") == "down"):
+            filt.append(row)
+    return filt, allsh
+
+
+def run(symbols, tf="15m", bars=1000, fetch=None, compare=True):
     if fetch is None:
         import sources
         fetch = lambda s, t, n: sources.klines(s, t, n)   # noqa: E731
@@ -174,7 +216,7 @@ def run(symbols, tf="15m", bars=1000, fetch=None):
         btc1h, btc4h = fetch("BTCUSDT", "1h", 500), fetch("BTCUSDT", "4h", 500)
     except Exception as e:                           # noqa: BLE001
         print(f"بسترِ BTC گرفته نشد ({type(e).__name__}) — آلت‌ها رد می‌شوند")
-    all_t, skipped = [], []
+    all_t, skipped, cmp_f, cmp_a = [], [], [], []
     for sym in symbols:
         try:
             cd = fetch(sym, tf, bars)
@@ -187,8 +229,25 @@ def run(symbols, tf="15m", bars=1000, fetch=None):
             continue
         t = replay(sym, cd, cd4, btc1h=btc1h, btc4h=btc4h, tf=tf)
         all_t.extend(t)
-        print(f"  {sym}: {len(t)} معامله")
+        if compare:
+            f_, a_ = trainer_shorts(sym, cd, tf=tf)
+            cmp_f.extend(f_)
+            cmp_a.extend(a_)
+            print(f"  {sym}: موتور {len(t)} · trainer فیلترشده {len(f_)} · trainer همهٔ شورت‌ها {len(a_)}")
+        else:
+            print(f"  {sym}: {len(t)} معامله")
     v = judge(all_t)
+    if compare:
+        v["compare"] = {
+            "trainer_filtered": _ci([x["net"] for x in cmp_f]),
+            "trainer_all_shorts": _ci([x["net"] for x in cmp_a]),
+            "engine_outcomes": _count(all_t),
+            "trainer_filtered_outcomes": _count(cmp_f),
+            "note": ("سه جمعیت روی **همان** کندل‌ها. اگر trainerِ فیلترشده هم "
+                     "نزدیکِ موتور باشد، اختلاف با دفتر از رژیم/جهانِ نماد "
+                     "است نه از کد؛ اگر نزدیکِ دفتر باشد، موتور هنوز جایی "
+                     "فرق دارد."),
+        }
     v.update({
         "generated": int(time.time() * 1000),
         "strategy": S.STRATEGY_ID, "version": S.STRATEGY_VERSION,
@@ -216,6 +275,18 @@ def render(v):
     if net:
         L.append(f"  خالص  : n={net['n']} · {net['mean']:+.4f}R "
                  f"CI[{net['lo']:+.4f},{net['hi']:+.4f}]")
+    c = v.get("compare")
+    if c:
+        for lab, key in (("trainer فیلترشده (همان چهار فیلتر)", "trainer_filtered"),
+                         ("trainer همهٔ شورت‌ها", "trainer_all_shorts")):
+            x = c.get(key)
+            if x:
+                L.append(f"  {lab:<36} n={x['n']} · {x['mean']:+.4f}R "
+                         f"CI[{x['lo']:+.4f},{x['hi']:+.4f}]")
+            else:
+                L.append(f"  {lab:<36} نمونهٔ کم")
+        L.append(f"  خروج‌ها — موتور: {c.get('engine_outcomes')} · "
+                 f"trainer فیلترشده: {c.get('trainer_filtered_outcomes')}")
     if v.get("need_more"):
         L.append(f"  برای تصمیم‌پذیری ~{v['need_more']} معاملهٔ دیگر لازم است")
     L.append(f"  اثرانگشت: {v['fingerprint']}")
@@ -320,6 +391,17 @@ def _selftest():
     many_neg = [{"net": -0.5, "R": -0.4}] * MIN_N_REJECT
     chk("CI زیر صفر با n کافی = REJECT",
         judge(many_neg)["verdict"] == "REJECT")
+    # حالتِ مقایسه: سه جمعیت روی یک داده، با ساختارِ ثابت — بی‌آن، اختلافِ
+    # «کد» و «رژیم» از هم جدا نمی‌شود.
+    ref_cd = S._zig(end=now, **S.REF)
+    v_cmp, _ = run(["BTCUSDT"], compare=True,
+                   fetch=lambda s_, t_, n_: ref_cd if t_ == "15m" else cd4)
+    chk("حالتِ مقایسه هر سه جمعیت را برمی‌گرداند",
+        set(v_cmp.get("compare", {})) >= {"trainer_filtered",
+                                          "trainer_all_shorts",
+                                          "engine_outcomes"})
+    chk("مقایسه، trainer را روی همان کندل‌ها می‌دواند نه دفتر",
+        "همان" in (v_cmp.get("compare") or {}).get("note", ""))
     chk("اثرانگشت شامل هندسه است",
         "rr_target" in fingerprint() and "min_stop_pct" in fingerprint())
     v, _ = {"verdict": "UNDECIDED"}, None
@@ -342,6 +424,12 @@ def main(argv):
     syms = DEFAULT_SYMS
     if "--symbols" in argv:
         syms = argv[argv.index("--symbols") + 1].split(",")
+    if "--universe" in argv:
+        # همان جهانِ نمادی که دفترِ میز تمرین از آن ساخته شده (۱۰۰ برتر به
+        # حجم) — تا مقایسه سیب با سیب باشد، نه ۲۰ نمادِ بزرگ با ۱۰۰ نمادِ داغ.
+        n = int(argv[argv.index("--universe") + 1])
+        syms = TR.top_symbols(n)
+        print(f"جهان نماد: {len(syms)} نمادِ برتر به حجم")
     tf = argv[argv.index("--tf") + 1] if "--tf" in argv else "15m"
     v, trades = run(syms, tf=tf)
     print(render(v))
