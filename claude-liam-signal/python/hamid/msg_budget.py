@@ -187,6 +187,23 @@ def render(v):
     return "\n".join(L)
 
 
+# فقط شکستنِ بودجهٔ **محصول** چرخه را سرخ می‌کند. بقیهٔ نوع‌ها OVER
+# گزارش می‌شوند (تابلو، شکاک، گذرگاه) ولی چرخه را نمی‌خوابانند.
+#
+# چرا (۸ سپتامبر، ممیزی E25): سیلِ ۱۰۷ پیامِ شکاک — عیبِ یک پاسبان —
+# با این دروازهٔ سخت ساعت ۰۷:۳۰ همان روز کلِ چرخهٔ حمید را می‌خواباند:
+# تسویه، ریپلای نتیجه، حافظه. پاسبانی که محصول را به‌خاطر عیبِ پاسبانِ
+# دیگر بخواباند، خودش خرابی است (درس ۲۵ اوت، sentinel). سیگنال فرق
+# دارد: بیش از ۲۴ در روز یعنی سقفِ دستور ۲۹ اوت دور خورده — این عیبِ
+# خودِ محصول است و باید بایستد.
+HARD_KINDS = {"signal"}
+
+
+def gate(v):
+    """نوع‌هایی که چرخه را سرخ می‌کنند — زیرمجموعهٔ `over`."""
+    return [k for k in (v.get("over") or []) if k in HARD_KINDS]
+
+
 def main(argv):
     v = judge()
     print(render(v))
@@ -195,8 +212,11 @@ def main(argv):
         OUT.write_text(json.dumps(v, ensure_ascii=False, indent=1),
                        encoding="utf-8")
         print(f"نوشته شد: {OUT}")
-    if "--check" in argv and v["verdict"] == "OVER":
+    if v["verdict"] == "OVER":
         print("بودجهٔ پیام شکسته شد: " + "، ".join(v["over"]))
+    hard = gate(v)
+    if "--check" in argv and hard:
+        print("دروازهٔ سخت (محصول): " + "، ".join(hard))
         return 1
     return 0
 

@@ -55,13 +55,44 @@ def _load(p, default=None):
         return default
 
 
+def _feed_rows(now_ms, window_h):
+    """ردِ پنل از **آرشیوِ append-only** خوانده می‌شود، نه از حلقهٔ ۲۰۰تاییِ
+    `telegram-feed.json`.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۸ سپتامبر: حلقهٔ زنده بعد از ادغام‌های پیاپی
+    نامرتب شده بود — ۹۶ ردیف سیگنالش همه مال پیش از ۲۹ اوت بودند و هیچ
+    سیگنالِ ۷۲ ساعت اخیر در آن نبود، در حالی که آرشیو همان پنجره ۷۱
+    سیگنال داشت. نتیجه: ممیز «۴۱ نشتیِ پنل از ۴۱ ارسال» می‌داد، شکاک آن
+    را سه نوبت پیاپی «ثابت‌نشده» می‌گرفت و ۱۰۷ پیام در ۱۶ ساعت به حمید
+    می‌رفت. یک خوانندهٔ یگانه برای «چه چیزی به تلگرام رفت» همان
+    `msg_budget.rows` است (یکتا، پنجره‌ای، از دفترِ شماره‌دار)."""
+    try:
+        from hamid import msg_budget
+        return msg_budget.rows(now_ms=int(now_ms), window_h=window_h)
+    except Exception:                                # noqa: BLE001
+        return []
+
+
+def _feed_since():
+    """اولین روزی که دفترِ پنل وجود داشته — از نامِ فایل‌های آرشیو، نه از
+    محتوای حلقهٔ زنده (که ممکن است کهنه یا نامرتب باشد)."""
+    days = []
+    for p in (SIG / "archive").glob("telegram-feed-*.jsonl"):
+        try:
+            days.append(time.mktime(time.strptime(p.stem[-8:] + " UTC",
+                                                  "%Y%m%d %Z")) * 1000)
+        except Exception:                            # noqa: BLE001
+            continue
+    return int(min(days)) if days else None
+
+
 def audit(window_h=WINDOW_H):
     now = time.time() * 1000
     lo = now - window_h * 3600 * 1000
 
     sent = [s for s in ((_load(SIG / "telegram-log.json", {}) or {}).get("sent") or [])
             if (s.get("at") or 0) >= lo]
-    feed = [r for r in ((_load(SIG / "telegram-feed.json", {}) or {}).get("rows") or [])
+    feed = [r for r in _feed_rows(now, window_h)
             if r.get("kind") == "signal" and (r.get("at") or 0) >= lo]
     ledger = _rows(BRAIN / "paper" / "open.jsonl") + _rows(BRAIN / "paper" / "closed.jsonl")
     cases = {p.stem for p in (BRAIN / "cases").glob("*.json")} if (BRAIN / "cases").exists() else set()
@@ -80,8 +111,7 @@ def audit(window_h=WINDOW_H):
     # ۲۸ اوت ساخته شد. ارسال‌های قبل از اولین ردیفش نمی‌توانند در آن باشند،
     # پس «نشتیِ پنل» شمردنشان نشتیِ ساختگی است. مبنا = زمان اولین ردیف
     # دفتر؛ اگر دفتر هنوز خالی است، رد پنل اصلاً سنجیده نمی‌شود.
-    all_feed = ((_load(SIG / "telegram-feed.json", {}) or {}).get("rows") or [])
-    feed_since = min((r.get("at") or 0) for r in all_feed) if all_feed else None
+    feed_since = _feed_since()
 
     leaks = []
     ok = 0

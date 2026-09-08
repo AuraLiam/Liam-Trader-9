@@ -267,20 +267,33 @@ def c_repeat_expired(sent, closed_all):
     **این بررسی دروازه نیست** (قانون ۰۳): فقط می‌شمارد و اقدام پیشنهاد
     می‌دهد. ورودش به دروازه فقط با CI بالای صفر و تأیید حمید.
     """
+    # «قبلاً» یعنی **پیش از لحظهٔ ارسال** — و هر لحظهٔ انقضا یک بار.
+    #
+    # تصحیح ۸ سپتامبر (ممیزی E25): نسخهٔ قبلی بی‌قیدِ زمان می‌شمرد و
+    # ارسال SOL@106.85 ساعت ۰۲:۴۷ را «قبلاً ۳× منقضی» گرفت در حالی که
+    # هر سه انقضا ساعت ۰۷:۵۵ — **بعد از** ارسال — و در یک میلی‌ثانیه بودند
+    # (ردیف سیگنال + دو بازوی آینهٔ تریل). سنجه با معنی «قبلاً» تراز
+    # نبود (قانون عددِ درست، سنجهٔ ۱). حالا انقضاها بر (نماد، ورود،
+    # لحظهٔ بسته‌شدن) یکتا می‌شوند و فقط آن‌هایی که پیش از `at` ارسال‌اند
+    # شمرده می‌شوند.
     exp = {}
     for t in closed_all:
         if t.get("outcome") != "expired":
             continue
         e = t.get("entry")
         if isinstance(e, (int, float)):
-            exp.setdefault((t.get("sym"), round(float(e), 10)), 0)
-            exp[(t.get("sym"), round(float(e), 10))] += 1
+            k = (t.get("sym"), round(float(e), 10))
+            exp.setdefault(k, set()).add(int(t.get("closed") or 0))
     hits = []
     for r in sent:
         k = (r.get("sym"), round(float(r["entry"]), 10)) if isinstance(
             r.get("entry"), (int, float)) else None
-        if k and exp.get(k, 0) >= 2:
-            hits.append(f"{k[0]} @ {k[1]} (قبلاً {exp[k]}× منقضی)")
+        if not k:
+            continue
+        at = int(r.get("at") or 0)
+        prior = [c for c in exp.get(k, ()) if c < at]
+        if len(prior) >= 2:
+            hits.append(f"{k[0]} @ {k[1]} (قبلاً {len(prior)}× منقضی)")
     hits = list(dict.fromkeys(hits))
     return _finding("ستاپِ تکرارشوندهٔ منقضی", not hits,
                     f"{len(hits)} ارسال روی ورودی که قبلاً ۲+ بار منقضی شده",
