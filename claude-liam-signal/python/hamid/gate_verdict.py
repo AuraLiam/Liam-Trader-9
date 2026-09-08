@@ -210,6 +210,12 @@ def judge(path=None, now_ms=None, stage=None):
         "by_dir": slice_by(lambda r: (r.get("dir") or "").upper() or None),
         "by_mode": slice_by(_mode),
         "by_tf": slice_by(lambda r: r.get("tf")),
+        # برشِ ترکیبِ روند ۴س/۱س (ممیزی E07، ۸ سپتامبر): پرسشِ «کدام
+        # ترکیب روند برنده است» باید شبانه و خودکار جواب بگیرد، نه با
+        # اسکریپتِ دستی. کلید = «t4/t1»؛ بی‌روند → None (شمرده نمی‌شود).
+        "by_trend": slice_by(lambda r: (
+            f"{r['_why'].get('trend_4h')}/{r['_why'].get('trend_1h')}"
+            if r["_why"].get("trend_4h") or r["_why"].get("trend_1h") else None)),
         "note": ("ضدواقع است نه سیگنال: این ستاپ‌ها ارسال نشدند. حکم "
                  "مشاوره‌ای است — هیچ آستانه‌ای این‌جا عوض نمی‌شود "
                  "(قانون ۰۳/۱۲)."),
@@ -226,7 +232,7 @@ def render(v):
             L.append(f"  {lbl}  n={c['n']:<5} {c['mean']:+.4f}R "
                      f"CI[{c['lo']:+.4f}, {c['hi']:+.4f}]  {c['verdict']}")
     for title, key in (("جهت", "by_dir"), ("نوع وتو", "by_mode"),
-                       ("تایم‌فریم", "by_tf")):
+                       ("تایم‌فریم", "by_tf"), ("روند ۴س/۱س", "by_trend")):
         if v[key]:
             L.append(f"\n  — برش بر {title}")
             for k, d in v[key].items():

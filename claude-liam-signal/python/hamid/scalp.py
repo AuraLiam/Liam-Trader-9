@@ -142,7 +142,9 @@ def simulate(cd, i, s):
     be = s["entry"] * (1 + 0.0015) if long else s["entry"] * (1 - 0.0015)
     third = s["entry"] + risk * RR_TARGET / 3 * (1 if long else -1)
     trailed = False
-    for k in cd[i + 1: i + 1 + HOLD_BARS]:
+    s["hold_bars"] = None
+    for n, k in enumerate(cd[i + 1: i + 1 + HOLD_BARS], start=1):
+        s["hold_bars"] = n
         if (long and k["l"] <= sl) or (not long and k["h"] >= sl):
             return ("trail", (sl - s["entry"]) / risk * (1 if long else -1)) \
                 if trailed else ("stop", -1.0)
@@ -179,6 +181,10 @@ def replay_symbol(sym, cd, after_ms=0, cap=CAP_PER_SYMBOL):
                                    int(time.time() * 1000)),
                      "outcome": outcome, "R": round(r, 3),
                      "fee_r": fee, "R_net": round(r - fee, 3),
+                     # کندل‌های واقعاً دیده‌شده — تا بریدگیِ ته‌داده از روی خودِ
+                     # دفتر اندازه‌گیری‌پذیر باشد نه فقط از روی کد (ممیزی E18).
+                     # (این میز ساختاراً بریده نمی‌شود: `limit = len - HOLD_BARS - 2`.)
+                     "hold_bars": s.get("hold_bars"),
                      "tf": "1m",
                      "why": {"stage": "scalp", "replay": 1, "tf": "1m",
                              "dir": s["dir"], "session": s["session"],

@@ -66,6 +66,12 @@ check("صعود USDT.D درست تشخیص داده می‌شود",
 check("بیرون از پوشش سری → unknown (عدد ساختگی ساخته نمی‌شود)",
       A.context_at(NOW - 900 * 3_600_000, pts) == "unknown")
 check("بدون سری → unknown", A.context_at(t_up, []) == "unknown")
+# بسترِ جاری روی خروجی (ممیزی E17، ۸ سپتامبر): بدون آن داشبورد همیشه «all»
+# می‌خواند و وزنِ به‌تفکیکِ بستر — خواستهٔ صریح حمید — هرگز مصرف نمی‌شد.
+_asrc = (Path(__file__).resolve().parent / "agent_scores.py").read_text(encoding="utf-8")
+check("خروجی build کلید live_ctx دارد", '"live_ctx": live_ctx' in _asrc)
+_dsrc = (Path(__file__).resolve().parents[1] / "liam9_strategy.py").read_text(encoding="utf-8")
+check("و داشبورد همان کلید را می‌خواند", 'd.get("live_ctx")' in _dsrc)
 
 # ── رأی‌ها ───────────────────────────────────────────────────────────────
 v = A.votes_of({"ob_align": "with", "pattern_align": "against",

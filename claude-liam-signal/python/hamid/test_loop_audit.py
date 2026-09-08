@@ -111,6 +111,16 @@ check("حلقهٔ زندهٔ پنل بر زمان مرتب می‌شود (خود
       "cur.sort(key=lambda r: int(r.get(\"at\") or 0))" in _tgsrc
       and _tgsrc.index("cur.sort(") < _tgsrc.index("cur = cur[-FEED_CAP:]"))
 
+# پرونده‌ها در زیرپوشهٔ ماه‌اند و تطبیق دقیق است (ممیزی E20، ۸ سپتامبر)
+_cases = {"ETHUSDT-1700000000000", "ETHFIUSDT-1700000001000"}
+check("تطبیقِ دقیق با نام پرونده (نماد-لحظهٔ بسته‌شدن)",
+      LA._has_case(_cases, "ETHUSDT", {"closed": 1700000000000}))
+check("پیشوندِ نماد، نه هر زیررشته‌ای (ETH داخل ETHFI نمی‌افتد)",
+      not LA._has_case({"ETHFIUSDT-1"}, "ETH", {"closed": 5})
+      and LA._has_case({"ETHFIUSDT-1"}, "ETHFIUSDT", {"closed": 5}))
+check("پرونده‌های زیرپوشهٔ ماه خوانده می‌شوند",
+      'glob("*/*.json")' in src)
+
 # منبعِ رفع مستند است — عدد کشف روی خودِ کد می‌ماند
 psrc = (HERE / "paper.py").read_text(encoding="utf-8")
 check("دلیلِ عددیِ رفع روی کد ثبت است", "۲۸ از ۴۰" in psrc)

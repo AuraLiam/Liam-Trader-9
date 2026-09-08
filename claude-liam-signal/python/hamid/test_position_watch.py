@@ -178,6 +178,20 @@ f1 = pend2("practice", "F")
 f1["filled"] = NOW - 5000 * MIN
 check("پوزیشنِ پرشدهٔ تکراری هم در scan یک بار می‌آید",
       len(PW.scan([f1, dict(f1)], now_ms=NOW)[0]) == 1)
+# بازوهای آینهٔ تریل = همان پوزیشن با نردبانِ دیگر (ممیزی E19، ۸ سپتامبر):
+# با مرحله در کلید، هر پوزیشنِ مانده سه بار شمرده می‌شد.
+_m = [dict(f1, why={"stage": st}) for st in ("sig-ibs", "exp-trail-g65", "exp-trail-g80")]
+_ms_stale, _ = PW.scan(_m, now_ms=NOW)
+check("سه ردیفِ آینه‌ای یک پوزیشن‌اند، نه سه پوزیشنِ مانده",
+      len(_ms_stale) == 1, str(len(_ms_stale)))
+check("و چون یکی‌شان ارسالی است، پرچمِ «برای حمید رفته» می‌گیرد",
+      _ms_stale and _ms_stale[0].get("sent_to_hamid") is True, str(_ms_stale))
+_p = PW.scan([dict(f1, why={"stage": "practice"})], now_ms=NOW)[0]
+check("پوزیشنِ دفتر داخلی پرچمِ ارسالی ندارد (آلارم نمی‌گیرد)",
+      _p and _p[0].get("sent_to_hamid") is False)
+_pwsrc = (Path(__file__).resolve().parent / "position_watch.py").read_text(encoding="utf-8")
+check("آلارمِ پوزیشنِ مانده فقط برای ارسالی‌ها ساخته می‌شود",
+      "mine_stale" in _pwsrc and 'stale_bucket(len(mine_stale))' in _pwsrc)
 check("مهلت لیمیت همان قاعدهٔ خودِ دفتر است (paper.pending_valid_min)",
       all(PW._fill_cap_min(tf) == P.pending_valid_min(tf)
           for tf in ("1m", "5m", "15m", "1h", None)))

@@ -209,7 +209,26 @@ def movement(now_fp, prev_fp):
 
 
 # ── پلهٔ ۳: تصمیم بعدی آن را خواند؟ ────────────────────────────────────
-def consumed(sent, closed, cutoff_ms):
+def _ledger_marks(ledger):
+    """ردپای استفاده روی **ردیف دفتر** (why)، با کلید (نماد، جهت، ورود).
+
+    تصحیح ۸ سپتامبر (ممیزی E21): ردیفِ telegram-log فقط at/sym/dir/entry/
+    trend دارد — هیچ‌کدام از USE_MARKS روی آن نیست؛ نشان‌ها روی `why`ِ
+    ردیف پیپر می‌نشینند (exp_used روی ۱۸۷ از ۴۶۷، phoenix_score روی ۹۳).
+    پس پلهٔ سوم با خواندنِ فقط ردیف log همیشه «استفاده‌نشده» می‌داد."""
+    out = {}
+    for t in ledger or []:
+        e = t.get("entry")
+        if not isinstance(e, (int, float)):
+            continue
+        k = (str(t.get("sym") or "").upper(), t.get("dir"), round(float(e), 10))
+        w = t.get("why") or {}
+        marks = {m for m in USE_MARKS if w.get(m) not in (None, "", 0, False)}
+        out.setdefault(k, set()).update(marks)
+    return out
+
+
+def consumed(sent, closed, cutoff_ms, ledger=None):
     """سیگنالی که **بعد از** بسته‌شدنِ معاملهٔ همان جفت رفته، ردپای
     تجربه دارد؟ این تنها چیزی است که «به کار بردن» را اثبات می‌کند."""
     last_close = {}
@@ -219,16 +238,23 @@ def consumed(sent, closed, cutoff_ms):
             continue
         k = (str(t.get("sym") or t.get("symbol") or "").upper(), t.get("dir"))
         last_close[k] = max(last_close.get(k, 0), ts)
+    lm = _ledger_marks(ledger if ledger is not None else closed)
     rows = []
     for s in sent:
-        ts = _ms(s, "ts", "t", "sent_ms")
+        # کلید زمانِ ردیفِ log واقعاً `at` است (تصحیح ۸ سپتامبر: بدون آن،
+        # هر ردیف رد می‌شد و پلهٔ سوم همیشه «۰ تصمیمِ با سابقه» می‌داد).
+        ts = _ms(s, "ts", "t", "sent_ms", "at")
         if ts is None or ts < cutoff_ms:
             continue
         k = (str(s.get("sym") or s.get("symbol") or "").upper(), s.get("dir"))
         prior = last_close.get(k)
         if not prior or prior >= ts:
             continue                                 # سابقه‌ای نبوده
-        marks = [m for m in USE_MARKS if s.get(m) not in (None, "", 0, False)]
+        marks = {m for m in USE_MARKS if s.get(m) not in (None, "", 0, False)}
+        e = s.get("entry")
+        if isinstance(e, (int, float)):
+            marks |= lm.get((k[0], k[1], round(float(e), 10)), set())
+        marks = sorted(marks)
         rows.append({"sym": k[0], "dir": k[1], "ts": int(ts),
                      "after_close_h": round((ts - prior) / 3_600_000, 1),
                      "used": bool(marks), "marks": marks})
@@ -239,6 +265,7 @@ def build(now_ms=None, prev_fp=None):
     now = int(now_ms if now_ms is not None else time.time() * 1000)
     cutoff = now - WINDOW_H * 3_600_000
     closed = _rows(BRAIN / "paper" / "closed.jsonl")
+    opened = _rows(BRAIN / "paper" / "open.jsonl")
     sent = _load(SIG / "telegram-log.json", [])
     if isinstance(sent, dict):
         sent = sent.get("rows") or sent.get("sent") or []
@@ -246,7 +273,7 @@ def build(now_ms=None, prev_fp=None):
     dg = digested(closed, cutoff)
     fp = fingerprint()
     mv = movement(fp, prev_fp if prev_fp is not None else _load(SNAP, None))
-    cs = consumed(sent, closed, cutoff)
+    cs = consumed(sent, closed, cutoff, ledger=closed + opened)
 
     def pct(n, d):
         return round(100 * n / d, 1) if d else None

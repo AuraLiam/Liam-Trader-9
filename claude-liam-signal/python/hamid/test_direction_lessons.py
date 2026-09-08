@@ -115,9 +115,21 @@ check("و مرز صادقانه روی خروجی هست",
 # ── ۶. فقط می‌خواند؛ دفترش append-only است (قانون ۰۵) ───────────────────
 _src = (HERE / "direction_lessons.py").read_text(encoding="utf-8")
 check("دفتر فقط append می‌شود، بازنویسی نه",
-      'BOOK.open("a"' in _src and "BOOK.write_text" not in _src)
+      '.open("a"' in _src and "BOOK.write_text" not in _src)
 check("جز خروجی خودش فایلی نمی‌نویسد",
       _src.count("write_text") == 1 and "OUT.write_text" in _src)
+
+# ── ۷. یکتا بر هویتِ معامله — هضمِ دوباره درسِ دوباره نمی‌سازد (۸ سپتامبر)
+_bk = Path(tempfile.mkdtemp(prefix="liam9-dl3-")) / "direction.jsonl"
+_lost = row(sym="DUPUSDT", opened=10, closed=11)
+_lost["R"], _lost["outcome"] = -1.0, "stop"
+_n1 = DL.append_lessons([_lost], now_ms=1, path=_bk)
+_n2 = DL.append_lessons([_lost, dict(_lost)], now_ms=2, path=_bk)
+check("باختِ اول درس می‌سازد", _n1 == 1, str(_n1))
+check("همان باخت دوباره (دو رانر / هضم دوباره) درس نمی‌سازد", _n2 == 0, str(_n2))
+_other = dict(_lost, closed=99)
+check("ولی باختِ دیگرِ همان نماد درس خودش را می‌گیرد",
+      DL.append_lessons([_other], now_ms=3, path=_bk) == 1)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

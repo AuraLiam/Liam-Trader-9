@@ -56,6 +56,22 @@ def build(rows, **kw):
         return W.build(path=str(p), **kw)
 
 
+print("— ردیفِ بریدهٔ میز تمرین (ته‌داده) وارد گزارش نمی‌شود (ممیزی E18):")
+_cens = row(0.01, stage="practice", outcome="timeout", hold_bars=3)
+_cens["why"]["trainer"] = 1
+_cens["tf"] = "15m"
+_full = row(0.01, stage="practice", outcome="timeout", hold_bars=96)
+_full["why"]["trainer"] = 1
+_full["tf"] = "15m"
+_rep_c = build([_cens] * 5 + [_full] * 5)
+_n_pr = ((_rep_c.get("by_stage") or {}).get("practice") or {}).get("n") \
+    if isinstance(_rep_c.get("by_stage"), dict) else None
+check("timeout با hold_bars زیر سقف شمرده نمی‌شود؛ با hold_bars=سقف شمرده می‌شود",
+      _n_pr in (5, None), str(_n_pr))
+_wsrc = (Path(__file__).resolve().parent / "work_report.py").read_text(encoding="utf-8")
+check("لودر گزارش کار is_censored را صدا می‌زند",
+      "is_censored" in _wsrc and "_censored(r)" in _wsrc)
+
 print("— دفترها قاطی نمی‌شوند:")
 rep = build([row(1.0)] * 5 + [row(5.0, stage="vetoed")] * 50
             + [row(5.0, stage="inducement")] * 50)

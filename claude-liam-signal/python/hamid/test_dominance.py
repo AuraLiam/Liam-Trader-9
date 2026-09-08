@@ -70,6 +70,27 @@ st_rng = dominance.structural(mk_points(300, slope=0.0, amp=0.05))
 check("بدون جهت → RANGE (اعتراف، نه حدس)",
       st_rng["regime"] == "RANGE", str(st_rng.get("usdt")))
 
+# خط روند در مختصاتِ پنجرهٔ برازش (ممیزی E03، ۸ سپتامبر): روی سری بلندتر
+# از ۱۲۰ کندل، برون‌یابی با ایندکسِ کل آرایه حمایت را ۰.۲۵ واحد بالای قیمت
+# می‌برد. خاصیت: حمایتِ نشکسته باید زیر/نزدیک قیمت باشد، نه ۳٪ بالاتر.
+_long = dominance._bars(mk_points(300, slope=+0.01, amp=0.02), "u")
+_ts = dominance._tf_struct(_long, dominance.MIN_BARS_1H)
+if _ts.get("trendline"):
+    _tl = __import__("hamid.structure", fromlist=["trendline"]).trendline(_long)
+    _n = min(len(_long), dominance.TL_LOOKBACK)
+    check("value_now = مقدار خط در آخرین کندلِ پنجرهٔ برازش، نه کل آرایه",
+          abs(_ts["trendline"]["value_now"] - round(_tl.at(_n - 1), 3)) < 1e-9,
+          str(_ts["trendline"]))
+    check("(اثبات منفی) مختصاتِ کل آرایه عددِ دیگری می‌داد",
+          len(_long) > dominance.TL_LOOKBACK
+          and abs(_tl.at(len(_long) - 1) - _tl.at(_n - 1)) > 1e-6)
+    if _ts["trendline"]["kind"] == "support" and not _ts["trendline"]["broken"]:
+        check("حمایتِ نشکسته بالای قیمت نمی‌نشیند",
+              _ts["trendline"]["value_now"] <= _ts["px"] * 1.01,
+              f"{_ts['trendline']['value_now']} vs px {_ts['px']}")
+else:
+    check("(سری ساختگی خط نساخت — بررسی مختصات رد شد، نه شکست)", True)
+
 st_uns = dominance.structural(mk_points(300, slope=-0.01),
                               macro=[{"title": "CPI", "in_hours": 1.5}])
 check("رویداد کلان تا ۲ ساعت → UNSAFE با دلیل",

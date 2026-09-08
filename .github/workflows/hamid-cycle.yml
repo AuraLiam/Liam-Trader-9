@@ -304,6 +304,12 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.learning_proof --write || true
 
+      # درس‌های جهتِ مخالف (E20، ۸ سپتامبر): دفترش از هضم حافظه پر می‌شود؛
+      # این گام فقط تابلوی نمرهٔ کلاس‌ها را می‌سازد (خواندن + یک خروجی).
+      - name: درس‌های جهت (E20)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.direction_lessons --write || true
+
       # دفترِ ضدواقعیتِ دروازهٔ روند (دستور حمید ۶ سپتامبر). دروازه‌ای که
       # بیشترین شورت را می‌کشد تنها دروازه‌ای بود که کارنامه نداشت. این
       # قدم فقط **می‌خواند و داوری می‌کند** — هیچ آستانه‌ای عوض نمی‌شود.

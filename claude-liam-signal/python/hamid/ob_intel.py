@@ -403,9 +403,11 @@ def main():
     try:
         prev_doc = json.loads(OUT.read_text())
         prev_states = prev_doc.get("states") or {}
+        prev_events = {e.get("key") for e in (prev_doc.get("events") or [])
+                       if e.get("key")}
     except Exception:                                # noqa: BLE001
-        prev_states = {}
-    out, states, events = {}, {}, []
+        prev_states, prev_events = {}, set()
+    out, states, events, repeats = {}, {}, [], 0
     for sym in top_by_48h(a.symbols):
         try:
             r = radar_for(sym, fetch)
@@ -421,26 +423,57 @@ def main():
                 observe(prev_states, sym, b["tf"], b)
         if r.get("approaching"):
             b = r["approaching"]
-            events.append({"kind": "OB_APPROACHING", "sym": sym,
-                           "tf": b["tf"], "grade": b["grade"],
-                           "dist_atr": b["dist_atr"],
-                           "zone": [b["low"], b["high"]], "move": b["move"]})
+            # ضدتکرار بر هویتِ باکس (ممیزی E08، ۸ سپتامبر): باکسِ شناور
+            # کنار قیمت هر اجرا دوباره شلیک می‌کرد — BNX به‌تنهایی ۳۶۹ از
+            # ۱٬۱۸۷ رویداد (۳۱٪). رویدادِ تکراری در `states` می‌ماند ولی نه
+            # در فهرست رویدادها، نه در دفتر اتاق، نه در دفتر مشاهدات.
+            ev = {"kind": "OB_APPROACHING", "sym": sym,
+                  "tf": b["tf"], "grade": b["grade"],
+                  "dist_atr": b["dist_atr"],
+                  "zone": [b["low"], b["high"]], "move": b["move"],
+                  "t": b["t"], "key": f"{sym}|{b['tf']}|{b['t']}|{b['move']}"}
+            if ev["key"] in prev_events:
+                repeats += 1
+                # هویت را نگه می‌داریم تا اجرای بعد هم تکراری بشناسدش
+                events.append({**ev, "repeat": True})
+            else:
+                events.append(ev)
+                _log_event(ev)
+    new_events = [e for e in events if not e.get("repeat")]
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({"generated": int(time.time() * 1000),
                                "symbols": out, "events": events,
+                               "n_new_events": len(new_events),
+                               "n_repeat_events": repeats,
                                "states": states}, ensure_ascii=False))
-    print(f"رادار OB: {len(out)} نماد، {len(events)} رویداد OB_APPROACHING")
+    print(f"رادار OB: {len(out)} نماد، {len(new_events)} رویداد تازهٔ "
+          f"OB_APPROACHING ({repeats} تکراری، ثبت نشد)")
     # رویداد داخلی برای ارکستراتور — عمداً بدون تلگرام (بند ۱۷: سیگنال نیست)
-    if events:
+    if new_events:
         try:
             import brain
-            for e in events[:6]:
+            for e in new_events[:6]:
                 brain.room_log("orchestrator",
                                f"OB_APPROACHING {e['sym']} {e['tf']} "
                                f"{e['grade']} ({e['dist_atr']}×ATR)", "ob")
         except Exception:                            # noqa: BLE001
             pass
     return 0
+
+
+def _log_event(ev):
+    """هر رویدادِ یکتا در دفتر مشاهدات (kind=event) — تا کارنامهٔ «واکنش
+    ظرف N کندل» شمردنی شود. تا امروز رویداد هیچ دفتری نداشت (ممیزی E08)."""
+    try:
+        import brain
+        if brain.blocked(OBS):
+            return
+    except Exception:                                # noqa: BLE001
+        pass
+    row = {"at": int(time.time() * 1000), "kind": "event", **ev}
+    OBS.parent.mkdir(parents=True, exist_ok=True)
+    with open(OBS, "a") as f:
+        f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":

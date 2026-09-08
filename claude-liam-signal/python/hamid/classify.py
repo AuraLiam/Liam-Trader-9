@@ -82,6 +82,14 @@ def load(path=None):
         if _censored(t):                             # ته‌داده، نه نتیجه (۷ سپتامبر)
             continue
         rows.append(t)
+    # خالص از منبع واحد کارمزد (ممیزی E11، ۸ سپتامبر): سرتیترِ این تابلو
+    # ناخالص بود؛ حکمِ «مثبت» روی ناخالص، با کارمزد ~۰.۲۲R میانه، وارونه
+    # می‌شود. ستونِ خالص کنار ناخالص می‌نشیند؛ حکم روی خالص است.
+    try:
+        from hamid import fees as _fees
+        _fees.apply_net(rows)
+    except Exception:                                # noqa: BLE001
+        pass
     return rows
 
 
@@ -152,13 +160,18 @@ def needed_n(rs):
 def cell(rows, alpha=ALPHA, rng=None):
     """آمار یک خانه + حکم. حکم فقط وقتی که CI صفر را رد کرده باشد."""
     rng = rng or random.Random(20260814)
-    rs = [t["R"] for t in rows if t.get("R") is not None]
+    gross = [t["R"] for t in rows if t.get("R") is not None]
+    # حکم روی **خالص** (R_net از `fees.apply_net`)؛ ناخالص فقط کنارش.
+    rs = [t["R_net"] if t.get("R_net") is not None else t["R"]
+          for t in rows if t.get("R") is not None]
     n = len(rs)
     wins = sum(1 for r in rs if r > 0)
     mean = round(sum(rs) / n, 3) if n else None
     out = {"n": n, "wins": wins, "stops": n - wins,
            "win_pct": round(wins / n * 100, 1) if n else None,
-           "mean_r": mean, "sum_r": round(sum(rs), 2) if n else 0}
+           "mean_r": mean, "sum_r": round(sum(rs), 2) if n else 0,
+           "mean_r_is": "net",
+           "mean_r_gross": round(sum(gross) / n, 3) if n else None}
     # «چقدر مانده تا حکم» — دستور حمید: «دیتاهای پیپر سریع به نتیجه برسند.»
     # بدون این عدد، سرعت‌بخشیدن حدس است؛ با آن معلوم است کدام دفتر ۱۰ معامله
     # کم دارد و کدام ۴۰۰۰ (یعنی عملاً هرگز).
@@ -218,6 +231,14 @@ def strategy_by_tf(rows):
     return _table(rows, lambda t: f"{_strategy(t)} @ {_tf(t)}")
 
 
+def strategy_by_tf_dir(rows):
+    """جدول ۱ب — استراتژی × تایم‌فریم × جهت (ممیزی E11: جهت بُعدِ گمشده بود؛
+    شورت و لانگِ یک استراتژی کارنامهٔ متفاوت دارند و یک‌کاسه‌کردنشان هر دو
+    را پنهان می‌کند)."""
+    return _table(rows, lambda t: (f"{_strategy(t)} @ {_tf(t)} "
+                                   f"{(t.get('dir') or '?').upper()}"))
+
+
 def ob_by_tf(rows):
     """جدول ۲ — کدام کلاس اردر بلاک در کدام تایم‌فریم."""
     def k(t):
@@ -256,13 +277,18 @@ def closest(table, top=6):
 def build(rows=None):
     rows = load() if rows is None else rows
     s_tf = strategy_by_tf(rows)
+    s_dir = strategy_by_tf_dir(rows)
     o_tf = ob_by_tf(rows)
     o_sym = ob_by_symbol(rows)
     tfs = sorted({_tf(t) for t in rows})
     return {
         "n_trades": len(rows),
         "timeframes": tfs,
+        "metric": "net (R_net از fees.apply_net)؛ ناخالص در mean_r_gross",
         "strategy_by_tf": s_tf,
+        "strategy_by_tf_dir": s_dir,
+        "dir_wins": best(s_dir, "مثبت"),
+        "dir_loses": best(s_dir, "منفی"),
         "ob_by_tf": o_tf,
         "ob_by_symbol": o_sym,
         "headline": {

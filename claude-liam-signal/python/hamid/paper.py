@@ -789,7 +789,14 @@ def _equity():
                  if _stage(t) not in _aside and not _stage(t).startswith("sig-")]
     experiments = [t for t in closed if (t.get("why") or {}).get("stage") == "first"]
     inducements = [t for t in closed if (t.get("why") or {}).get("stage") == "inducement"]
-    practices = [t for t in closed if (t.get("why") or {}).get("stage") == "practice"]
+    # میز تمرین بدون ردیف‌های بریده (ته‌داده، نه نتیجه — تعریف واحد در
+    # `trainer.is_censored`؛ ممیزی E18، ۸ سپتامبر: ۴۲.۹٪ دفتر تمرین).
+    try:
+        from hamid.trainer import is_censored as _cens
+    except Exception:                                # noqa: BLE001
+        _cens = lambda r: False                      # noqa: E731
+    practices = [t for t in closed if (t.get("why") or {}).get("stage") == "practice"
+                 and not _cens(t)]
     alarm_trades = [t for t in closed if (t.get("why") or {}).get("stage") == "alarm"]
     scalps = [t for t in closed if (t.get("why") or {}).get("stage") == "scalp"]
     shocks = [t for t in closed if (t.get("why") or {}).get("stage") == "shock"]
@@ -924,6 +931,9 @@ CONDITIONS = [
     ("روی OB معتبر هم‌جهت", lambda w: w.get("ob_align") == "with"),
     ("روی OB خلاف جهت", lambda w: w.get("ob_align") == "against"),
     ("OB با ۲+ هانت", lambda w: (w.get("ob_hunts") or 0) >= 2),
+    # تازگیِ OB (ممیزی E08، ۸ سپتامبر): روی میز تمرین +۰.۰۷۹R با کران پایین
+    # +۰.۰۰۴ — لبِ مرز. حکم فقط از همین ماشین با تصحیح بونفرونی، نه از ممیزی.
+    ("OB تازه (مصرف‌نشده)", lambda w: w.get("ob_fresh") is True),
     # پرسش پروندهٔ زاما: استاپ خیلی تنگ بیشتر استاپ می‌خورد؟
     ("استاپ زیر ۰.۶٪", lambda w: (w.get("stop_pct") or 9) < 0.6),
     # هزینهٔ هدف «۱۵ در روز»: سیگنالی که با آستانهٔ شل‌شده باز شد بدتر است؟

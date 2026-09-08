@@ -51,6 +51,18 @@ strong = [tr(2.0) for _ in range(40)]
 c2 = cl.cell(strong)
 check("خانهٔ قوی حکم مثبت می‌گیرد", c2["verdict"] == "مثبت")
 check("کف فاصلهٔ اطمینان بالای صفر است", c2["ci"][0] > 0)
+# حکم روی خالص (ممیزی E11، ۸ سپتامبر): ناخالصِ مثبت با کارمزدِ بزرگ، خالصاً منفی
+_fee_heavy = [dict(tr(0.3), R_net=-0.1) for _ in range(40)]
+c3 = cl.cell(_fee_heavy)
+check("حکم روی خالص است، نه ناخالص", c3["verdict"] == "منفی" and c3["mean_r_is"] == "net")
+check("و ناخالص کنارش گزارش می‌شود", abs(c3["mean_r_gross"] - 0.3) < 1e-9)
+_rows_dir = ([dict(tr(1.0), dir="LONG") for _ in range(30)]
+             + [dict(tr(-1.0), dir="SHORT") for _ in range(30)])
+_bd = cl.build(_rows_dir)
+check("جهت بُعدِ جدول است (لانگ/شورتِ یک استراتژی یک‌کاسه نمی‌شوند)",
+      any(" LONG" in k for k in _bd["strategy_by_tf_dir"]["cells"])
+      and any(" SHORT" in k for k in _bd["strategy_by_tf_dir"]["cells"]))
+check("سرتیتر اعلام می‌کند که خالص است", "net" in _bd["metric"])
 
 mixed = [tr(1.0 if i % 2 else -1.0) for i in range(60)]
 c3 = cl.cell(mixed)

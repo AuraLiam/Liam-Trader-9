@@ -24,7 +24,13 @@ sys.path.insert(0, str(PY))
 SERIES = ROOT / "brain" / "dominance-series.json"
 DOM = ROOT / "signals" / "dominance.json"
 STATE = ROOT / "signals" / "dominance-report.json"
-MIN_GAP_MIN = 50
+# فاصلهٔ کمینه از **جدول مرکزی** کادنس، نه عددِ محلی (ممیزی E03/E25، ۸
+# سپتامبر): این‌جا ۵۰ بود و جدول ۵۵؛ با لرزشِ زمان‌بند گام واقعی ~۵۲د
+# می‌شد → ~۲۷.۷ گزارش در روز، بالای بودجهٔ ۲۶. دو منبعِ حقیقت = همان
+# کلاسِ «سند و کد از هم جدا می‌افتند». دستور حمید («هر یک ساعت») سرِ
+# جایش است؛ ۵۵ فقط لرزشِ یک نوبت را می‌بخشد، نه بیشتر.
+from hamid.cadence_gate import MIN_GAP_MIN as _GAPS                # noqa: E402
+MIN_GAP_MIN = _GAPS["dom_report"]
 BARS_SHOWN = 72          # سه روزِ ۱ساعته روی چارت
 
 

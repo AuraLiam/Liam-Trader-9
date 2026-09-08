@@ -159,6 +159,22 @@ check("تصمیمِ با ردپای تجربه، «استفاده‌شده» ا�
 check("و بی‌ردپا، «استفاده‌نشده»",
       any(r["sym"] == "BBBUSDT" and not r["used"] for r in cs))
 
+# ردیفِ واقعیِ telegram-log کلیدِ `at` دارد و هیچ نشانی؛ نشان روی `why`ِ
+# ردیفِ دفتر است (ممیزی E21، ۸ سپتامبر: با کلیدِ غلط پلهٔ سوم همیشه صفر بود).
+sent_real = [{"sym": "AAAUSDT", "dir": "LONG", "at": NOW - 1 * H, "entry": 1.5},
+             {"sym": "BBBUSDT", "dir": "SHORT", "at": NOW - 1 * H, "entry": 2.5}]
+ledger = [{"sym": "AAAUSDT", "dir": "LONG", "entry": 1.5,
+           "why": {"stage": "sig-ibs", "phoenix_score": 0.3}},
+          {"sym": "BBBUSDT", "dir": "SHORT", "entry": 2.5,
+           "why": {"stage": "sig-smc"}}]
+cs2 = L.consumed(sent_real, closed2, NOW - L.WINDOW_H * H, ledger=ledger)
+check("ردیفِ log با کلید `at` شمرده می‌شود", len(cs2) == 2, str(cs2))
+check("نشانِ استفاده از ردیفِ دفتر خوانده می‌شود (phoenix_score روی why)",
+      any(r["sym"] == "AAAUSDT" and r["used"] and "phoenix_score" in r["marks"]
+          for r in cs2), str(cs2))
+check("و بی‌نشان، استفاده‌نشده می‌ماند",
+      any(r["sym"] == "BBBUSDT" and not r["used"] for r in cs2))
+
 lsrc = (HERE / "learning_proof.py").read_text(encoding="utf-8")
 check("اثبات فقط می‌خواند — چیزی جز تابلوی خودش نمی‌نویسد",
       lsrc.count("write_text") <= 2)

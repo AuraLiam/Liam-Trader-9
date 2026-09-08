@@ -237,7 +237,16 @@ def build(now_ms=None, closed_path=None, dom_points=None):
                 a["wx"] += w_recency * credit
                 a["last"] = max(a["last"], float(ts))
                 a["with" if side > 0 else "against"] += 1
+    # بسترِ جاری روی خودِ خروجی (ممیزی E17، ۸ سپتامبر): وزنِ به‌تفکیکِ
+    # بستر (usdtd_up/down/flat — خواستهٔ صریح حمید ۲۷ اوت) شمرده می‌شد ولی
+    # هرگز مصرف نمی‌شد، چون `liam9_strategy.sync_room_weights` کلید
+    # `live_ctx` را می‌خواند و این‌جا نوشته نمی‌شد → همیشه «all».
+    try:
+        live_ctx = context_at(now_ms, pts)
+    except Exception:                                # noqa: BLE001
+        live_ctx = "all"
     out = {"generated": int(now_ms), "panel": "لیام تریدر ۹",
+           "live_ctx": live_ctx,
            "source": "brain/paper/closed.jsonl — دفتر پیپر",
            "half_life_days": HALF_LIFE_DAYS, "min_n": MIN_N,
            "band": {"exploratory": BAND_EXPLORATORY,

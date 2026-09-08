@@ -75,10 +75,51 @@ def remember(kind, sym, text, data=None):
             return
     j["lessons"].insert(0, {"at": now, "kind": kind,
                             "sym": sym, "text": text, "data": data or {}})
-    j["lessons"] = j["lessons"][:CAP]
+    j["lessons"] = _evict(j["lessons"], now)
     j["updated"] = int(time.time() * 1000)
     LESSONS.parent.mkdir(parents=True, exist_ok=True)
     LESSONS.write_text(json.dumps(j, ensure_ascii=False, indent=1))
+
+
+RETIRED = ROOT / "brain" / "memory" / "retired.jsonl"     # append-only
+# ردیفِ «نتیجه» (رسیدِ یک معامله) اول بیرون می‌رود؛ درس/تحلیل/ضعف/کشف
+# دیرتر. رسید در دفتر پیپر و پرونده هست؛ درس فقط این‌جاست.
+EVICT_FIRST = ("نتیجه",)
+
+
+def _evict(lessons, now):
+    """سقفِ حافظه با **بازنشستگیِ ثبت‌شده**، نه بریدنِ بی‌صدا.
+
+    تصحیح ۸ سپتامبر (ممیزی E21): `[:CAP]` ردیف‌های اضافه را بی‌هیچ ردی دور
+    می‌ریخت — و چون «نتیجه»ها پرشمارترین نوع‌اند، درس‌های کم‌شمارتر با
+    آن‌ها سُر می‌خوردند. حالا: (۱) اول کهنه‌ترین «نتیجه»ها می‌روند، بعد
+    کهنه‌ترینِ بقیه؛ (۲) هر ردیفِ بیرون‌رفته با دلیل در `retired.jsonl`
+    می‌نشیند (همان دفتری که بازسنجی هم به آن می‌نویسد)."""
+    if len(lessons) <= CAP:
+        return lessons
+    extra = len(lessons) - CAP
+    # اندیس‌های نامزد: نتیجه‌ها از کهنه به نو، بعد بقیه از کهنه به نو
+    order = sorted(range(len(lessons)),
+                   key=lambda i: (0 if lessons[i].get("kind") in EVICT_FIRST else 1,
+                                  lessons[i].get("at") or 0))
+    drop = set(order[:extra])
+    gone = [lessons[i] for i in sorted(drop)]
+    try:
+        import brain
+        blocked = brain.blocked(RETIRED)
+    except Exception:                                # noqa: BLE001
+        blocked = False
+    if not blocked:
+        try:
+            RETIRED.parent.mkdir(parents=True, exist_ok=True)
+            with RETIRED.open("a", encoding="utf-8") as f:
+                for l in gone:
+                    f.write(json.dumps({**l, "retired_at": now,
+                                        "retired_reason": "cap"},
+                                       ensure_ascii=False) + "\n")
+        except Exception:                            # noqa: BLE001
+            pass
+    return [l for i, l in enumerate(lessons) if i not in drop]
 
 
 def lessons(sym=None, kind=None, limit=8):
@@ -124,6 +165,17 @@ def digest_closed(trades):
             brain.build_index()
         except Exception:                            # noqa: BLE001 - ایندکس دفعهٔ بعد
             pass
+        # درسِ جهتِ مخالف از هر باختِ بسته (ممیزی E20، ۸ سپتامبر): دفتر
+        # `direction_lessons` هیچ نویسنده‌ای در چرخه نداشت — یعنی «هر ترید
+        # پیپر = یک درس» فقط برای نتیجه کار می‌کرد، نه برای فرضیهٔ جهت.
+        # فقط وقتی حافظه روی مسیر واقعی است (آزمون‌ها LESSONS را به پوشهٔ
+        # موقت می‌برند — دفترِ درسِ جهت نباید از آن‌جا آلوده شود).
+        if LESSONS == ROOT / "brain" / "memory" / "lessons.json":
+            try:
+                from hamid import direction_lessons as _dl
+                _dl.append_lessons(trades)
+            except Exception as e:                   # noqa: BLE001 - درس، هضم را نمی‌کشد
+                print(f"درس جهت: {type(e).__name__}")
     return fed
 
 
@@ -166,6 +218,21 @@ def digest_backlog(limit=DIGEST_LIMIT, now_ms=None):
     if not rows:
         return 0
     fed = digest_closed(rows)
+    # پروندهٔ معامله برای بسته‌های ورک‌فلوهای دیگر (ممیزی E20): پرونده فقط
+    # از مسیر `cycle.settle_books` برای «تسویهٔ همین اجرا» ساخته می‌شد؛
+    # هر چیزی که رانر دیگری می‌بست پرونده نداشت. `write_case` روی نام
+    # یکتا idempotent است، پس تکرار نمی‌سازد. در حالت شنی نوشته نمی‌شود.
+    try:
+        from hamid import cases as _cases
+        _real_paper = Path(paper.CLOSED).resolve() == (
+            ROOT / "brain" / "paper" / "closed.jsonl").resolve()
+        if _real_paper and not brain.blocked(_cases.CASES):
+            _cases.write_cases([t for t in rows
+                                if (t.get("why") or {}).get("stage")
+                                not in ("first", "practice", "inducement")
+                                and t.get("outcome") in ("target", "stop", "trail")])
+    except Exception as e:                           # noqa: BLE001
+        print(f"پروندهٔ عقب‌مانده: {type(e).__name__}")
     st["last_closed_ms"] = max(t["closed"] for t in rows)
     st["at"] = int(now_ms or time.time() * 1000)
     if not brain.blocked(DIGEST_STATE):

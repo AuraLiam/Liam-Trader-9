@@ -74,17 +74,27 @@ def scan(rows, now_ms=None):
         opened = r.get("filled")
         if not opened:
             continue
-        k = (r.get("sym"), r.get("opened"), r.get("entry"),
-             (r.get("why") or {}).get("stage"))
+        stage = str((r.get("why") or {}).get("stage") or "")
+        # هویت بدون مرحله (ممیزی E19، ۸ سپتامبر): بازوهای آینهٔ تریل
+        # (exp-trail-*) همان پوزیشن‌اند با نردبانِ دیگر؛ با مرحله در کلید،
+        # هر پوزیشنِ مانده سه بار شمرده می‌شد. ردیفِ ارسالی (sig-*) مقدم.
+        k = (r.get("sym"), r.get("opened"), r.get("entry"))
         if k in seen:                # نسخهٔ تکراری = همان پوزیشن، یک بار
+            if stage.startswith("sig-"):
+                for rec in stale + ok:
+                    if rec["_k"] == k:
+                        rec["sent_to_hamid"] = True
             continue
         seen.add(k)
         age_min = (now - opened) / 60000
         cap = max_hold_for(r.get("tf"))
         rec = {"sym": r.get("sym"), "dir": r.get("dir"), "tf": r.get("tf"),
                "age_min": round(age_min), "max_hold_min": cap,
-               "over_by_min": round(age_min - cap)}
+               "over_by_min": round(age_min - cap),
+               "sent_to_hamid": stage.startswith("sig-"), "_k": k}
         (stale if age_min > cap else ok).append(rec)
+    for rec in stale + ok:
+        rec.pop("_k", None)
     stale.sort(key=lambda x: -x["over_by_min"])
     return stale, ok
 
@@ -200,10 +210,15 @@ def run(alert=False, quiet=False, path=None, now_ms=None):
         # تازه» یعنی پیام تازه. سطل یعنی فقط وقتی خبر می‌دهیم که وضعیت
         # از نظر بزرگی عوض شده باشد — نه با هر جابه‌جاییِ جزئی.
         from hamid import alert_gate
-        key = stale_bucket(len(stale))
+        # فقط پوزیشنی که واقعاً برای حمید رفته (sig-*) آلارم می‌گیرد — همان
+        # قاعده‌ای که لیمیت‌های منقضی از ۲۴ اوت دارند؛ پوزیشنِ ماندهٔ دفتر
+        # داخلی (تمرین/آزمایش/ضدواقع) کارِ تعمیرکار است نه پیام (ممیزی E19).
+        mine_stale = [s_ for s_ in stale if s_.get("sent_to_hamid")]
+        key = stale_bucket(len(mine_stale))
         lines = [f"⏰ {s_['sym']} {s_['dir']} ({s_['tf']}): "
-                 f"{s_['over_by_min']}د بیش از سقف باز است" for s_ in stale[:6]]
-        more = f"\n… و {len(stale) - 6} پوزیشن دیگر" if len(stale) > 6 else ""
+                 f"{s_['over_by_min']}د بیش از سقف باز است" for s_ in mine_stale[:6]]
+        more = (f"\n… و {len(mine_stale) - 6} پوزیشن دیگر"
+                if len(mine_stale) > 6 else "")
         alert_gate.send(
             "position_watch", key,
             "⏰ لیام تریدر ۹ — پوزیشنِ مانده:\n" + "\n".join(lines) + more

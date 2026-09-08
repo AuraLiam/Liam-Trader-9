@@ -291,13 +291,54 @@ def build(path=None, now_ms=None):
     }
 
 
-def append_lessons(new_rows, now_ms=None):
-    """درس‌های معاملات تازه‌بسته — append-only، بدون بازنویسی."""
-    out = [x for x in (lesson_from(r, now_ms) for r in new_rows) if x]
+def _lesson_key(x):
+    return (x.get("sym"), x.get("lost_dir"), x.get("closed"), x.get("entry"))
+
+
+def _existing_keys(path=None):
+    p = Path(path) if path else BOOK
+    out = set()
+    if not p.exists():
+        return out
+    for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            out.add(_lesson_key(json.loads(ln)))
+        except Exception:                            # noqa: BLE001
+            continue
+    return out
+
+
+def append_lessons(new_rows, now_ms=None, path=None):
+    """درس‌های معاملات تازه‌بسته — append-only، بدون بازنویسی، **یکتا بر
+    هویتِ معامله** (نماد، جهتِ باخته، لحظهٔ بسته‌شدن، ورود).
+
+    یکتایی از ۸ سپتامبر: حالا این تابع از `memory.digest_closed` هم صدا
+    زده می‌شود و دو رانرِ هم‌پوشان یا هضمِ دوباره نباید یک باخت را دو درس
+    کند — همان کلاسِ «n باددار، CI ساختگی‌تنگ» (۲۴ اوت)."""
+    p = Path(path) if path else BOOK
+    try:
+        import brain
+        if brain.blocked(p):
+            return 0
+    except Exception:                                # noqa: BLE001
+        pass
+    seen = _existing_keys(p)
+    out = []
+    for x in (lesson_from(r, now_ms) for r in new_rows):
+        if not x:
+            continue
+        k = _lesson_key(x)
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(x)
     if not out:
         return 0
-    BOOK.parent.mkdir(parents=True, exist_ok=True)
-    with BOOK.open("a", encoding="utf-8") as f:
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as f:
         for x in out:
             f.write(json.dumps(x, ensure_ascii=False) + "\n")
     return len(out)

@@ -134,19 +134,43 @@ def reasons(exps, strategy):
     return out
 
 
+FEE_ROUND_TRIP = 0.0015     # تیکر دو سر + لغزش (~۰.۱۵٪) — همان عدد backtest.py
+
+
+def fee_r_of(e):
+    """کارمزد بر حسب R برای یک ستاپ: نسبتِ کارمزد به فاصلهٔ استاپ."""
+    try:
+        risk = abs(float(e["entry"]) - float(e["sl"]))
+        return FEE_ROUND_TRIP * float(e["entry"]) / risk if risk > 0 else 0.0
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return 0.0
+
+
 def summarise(exps, strategy):
     pool = [e for e in exps if e["strategy"] == strategy]
     if not pool:
         return {"strategy": strategy, "n": 0}
     rs = [e["r"] for e in pool]
     ci = boot_ci(rs)
+    # خالص کنار ناخالص، با برچسب صریح (ممیزی E18، ۸ سپتامبر): سرتیترِ شبانه
+    # تا امروز ناخالص بود و هیچ برچسبی نداشت — پنل و گزارش آن را «کارنامه»
+    # می‌خواندند. همان الگوی backtest.py: کارمزد رفت‌وبرگشت ۰.۱۵٪ روی
+    # ارزش، تقسیم بر فاصلهٔ استاپ → کارمزد بر حسب R. هیچ حکمی عوض نمی‌شود؛
+    # عددِ بی‌برچسب حذف می‌شود.
+    nets = [e["r"] - fee_r_of(e) for e in pool]
+    ci_n = boot_ci(nets)
     longs = [e["r"] for e in pool if e["dir"] == "LONG"]
     shorts = [e["r"] for e in pool if e["dir"] == "SHORT"]
     return {
         "strategy": strategy, "n": len(pool),
         "win": round(100 * sum(e["win"] for e in pool) / len(pool), 1),
         "ev": round(statistics.fmean(rs), 3),
+        "ev_is": "gross",
         "ci": [round(ci[0], 3), round(ci[1], 3)] if ci else None,
+        "ev_net": round(statistics.fmean(nets), 3),
+        "ci_net": [round(ci_n[0], 3), round(ci_n[1], 3)] if ci_n else None,
+        "fee_r_mean": round(statistics.fmean(fee_r_of(e) for e in pool), 3),
+        "fee_model": f"round-trip {FEE_ROUND_TRIP*100:.2f}% of notional ÷ stop distance",
         "long": {"n": len(longs), "ev": round(statistics.fmean(longs), 3) if longs else None,
                  "win": round(100 * sum(1 for r in longs if r > 0) / len(longs), 1) if longs else None},
         "short": {"n": len(shorts), "ev": round(statistics.fmean(shorts), 3) if shorts else None,

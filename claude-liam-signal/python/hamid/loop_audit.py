@@ -73,6 +73,16 @@ def _feed_rows(now_ms, window_h):
         return []
 
 
+def _has_case(cases, sym, row):
+    """پروندهٔ همین معامله: اول نامِ دقیق `<SYM>-<closed>`، بعد پیشوندِ نماد."""
+    if not cases or not sym:
+        return False
+    c = row.get("closed")
+    if isinstance(c, (int, float)) and f"{sym}-{int(c)}" in cases:
+        return True
+    return any(x.startswith(f"{sym}-") for x in cases)
+
+
 def _feed_since():
     """اولین روزی که دفترِ پنل وجود داشته — از نامِ فایل‌های آرشیو، نه از
     محتوای حلقهٔ زنده (که ممکن است کهنه یا نامرتب باشد)."""
@@ -95,7 +105,13 @@ def audit(window_h=WINDOW_H):
     feed = [r for r in _feed_rows(now, window_h)
             if r.get("kind") == "signal" and (r.get("at") or 0) >= lo]
     ledger = _rows(BRAIN / "paper" / "open.jsonl") + _rows(BRAIN / "paper" / "closed.jsonl")
-    cases = {p.stem for p in (BRAIN / "cases").glob("*.json")} if (BRAIN / "cases").exists() else set()
+    # پرونده‌ها در زیرپوشهٔ ماه‌اند (`cases/YYYY-MM/<SYM>-<closed>.json`)؛
+    # glob سطحِ بالا هیچ‌چیز نمی‌دید و هر بستهٔ بی‌outcome «بی‌علت» می‌شد
+    # (ممیزی E20، ۸ سپتامبر). تطبیق هم دقیق است: نام پرونده با نماد شروع
+    # می‌شود، نه هر زیررشته‌ای (ETH داخل ETHFI نیفتد).
+    cases = ({p.stem for p in (BRAIN / "cases").glob("*/*.json")}
+             | {p.stem for p in (BRAIN / "cases").glob("*.json")}) \
+        if (BRAIN / "cases").exists() else set()
 
     # ردیف دفتر با کلیدِ (نماد، دقیقهٔ باز شدن) و همچنین با tg_msg_id
     by_sym = {}
@@ -145,7 +161,7 @@ def audit(window_h=WINDOW_H):
         if row is None:
             miss.append("learning")         # رد ۳: یادگیری
         elif row.get("closed") and not (row.get("outcome") or
-                                        any(sym in c for c in cases)):
+                                        _has_case(cases, sym, row)):
             miss.append("rootcause")        # رد ۴: علت‌یابی
         if miss:
             leaks.append({"sym": sym, "tf": s.get("tf"), "dir": s.get("dir"),

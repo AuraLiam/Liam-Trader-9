@@ -25,6 +25,7 @@ def check(name, ok, detail=""):
 
 tmp = Path(tempfile.mkdtemp())
 memory.LESSONS = tmp / "lessons.json"
+memory.RETIRED = tmp / "retired.jsonl"
 
 LEARNED, INDEXED = [], []
 _orig = (brain.learn, brain.build_index, brain.recall)
@@ -145,6 +146,37 @@ check("بعد از ۱۲ ساعت، همان درس ردیف تازه می‌گی
       len([l for l in memory._load()["lessons"]
            if l.get("text") == "پامپ رادار دیر رسید"]) == 2)
 
+
+# ── سقفِ حافظه: بازنشستگیِ ثبت‌شده، «نتیجه» اول (ممیزی E21، ۸ سپتامبر) ──
+memory.LESSONS.write_text(_json.dumps({"lessons": []}, ensure_ascii=False))
+_t0 = __import__("time").time() * 1000
+_ls = []
+for _i in range(memory.CAP):
+    _kind = "نتیجه" if _i % 2 else "درس"
+    _ls.append({"at": _t0 - (memory.CAP - _i) * 1000, "kind": _kind,
+                "sym": f"S{_i}USDT", "text": f"{_kind} {_i}", "data": {}})
+memory.LESSONS.write_text(_json.dumps({"lessons": list(reversed(_ls))},
+                                      ensure_ascii=False))
+memory.remember("درس", "NEWUSDT", "درسِ تازه")           # سرریز = ۱
+_after = memory._load()["lessons"]
+check("سقف رعایت می‌شود", len(_after) == memory.CAP, str(len(_after)))
+check("درسِ تازه ماند", any(l["text"] == "درسِ تازه" for l in _after))
+check("کهنه‌ترین «نتیجه» بیرون رفت، نه کهنه‌ترین درس",
+      not any(l["text"] == "نتیجه 1" for l in _after)
+      and any(l["text"] == "درس 0" for l in _after))
+_ret = [ _json.loads(x) for x in memory.RETIRED.read_text().splitlines() if x.strip()]
+check("ردیفِ بیرون‌رفته با دلیل در retired.jsonl ثبت شد",
+      len(_ret) == 1 and _ret[0]["text"] == "نتیجه 1"
+      and _ret[0].get("retired_reason") == "cap", str(_ret[:1]))
+# اثبات منفی: برشِ خام [:CAP] «درس 0» را می‌انداخت (چون کهنه‌ترینِ صف است)
+check("(اثبات منفی) برشِ خامِ قبلی کهنه‌ترین درس را می‌کشت",
+      list(reversed(_ls))[:memory.CAP - 1][-1]["text"] != "درس 0")
+_srcm = (Path(__file__).resolve().parent / "memory.py").read_text(encoding="utf-8")
+check("برشِ بی‌صدای [:CAP] دیگر در کد نیست", 'j["lessons"][:CAP]' not in _srcm)
+check("هضم، درسِ جهت را هم می‌نویسد (فقط روی مسیر واقعی)",
+      "direction_lessons" in _srcm and "append_lessons(trades)" in _srcm)
+check("و عقب‌ماندهٔ ورک‌فلوهای دیگر پرونده می‌گیرد",
+      "write_cases(" in _srcm and "_real_paper" in _srcm)
 
 print()
 if FAIL:

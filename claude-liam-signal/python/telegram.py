@@ -339,6 +339,15 @@ def record_out(kind, title, extra=None, msg_id=None):
     return row
 
 
+def _trend_trace(ta):
+    """ردپای دروازهٔ روند برای دفتر — همان سه کلیدی که شاخهٔ وتو می‌نویسد،
+    تا دو جمعیت (ارسالی و ضدواقع) با یک قرارداد سنجیده شوند."""
+    if not isinstance(ta, dict):
+        return {}
+    return {"trend_4h": ta.get("t4"), "trend_1h": ta.get("t1"),
+            "trend_mode": ta.get("mode")}
+
+
 def logged(kind, title, extra=None, msg_id=None):
     """ثبتِ بی‌خطر روی دفترِ پنل — برای فرستنده‌هایی که `record_out` مستقیم
     صدا نمی‌زنند.
@@ -1342,6 +1351,16 @@ def send_signals(signals, render_chart, limit=8):
                                   "patterns": ((s.get("premortem") or {}).get("patterns") or {}).get("by_tf"),
                                   "ob_align": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("align"),
                                   "ob_hunts": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("hunts"),
+                                  # ردپای کاملِ OB (ممیزی E08، ۸ سپتامبر): تازگی/واکنش/تایم‌فریم
+                                  # روی practice یافتهٔ CI-بالای-صفر داشت ولی روی ارسالی
+                                  # اصلاً ثبت نمی‌شد — پس روی جمعیت واقعی آزمودنی نبود.
+                                  "ob_fresh": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("fresh"),
+                                  "ob_reactions": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("reactions"),
+                                  "ob_tf": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("tf"),
+                                  # ردپای دروازهٔ روند روی خودِ محصول (ممیزی E07): تا امروز
+                                  # فقط شاخهٔ وتو t4/t1 می‌نوشت — ۰ از ۴۶۷ ردیف ارسالی روند
+                                  # داشت و برشِ «کدام ترکیب روند برنده است» ناممکن بود.
+                                  **_trend_trace(locals().get("_ta")),
                                   "fib_ratio": (s.get("premortem") or {}).get("fib"),
                                   # ردپای اتاق فومو (۲ سپتامبر): داغی جمعیت +
                                   # شاهد اپ fomo — ثبت برای ماشین شبانه، نه امتیاز
@@ -1365,6 +1384,9 @@ def send_signals(signals, render_chart, limit=8):
                                   # دستور حمید: تی‌پی‌های تجربه‌محور باید قابل شمارش باشند —
                                   # دلایل صدور روی پرونده می‌ماند تا «با تجربه» اثبات‌پذیر باشد
                                   "pm_pro": (s.get("premortem") or {}).get("pro", [])[:3],
+                                  # ردپای دوپا (ممیزی E17): بدون `pm_con` روی ارسالی، توازن
+                                  # pro−con هرگز نمره‌پذیر نبود — con فقط روی وتوشده‌ها بود.
+                                  "pm_con": (s.get("premortem") or {}).get("con", [])[:3],
                                   "exp_used": any(("تمرین تاریخی" in x or "حافظه" in x
                                                    or "قانون تأییدشده" in x)
                                                   for x in (s.get("premortem") or {}).get("pro", []))})

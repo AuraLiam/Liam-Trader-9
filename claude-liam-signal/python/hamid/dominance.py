@@ -83,6 +83,7 @@ def _bars(points, key, bar_ms=3_600_000):
 
 MIN_BARS_1H = 60      # زیر این، حکم ساختاری صادر نمی‌شود — دروازهٔ صداقت
 MIN_BARS_4H = 60
+TL_LOOKBACK = 120     # پنجرهٔ برازشِ `structure.trendline` — مبدأ مختصاتِ خط
 
 
 def _tf_struct(bars, min_bars):
@@ -101,9 +102,15 @@ def _tf_struct(bars, min_bars):
            "levels_below": [round(x, 3) for x in below]}
     tl = st.trendline(bars)
     if tl is not None:
+        # مبدأ خط، **پنجرهٔ برازش** است (۱۲۰ کندل آخر)، نه کندل اولِ سری.
+        # ممیزی E03، ۸ سپتامبر: با مختصاتِ کل آرایه، حمایتِ ۱س USDT.D
+        # ۷.۰۷۸ منتشر شد در حالی که قیمت ۶.۸۲۳ و مقدار درست ۶.۷۸۸ بود —
+        # حمایتی ۳.۷٪ بالای قیمت با broken=false. همان کلاسِ باگی که
+        # `Trendline.at_t` برای چارت سیگنال رفع کرده بود.
+        n_win = min(len(bars), TL_LOOKBACK)
         out["trendline"] = {
             "kind": tl.kind, "touches": tl.touches, "broken": tl.broken,
-            "value_now": round(tl.slope * (len(bars) - 1) + tl.intercept, 3)}
+            "value_now": round(tl.at(n_win - 1), 3)}
     return out
 
 
@@ -268,7 +275,15 @@ def run():
         tot = sum(v["n"] for v in sb.values())
         hit = sum(v["hit"] for v in sb.values())
         if tot:
-            verdict += f"؛ کارنامهٔ پیش‌بینی: {hit}/{tot} ({round(100*hit/tot)}٪)"
+            # کنارِ عدد، بنچمارکِ «همیشه تخت» — بی‌بنچمارک، ۵۱٪ مهارت به نظر
+            # می‌رسد؛ با بنچمارک معلوم می‌شود از سکوت بدتر است یا بهتر
+            # (ممیزی E03: USDT.D|30m اصابت ۶۸٪ در برابر بنچمارک ۸۸.۵٪).
+            flat = sum((v.get("baseline_flat_pct") or 0) * v["n"] / 100.0
+                       for v in sb.values() if v.get("baseline_flat_pct") is not None)
+            n_fl = sum(v["n"] for v in sb.values() if v.get("baseline_flat_pct") is not None)
+            bench = f"؛ بنچمارکِ همیشه‌تخت {round(100*flat/n_fl)}٪" if n_fl else ""
+            verdict += (f"؛ کارنامهٔ پیش‌بینی: {hit}/{tot} ({round(100*hit/tot)}٪)"
+                        + bench)
     except Exception as e:                       # noqa: BLE001 - ناظر، اتاق را نمی‌کشد
         fc = {"note": f"خطای ناظر پیش‌بینی: {e}"}
     OUT.parent.mkdir(exist_ok=True)

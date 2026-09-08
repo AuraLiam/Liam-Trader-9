@@ -109,12 +109,22 @@ def pairs():
     می‌مانند؛ قاطی‌کردنشان همان کاری است که قانون ۰۹ منع کرده.
     """
     from hamid import paper
+    try:
+        from hamid.trainer import is_censored as _cens
+    except Exception:                                # noqa: BLE001
+        _cens = lambda r: False                      # noqa: E731
     rows = paper._read(paper.CLOSED)
     base, arms = {}, {t: {} for t in paper.TRAIL_ARMS}
     for r in rows:
         st = (r.get("why") or {}).get("stage") or ""
         k = (r.get("sym"), r.get("entry"), r.get("opened"))
         if st.startswith("sig-") or st == "practice":
+            # پایهٔ بریده (ته‌داده) جفت نمی‌سازد. امروز صفر جفت است (اندازه‌گیری
+            # ۸ سپتامبر: ۰ از ۲۸۴ — مکانیزمِ آینه فقط ردیفِ دفتر باز را کپی
+            # می‌کند)، ولی «تصادفِ مکانیزم» محافظ نیست؛ این خط کلاسِ عیب را
+            # قفل می‌کند.
+            if _cens(r):
+                continue
             base[k] = r
         elif st in arms:
             arms[st][k] = r

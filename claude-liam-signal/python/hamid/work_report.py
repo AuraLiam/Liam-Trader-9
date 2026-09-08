@@ -70,6 +70,19 @@ except Exception:                                    # noqa: BLE001
     NOT_PERFORMANCE |= {"exp-short-b1", "exp-short-b2"}
 
 
+def _censored(row):
+    """ردیفِ میز تمرین که به تهِ داده خورد — تعریفِ واحد `trainer.is_censored`.
+
+    گزارش کار سه نوبت در روز به حمید می‌رود و جدولِ «تمرین (مربی)»اش با
+    ۴۲.۹٪ ردیفِ نزدیک-صفر به سمت صفر کشیده می‌شد (اندازه‌گیری ۸ سپتامبر:
+    ۹٬۹۸۵ از ۲۳٬۲۸۴). سنجه‌ای که با کد تراز نباشد، عددِ غلط می‌فرستد."""
+    try:
+        from hamid.trainer import is_censored
+        return is_censored(row)
+    except Exception:                                # noqa: BLE001
+        return False
+
+
 def load(since_ms=None, path=None):
     """ردیف‌های بستهٔ داخل پنجره. ردیفِ بی‌نمره (R=None) وارد آمار نمی‌شود."""
     p = Path(path) if path else CLOSED
@@ -87,6 +100,8 @@ def load(since_ms=None, path=None):
             if r.get("R") is None:
                 continue
             if since_ms and (r.get("closed") or 0) < since_ms:
+                continue
+            if _censored(r):           # ته‌داده، نه نتیجه (ممیزی E18، ۸ سپتامبر)
                 continue
             out.append(r)
     # خالص با منبع واحد کارمزد بازمحاسبه می‌شود — نه از `R_net` ذخیره‌شده.

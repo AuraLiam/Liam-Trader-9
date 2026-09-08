@@ -97,8 +97,14 @@ def _books():
     سیگنالی به تلگرام نفرستاده، پس هیچ معامله‌ای در هر دو دفتر نیست.
     """
     prac, sig = [], []
+    try:
+        from hamid.trainer import is_censored as _cens
+    except Exception:                                # noqa: BLE001
+        _cens = lambda r: False                      # noqa: E731
     for t in paper._read(paper.CLOSED):
         if t.get("R") is None or t.get("outcome") == "expired":
+            continue
+        if _cens(t):               # ته‌داده، نه نتیجه (ممیزی E18، ۸ سپتامبر)
             continue
         st = (t.get("why") or {}).get("stage") or ""
         if st in PRACTICE_STAGES:

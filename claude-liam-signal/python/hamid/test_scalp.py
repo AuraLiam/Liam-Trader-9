@@ -75,6 +75,13 @@ def run():
     out, r = scalp.simulate(cd2, 4, s2)
     check("تریل: برگشت بعد از ⅓ = trail با زیان تقریباً صفر",
           out == "trail" and r > -0.35, f"{out} {r}")
+    # کندل‌های واقعاً دیده‌شده روی خودِ ستاپ (ممیزی E18): سنجش‌پذیریِ بریدگی
+    check("simulate شمارِ کندل‌های دیده‌شده را ثبت می‌کند", s2.get("hold_bars") == 2,
+          str(s2.get("hold_bars")))
+    s3 = {"dir": "LONG", "entry": 100.0, "sl": 99.5, "tp1": 100.75}
+    out3, _ = scalp.simulate(mk([100.0] * (scalp.HOLD_BARS + 10)), 4, s3)
+    check("timeoutِ کامل = hold_bars برابر سقف", out3 == "timeout"
+          and s3.get("hold_bars") == scalp.HOLD_BARS, f"{out3} {s3.get('hold_bars')}")
 
     # ۴ب) محافظ مرز: کندل‌های نارس (بدون آیندهٔ کافی) نسوزند.
     # کلاس خطای ۱۸ اوت: frontier تا cd[-1] جلو می‌رفت و دفتر یخ می‌زد.

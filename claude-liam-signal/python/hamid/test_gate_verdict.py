@@ -78,6 +78,24 @@ _i_open = _tg.find('"stage_tag": "gate-vetoed"')
 _i_skip = _tg.find('sent[f"skip|{_key(s)}"] = now_ms', _i_open)
 check("ثبت، وتو را باطل نمی‌کند (ستاپ همچنان رد می‌شود)",
       0 < _i_open < _i_skip and "continue" in _tg[_i_skip:_i_skip + 120])
+# ردپای روند روی **خودِ محصول** هم (ممیزی E07، ۸ سپتامبر): ۰ از ۴۶۷ ردیفِ
+# ارسالی t4/t1 داشت. قرارداد: هر دو جمعیت با یک تابع نوشته می‌شوند.
+_i_sig = _tg.find('"stage_tag": f"sig-{s.get(\'strategy\', \'?\')}"')
+check("ردیفِ ارسالی هم ردپای روند می‌گیرد (همان سه کلید)",
+      _i_sig > 0 and "_trend_trace(" in _tg[_i_sig:_i_sig + 6000])
+import telegram as _tgm                                   # noqa: E402
+check("تابع ردپای روند همان کلیدهای شاخهٔ وتو را می‌دهد",
+      _tgm._trend_trace({"t4": "up", "t1": "down", "mode": "counter"})
+      == {"trend_4h": "up", "trend_1h": "down", "trend_mode": "counter"}
+      and _tgm._trend_trace(None) == {})
+check("ردپای دوپای بازجویی و OB کامل روی ارسالی (E17/E08)",
+      all(k in _tg[_i_sig:_i_sig + 6000]
+          for k in ('"pm_con"', '"ob_fresh"', '"ob_reactions"', '"ob_tf"')))
+_bt = GV.judge(path=_ledger([dict(_row(i), why={**_row(i)["why"], "trend_4h": "up",
+                                                 "trend_1h": "down"})
+                             for i in range(20)]))
+check("برشِ ترکیبِ روند در خروجی داور هست", "up/down" in (_bt.get("by_trend") or {}),
+      str(list((_bt.get("by_trend") or {}).keys())))
 check("خطای دفتر جلوی وتو را نمی‌گیرد",
       "دفتر اختیاری است؛ وتو نه" in _tg)
 
