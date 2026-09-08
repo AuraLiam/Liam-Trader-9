@@ -159,6 +159,24 @@ check("روشِ سنجش روی خروجی نوشته شده (چرخش فقط ر
       "عرضه" in v.get("method", ""))
 check("خطوطِ فارسی برای گزارش ساخته می‌شوند", len(S.fa_lines(v)) >= 2)
 
+# ── ۱۰ب) نگاه به آینده ممنوع — جاسوسِ صریح ──────────────────────────
+#
+# نسخهٔ اولِ `_at` «نزدیک‌ترین» نقطه را می‌گرفت و می‌توانست تا ۸ دقیقه
+# جلوتر باشد. روی مسیر زنده بی‌ضرر، در بازپخش **دروغ‌ساز**.
+spy = series(N, d_other=-0.06)
+mid = spy[len(spy) // 2]["t"]
+picked = S._at(spy, mid)
+check("انتخابِ نقطه هرگز از لحظهٔ هدف جلو نمی‌زند",
+      picked is not None and picked["t"] <= mid, str(picked and picked["t"] - mid))
+# و حکم نباید به نقطه‌های آینده حساس باشد: بریدنِ آینده جواب را عوض نکند
+past_only = [p for p in spy if p["t"] <= mid]
+check("حکم با/بی نقاطِ آینده یکی است (بی‌نشتِ آینده)",
+      S.regime(spy, 240, now_ms=mid)["bias"]
+      == S.regime(past_only, 240, now_ms=mid)["bias"])
+check("و همین برای طبقه‌بندِ ریشه هم برقرار است",
+      S.classify(spy, 240, now_ms=mid)["cause"]
+      == S.classify(past_only, 240, now_ms=mid)["cause"])
+
 # ── ۱۱) فقط می‌خواند (قانون ۰۵) ─────────────────────────────────────
 src = (HERE / "stables.py").read_text(encoding="utf-8")
 check("این ماژول هیچ فایلی نمی‌نویسد",

@@ -120,11 +120,19 @@ def supplies(p):
 
 
 def _at(points, t_target, tol_ms=8 * 60_000):
-    ok = [p for p in points if p.get("m") and stable_d(p) is not None]
+    """آخرین نقطهٔ **قبل از** لحظهٔ هدف — هرگز جلوتر.
+
+    نسخهٔ اول «نزدیک‌ترین» نقطه را می‌گرفت و می‌توانست تا ۸ دقیقه جلوتر
+    از هدف باشد. روی مسیر زنده بی‌ضرر است (نقطهٔ آینده وجود ندارد) ولی
+    در بازپخشِ بک‌تست همان **نگاه به آینده** است — و بک‌تستی که ۸ دقیقه
+    آینده را ببیند، عددش دروغ می‌گوید. پس عقب‌نگر، بی‌استثنا.
+    """
+    ok = [p for p in points
+          if p.get("m") and stable_d(p) is not None and p["t"] <= t_target]
     if not ok:
         return None
-    p = min(ok, key=lambda x: abs(x["t"] - t_target))
-    return p if abs(p["t"] - t_target) <= tol_ms else None
+    p = max(ok, key=lambda x: x["t"])
+    return p if t_target - p["t"] <= tol_ms else None
 
 
 def _log(a, b):

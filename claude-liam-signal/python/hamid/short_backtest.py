@@ -79,12 +79,60 @@ def _htf_upto(htf, t_ms):
     return out
 
 
+NO_HISTORY = "UNKNOWN_NO_HISTORY"
+
+
+def stance_fn(series=None, path=None):
+    """→ callable(now_ms) → بسترِ استیبل در همان لحظه، یا None.
+
+    سریِ دامیننس فقط از ۲۹ اوت ۲۰۲۶ جمع شده، پس برای بیشترِ بازهٔ یک
+    بک‌تستِ عمیق **وجود ندارد**. آن‌جا `NO_HISTORY` برمی‌گردد — که نه
+    وتو می‌کند نه تأیید؛ یعنی خطِ پایه دست‌نخورده می‌ماند و برشِ دروازه
+    فقط روی بازه‌ای سنجیده می‌شود که واقعاً داده دارد. جعلِ بستر برای
+    گذشته، همان «عددِ بی‌منبع» است (قانون ۰۱ بند ۱).
+
+    کش بر سطلِ ۱۵دقیقه‌ای: بسترِ استیبل روی افق ۴ساعته سنجیده می‌شود و
+    بین دو کندلِ ۱۵د عملاً تکان نمی‌خورد؛ بی‌کش، هر بار یک پیمایشِ کاملِ
+    سری لازم بود و بازپخش عملاً نمی‌ایستاد.
+    """
+    if series is None:
+        p = Path(path) if path else (ROOT / "brain" / "dominance-series.json")
+        try:
+            series = json.loads(p.read_text(encoding="utf-8")).get("points") or []
+        except Exception:                            # noqa: BLE001
+            series = []
+    if not series:
+        return None
+    try:
+        from hamid import stables as STB
+    except Exception:                                # noqa: BLE001
+        return None
+    lo = min(p["t"] for p in series)
+    hi = max(p["t"] for p in series)
+    cache = {}
+
+    def at(now_ms):
+        if now_ms < lo or now_ms > hi:
+            return NO_HISTORY
+        k = int(now_ms // (15 * 60_000))
+        if k not in cache:
+            s = (STB.alt_stance(series, 240, now_ms=int(now_ms)) or {}).get("stance")
+            cache[k] = s if s and s != "INSUFFICIENT" else NO_HISTORY
+        return cache[k]
+    return at
+
+
 def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
-           warmup=200):
+           warmup=200, stance_at=None):
     """بازپخشِ بار-به-بار. → فهرست معامله‌ها.
 
     هیچ کندلی بعد از اندیس جاری به موتور داده نمی‌شود؛ خروج هم فقط از
     کندل‌های **بعدی** خوانده می‌شود.
+
+    `stance_at(now_ms)` بسترِ استیبل را در همان لحظه می‌دهد (دستور حمید
+    ۸ سپتامبر: اولویتِ اول). بی‌آن، دروازهٔ دامیننس هر آلتی را وتو
+    می‌کرد و بک‌تست صفر معامله می‌داد — پس این‌جا صریح تزریق می‌شود و
+    روی هر معامله ثبت، تا مقایسهٔ «با دروازه / بی‌دروازه» **جفتی** باشد.
     """
     from hamid import fees
     tf_ms = TF_MS.get(tf, 900_000)
@@ -99,9 +147,14 @@ def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
         now = t + tf_ms                              # کندلِ i تازه بسته شد
         b4 = S.trend(_htf_upto(btc4h, now)) if btc4h else None
         b1 = S.trend(_htf_upto(btc1h, now)) if btc1h else None
+        # بستر در **همان لحظه** محاسبه می‌شود؛ `dom_generated=now` یعنی
+        # عکس‌فوری تازه است (نگاه به آینده نیست — تابع فقط نقاطِ ≤ now
+        # را می‌بیند، چون `stables._at` پنجرهٔ گذشته را می‌گیرد).
+        st_ = stance_at(now) if stance_at else NO_HISTORY
         d = S.decide(symbol, cd15[:i + 1], tf=tf,
                      cd_4h=_htf_upto(cd4h, now),
-                     btc_4h=b4, btc_1h=b1, now_ms=now)
+                     btc_4h=b4, btc_1h=b1, now_ms=now,
+                     alt_stance=st_, dom_generated=now)
         if d.get("action") != "SHORT":
             i += 1
             continue
@@ -125,7 +178,8 @@ def replay(symbol, cd15, cd4h, btc1h=None, btc4h=None, tf="15m",
                        "fee_r": round(fee_r, 4),
                        "net": round(out_r - fee_r, 4),
                        "stop_pct": d["stop_pct"], "bars": bars,
-                       "chan_pos": d["chan_pos"], **exc})
+                       "chan_pos": d["chan_pos"],
+                       "alt_stance": d.get("alt_stance") or st_, **exc})
         i = j + 1                                    # یک پوزیشن در هر لحظه
     return trades
 
@@ -152,8 +206,11 @@ def judge(trades):
     nets = [t["net"] for t in trades]
     ci = _ci(nets)
     if not ci:
+        # قرارداد خروجی **یکی** است، چه نمونه باشد چه نباشد — وگرنه
+        # مصرف‌کننده (merge/render) روی حالتِ کم‌نمونه می‌ترکد.
         return {"verdict": "UNDECIDED", "why": "نمونهٔ کم", "net": ci,
-                "need": MIN_N_PROMOTE}
+                "gross": None, "per_stance": {}, "dom_gate": None,
+                "need": MIN_N_PROMOTE, "need_more": MIN_N_PROMOTE}
     n = ci["n"]
     if ci["lo"] > 0 and n >= MIN_N_PROMOTE:
         v, why = "PROMOTE", "CI خالص کاملاً بالای صفر"
@@ -168,8 +225,30 @@ def judge(trades):
         need = max(0, int(want) - n)
         need = max(need, MIN_N_PROMOTE - n if ci["mean"] > 0 else
                    MIN_N_REJECT - n)
+    # برشِ بسترِ استیبل (دستور حمید ۸ سپتامبر). دروازه فقط **وتو** می‌کند،
+    # پس «با دروازه» زیرمجموعهٔ «بی دروازه» است و مقایسه جفتی است: همان
+    # کندل‌ها، همان ستاپ‌ها، فقط بخشی کنار گذاشته می‌شود.
+    with_h = [t for t in trades if t.get("alt_stance") not in (None, NO_HISTORY)]
+    per_stance = {}
+    for st_ in sorted({t.get("alt_stance") or NO_HISTORY for t in trades}):
+        per_stance[st_] = _ci([t["net"] for t in trades
+                               if (t.get("alt_stance") or NO_HISTORY) == st_])
+    gate = None
+    if with_h:
+        keep = [t for t in with_h if t["alt_stance"] in S.DOM_FAVORS_SHORT
+                or t["alt_stance"] not in S.DOM_VETO_SHORT]
+        drop = [t for t in with_h if t["alt_stance"] in S.DOM_VETO_SHORT]
+        gate = {"window_only": True,
+                "note": ("فقط بازه‌ای که سریِ دامیننس دارد؛ بقیهٔ بازپخش "
+                         "بستر ندارد و در این برش نیست"),
+                "ungated": _ci([t["net"] for t in with_h]),
+                "gated": _ci([t["net"] for t in keep]),
+                "vetoed": _ci([t["net"] for t in drop]),
+                "favors_only": _ci([t["net"] for t in with_h
+                                    if t["alt_stance"] in S.DOM_FAVORS_SHORT])}
     return {"verdict": v, "why": why, "net": ci,
             "gross": _ci([t["R"] for t in trades]),
+            "per_stance": per_stance, "dom_gate": gate,
             "need_more": max(0, need)}
 
 
@@ -268,6 +347,9 @@ def run(symbols, tf="15m", bars=1000, fetch=None, compare=True,
         btc1h, btc4h = fetch("BTCUSDT", "1h", n1h), fetch("BTCUSDT", "4h", n4h)
     except Exception as e:                           # noqa: BLE001
         print(f"بسترِ BTC گرفته نشد ({type(e).__name__}) — آلت‌ها رد می‌شوند")
+    _stance = stance_fn()
+    if _stance is None:
+        print("سریِ دامیننس نیست — بسترِ استیبل روی هیچ معامله‌ای ثبت نمی‌شود")
     all_t, skipped, cmp_f, cmp_a = [], [], [], []
     for sym in symbols:
         try:
@@ -279,7 +361,8 @@ def run(symbols, tf="15m", bars=1000, fetch=None, compare=True,
         if not cd or len(cd) < 260:                 # bars=0 → کلِ سری از لودر
             skipped.append(f"{sym}: کندل کم ({len(cd or [])})")
             continue
-        t = replay(sym, cd, cd4, btc1h=btc1h, btc4h=btc4h, tf=tf)
+        t = replay(sym, cd, cd4, btc1h=btc1h, btc4h=btc4h, tf=tf,
+                   stance_at=_stance)
         all_t.extend(t)
         if compare:
             f_, a_ = trainer_shorts(sym, cd, tf=tf)
@@ -374,7 +457,7 @@ def merge(shards_dir, out=None):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(v, ensure_ascii=False, indent=1), encoding="utf-8")
     print(render(v))
-    for k in ("per_year", "per_btc_4h"):
+    for k in ("per_year", "per_btc_4h", "per_stance"):
         for lab, c in v[k].items():
             if c:
                 print(f"    {k} {lab}: n={c['n']} {c['mean']:+.4f}R CI[{c['lo']:+.4f},{c['hi']:+.4f}]")
@@ -473,6 +556,40 @@ def _selftest():
     dn = list(ref) + tail
     t2 = replay("BTCUSDT", dn, cd4, btc4h=None, btc1h=None,
                 warmup=len(ref) - 1)
+
+    # ── بسترِ استیبل در بازپخش (دستور حمید ۸ سپتامبر) ──────────────────
+    #
+    # اثباتِ منفیِ جفتی: **همان** کندل‌ها با بسترِ وتوکننده باید صفر
+    # معامله بدهند. بی‌این بررسی، دروازه ممکن است در بازپخش اصلاً وصل
+    # نباشد و ما خیال کنیم سنجیده‌ایمش.
+    # بسترِ BTC این‌جا **کندل** است نه رشتهٔ روند — `replay` خودش روند را
+    # حساب می‌کند. (نسخهٔ اولِ همین بررسی رشته داد، `_htf_upto` روی رشته
+    # پیمایش کرد و بستر None شد؛ آن‌وقت صفرِ خروجی به دروازه نسبت داده
+    # می‌شد در حالی که عیبِ خودِ آزمون بود.)
+    btc_dn4 = _zig_btc = S._zig(legs=6, down=10, up=5, end=now,
+                                tf_ms=14_400_000)
+    btc_dn1 = S._zig(legs=6, down=10, up=5, end=now, tf_ms=3_600_000)
+    t_alt = replay("AAAUSDT", dn, cd4, btc4h=btc_dn4, btc1h=btc_dn1,
+                   warmup=len(ref) - 1)
+    t_veto = replay("AAAUSDT", dn, cd4, btc4h=btc_dn4, btc1h=btc_dn1,
+                    warmup=len(ref) - 1,
+                    stance_at=lambda _t: "LONG_ALT_STRONG")
+    chk("بی‌بسترِ تاریخی، خطِ پایه دست‌نخورده می‌ماند (وتوی کور نمی‌کند)",
+        len(t_alt) > 0, f"{len(t_alt)} معامله")
+    chk("و با بسترِ وتوکننده، همان کندل‌ها صفر معامله می‌دهند",
+        len(t_veto) == 0, f"{len(t_veto)} معامله")
+    chk("بسترِ هر معامله روی خودش ثبت می‌شود",
+        all(t.get("alt_stance") for t in t_alt), str(t_alt[:1]))
+    chk("و بی‌تاریخچه صریح برچسب می‌خورد، نه «خنثی»",
+        all(t["alt_stance"] == NO_HISTORY for t in t_alt))
+    # `stance_fn` بیرون از بازهٔ سری باید NO_HISTORY بدهد، نه حدس
+    _pts = [{"t": 1_788_000_000_000 + i * 180_000, "m": 3_000e9 + i,
+             "u": 6.8, "c": 2.7, "b": 59.0} for i in range(200)]
+    _fn = stance_fn(series=_pts)
+    chk("stance_fn روی سریِ موجود کار می‌کند",
+        _fn is not None and _fn(_pts[-1]["t"]) is not None)
+    chk("و بیرون از بازهٔ سری، بستر جعل نمی‌کند",
+        _fn(_pts[0]["t"] - 10 * 86_400_000) == NO_HISTORY)
     if t2:
         chk("در ریزشِ ادامه‌دار به تارگت می‌رسد",
             any(t["R"] > 0 for t in t2), str(t2[0]))
