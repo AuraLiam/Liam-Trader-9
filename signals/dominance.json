@@ -1,5 +1,5 @@
 {
- "generated": 1788911003560,
+ "generated": 1788911191652,
  "usdt_dominance": 6.789,
  "btc_dominance": 58.33,
  "chg_1h": {
@@ -11,8 +11,24 @@
   "btc": 0.0
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س down)؛ کارنامهٔ پیش‌بینی: 1156/2300 (50٪)؛ بنچمارکِ همیشه‌تخت 63٪؛ بسترِ استیبل: NEUTRAL",
- "macro": [],
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Main Refinancing Rate (36.5س) + Core PPI m/m (36.7س) + PPI m/m (36.7س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س down)؛ کارنامهٔ پیش‌بینی: 1158/2302 (50٪)؛ بنچمارکِ همیشه‌تخت 63٪؛ بسترِ استیبل: NEUTRAL",
+ "macro": [
+  {
+   "title": "Main Refinancing Rate",
+   "in_hours": 36.5,
+   "country": "EUR"
+  },
+  {
+   "title": "Core PPI m/m",
+   "in_hours": 36.7,
+   "country": "USD"
+  },
+  {
+   "title": "PPI m/m",
+   "in_hours": 36.7,
+   "country": "USD"
+  }
+ ],
  "structure": {
   "bars_1h": 287,
   "bars_4h": 77,
@@ -99,8 +115,41 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.083,
+     "DOWN": 0.033,
+     "FLAT": 0.883
+    },
+    "p_claim": 0.883,
+    "p_n": 60,
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (0↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.183,
+     "DOWN": 0.283,
+     "FLAT": 0.533
+    },
+    "p_claim": 0.533,
+    "p_n": 60,
+    "ev_n": 1
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
     "n": 230,
@@ -134,17 +183,17 @@
     "skill": 3.3
    },
    "BTC.D|30m": {
-    "n": 859,
-    "hit": 364,
+    "n": 860,
+    "hit": 365,
     "hit_pct": 42.4,
     "dir_n": 16,
     "dir_hit_pct": 18.8,
-    "baseline_flat_pct": 48.5,
-    "skill": -6.1,
-    "brier": 0.6353,
-    "brier_n": 332,
-    "brier_climate": 0.6323,
-    "brier_skill": -0.003
+    "baseline_flat_pct": 49.2,
+    "skill": -6.8,
+    "brier": 0.6344,
+    "brier_n": 333,
+    "brier_climate": 0.6288,
+    "brier_skill": -0.0056
    },
    "USDT.D|120m": {
     "n": 230,
@@ -178,17 +227,17 @@
     "skill": -1.0
    },
    "USDT.D|30m": {
-    "n": 859,
-    "hit": 565,
+    "n": 860,
+    "hit": 566,
     "hit_pct": 65.8,
     "dir_n": 61,
     "dir_hit_pct": 6.6,
     "baseline_flat_pct": 88.5,
     "skill": -22.7,
-    "brier": 0.3226,
-    "brier_n": 310,
+    "brier": 0.3216,
+    "brier_n": 311,
     "brier_climate": 0.2108,
-    "brier_skill": -0.1118
+    "brier_skill": -0.1108
    }
   },
   "open": 8
@@ -307,7 +356,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2608,
+    "bars": 2609,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -315,7 +364,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2608,
+    "bars": 2609,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -325,40 +374,40 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1057,
+    "bars": 1058,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
-    "trend": "range",
-    "px": 6.787,
+    "trend": "down",
+    "px": 6.789,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 1056,
+     "n": 1057,
      "pctl": 0.75,
      "median": 0.005,
      "p90": 0.018
     },
-    "delta": 0.003,
+    "delta": 0.002,
     "meaningful": false,
-    "regime": "RANGE",
-    "note": "USDT.D در 15m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0030 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
+    "regime": "BULLISH",
+    "note": "USDT.D در 15m: روند down → رژیم BULLISH؛ تغییر آخرین کندل +0.0020 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1057,
+    "bars": 1058,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 58.34,
+    "px": 58.33,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1056,
+     "n": 1057,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.03
     },
-    "delta": 0.0,
+    "delta": -0.01,
     "meaningful": false,
-    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0000"
+    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل -0.0100"
    }
   },
   "1h": {
