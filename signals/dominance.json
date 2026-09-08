@@ -1,5 +1,5 @@
 {
- "generated": 1788909160894,
+ "generated": 1788909354010,
  "usdt_dominance": 6.784,
  "btc_dominance": 58.34,
  "chg_1h": {
@@ -11,8 +11,24 @@
   "btc": 0.03
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1154/2298 (50٪)؛ بنچمارکِ همیشه‌تخت 63٪؛ بسترِ استیبل: NEUTRAL",
- "macro": [],
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Main Refinancing Rate (37.0س) + Core PPI m/m (37.2س) + PPI m/m (37.2س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1156/2300 (50٪)؛ بنچمارکِ همیشه‌تخت 63٪؛ بسترِ استیبل: NEUTRAL",
+ "macro": [
+  {
+   "title": "Main Refinancing Rate",
+   "in_hours": 37.0,
+   "country": "EUR"
+  },
+  {
+   "title": "Core PPI m/m",
+   "in_hours": 37.2,
+   "country": "USD"
+  },
+  {
+   "title": "PPI m/m",
+   "in_hours": 37.2,
+   "country": "USD"
+  }
+ ],
  "structure": {
   "bars_1h": 288,
   "bars_4h": 77,
@@ -102,30 +118,34 @@
   "made_now": [
    {
     "metric": "USDT.D",
-    "horizon_min": 120,
+    "horizon_min": 30,
     "path": "FLAT",
     "reasons": [
      "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
     ],
-    "p": null,
-    "p_n": 19,
-    "p_why": "نمونه 19 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "p": {
+     "UP": 0.083,
+     "DOWN": 0.033,
+     "FLAT": 0.883
+    },
+    "p_claim": 0.883,
+    "p_n": 60,
     "ev_n": 2
    },
    {
     "metric": "BTC.D",
-    "horizon_min": 120,
+    "horizon_min": 30,
     "path": "FLAT",
     "reasons": [
      "شواهد ناهم‌جهت یا ناکافی (0↑/1↓)"
     ],
     "p": {
-     "UP": 0.16,
-     "DOWN": 0.52,
-     "FLAT": 0.32
+     "UP": 0.2,
+     "DOWN": 0.283,
+     "FLAT": 0.517
     },
-    "p_claim": 0.32,
-    "p_n": 25,
+    "p_claim": 0.517,
+    "p_n": 60,
     "ev_n": 1
    }
   ],
@@ -163,17 +183,17 @@
     "skill": 3.3
    },
    "BTC.D|30m": {
-    "n": 858,
-    "hit": 363,
-    "hit_pct": 42.3,
-    "dir_n": 17,
-    "dir_hit_pct": 17.6,
+    "n": 859,
+    "hit": 364,
+    "hit_pct": 42.4,
+    "dir_n": 16,
+    "dir_hit_pct": 18.8,
     "baseline_flat_pct": 48.5,
-    "skill": -6.2,
-    "brier": 0.6361,
-    "brier_n": 331,
+    "skill": -6.1,
+    "brier": 0.6353,
+    "brier_n": 332,
     "brier_climate": 0.6323,
-    "brier_skill": -0.0038
+    "brier_skill": -0.003
    },
    "USDT.D|120m": {
     "n": 230,
@@ -207,17 +227,17 @@
     "skill": -1.0
    },
    "USDT.D|30m": {
-    "n": 858,
-    "hit": 564,
-    "hit_pct": 65.7,
+    "n": 859,
+    "hit": 565,
+    "hit_pct": 65.8,
     "dir_n": 61,
     "dir_hit_pct": 6.6,
     "baseline_flat_pct": 88.5,
-    "skill": -22.8,
-    "brier": 0.3236,
-    "brier_n": 309,
+    "skill": -22.7,
+    "brier": 0.3226,
+    "brier_n": 310,
     "brier_climate": 0.2108,
-    "brier_skill": -0.1128
+    "brier_skill": -0.1118
    }
   },
   "open": 8
@@ -354,40 +374,40 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1057,
+    "bars": 1058,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "range",
-    "px": 6.781,
+    "px": 6.784,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 1056,
+     "n": 1057,
      "pctl": 0.75,
      "median": 0.005,
      "p90": 0.018
     },
-    "delta": -0.006,
+    "delta": 0.003,
     "meaningful": false,
     "regime": "RANGE",
-    "note": "USDT.D در 15m: روند range → رژیم RANGE؛ تغییر آخرین کندل -0.0060 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 15m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0030 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1057,
+    "bars": 1058,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "up",
     "px": 58.34,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1056,
+     "n": 1057,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.03
     },
-    "delta": -0.01,
+    "delta": 0.0,
     "meaningful": false,
-    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل -0.0100"
+    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0000"
    }
   },
   "1h": {
@@ -481,20 +501,20 @@
   },
   "cause": {
    "1h": {
-    "cause": "MARKET_RISE",
-    "why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
+    "cause": "NEW_MONEY",
+    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "window_min": 60,
-    "d_usdt_d": -0.011,
-    "d_stable_d": -0.015,
+    "d_usdt_d": -0.002,
+    "d_stable_d": -0.002,
     "supply_growth": {
-     "USDT": -0.000281,
-     "USDC": -0.000111
+     "USDT": 0.000911,
+     "USDC": 0.001206
     },
-    "supply_growth_total": -0.000232,
-    "mcap_growth": 0.001339,
+    "supply_growth_total": 0.000996,
+    "mcap_growth": 0.001206,
     "usdt_d": 6.784,
     "stable_d": 9.54,
-    "misleading": false,
+    "misleading": true,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
@@ -518,24 +538,24 @@
   "regime": {
    "1h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.015، زیر میانهٔ 0.017) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.002، زیر میانهٔ 0.016) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "threshold": 0.017,
+    "threshold": 0.016,
     "stable_d": 9.54,
-    "d_stable_d": -0.015,
+    "d_stable_d": -0.002,
     "usdt_d": 6.784,
-    "d_usdt_d": -0.011,
-    "cause": "MARKET_RISE",
-    "cause_why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
+    "d_usdt_d": -0.002,
+    "cause": "NEW_MONEY",
+    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "naive_usdt_only": "NEUTRAL",
     "disagrees_with_naive": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.04) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.038) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.04,
+    "threshold": 0.038,
     "stable_d": 9.54,
     "d_stable_d": -0.003,
     "usdt_d": 6.784,
@@ -549,7 +569,7 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.04) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.038) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
    "d_btc_d": 0.03,
    "cause": "MIXED",
