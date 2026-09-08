@@ -235,6 +235,17 @@ def decide(window, tf="15m"):
             why["vol_z"] = round(vol_z_at(window, len(window) - 1), 2)
         except Exception:                             # noqa: BLE001
             pass
+        # نردبانِ ریزش (دستور حمید ۸ سپتامبر: «اکثرا دارن پله‌ای می‌ریزن»).
+        # فقط **برچسب** است، نه دروازه — ادعای حمید تا وقتی ماشین شبانه
+        # با CI جوابش را ندهد، فرضیه است (قانون ۰۳/۱۲). برچسب از همین
+        # `window` ساخته می‌شود که در `replay_symbol` به `c15[:i+1]` بریده
+        # شده، پس علّی است. هزینه‌اش هم فقط روی ستاپ‌های واقعی است چون
+        # `pack` تنها وقتی صدا زده می‌شود که ستاپی وجود داشته باشد.
+        try:
+            from hamid import stairs as _stairs
+            why.update(_stairs.label(window, tf=tf, direction=d))
+        except Exception:                             # noqa: BLE001 - برچسب اختیاری
+            pass
         return {"dir": d, "entry": px, "sl": sl, "tp1": tp, "why": why}
 
     # A) پولبک به اردر بلاک (داخل یا نزدیک ≤۲×ATR — خروجی near)

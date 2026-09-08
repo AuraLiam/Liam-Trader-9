@@ -10,7 +10,7 @@
 ماژول‌های زیر عیناً از ریپو آمده‌اند و این‌جا به‌عنوان ماژولِ واقعی
 نصب می‌شوند — پس تعریفِ ساختار/اردر بلاک/کارمزد **دقیقاً** همان
 چیزی است که بک‌تست با آن سنجیده شده:
-    hamid.structure · hamid.orderblocks · hamid.fees
+    hamid.structure · hamid.orderblocks · hamid.microstructure · hamid.stairs · hamid.fees
 
 مرز: این موتور هنوز مجوز تولید ندارد (PRODUCTION_APPROVED=False).
 خروجی‌اش پیشنهادِ سنجش‌پذیر است، نه سیگنالِ تأییدشده.
@@ -561,6 +561,482 @@ def note_fa (b ,where ="داخل"):
 
 '''
 
+_BUNDLED['hamid.microstructure'] = r'''
+""
+
+STRUCT_VERSION ="e07-micro-1.0"
+
+PIVOT_L =2 
+PIVOT_R =2 
+
+MIN_LEG_ATR =1.0 
+
+def session_of (ms ):
+    ""
+    h =(ms //3600000 )%24 
+    if 12 <=h <16 :
+        return "overlap"
+    if 7 <=h <16 :
+        return "london"
+    if 16 <=h <21 :
+        return "ny"
+    return "asia"
+
+def _atr_at (cd ,i ,n =14 ):
+    ""
+    if i <n :
+        return None 
+    tr =[]
+    for j in range (i -n +1 ,i +1 ):
+        h ,l ,pc =cd [j ]["h"],cd [j ]["l"],cd [j -1 ]["c"]
+        tr .append (max (h -l ,abs (h -pc ),abs (l -pc )))
+    return sum (tr )/len (tr )if tr else None 
+
+def pivots (cd ,left =PIVOT_L ,right =PIVOT_R ,min_leg_atr =MIN_LEG_ATR ):
+    ""
+    raw_hi ,raw_lo =[],[]
+    n =len (cd )
+    for i in range (left ,n -right ):
+        h ,l =cd [i ]["h"],cd [i ]["l"]
+        if all (cd [j ]["h"]<h for j in range (i -left ,i ))and all (cd [j ]["h"]<h for j in range (i +1 ,i +right +1 )):
+            raw_hi .append ({"i":i ,"t":cd [i ]["t"],"px":h ,
+            "confirmed_at_i":i +right ,"kind":"H"})
+        if all (cd [j ]["l"]>l for j in range (i -left ,i ))and all (cd [j ]["l"]>l for j in range (i +1 ,i +right +1 )):
+            raw_lo .append ({"i":i ,"t":cd [i ]["t"],"px":l ,
+            "confirmed_at_i":i +right ,"kind":"L"})
+
+    chain =[]
+    for p in sorted (raw_hi +raw_lo ,key =lambda x :x ["i"]):
+        a =_atr_at (cd ,p ["i"])
+        if a is None or a <=0 :
+            continue 
+        need =a *min_leg_atr 
+        if not chain :
+            p ["leg"]=None 
+            chain .append (p )
+            continue 
+        last =chain [-1 ]
+        if p ["kind"]==last ["kind"]:
+            better =p ["px"]>last ["px"]if p ["kind"]=="H"else p ["px"]<last ["px"]
+            if better :
+                p ["leg"]=last .get ("leg")
+                chain [-1 ]=p 
+            continue 
+        leg =(p ["px"]-last ["px"])if p ["kind"]=="H"else (last ["px"]-p ["px"])
+        if leg >=need :
+            p ["leg"]=round (leg ,8 )
+            chain .append (p )
+    hi =[p for p in chain if p ["kind"]=="H"]
+    lo =[p for p in chain if p ["kind"]=="L"]
+    return hi ,lo 
+
+def _last_confirmed (seq ,upto_i ):
+    ""
+    out =None 
+    for p in seq :
+        if p ["confirmed_at_i"]<=upto_i :
+            out =p 
+        else :
+            break 
+    return out 
+
+def structure (cd ,left =PIVOT_L ,right =PIVOT_R ,min_leg_atr =MIN_LEG_ATR ):
+    ""
+    n =len (cd )
+    if n <(left +right +6 ):
+        return None 
+    hi ,lo =pivots (cd ,left ,right ,min_leg_atr )
+    if not hi or not lo :
+        return None 
+
+    bias =None 
+    events =[]
+
+    used_hi_i =used_lo_i =None 
+    for i in range (left +right ,n ):
+        ph =_last_confirmed (hi ,i -1 )
+        pl =_last_confirmed (lo ,i -1 )
+        c =cd [i ]["c"]
+        if ph and c >ph ["px"]and ph ["i"]!=used_hi_i :
+            ev ="BOS"if bias =="up"else ("CHoCH"if bias =="down"else "BOS")
+            events .append ({"i":i ,"t":cd [i ]["t"],"kind":ev ,"dir":"up",
+            "level":ph ["px"],"close":c ,
+            "session":session_of (cd [i ]["t"])})
+            bias ,used_hi_i ="up",ph ["i"]
+        elif pl and c <pl ["px"]and pl ["i"]!=used_lo_i :
+            ev ="BOS"if bias =="down"else ("CHoCH"if bias =="up"else "BOS")
+            events .append ({"i":i ,"t":cd [i ]["t"],"kind":ev ,"dir":"down",
+            "level":pl ["px"],"close":c ,
+            "session":session_of (cd [i ]["t"])})
+            bias ,used_lo_i ="down",pl ["i"]
+
+    last =events [-1 ]if events else None 
+    return {"formula_version":STRUCT_VERSION ,
+    "bias":bias ,
+    "last_event":last ["kind"]if last else None ,
+    "last_event_dir":last ["dir"]if last else None ,
+    "last_event_i":last ["i"]if last else None ,
+    "swing_high":_last_confirmed (hi ,n -1 ),
+    "swing_low":_last_confirmed (lo ,n -1 ),
+    "session":session_of (cd [-1 ]["t"]),
+    "events":events }
+
+'''
+
+_BUNDLED['hamid.stairs'] = r'''
+""
+from __future__ import annotations 
+
+import statistics 
+import sys 
+from pathlib import Path 
+
+HERE =Path (__file__ ).resolve ().parent 
+sys .path .insert (0 ,str (HERE .parent ))
+
+EDGE_ATR =0.50 
+
+MAX_STEPS =8 
+
+HYPOTHESES =6 
+ALPHA_SIDAK =1 -(1 -0.05 )**(1 /HYPOTHESES )
+
+PROMOTE_MIN_N =150 
+REJECT_MIN_N =300 
+
+BARS =300 
+
+def staircase (cd ,bars =BARS ):
+    ""
+    from hamid .microstructure import structure 
+    win =cd [-bars :]if len (cd )>bars else cd 
+    unknown ={"dir":None ,"steps":0 ,"hi":None ,"lo":None ,"lag":None ,
+    "broken":None ,"n_ev":0 ,"last_kind":None }
+    st =structure (win )
+    if not st or not st .get ("events"):
+        return dict (unknown ,why ="ساختاری ثبت نشد")
+    evs =st ["events"]
+    last =evs [-1 ]
+    d =last ["dir"]
+    steps =0 
+    for e in reversed (evs ):
+        if e ["dir"]!=d :
+            break 
+        steps +=1 
+        if steps >=MAX_STEPS :
+            break 
+    sh ,sl =st .get ("swing_high"),st .get ("swing_low")
+    return {
+    "dir":d ,
+    "steps":steps ,
+    "hi":sh ["px"]if sh else None ,
+    "lo":sl ["px"]if sl else None ,
+
+    "lag":len (win )-1 -last ["i"],
+
+    "broken":last ["kind"]=="CHoCH",
+    "last_kind":last ["kind"],
+    "n_ev":len (evs ),
+    "why":None ,
+    }
+
+def depth (cd ,st ):
+    ""
+    hi ,lo =st .get ("hi"),st .get ("lo")
+    if hi is None or lo is None or hi <=lo :
+        return None 
+    px =cd [-1 ]["c"]
+    return round ((px -lo )/(hi -lo ),3 )
+
+def overhead_ob (cd ,tf ="15m"):
+    ""
+    from hamid .orderblocks import find 
+    from hamid .structure import atr 
+    px =cd [-1 ]["c"]
+    a =atr (cd )or px *0.005 
+    best ,best_d =None ,None 
+    for b in find (cd ,tf =tf ):
+        if b .get ("broken"):
+            continue 
+        if b ["low"]<=px <=b ["high"]:
+            return "inside",b 
+        if b ["low"]>px :
+            d =b ["low"]-px 
+            if best_d is None or d <best_d :
+                best ,best_d =b ,d 
+    if best is None :
+        return "none",None 
+    return ("under_edge"if best_d <=EDGE_ATR *a else "far"),best 
+
+def label (cd ,tf ="15m",direction =None ,box =None ):
+    ""
+    st =staircase (cd )
+    rel ,near_box =overhead_ob (cd ,tf =tf )
+    out ={"stair_dir":st ["dir"],"stair_steps":st ["steps"],
+    "stair_broken":st ["broken"],"stair_depth":depth (cd ,st ),
+    "stair_ob":rel ,"stair_lag":st ["lag"]}
+    if near_box is not None :
+        out ["stair_ob_fresh"]=near_box .get ("fresh")
+        out ["stair_ob_reactions"]=near_box .get ("reactions")
+    if box is not None and near_box is not None :
+        out ["stair_ob_stale"]=box .get ("i")!=near_box .get ("i")
+    if direction in ("LONG","SHORT")and st ["dir"]:
+        want ="up"if direction =="LONG"else "down"
+        out ["stair_align"]="with"if st ["dir"]==want else "against"
+    return out 
+
+def fa (lb ):
+    ""
+    if not lb or not lb .get ("stair_dir"):
+        return "نردبان: تشخیص داده نشد"
+    d ="ریزشی"if lb ["stair_dir"]=="down"else "صعودی"
+    bits =[f"نردبان {d} · پلهٔ {lb['stair_steps']}"]
+    rel ={"inside":"داخل اردر بلاک بالاسری",
+    "under_edge":"چسبیده به زیرِ اردر بلاک بالاسری",
+    "far":"دور از اردر بلاک بالاسری",
+    "none":"اردر بلاک بالاسری ندارد"}.get (lb .get ("stair_ob"))
+    if rel :
+        bits .append (rel )
+    if lb .get ("stair_depth")is not None :
+        bits .append (f"عمق پولبک {lb['stair_depth']:.2f}")
+    if lb .get ("stair_broken"):
+        bits .append ("⚠ نردبان شکسته (برگشت محتمل)")
+    return " · ".join (bits )
+
+def _boot (a ,b ,n =3000 ,alpha =0.05 ):
+    ""
+    import random 
+    if len (a )<8 or len (b )<8 :
+        return None 
+    d =[]
+    for _ in range (n ):
+        sa =[random .choice (a )for _ in a ]
+        sb =[random .choice (b )for _ in b ]
+        d .append (sum (sa )/len (sa )-sum (sb )/len (sb ))
+    d .sort ()
+    return d [int (n *alpha /2 )],d [int (n *(1 -alpha /2 ))]
+
+def _verdict (lo ,hi ,n_small ):
+    if lo is None :
+        return "UNDECIDED"
+    if lo >0 and n_small >=PROMOTE_MIN_N :
+        return "PROMOTE_CANDIDATE"
+    if hi <0 and n_small >=REJECT_MIN_N :
+        return "REJECT"
+    return "UNDECIDED"
+
+def _need (a ,b ,half =0.10 ):
+    ""
+    xs =list (a )+list (b )
+    if len (xs )<4 :
+        return None 
+    sd =statistics .stdev (xs )
+    return int (round (2 *(1.96 *sd /half )**2 ))
+
+TESTS =(
+("H1 پلهٔ ≥۲ در برابر پلهٔ ۱",
+lambda w :(w .get ("stair_steps")or 0 )>=2 ,
+lambda w :(w .get ("stair_steps")or 0 )==1 ),
+("H2 پلهٔ ≥۳ در برابر پلهٔ ۱",
+lambda w :(w .get ("stair_steps")or 0 )>=3 ,
+lambda w :(w .get ("stair_steps")or 0 )==1 ),
+("H3 زیرِ لبهٔ OB در برابر داخلِ OB",
+lambda w :w .get ("stair_ob")=="under_edge",
+lambda w :w .get ("stair_ob")=="inside"),
+("H4 پولبک عمیق (≥۰.۵) در برابر کم‌عمق",
+lambda w :(w .get ("stair_depth")is not None and w ["stair_depth"]>=0.5 ),
+lambda w :(w .get ("stair_depth")is not None and w ["stair_depth"]<0.5 )),
+("H5 نردبان نشکسته در برابر شکسته",
+lambda w :w .get ("stair_broken")is False ,
+lambda w :w .get ("stair_broken")is True ),
+("H6 نردبان هم‌جهت در برابر خلاف‌جهت",
+lambda w :w .get ("stair_align")=="with",
+lambda w :w .get ("stair_align")=="against"),
+)
+
+def judge (rows ,verbose =True ):
+    ""
+    tagged =[r for r in rows if (r .get ("why")or {}).get ("stair_dir")is not None ]
+    out ={"n_rows":len (rows ),"n_tagged":len (tagged ),
+    "alpha_sidak":round (ALPHA_SIDAK ,5 ),"tests":[]}
+    if verbose :
+        print (f"ردیفِ یکتا: {len(rows)} · با برچسبِ نردبان: {len(tagged)}")
+        print (f"آستانهٔ Šidák برای {HYPOTHESES} فرضیه: "
+        f"α={ALPHA_SIDAK:.5f}\n")
+    for name ,fa_ ,fb in TESTS :
+        a =[r ["R_net"]for r in tagged if fa_ (r .get ("why")or {})]
+        b =[r ["R_net"]for r in tagged if fb (r .get ("why")or {})]
+        rec ={"test":name ,"n_a":len (a ),"n_b":len (b )}
+        if len (a )<8 or len (b )<8 :
+            rec ["verdict"]="UNDECIDED"
+            rec ["why"]="نمونهٔ کم"
+            rec ["need_per_arm"]=_need (a ,b )
+            if verbose :
+                print (f"  {name:<38} n={len(a)}/{len(b)} — نمونهٔ کم")
+            out ["tests"].append (rec )
+            continue 
+        ea ,eb =statistics .fmean (a ),statistics .fmean (b )
+        ci =_boot (a ,b ,alpha =ALPHA_SIDAK )
+        n_small =min (len (a ),len (b ))
+        rec .update ({"ev_a":round (ea ,4 ),"ev_b":round (eb ,4 ),
+        "diff":round (ea -eb ,4 ),
+        "ci":[round (ci [0 ],4 ),round (ci [1 ],4 )]if ci else None ,
+        "verdict":_verdict (ci [0 ]if ci else None ,
+        ci [1 ]if ci else None ,n_small ),
+        "need_per_arm":_need (a ,b )})
+        out ["tests"].append (rec )
+        if verbose :
+            c =f"[{ci[0]:+.4f}, {ci[1]:+.4f}]"if ci else "—"
+            print (f"  {name:<38} n={len(a):<5}/{len(b):<5} "
+            f"{ea - eb:+.4f}  {c}  {rec['verdict']}")
+    return out 
+
+def main (argv =()):
+    if "--selftest"in argv :
+        return _selftest ()
+    if "--judge"in argv :
+        from hamid .direction_autopsy import load 
+        rows =[]
+        for pre in ("practice","sig-","vetoed","first","second"):
+            rows +=load (pre )
+        r =judge (rows )
+        if not r ["n_tagged"]:
+            print ("\nهیچ ردیفی هنوز برچسبِ نردبان ندارد — برچسب از امروز "
+            "روی معامله‌های تازه نوشته می‌شود. عددی گزارش نمی‌شود؛\n"
+            "ادعای زودرس از نگفتن بدتر است.")
+        return 0 
+    print (__doc__ )
+    return 0 
+
+def _c (t ,o ,h ,l ,c ,v =100.0 ):
+    return {"t":t ,"o":o ,"h":h ,"l":l ,"c":c ,"v":v }
+
+def _ladder (steps =3 ,start =100.0 ,leg =4.0 ,back =1.5 ,bars =6 ,t0 =0 ):
+    ""
+    cd ,px ,t =[],start ,t0 
+    for _ in range (20 ):
+        cd .append (_c (t ,px ,px +0.1 ,px -0.1 ,px ));t +=900_000 
+
+    for _ in range (steps ):
+        for k in range (bars ):
+            nxt =px -leg /bars 
+            cd .append (_c (t ,px ,px ,nxt -0.05 ,nxt ));t +=900_000 
+            px =nxt 
+        for k in range (bars ):
+            nxt =px +back /bars 
+            cd .append (_c (t ,px ,nxt +0.05 ,px ,nxt ));t +=900_000 
+            px =nxt 
+    for _ in range (3 ):
+        cd .append (_c (t ,px ,px +0.05 ,px -0.05 ,px ));t +=900_000 
+    return cd 
+
+def _selftest ():
+    ok =fails =0 
+
+    def chk (cond ,msg ):
+        nonlocal ok ,fails 
+        if cond :
+            ok +=1 
+        else :
+            fails +=1 
+            print (f"  ✗ {msg}")
+
+    cd =_ladder (steps =3 )
+    st =staircase (cd )
+    chk (st ["dir"]=="down",f"نردبان ریزشی تشخیص داده نشد: {st}")
+    chk (st ["steps"]>=2 ,f"پله کم شمرده شد: {st['steps']}")
+    chk (st ["broken"]is False ,"نردبانِ سالم «شکسته» خوانده شد")
+
+    up =[_c (c ["t"],-c ["o"]+200 ,-c ["l"]+200 ,-c ["h"]+200 ,
+    -c ["c"]+200 ,c ["v"])for c in cd ]
+    chk (staircase (up )["dir"]=="up","نردبانِ صعودی تشخیص داده نشد")
+
+    flat =[_c (i *900_000 ,100 ,100.4 ,99.6 ,100 +(0.2 if i %2 else -0.2 ))
+    for i in range (120 )]
+    chk (staircase (flat )["steps"]==0 ,"بازار رنج پله ساخت")
+
+    base =_ladder (steps =3 )
+    i =len (base )-12 
+    a =staircase (base [:i +1 ])
+    staircase (base [:i +1 ]+[_c (base [i ]["t"]+(k +1 )*900_000 ,
+    500 ,900 ,400 ,800 )for k in range (12 )])
+    chk (staircase (base [:i +1 ])==a ,"تابع بین دو فراخوانی حالت نگه داشت")
+
+    import hamid .microstructure as _ms 
+    chk (_ms .STRUCT_VERSION .startswith ("e07-micro"),
+    "موتور ساختار عوض شده — تعریفِ پله باید بازبینی شود")
+    src =(HERE /"stairs.py").read_text (encoding ="utf-8")
+    chk ("from hamid.microstructure import structure"in src ,
+    "زنجیرهٔ ساختار قرض گرفته نشده — خطرِ تعریفِ ششم")
+
+    win =base [-BARS :]if len (base )>BARS else base 
+    full =_ms .structure (win )
+    if full and full .get ("events"):
+        hi ,lo =_ms .pivots (win )
+        levels ={round (p ["px"],8 )for p in hi +lo 
+        if p ["confirmed_at_i"]<=full ["events"][-1 ]["i"]-1 }
+        chk (round (full ["events"][-1 ]["level"],8 )in levels ,
+        "رویدادِ ساختاری روی سطحِ تأییدنشده ثبت شد")
+
+    tiny =_ladder (steps =3 ,leg =0.02 ,back =0.01 )
+    chk (staircase (tiny )["steps"]<=1 ,
+    "حرکتِ زیرِ کفِ لگ به‌عنوان نردبانِ چندپله شمرده شد")
+
+    brk =list (base )
+    top =max (c ["h"]for c in base [-40 :])
+    px =base [-1 ]["c"]
+    for k in range (6 ):
+        nxt =px +(top *1.06 -px )/6 
+        brk .append (_c (base [-1 ]["t"]+(k +1 )*900_000 ,px ,
+        nxt +0.05 ,px -0.05 ,nxt ))
+        px =nxt 
+    rb =staircase (brk )
+    chk (rb ["dir"]=="up"or rb ["broken"]is True ,
+    f"برگشتِ روند دیده نشد: {rb}")
+
+    lb =label (base ,direction ="SHORT")
+    for k in ("stair_dir","stair_steps","stair_broken","stair_depth",
+    "stair_ob","stair_lag"):
+        chk (k in lb ,f"کلید {k} در برچسب نیست")
+    chk (lb .get ("stair_align")=="with",
+    f"هم‌جهتی شورت با نردبانِ ریزشی غلط: {lb.get('stair_align')}")
+    chk (label (flat ,direction ="SHORT").get ("stair_align")is None ,
+    "بی‌نردبان، هم‌جهتی جعل شد")
+
+    d =lb .get ("stair_depth")
+    chk (d is None or -0.5 <=d <=1.5 ,f"عمق پولبکِ بی‌معنا: {d}")
+
+    chk (staircase (base [:10 ])["dir"]is None ,"پنجرهٔ کوتاه جواب ساخت")
+
+    chk ("نردبان"in fa (lb ),"خط فارسی ساخته نشد")
+    chk ("تشخیص داده نشد"in fa ({}),"برچسبِ خالی پیام درست نداد")
+
+    j =judge ([{"R_net":0.1 ,"why":{}}for _ in range (50 )],verbose =False )
+    chk (j ["n_tagged"]==0 ,"ردیفِ بی‌برچسب شمرده شد")
+    chk (all (t ["verdict"]=="UNDECIDED"for t in j ["tests"]),
+    "بدون نمونه حکم صادر شد")
+
+    rows =([{"R_net":1.0 ,"why":{"stair_dir":"down","stair_steps":3 }}
+    for _ in range (30 )]
+    +[{"R_net":-1.0 ,"why":{"stair_dir":"down","stair_steps":1 }}
+    for _ in range (30 )])
+    j2 =judge (rows ,verbose =False )
+    h1 =next (t for t in j2 ["tests"]if t ["test"].startswith ("H1"))
+    chk (h1 ["diff"]>0 ,"اختلافِ آشکار دیده نشد")
+    chk (h1 ["verdict"]=="UNDECIDED",
+    f"با n={h1['n_a']} حکمِ زودرس داد: {h1['verdict']}")
+
+    chk (abs (ALPHA_SIDAK -(1 -0.95 **(1 /6 )))<1e-12 ,"Šidák غلط")
+    chk (ALPHA_SIDAK <0.05 ,"تصحیح چندآزمونی آستانه را شل کرد")
+
+    print (f"stairs: {ok} بررسی سبز"+(f" · {fails} قرمز"if fails else ""))
+    return 1 if fails else 0 
+
+if __name__ =="__main__":
+    sys .exit (main (sys .argv [1 :]))
+
+'''
+
 _BUNDLED['hamid.fees'] = r'''
 ""
 import json 
@@ -912,6 +1388,40 @@ def _no (symbol ,tf ,why ,**extra ):
     "production_approved":PRODUCTION_APPROVED ,
     "panel":PANEL_NAME ,"t":int (time .time ()*1000 ),**extra }
 
+def _stair (cd ,tf ="15m"):
+    ""
+    try :
+        from hamid import stairs 
+
+        lb =stairs .label (_dicts (cd ),tf =tf ,direction ="SHORT")
+        lb ["fa"]=stairs .fa (lb )
+        return lb 
+    except Exception :
+        return None 
+
+def drop_radar (symbol ,cd ,tf ="15m"):
+    ""
+    lb =_stair (cd ,tf =tf )
+    if not lb :
+        return {"symbol":symbol ,"tf":tf ,"state":"UNKNOWN",
+        "why":"برچسبِ نردبان ساخته نشد","is_signal":False }
+    falling =lb .get ("stair_dir")=="down"and not lb .get ("stair_broken")
+    steps =lb .get ("stair_steps")or 0 
+    if falling and steps >=2 :
+        state ="STAIR_DOWN"
+    elif falling and steps ==1 :
+        state ="FIRST_LEG_DOWN"
+    elif lb .get ("stair_dir")=="down"and lb .get ("stair_broken"):
+        state ="DOWN_BUT_TURNING"
+    elif lb .get ("stair_dir")=="up":
+        state ="NOT_FALLING"
+    else :
+        state ="UNKNOWN"
+    return {"symbol":symbol ,"tf":tf ,"state":state ,"steps":steps ,
+    "at_ob":lb .get ("stair_ob"),"depth":lb .get ("stair_depth"),
+    "turning":lb .get ("stair_broken"),"fa":lb .get ("fa"),
+    "is_signal":False ,"panel":PANEL_NAME }
+
 def decide (symbol ,cd ,tf ="15m",cd_4h =None ,btc_4h =None ,btc_1h =None ,
 equity =None ,now_ms =None ,alt_stance =None ,dom_generated =None ):
     ""
@@ -1056,6 +1566,8 @@ equity =None ,now_ms =None ,alt_stance =None ,dom_generated =None ):
 
     "alt_stance":dom_stance ,"dom_why":dom_why ,
     "ob":ob ,"sweep":sweep ,
+
+    "stair":_stair (cd ,tf ),
     "max_hold_bars":P ["max_hold_bars"],
     "trail":{"arm_at":round (entry -fee_r *risk ,8 ),
     "frac":0.80 ,

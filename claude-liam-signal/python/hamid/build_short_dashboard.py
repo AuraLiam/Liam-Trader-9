@@ -40,7 +40,8 @@ sys.path.insert(0, str(PY))
 from hamid.build_dashboard import strip                # noqa: E402
 
 # ترتیب **وابستگی** است، نه سلیقه: orderblocks از structure می‌خواند.
-DEPS = ("hamid.structure", "hamid.orderblocks", "hamid.fees")
+DEPS = ("hamid.structure", "hamid.orderblocks", "hamid.microstructure",
+        "hamid.stairs", "hamid.fees")
 ENGINE = "liam9_short_strategy"
 OUT = PY / "liam9_short_dash.py"
 MARK = "'''"                     # جداکنندهٔ رشته — نبودش در سورس اثبات می‌شود
@@ -146,8 +147,21 @@ def verify(path):
             "a = S.decide('AAAUSDT', cd, **kw)\n"
             "b = B.decide('AAAUSDT', cd, **kw)\n"
             "keys = ('action','entry','sl','tp1','tp2','leverage','stop_pct',\n"
-            "        'rr_net','chan_pos','alt_stance')\n"
-            "print(json.dumps({k: [a.get(k), b.get(k)] for k in keys}))\n",
+            "        'rr_net','chan_pos','alt_stance','stair')\n"
+            "out = {k: [a.get(k), b.get(k)] for k in keys}\n"
+            # رادارِ ریزش هم باید در بسته همان جواب را بدهد — وگرنه
+            # «شناسایی ریزش» در داشبورد چیزِ دیگری از اندازه‌گیری است.
+            # سریِ مرجعِ `_zig` عمداً پله‌ای نیست (سقف‌های برابر می‌سازد و
+            # فرکتالِ سختِ `microstructure` روی آن پیوت نمی‌دهد). برای
+            # سنجشِ رادارِ ریزش یک **نردبانِ واقعی** لازم است، وگرنه
+            # «نامعلوم» هر دو طرف را یکسان و بی‌معنا سبز می‌کند.
+            "from hamid import stairs as ST\n"
+            "lad = [[c['t'],c['o'],c['h'],c['l'],c['c'],c['v']]\n"
+            "       for c in ST._ladder(steps=18, start=200.0, leg=6.0,\n"
+            "                           back=2.2, bars=7)]\n"
+            "out['drop_radar'] = [S.drop_radar('AAAUSDT', lad),\n"
+            "                     B.drop_radar('AAAUSDT', lad)]\n"
+            "print(json.dumps(out))\n",
             encoding="utf-8")
         r2 = subprocess.run([sys.executable, str(probe)], capture_output=True,
                             text=True, timeout=300, cwd=td)
@@ -158,6 +172,14 @@ def verify(path):
         bad = {k: v for k, v in pairs.items() if v[0] != v[1]}
         if bad:
             return False, f"تصمیمِ بسته با موتور اصلی یکی نیست: {bad}"
+        # برابری کافی نیست — **هر دو طرف می‌توانند یکسان خراب باشند**.
+        # همین یک بار افتاد: `_stair` کندلِ خام را به ماژولِ دیکشنری‌خواه
+        # می‌داد، هر دو طرف None برگرداندند و پروب سبز ماند. پس حضورِ
+        # شاهد هم شرط است، نه فقط یکسان بودنش.
+        if pairs.get("stair", [None])[0] is None:
+            return False, "شاهدِ نردبان روی خروجی نیست (هر دو طرف None)"
+        if (pairs.get("drop_radar") or [{}])[0].get("state") in (None, "UNKNOWN"):
+            return False, "رادارِ ریزش روی سریِ مرجع «نامعلوم» داد"
     return True, "خودآزمایی سبز + تصمیم با موتور اصلی یکی است"
 
 

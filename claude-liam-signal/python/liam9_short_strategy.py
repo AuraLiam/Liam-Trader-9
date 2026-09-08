@@ -441,6 +441,60 @@ def _no(symbol, tf, why, **extra):
             "panel": PANEL_NAME, "t": int(time.time() * 1000), **extra}
 
 
+def _stair(cd, tf="15m"):
+    """برچسبِ نردبانِ ریزش — شاهد، نه دروازه.
+
+    از `hamid.stairs` قرض گرفته می‌شود؛ خرابی‌اش هرگز تصمیم را نمی‌کشد
+    (برچسبِ غایب یعنی «نمی‌دانم»، نه «نرو»).
+    """
+    try:
+        from hamid import stairs
+        # ⚠️ `cd` این‌جا کندلِ **خام صرافی** است (`[t,o,h,l,c,v]`) ولی
+        # ماژول‌های قرض‌گرفته دیکشنری می‌خواهند. همان `_dicts` که برای
+        # `structure.channel` استفاده می‌شود، این‌جا هم لازم است — بدون
+        # آن `label` بی‌صدا None برمی‌گرداند و «شاهدِ غایب» با «شاهدِ
+        # خنثی» یکی دیده می‌شود. (همین یک بار اتفاق افتاد و چون هر دو
+        # طرفِ پروبِ برابری یکسان خراب بودند، پروب سبز ماند.)
+        lb = stairs.label(_dicts(cd), tf=tf, direction="SHORT")
+        lb["fa"] = stairs.fa(lb)
+        return lb
+    except Exception:                                   # noqa: BLE001
+        return None
+
+
+def drop_radar(symbol, cd, tf="15m"):
+    """**رادارِ ریزش** — دستور حمید (۸ سپتامبر): «در کنار شناسایی پامپ‌ها
+    برای شناسایی ریزش‌ها هم استفاده شود».
+
+    برخلاف `decide`، این تابع **همیشه** جواب می‌دهد؛ حتی وقتی هیچ ستاپِ
+    قابل‌معامله‌ای نیست. کارش تشخیصِ وضعیت است نه صدور سیگنال:
+    «این نماد الان پله‌ای می‌ریزد یا نه، چند پله، و کجای پولبک است».
+
+    مرز: خروجی‌اش **سیگنال نیست** و هیچ ورود/استاپ/تارگتی ندارد. برای
+    معامله باید از `decide` رد شود که همهٔ دروازه‌ها را دارد.
+    """
+    lb = _stair(cd, tf=tf)
+    if not lb:
+        return {"symbol": symbol, "tf": tf, "state": "UNKNOWN",
+                "why": "برچسبِ نردبان ساخته نشد", "is_signal": False}
+    falling = lb.get("stair_dir") == "down" and not lb.get("stair_broken")
+    steps = lb.get("stair_steps") or 0
+    if falling and steps >= 2:
+        state = "STAIR_DOWN"
+    elif falling and steps == 1:
+        state = "FIRST_LEG_DOWN"
+    elif lb.get("stair_dir") == "down" and lb.get("stair_broken"):
+        state = "DOWN_BUT_TURNING"
+    elif lb.get("stair_dir") == "up":
+        state = "NOT_FALLING"
+    else:
+        state = "UNKNOWN"
+    return {"symbol": symbol, "tf": tf, "state": state, "steps": steps,
+            "at_ob": lb.get("stair_ob"), "depth": lb.get("stair_depth"),
+            "turning": lb.get("stair_broken"), "fa": lb.get("fa"),
+            "is_signal": False, "panel": PANEL_NAME}
+
+
 def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
            equity=None, now_ms=None, alt_stance=None, dom_generated=None):
     """تصمیمِ شورت. → dict با `action` ∈ {SHORT, NO_SIGNAL}.
@@ -629,6 +683,11 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
         # سهمِ همین دروازه را از نتیجه جدا بسنجد (قانون انجینِ ردپادار)
         "alt_stance": dom_stance, "dom_why": dom_why,
         "ob": ob, "sweep": sweep,
+        # نردبانِ ریزش (دستور حمید ۸ سپتامبر). **شاهد است، نه دروازه** —
+        # هیچ عددی از این‌جا ورود/استاپ/تارگت را عوض نمی‌کند و هیچ
+        # سیگنالی به‌خاطرش حذف نمی‌شود. ورودش به تصمیم فقط از مسیر
+        # قانون ۰۳ (CI بالای صفر + تأیید صریح حمید).
+        "stair": _stair(cd, tf),
         "max_hold_bars": P["max_hold_bars"],
         "trail": {"arm_at": round(entry - fee_r * risk, 8),
                   "frac": 0.80,

@@ -997,6 +997,19 @@ CONDITIONS = [
     ("سوپرترند هم‌جهت", lambda w: w.get("supertrend_align") == "with"),
     ("ICT هم‌جهت", lambda w: w.get("ict_align") == "with"),
     ("ICT خلاف جهت", lambda w: w.get("ict_align") == "against"),
+    # نردبانِ ریزش (دستور حمید ۸ سپتامبر): «اکثرا دارن پله‌ای می‌ریزن و با
+    # پولبک‌های پیاپی به اوردر بلاک‌های بالاییشون برخورد می‌کنن و میان
+    # پایین… البته می‌تونه روند برگرده.» تعریف و شمارش در `hamid/stairs.py`.
+    # این پنج شرط **فقط سؤال** می‌پرسند؛ هیچ دروازه‌ای عوض نمی‌شود تا
+    # بازهٔ اطمینان از صفر رد کند و حمید تأیید کند (قانون ۰۳/۱۲).
+    ("نردبان ریزشی، پلهٔ ۲+",
+     lambda w: w.get("stair_dir") == "down" and (w.get("stair_steps") or 0) >= 2),
+    ("نردبان ریزشی، پلهٔ ۱",
+     lambda w: w.get("stair_dir") == "down" and (w.get("stair_steps") or 0) == 1),
+    ("چسبیده به زیرِ OB بالاسری", lambda w: w.get("stair_ob") == "under_edge"),
+    ("داخلِ OB بالاسری", lambda w: w.get("stair_ob") == "inside"),
+    ("نردبان شکسته (برگشت محتمل)", lambda w: w.get("stair_broken") is True),
+    ("نردبان هم‌جهت با معامله", lambda w: w.get("stair_align") == "with"),
 ]
 
 
