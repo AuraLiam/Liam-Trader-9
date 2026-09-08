@@ -84,6 +84,33 @@ src = (HERE / "loop_audit.py").read_text(encoding="utf-8")
 check("مرزِ «دفتر پنل از چه زمانی هست» در کد اعمال شده",
       "feed_since" in src and "at >= feed_since" in src)
 
+# ردِ پنل از آرشیوِ append-only می‌آید، نه از حلقهٔ ۲۰۰تاییِ ادغام‌خورده
+# (۸ سپتامبر: حلقه ۹۶ سیگنالِ پیش از ۲۹ اوت داشت و صفر سیگنالِ ۷۲ ساعت
+# اخیر؛ آرشیو همان پنجره ۷۱ تا — ممیز ۴۱ نشتیِ کاذب می‌داد و شکاک ۱۰۷
+# پیام فرستاد). خاصیت: یک ردیف که فقط در آرشیو باشد باید دیده شود.
+from hamid import msg_budget as _MB                  # noqa: E402
+_arch = Path(tempfile.mkdtemp(prefix="loopfeed-"))
+_now = int(time.time() * 1000)
+_day = time.strftime("%Y%m%d", time.gmtime(_now / 1000))
+(_arch / f"telegram-feed-{_day}.jsonl").write_text(json.dumps(
+    {"n": 1, "at": _now - 60_000, "kind": "signal", "title": "ZZZUSDT 5m LONG",
+     "extra": {"sym": "ZZZUSDT"}}) + "\n", encoding="utf-8")
+_old_arch = _MB.ARCHIVE
+_MB.ARCHIVE = _arch
+try:
+    _rows = LA._feed_rows(_now, 72)
+    check("ردِ پنل از آرشیو خوانده می‌شود (یک خوانندهٔ یگانه: msg_budget.rows)",
+          any((r.get("extra") or {}).get("sym") == "ZZZUSDT" for r in _rows),
+          str(_rows[:2]))
+finally:
+    _MB.ARCHIVE = _old_arch
+check("حلقهٔ زنده دیگر منبعِ ممیز نیست",
+      'telegram-feed.json' not in src.split("def audit")[1].split("def packet")[0])
+_tgsrc = (PY / "telegram.py").read_text(encoding="utf-8")
+check("حلقهٔ زندهٔ پنل بر زمان مرتب می‌شود (خودترمیم بعد از ادغام)",
+      "cur.sort(key=lambda r: int(r.get(\"at\") or 0))" in _tgsrc
+      and _tgsrc.index("cur.sort(") < _tgsrc.index("cur = cur[-FEED_CAP:]"))
+
 # منبعِ رفع مستند است — عدد کشف روی خودِ کد می‌ماند
 psrc = (HERE / "paper.py").read_text(encoding="utf-8")
 check("دلیلِ عددیِ رفع روی کد ثبت است", "۲۸ از ۴۰" in psrc)

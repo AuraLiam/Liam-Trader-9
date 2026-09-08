@@ -317,6 +317,10 @@ def record_out(kind, title, extra=None, msg_id=None):
     except Exception:                                # noqa: BLE001
         cur = []
     cur.append(row)
+    # مرتب بر زمان، بعد سقف — حلقه‌ای که بعد از ادغام نامرتب شده باشد
+    # (۸ سپتامبر: ۹۶ سیگنالِ پیش از ۲۹ اوت جا خوش کرده بودند و تازه‌ها
+    # از انتها می‌افتادند) با اولین نوشتن خودش را ترمیم می‌کند.
+    cur.sort(key=lambda r: int(r.get("at") or 0))
     cur = cur[-FEED_CAP:]
     try:
         FEED.parent.mkdir(parents=True, exist_ok=True)

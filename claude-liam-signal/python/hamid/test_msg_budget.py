@@ -178,6 +178,18 @@ check("ولی نرخِ برآوردی گفته می‌شود، نه پنهان",
 v = MB.judge(now_ms=NOW, archive=d5, effective_from=NOW - 24 * HOUR)
 check("و با پنجرهٔ کامل، همان دفتر حکمِ OVER می‌گیرد",
       v["verdict"] == "OVER" and "dom_report" in v["over"], v["verdict"])
+# فقط شکستنِ بودجهٔ **محصول** (signal) چرخه را سرخ می‌کند. ۸ سپتامبر:
+# سیلِ ۱۰۷ پیامِ شکاک با دروازهٔ سختِ همه‌نوع، ساعت ۰۷:۳۰ کلِ چرخهٔ حمید
+# را می‌خواباند — تسویه و ریپلای نتیجه به‌خاطر عیبِ یک پاسبان.
+check("OVER روی آلارم/گزارش گزارش می‌شود ولی چرخه را نمی‌بندد",
+      v["verdict"] == "OVER" and MB.gate(v) == [], str(MB.gate(v)))
+d7 = _tmp()
+_feed(d7, [{"at": NOW - i * 30_000, "kind": "signal", "title": f"s{i}"}
+           for i in range(1, 31)])
+v7 = MB.judge(now_ms=NOW, archive=d7, effective_from=NOW - 24 * HOUR)
+check("ولی بیش از ۲۴ سیگنال در روز، دروازهٔ سخت است (سقفِ دستور ۲۹ اوت)",
+      MB.gate(v7) == ["signal"], str(MB.gate(v7)))
+check("دروازهٔ سخت فقط signal است", MB.HARD_KINDS == {"signal"})
 check("EFFECTIVE_FROM روی خودِ فایل عدد ثابت است",
       isinstance(MB.EFFECTIVE_FROM, int) and MB.EFFECTIVE_FROM > 1_700_000_000_000)
 

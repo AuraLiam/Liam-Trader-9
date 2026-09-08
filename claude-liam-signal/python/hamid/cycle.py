@@ -533,19 +533,20 @@ def settle_books(report):
     t_mark = int(time.time() * 1000)
     still, closed = paper.mark()
     try:
-        just = [t for t in paper._read(paper.CLOSED)
+        closed_rows = paper._read(paper.CLOSED)
+        just = [t for t in closed_rows
                 if (t.get("closed") or 0) >= t_mark
                 and t.get("outcome") in ("target", "stop", "trail")
                 and (t.get("why") or {}).get("stage")
                 not in ("first", "practice", "inducement")]
+        import telegram as _tg
+        tok, chat = _tg.creds()
+        autopsies, stop_reasons = {}, []
         if just:
-            import telegram as _tg
-            tok, chat = _tg.creds()
             # کالبدشکافی استاپ (قانون حمید): استاپ که خورد، همان لحظه ایجنت
             # وارد شود — BTC چه می‌کرد؟ این ارز طبق لگ-کورولیشن دنبالش
             # می‌ریزد؟ در ریزش بزرگ قبلی BTC هم ریخته بود؟ حکم: استاپ
             # سیستمی بود یا ضعف خود ستاپ — و همین حکم درس می‌شود.
-            autopsies = {}
             try:
                 from hamid import lagcorr as _lagc
                 from hamid import memory as _mem0
@@ -580,7 +581,6 @@ def settle_books(report):
             except Exception as e:                   # noqa: BLE001
                 print(f"کالبدشکافی استاپ: {type(e).__name__}")
             # دلیل برای هر استاپ — نه فقط استاپ‌های مرتبط با BTC
-            stop_reasons = []
             for t in just:
                 if t["outcome"] == "stop":
                     r = _stop_reason(t, autopsies.get(t["sym"] + t["dir"]))
@@ -589,24 +589,21 @@ def settle_books(report):
                                          "mfe": t.get("mfe_r"), "mae": t.get("mae_r"),
                                          "reason": r})
             report["stop_reasons"] = stop_reasons[:10]
-            if tok:
+        # خواست حمید: نتیجهٔ هر سیگنال «ریپلایِ» پیام خودش باشد تا با
+        # سیگنال دیگری اشتباه نشود — فقط معامله‌های دارای شناسهٔ پیام
+        # اعلام می‌شوند (ریپلای)؛ پیام جمعی فقط وقتی ریپلای شکست بخورد.
+        #
+        # نامزدها از دفترِ «اعلام‌شده» می‌آیند، نه از «تسویه‌های همین
+        # اجرا» (۸ سپتامبر — ممیزی E25: ۸ از ۱۵ تسویهٔ رانرِ دیگر هرگز
+        # ریپلای نگرفت و ۴ تسویهٔ دو رانرِ هم‌پوشان دو بار اعلام شد).
+        # یکتاسازی هم همان‌جاست: یک شناسهٔ پیام = یک ریپلای، ردیفِ sig-*
+        # مقدم (alarm + sig-alarm، بازوهای آینه). شرح در `hamid/announce.py`.
+        from hamid import announce as _ann
+        dd = _ann.pending(closed_rows, outcomes=("target", "stop", "trail")) \
+            if tok else []
+        if dd:
                 rmap = {s["sym"] + s["dir"]: s["reason"] for s in stop_reasons}
-                # خواست حمید: نتیجهٔ هر سیگنال «ریپلایِ» پیام خودش باشد تا با
-                # سیگنال دیگری اشتباه نشود — فقط معامله‌های دارای شناسهٔ پیام
-                # اعلام می‌شوند (ریپلای)؛ پیام جمعی فقط وقتی ریپلای شکست بخورد.
-                # یکتاسازی: معاملهٔ آلارمی در دو دفتر (alarm + sig-alarm) ثبت
-                # می‌شود؛ برای اعلام فقط یکی — نسخهٔ دارای شناسهٔ پیام مقدم
-                dd, seen_k = [], {}
-                for t in just:
-                    k = (t["sym"], t["dir"], round(float(t["entry"]), 10))
-                    has_mid = bool((t.get("why") or {}).get("tg_msg_id"))
-                    if k in seen_k:
-                        if has_mid and not (dd[seen_k[k]].get("why") or {}).get("tg_msg_id"):
-                            dd[seen_k[k]] = t
-                        continue
-                    seen_k[k] = len(dd)
-                    dd.append(t)
-                rest = []
+                rest, rest_rows = [], []
                 for t in dd[:10]:
                     # شکایت حمید (۱۲ اوت): «بعضی از نتایج اصلاً جزو سیگنال
                     # نبوده‌اند و من در پیام‌ها ندیدم». معامله‌ای که شناسهٔ
@@ -664,45 +661,56 @@ def settle_books(report):
                                            {"sym": t.get("sym"),
                                             "outcome": t.get("outcome"),
                                             "r": t.get("r")}, mid)
+                            _ann.mark(t, "reply")
                             continue
                         except Exception:            # noqa: BLE001 - ریپلای نشد → جمعی
                             pass
                     rest.append(line + (f"\n   🔎 <i>{a}</i>" if a else ""))
+                    rest_rows.append(t)
                 if rest:
-                    _tg._post(tok, "sendMessage",
-                              {"chat_id": chat, "parse_mode": "HTML",
-                               "text": (f"🏷 <b>{_tg.PANEL_NAME}</b>\n"
-                                        f"📊 <b>نتیجهٔ معامله‌ها</b>\n\n" + "\n".join(rest))})
-                    _tg.record_out("outcome_batch",
-                                   f"نتیجهٔ {len(rest)} معامله (جمعی)",
-                                   {"n": len(rest)})
-                n_mid = len([t for t in dd if (t.get("why") or {}).get("tg_msg_id")])
-                act(f"نتیجهٔ {n_mid} سیگنال ارسالی به تلگرام رفت (ریپلای)؛ "
-                    f"{len(just) - n_mid} بستهٔ دفتر داخلی فقط در حافظه/پنل ماند")
-                # خواست حمید: اوردرِ فعال‌نشده که منطقی منقضی شد هم ریپلای
-                # بگیرد — «به این دلایل منقضی است و ورود ممنوع»
-                exp_just = [t for t in paper._read(paper.CLOSED)
-                            if (t.get("closed") or 0) >= t_mark
-                            and t.get("outcome") == "expired"
-                            and (t.get("why") or {}).get("tg_msg_id")]
-                for t in exp_just[:6]:
-                    hrs = round(((t.get("closed") or 0) - (t.get("opened") or 0)) / 3600e3, 1)
                     try:
                         _tg._post(tok, "sendMessage",
                                   {"chat_id": chat, "parse_mode": "HTML",
-                                   "reply_to_message_id": t["why"]["tg_msg_id"],
-                                   "allow_sending_without_reply": "true",
-                                   "text": (f"{_tg.BRAND} · ⌛️ <b>این سیگنال منقضی شد — ورود ممنوع</b>\n"
-                                            f"قیمت در {hrs} ساعت هرگز به ناحیهٔ ورود "
-                                            f"<code>{t['entry']:.10g}</code> نرسید؛ ستاپ کهنه "
-                                            f"شده و شرایطی که صدورش را توجیه می‌کرد دیگر "
-                                            f"برقرار نیست. اگر دوباره معتبر شود، سیگنال "
-                                            f"تازه با تحلیل تازه می‌آید.\n"
-                                            f"🕐 <code>{_tg.tehran()}</code> به وقت ایران")})
-                    except Exception:                # noqa: BLE001
+                                   "text": (f"🏷 <b>{_tg.PANEL_NAME}</b>\n"
+                                            f"📊 <b>نتیجهٔ معامله‌ها</b>\n\n" + "\n".join(rest))})
+                        _tg.record_out("outcome_batch",
+                                       f"نتیجهٔ {len(rest)} معامله (جمعی)",
+                                       {"n": len(rest)})
+                        for t in rest_rows:
+                            _ann.mark(t, "batch")
+                    except Exception:                # noqa: BLE001 - نوبت بعد
                         pass
-                if exp_just:
-                    act(f"⌛️ {len(exp_just)} اوردر فعال‌نشده با ریپلای «منقضی — ورود ممنوع» بسته اعلام شد")
+                act(f"نتیجهٔ {min(len(dd), 10)} سیگنال ارسالی به تلگرام رفت (ریپلای)"
+                    + (f"؛ {len(dd) - 10} تا نوبت بعد" if len(dd) > 10 else ""))
+        # خواست حمید: اوردرِ فعال‌نشده که منطقی منقضی شد هم ریپلای
+        # بگیرد — «به این دلایل منقضی است و ورود ممنوع»
+        exp_just = _ann.pending(closed_rows, outcomes=("expired",)) if tok else []
+        n_exp = 0
+        for t in exp_just[:6]:
+            hrs = round(((t.get("closed") or 0) - (t.get("opened") or 0)) / 3600e3, 1)
+            try:
+                _tg._post(tok, "sendMessage",
+                          {"chat_id": chat, "parse_mode": "HTML",
+                           "reply_to_message_id": t["why"]["tg_msg_id"],
+                           "allow_sending_without_reply": "true",
+                           "text": (f"{_tg.BRAND} · ⌛️ <b>این سیگنال منقضی شد — ورود ممنوع</b>\n"
+                                    f"قیمت در {hrs} ساعت هرگز به ناحیهٔ ورود "
+                                    f"<code>{t['entry']:.10g}</code> نرسید؛ ستاپ کهنه "
+                                    f"شده و شرایطی که صدورش را توجیه می‌کرد دیگر "
+                                    f"برقرار نیست. اگر دوباره معتبر شود، سیگنال "
+                                    f"تازه با تحلیل تازه می‌آید.\n"
+                                    f"🕐 <code>{_tg.tehran()}</code> به وقت ایران")})
+                # پیامِ بی‌دفتر ممنوع (E25، ۸ سپتامبر): همان دفتری که
+                # بودجهٔ پیام از آن می‌شمارد.
+                _tg.record_out("outcome", f"{t['sym']} expired",
+                               {"sym": t.get("sym"), "outcome": "expired",
+                                "hrs": hrs}, t["why"]["tg_msg_id"])
+                _ann.mark(t, "reply")
+                n_exp += 1
+            except Exception:                        # noqa: BLE001
+                pass
+        if n_exp:
+            act(f"⌛️ {n_exp} اوردر فعال‌نشده با ریپلای «منقضی — ورود ممنوع» بسته اعلام شد")
     except Exception as e:                           # noqa: BLE001 - اعلان تسویه را نمی‌کشد
         print(f"اعلان نتیجه: {type(e).__name__}")
     # پرونده‌سازی (بند ۲۲ منشور): هر بستهٔ سیگنال‌گرید یک case یکتا —

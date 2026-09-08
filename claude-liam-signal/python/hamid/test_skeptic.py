@@ -229,6 +229,34 @@ def run():
     src = (PY / "hamid" / "skeptic.py").read_text(encoding="utf-8")
     check("شکاک از دروازهٔ آلارم رد می‌شود (قانون ۰۷)",
           "alert_gate.send" in src and "tg.send_text" not in src)
+    # کلیدِ سطلی (۸ سپتامبر): ۱۰۷ پیام در ۱۶.۶ ساعت چون کلید از متنِ سؤال
+    # و شمارش ساخته می‌شد و هر نوسانِ ۱↔۲ مورد «کلیدِ تازه» بود.
+    _p1 = {"persistent": [{"engine": "E25", "q": "هر سیگنالِ رفته ردپای کامل دارد؟"}]}
+    _p2 = {"persistent": [{"engine": "E25", "q": "بودجهٔ پیام رعایت شده؟"},
+                          {"engine": "E25", "q": "سؤال سوم"}]}
+    _p3 = {"persistent": [{"engine": "E25", "q": "x"}, {"engine": "E01", "q": "y"}]}
+    check("کلید آلارم فقط از مجموعهٔ انجین‌هاست — سؤال/شمارشِ متفاوت، کلیدِ یکسان",
+          S.alarm_key(_p1) == S.alarm_key(_p2), f"{S.alarm_key(_p1)} / {S.alarm_key(_p2)}")
+    check("انجینِ خرابِ تازه = کلیدِ تازه", S.alarm_key(_p3) != S.alarm_key(_p1))
+    check("بدون موردِ پابرجا، کلید خالی است (دروازه «رفع شد» می‌فهمد)",
+          S.alarm_key({"persistent": []}) == "")
+    check("و مسیر ارسال همان کلیدِ سطلی را می‌دهد", "alarm_key(res)" in src
+          and "a['q'][:20]" not in src)
+    check("E25 بودجهٔ پیام را هم می‌پرسد", S.q_msg_budget in _e25)
+    _saved2 = S._j
+    try:
+        S._j = lambda rel, default=None: {"verdict": "WARMING", "covered_h": 3,
+                                          "window_h": 24}
+        check("بودجه در گرم‌شدن: NO_DATA نه حکم", S.q_msg_budget(0)["verdict"] == "NO_DATA")
+        S._j = lambda rel, default=None: {"verdict": "OVER", "over": ["alert"],
+                                          "kinds": {"alert": {"n": 119, "budget": 12}}}
+        _a = S.q_msg_budget(0)
+        check("بودجهٔ شکسته: UNPROVED با عددش", _a["verdict"] == "UNPROVED"
+              and "119/12" in _a["evidence"], str(_a))
+        S._j = lambda rel, default=None: {"verdict": "OK", "over": [], "total": 40}
+        check("بودجهٔ رعایت‌شده: PROVED", S.q_msg_budget(0)["verdict"] == "PROVED")
+    finally:
+        S._j = _saved2
     check("شکاک سیگنال صادر یا وتو نمی‌کند",
           "send_signals" not in src and "veto" not in src)
     check("فقط خروجی و دفتر خودش را می‌نویسد (قانون ۰۵)",

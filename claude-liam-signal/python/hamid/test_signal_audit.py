@@ -119,8 +119,9 @@ def run():
           A.c_direction_bias(mixed)["ok"])
 
     # ۸) ستاپِ تکرارشوندهٔ منقضی — پروندهٔ LOKA
-    exp2 = [bk(None, "sig-smc", r=None, outcome="expired", entry=0.1236,
-               sym="LOKAUSDT") for _ in range(3)]
+    # سه انقضای **جدا** (سه لحظهٔ متفاوت)، همه پیش از ارسالِ دوباره
+    exp2 = [dict(bk(None, "sig-smc", r=None, outcome="expired", entry=0.1236,
+                    sym="LOKAUSDT"), closed=NOW - (20 + i) * H) for i in range(3)]
     check("منقضیِ تکراری: ورودِ ۳بار منقضی‌شده، دوباره فرستاده = قرمز",
           not A.c_repeat_expired([snt("LOKAUSDT", NOW - H, entry=0.1236)],
                                  exp2)["ok"])
@@ -129,6 +130,18 @@ def run():
                              exp2[:1])["ok"])
     check("منقضیِ تکراری: ورودِ متفاوت سبز است",
           A.c_repeat_expired([snt("LOKAUSDT", NOW - H, entry=0.2)], exp2)["ok"])
+    # پروندهٔ SOL@106.85 (۸ سپتامبر): ارسال ۰۲:۴۷، انقضاها ۰۷:۵۵ — یعنی
+    # **بعد از** ارسال. «قبلاً» باید زمان‌مرتب باشد، وگرنه مثبتِ کاذب.
+    check("منقضیِ تکراری: انقضای بعد از ارسال، «قبلاً» نیست (پروندهٔ SOL)",
+          A.c_repeat_expired([snt("LOKAUSDT", NOW - 30 * H, entry=0.1236)],
+                             exp2)["ok"])
+    # سه ردیفِ آینه‌ای (سیگنال + دو بازوی تریل) در یک میلی‌ثانیه = یک انقضا
+    mirror = [dict(bk(None, st, r=None, outcome="expired", entry=0.1236,
+                      sym="LOKAUSDT"), closed=NOW - 20 * H)
+              for st in ("sig-smc", "exp-trail-g65", "exp-trail-g80")]
+    check("منقضیِ تکراری: ردیف‌های آینه‌ایِ هم‌لحظه یک انقضا شمرده می‌شوند",
+          A.c_repeat_expired([snt("LOKAUSDT", NOW - H, entry=0.1236)],
+                             mirror)["ok"])
 
     # ── ساختار خروجی و مرزها ──────────────────────────────────────────
     snap = A.build()

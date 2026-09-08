@@ -172,6 +172,25 @@ def q_delivery_id(now):
         f"{leaks} نشتی از {la.get('n_closed_sig') or '?'} بسته")
 
 
+def q_msg_budget(now):
+    """بودجهٔ پیام (E25) از خودِ دفترِ محصول — پنجره‌ای، پس رفعِ ریشه
+    ظرف ۲۴ ساعت سبزش می‌کند. تا پنجره کامل نشده (WARMING) حکمی نیست."""
+    mb = _j("signals/msg-budget.json", {}) or {}
+    v = mb.get("verdict")
+    if not v:
+        return na("بودجهٔ پیام رعایت شده؟", "msg-budget.json نیست")
+    if v == "WARMING":
+        return na("بودجهٔ پیام رعایت شده؟",
+                  f"پنجره هنوز کامل نیست ({mb.get('covered_h')} از "
+                  f"{mb.get('window_h')} ساعت)")
+    over = mb.get("over") or []
+    kinds = mb.get("kinds") or {}
+    ev = "، ".join(f"{k} {kinds.get(k, {}).get('n')}/{kinds.get(k, {}).get('budget')}"
+                   for k in over) if over else f"{mb.get('total')} پیام در پنجره"
+    return (ok if not over else no)("بودجهٔ پیام رعایت شده؟", ev,
+                                    "شمارش از آرشیو append-only، نه از متن کد")
+
+
 def q_signal_sanity(now):
     """محتوای خودِ سیگنال‌های رفته — نه فقط این‌که رفتند.
 
@@ -370,7 +389,8 @@ BANK = [
                               q_fresh("signals/latest.json", 45, "اسکن")]),
     ("E21", "حافظه", [q_fingerprint("exp_used", "لایهٔ تجربه")]),
     ("E23", "ناظر", [q_state_bus, q_orphans]),
-    ("E25", "تحویل", [q_delivery_id, q_dedupe_contract, q_signal_sanity]),
+    ("E25", "تحویل", [q_delivery_id, q_dedupe_contract, q_signal_sanity,
+                      q_msg_budget]),
     # بازرسیِ نتیجه‌گیری — همان چیزی که حمید گفت باید به آن شک کرد
     ("**", "بازرسیِ نتیجه‌گیری", [q_unique_rows, q_fee_single_source,
                                   q_scorecard_red]),
@@ -452,6 +472,20 @@ def interrogate(now_ms=None, rnd=None):
     }
 
 
+def alarm_key(res):
+    """کلیدِ دروازهٔ آلارم — **سطلی**، فقط مجموعهٔ انجین‌هایی که شکستِ
+    پابرجا دارند.
+
+    نسخهٔ قبلی کلید را از «انجین:۲۰ حرفِ اولِ سؤال» می‌ساخت. با سؤالِ
+    چرخشی و نوسانِ ۱↔۲ مورد، هر نوبت «کلیدِ تازه» بود و دروازهٔ ۶ساعته
+    عبور می‌داد: ۱۰۷ پیامِ شکاک در ۱۶.۶ ساعت (۷ سپتامبر) — دقیقاً همان
+    ضدالگویی که قانون ۰۷ برای پاسبان پوزیشن ثبت کرده («کلید را از
+    مجموعهٔ نمادها ساخت و باز اسپم شد»). کلید باید درشت باشد: انجینِ
+    خراب تازه = پیامِ تازه؛ همان انجین با سؤالِ دیگر = همان مشکل."""
+    eng = sorted({a["engine"] for a in (res.get("persistent") or [])})
+    return "skeptic|" + "|".join(eng) if eng else ""
+
+
 def caption(res):
     p = res.get("persistent") or []
     if not p:
@@ -513,9 +547,7 @@ def main(argv=()):
             print("  تلگرام: نرفت (اجرای محلی — آلارم فقط از رانر)")
             return 0
         from hamid import alert_gate
-        key = "skeptic|" + "|".join(sorted(f"{a['engine']}:{a['q'][:20]}"
-                                           for a in res["persistent"]))
-        sent, why = alert_gate.send("شکاک", key, caption(res))
+        sent, why = alert_gate.send("شکاک", alarm_key(res), caption(res))
         print(f"  تلگرام: {'رفت' if sent else 'نرفت'} ({why})")
     return 0
 
