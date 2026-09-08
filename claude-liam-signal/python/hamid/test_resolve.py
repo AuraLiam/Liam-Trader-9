@@ -159,8 +159,8 @@ check("دفتر jsonl تازه خودکار پوشش داده می‌شود",
       rbc.handler_for("brain/paper/open.jsonl") is rbc.merge_jsonl)
 check("هر jsonl زیر brain (مثلاً learning) هم پوشش دارد",
       rbc.handler_for("brain/learning/experiences.jsonl") is rbc.merge_jsonl)
-check("signals عکس‌فوری می‌گیرد نه اجتماع",
-      rbc.handler_for("signals/pump-radar.json") is rbc.take_ours)
+check("signals عکس‌فوری می‌گیرد نه اجتماع — با قاعدهٔ «مهرِ تازه‌تر برنده»",
+      rbc.handler_for("signals/pump-radar.json") is rbc.merge_newest_generated)
 check("index.json بازساخته می‌شود نه merge",
       rbc.handler_for("brain/learning/index.json") is rbc.rebuild_index)
 check("مسیر ناشناخته حدس زده نمی‌شود",
@@ -201,6 +201,53 @@ check("مرز جلوتر برنده است", _st.get("A") == 900)
 check("نماد فقط-در-طرف-مقابل نمی‌افتد", _st.get("C") == 300)
 check("نماد فقط-در-خودمان هم نمی‌افتد", _st.get("B") == 150)
 
+# ── عکس‌فوریِ مهرخورده: مهرِ تازه‌تر برنده، نه «ما» (۸ سپتامبر) ─────────
+#
+# بازسازیِ حادثه: origin نتیجهٔ ۸۰دقیقه‌ایِ بک‌تست عمیق (generated=2000)
+# را دارد؛ رانرِ ضربان با چک‌اوتِ کهنه (generated=1000) ادغام می‌کند.
+# با `take_ours` کور، نتیجهٔ تازه بی‌صدا پاک می‌شد.
+(tmp / "signals").mkdir(exist_ok=True)
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "signals/deep.json").write_text(json.dumps({"generated": 1000, "n": 31}))
+(tmp / "signals/nostamp.json").write_text(json.dumps({"n": 1}))
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "snap base", cwd=tmp)
+git("checkout", "-q", "-b", "other3", cwd=tmp)
+(tmp / "signals/deep.json").write_text(json.dumps({"generated": 2000, "n": 208}))
+(tmp / "signals/nostamp.json").write_text(json.dumps({"n": 2}))
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "snap theirs (newer)", cwd=tmp)
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "signals/deep.json").write_text(json.dumps({"generated": 1500, "n": 31}))
+(tmp / "signals/nostamp.json").write_text(json.dumps({"n": 3}))
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "snap ours (stale)", cwd=tmp)
+git("merge", "--no-edit", "other3", cwd=tmp)
+r3 = subprocess.run([sys.executable, "scripts/resolve_brain_conflicts.py"],
+                    cwd=tmp, capture_output=True, text=True)
+check("تعارض عکس‌فوریِ مهرخورده خودکار حل می‌شود", r3.returncode == 0)
+_deep = json.loads((tmp / "signals/deep.json").read_text())
+check("مهرِ تازه‌ترِ origin برنده است (نتیجهٔ ۲۰۸تایی پاک نمی‌شود)",
+      _deep.get("generated") == 2000 and _deep.get("n") == 208)
+_ns = json.loads((tmp / "signals/nostamp.json").read_text())
+check("فایلِ بی‌مهر رفتار قبلی را دارد (ما)", _ns.get("n") == 3)
+check("(اثبات منفی) take_ours کور همان ۳۱تایی را می‌گذاشت",
+      rbc.take_ours is not rbc.handler_for("signals/deep.json"))
+# و وقتی ما تازه‌تریم، ما می‌مانیم
+git("checkout", "-q", "-b", "other4", cwd=tmp)
+(tmp / "signals/deep.json").write_text(json.dumps({"generated": 2100, "n": 5}))
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "theirs older", cwd=tmp)
+git("checkout", "-q", "main", cwd=tmp)
+(tmp / "signals/deep.json").write_text(json.dumps({"generated": 2500, "n": 9}))
+git("add", "-A", cwd=tmp)
+git("commit", "-qm", "ours newer", cwd=tmp)
+git("merge", "--no-edit", "other4", cwd=tmp)
+subprocess.run([sys.executable, "scripts/resolve_brain_conflicts.py"],
+               cwd=tmp, capture_output=True, text=True)
+check("وقتی مهرِ ما تازه‌تر است، ما می‌مانیم",
+      json.loads((tmp / "signals/deep.json").read_text()).get("n") == 9)
+
 # ── گاردِ ساختاری — نسخهٔ دوم، قطعی ───────────────────────────────────────
 #
 # نسخهٔ اول فایل‌های **واقعیِ لحظه** را زیر brain/ می‌گشت. این یعنی آزمونی
@@ -221,7 +268,8 @@ CRITICAL = {
     "brain/paper/trainer-state.json": rbc.merge_frontier,
     "brain/telegram-sent.json": rbc.merge_key_list,
     "brain/health.json": rbc.take_ours,
-    "signals/latest.json": rbc.take_ours,
+    "signals/latest.json": rbc.merge_newest_generated,
+    "signals/short-backtest-deep.json": rbc.merge_newest_generated,
 }
 _wrong = {p: rbc.handler_for(p).__name__ for p, fn in CRITICAL.items()
           if rbc.handler_for(p) is not fn}

@@ -333,8 +333,10 @@ check("کلاس: هر jsonl زیر signals/archive → اجتماع، نه take_
           "signals/archive/telegram-feed-20260904.jsonl",
           "signals/archive/delivery-failures-20260904.jsonl")),
       str([_rbc.handler_for("signals/archive/telegram-feed-20260904.jsonl")]))
-check("مرز: عکس‌فوریِ signals همچنان take_ours می‌ماند",
-      _rbc.handler_for("signals/latest.json") is _rbc.take_ours)
+# ۸ سپتامبر: عکس‌فوریِ signals دیگر «ما»ی کور نیست — مهرِ `generated`
+# تازه‌تر برنده است (نتیجهٔ ۸۰دقیقه‌ایِ بک‌تست عمیق با take_ours پاک شد).
+check("مرز: عکس‌فوریِ signals با قاعدهٔ «مهرِ تازه‌تر» حل می‌شود، نه اجتماع",
+      _rbc.handler_for("signals/latest.json") is _rbc.merge_newest_generated)
 
 # ── ۹) ریموتِ مرده → خروج ۱ بعد از تلاش‌ها، نه سکوت ───────────────────────
 w = World()

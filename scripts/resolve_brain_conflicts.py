@@ -333,6 +333,38 @@ def merge_newest_date(path):
     return f"تاریخ تازه‌تر برنده: {win}"
 
 
+def _generated_stamp(txt):
+    """مهرِ `generated` (میلی‌ثانیه) یک عکس‌فوری، یا None اگر ندارد/خراب است."""
+    try:
+        d = json.loads(txt or "")
+    except Exception:                                # noqa: BLE001
+        return None
+    g = d.get("generated") if isinstance(d, dict) else None
+    return float(g) if isinstance(g, (int, float)) else None
+
+
+def merge_newest_generated(path):
+    """عکس‌فوریِ مهرخورده (signals/*.json با `generated`): **مهرِ تازه‌تر**
+    برنده است، نه «ما».
+
+    ۸ سپتامبر ۰۰:۲۲: اجرای دومِ بک‌تست عمیق شورت (۲۰۸ معامله، ۸۰ دقیقه
+    محاسبه) ساعت ۰۰:۱۷ منتشر شد؛ پنج دقیقه بعد ضربان با چک‌اوتِ کهنه‌اش
+    ادغام کرد و `take_ours` نسخهٔ ۲۲:۱۹ (۳۱ معامله) را برگرداند — بی‌صدا.
+    همان کلاسِ ۲۵ اوت (pump-radar.json) که آن روز فقط برای همان یک فایل
+    (`pump_radar.reapply`) بسته شد، نه برای کلاس. «ما» فقط وقتی تازه‌تریم
+    که مهرمان تازه‌تر باشد؛ ۶۸ از ۸۳ فایلِ signals/ مهر دارند.
+    بی‌مهر → رفتار قبلی (ما)."""
+    a, b = _stage(2, path), _stage(3, path)
+    ga, gb = _generated_stamp(a), _generated_stamp(b)
+    if ga is not None and gb is not None and gb > ga:
+        (ROOT / path).write_text(b, encoding="utf-8")
+        return f"مهرِ تازه‌تر برنده: origin ({int(gb)} > {int(ga)})"
+    subprocess.run(["git", "checkout", "--ours", "--", path], cwd=ROOT, check=False)
+    if ga is None or gb is None:
+        return "عکس‌فوری همین اجرا (بی‌مهر)"
+    return f"عکس‌فوری همین اجرا (مهر {int(ga)} ≥ {int(gb)})"
+
+
 def take_theirs(path):
     """برای سندهای دست‌نوشتهٔ زیر brain/ (README، یافته‌های تحقیق): نسخهٔ
     origin/main برنده است — رانرِ بی‌ناظر سندی را عوض نمی‌کند؛ اگر متفاوت
@@ -405,6 +437,9 @@ def handler_for(path):
     # عکس‌فوری؛ take_ours روی آن یعنی گم‌شدنِ بی‌صدای ردیف (درس ۵ سپتامبر).
     if path.startswith("signals/archive/") and path.endswith(".jsonl"):
         return merge_archive_jsonl
+    # عکس‌فوریِ signals/: مهرِ تازه‌تر برنده (۸ سپتامبر) — نه «ما»ی کور
+    if path.startswith("signals/") and path.endswith(".json"):
+        return merge_newest_generated
     if path.startswith("signals/"):
         return take_ours
     # آرشیو بک‌تست — ۱۷ اوت: heartbeat و hamid-backtest هر دو این پوشه را

@@ -140,7 +140,7 @@ PANEL_NAME = "لیام تریدر ۹"
 # فیلتر **باطل شد** — فیلترشده −۰.۴۶R در برابر بی‌فیلتر −۰.۱۵R، هر دو با
 # خودِ کدِ trainer روی همان کندل‌ها. هندسهٔ فعلی REJECT‌خواه است؛ حکمِ
 # رسمی REJECT فقط با n≥۵۰۰ (قاعدهٔ توقفِ از پیش ثبت‌شده) می‌آید.
-VALIDATION_STATUS = "REJECTED_OUT_OF_TIME_PENDING_N"
+VALIDATION_STATUS = "BACKTESTED_UNDECIDED_N208"   # اجرای عمیق ۸ سپتامبر: خالص CI شاملِ صفر
 PRODUCTION_APPROVED = False
 
 P = {
