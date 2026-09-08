@@ -286,6 +286,17 @@ def run():
                         + bench)
     except Exception as e:                       # noqa: BLE001 - ناظر، اتاق را نمی‌کشد
         fc = {"note": f"خطای ناظر پیش‌بینی: {e}"}
+    # تتر **در کنار کل استیبل‌کوین‌ها** (دستور حمید، ۸ سپتامبر): USDT.D
+    # بالا می‌تواند چرخشِ USDC→USDT باشد، نه ریسک‌آف. مبنای جهت STABLE.D
+    # است که از چرخش مصون است. شرح و اعداد در `hamid/stables.py`.
+    try:
+        from hamid import stables as _stb
+        stb = _stb.build(series)
+        st_ = (stb.get("alt_stance") or {}).get("stance")
+        if st_ and st_ != "INSUFFICIENT":
+            verdict += f"؛ بسترِ استیبل: {st_}"
+    except Exception as e:                       # noqa: BLE001 - شاهد، اتاق را نمی‌کشد
+        stb = {"note": f"خطای تحلیل استیبل: {e}"}
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({
         "generated": int(time.time() * 1000),
@@ -293,7 +304,7 @@ def run():
         "chg_1h": {"usdt": u1, "btc": b1}, "chg_4h": {"usdt": u4, "btc": b4},
         "points": len(series), "verdict": verdict, "macro": mac,
         "structure": struct, "multi_tf": mtf, "forecast": fc,
-        "decomposition": decomp, "tf_map": tfm,
+        "decomposition": decomp, "tf_map": tfm, "stables": stb,
     }, ensure_ascii=False, indent=1))
     print(f"USDT.D {u} ({'+' if (u1 or 0) >= 0 else ''}{u1}/1h) · "
           f"BTC.D {b} · {verdict}")

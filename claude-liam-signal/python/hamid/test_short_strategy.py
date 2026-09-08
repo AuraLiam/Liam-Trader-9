@@ -47,8 +47,10 @@ check('هیچ‌جا "LONG" برنمی‌گرداند',
 now = 1788800000000
 cd = S._zig(end=now, **S.REF)
 cd4 = S._zig(legs=6, down=10, up=5, end=now, tf_ms=14_400_000)
+# بسترِ دامیننس، اولویتِ اولِ حمید (۸ سپتامبر) — بی‌آن، آلت سیگنال
+# نمی‌گیرد (قانون ۰۱ بند ۳). سناریوی مرجع بسترِ هم‌جهت می‌گیرد.
 d = S.decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="down", btc_1h="down",
-             equity=1000, now_ms=now)
+             equity=1000, now_ms=now, alt_stance="SHORT_ALT")
 check("سناریوی مرجع به SHORT می‌رسد", d["action"] == "SHORT", d.get("why"))
 
 # ── ۳. مرزِ قانون ۰۳/۱۲ — بی‌CI وارد تولید نمی‌شود ───────────────────────
@@ -87,18 +89,30 @@ check("سایز از ریسکِ ۲٪ می‌آید نه از اهرم",
       abs(d["risk_usd"] - 20.0) < 0.01, str(d.get("risk_usd")))
 
 # ── ۶. دروازه‌های اجباری واقعاً می‌بندند (قانون ۰۱) ──────────────────────
+# اولویتِ اول (دستور حمید ۸ سپتامبر): بسترِ دامیننس، پیش از همه
+check("بسترِ دامیننس ناموجود برای آلت = NO_SIGNAL",
+      S.decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="down", btc_1h="down",
+               now_ms=now)["action"] == "NO_SIGNAL")
+check("بسترِ ریسک‌آنِ صریح، شورتِ آلت را وتو می‌کند",
+      S.decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="down", btc_1h="down",
+               now_ms=now, alt_stance="LONG_ALT_STRONG")["action"] == "NO_SIGNAL")
+check("و مبنای این دروازه STABLE.D است نه USDT.D تنها",
+      "stables" in _src and "alt_stance" in _src)
+check("دروازهٔ دامیننس اولِ قیف است",
+      [g["gate"] for g in d["funnel"]][:2] == ["داده", "دامیننس (اولویت ۱)"],
+      str([g["gate"] for g in d["funnel"]][:3]))
 check("بسترِ BTC ناموجود برای آلت = NO_SIGNAL",
       S.decide("AAAUSDT", cd, cd_4h=cd4,
-               now_ms=now)["action"] == "NO_SIGNAL")
+               now_ms=now, alt_stance="SHORT_ALT")["action"] == "NO_SIGNAL")
 check("هر دو تایمِ BTC صعودی = وتوی مطلق",
       S.decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="up", btc_1h="up",
-               now_ms=now)["action"] == "NO_SIGNAL")
+               now_ms=now, alt_stance="SHORT_ALT")["action"] == "NO_SIGNAL")
 check("۴س صعودی = رد",
       S.decide("AAAUSDT", cd,
                cd_4h=S._zig(legs=6, down=10, up=5, direction="up",
                             end=now, tf_ms=14_400_000),
                btc_4h="down", btc_1h="down",
-               now_ms=now)["action"] == "NO_SIGNAL")
+               now_ms=now, alt_stance="SHORT_ALT")["action"] == "NO_SIGNAL")
 check("قیفِ دروازه‌ها روی هر خروجی هست — رد هم دلیلِ ساختاری دارد",
       isinstance(d.get("funnel"), list) and d["funnel"])
 

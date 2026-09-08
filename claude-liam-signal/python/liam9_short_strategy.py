@@ -164,7 +164,86 @@ P = {
     "max_hold_bars": 120,
     "stale_max_s": 300,        # کندل کهنه‌تر از این = NO_SIGNAL (قانون ۰۱ بند ۱)
     "min_bars": 60,
+    # سنِ مجازِ عکس‌فوریِ دامیننس (دقیقه). سقفِ قرارداد وضعیت برای
+    # `signals/dominance.json` ۴۵ دقیقه است؛ همان‌جا خوانده می‌شود.
+    "dom_max_age_min": 45,
 }
+
+# ── اولویتِ ۱: بسترِ دامیننس (دستور صریح حمید، ۸ سپتامبر) ────────────────
+#
+# «اولویت روند پوزیشن باز کردن باید با تشخیص روند حرکت دامیننس تتر باشه
+# و بقیه دامیننسها… باید دامیننس تتر رو در کنار کل استیبل‌کوین‌ها تحلیل
+# کنی.»
+#
+# پس این دروازه **اولِ همه** می‌نشیند، پیش از بسترِ BTC و ساختار. مبنا
+# `hamid/stables.alt_stance` است، نه USDT.D تنها — چون USDT.D بالا
+# می‌تواند صرفاً چرخشِ USDC→USDT باشد و آن‌وقت «بازار نزولی» خواندنش
+# غلط است. شرح کامل و اعداد در `hamid/stables.py`.
+#
+# با `sync_dominance()` پر می‌شود (داشبورد) یا مستقیم به `decide` داده
+# می‌شود. کهنه یا نبود = برای آلت NO_SIGNAL (قانون ۰۱ بند ۳: بسترِ
+# دامیننس برای هر سیگنالِ آلت اجباری است).
+DOM = {"stance": None, "why": None, "generated": 0, "source": None}
+
+# فقط این دو حالت شورتِ آلت را وتو می‌کنند: بستر صریح می‌گوید پول از
+# استیبل بیرون آمده و به آلت رفته. `LONG_BTC_ONLY` عمداً وتو **نیست** —
+# پول به بیت‌کوین رفتن یعنی آلت در برابر بیت‌کوین ضعیف است، ولی دربارهٔ
+# قیمتِ دلاریِ آلت حرفِ روشنی نمی‌زند؛ ادعای بیش از داده ممنوع.
+DOM_VETO_SHORT = ("LONG_ALT", "LONG_ALT_STRONG")
+DOM_FAVORS_SHORT = ("SHORT_ALT", "SHORT_ALT_STRONG")
+
+
+def sync_dominance(raw_url=None, timeout=10):
+    """عکس‌فوریِ دامیننس را از ریپو بکش — برای داشبورد.
+
+    خطا = دست‌نخورده ماندنِ DOM (و در نتیجه NO_SIGNAL برای آلت‌ها)، نه
+    عبورِ کور. سکوت با `diagnose()` خوانا می‌ماند.
+    """
+    import urllib.request
+    url = raw_url or ("https://raw.githubusercontent.com/AuraLiam/"
+                      "Liam-Trader-9/main/signals/dominance.json")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "liam9-short"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            d = json.load(r)
+    except Exception as e:                           # noqa: BLE001
+        DOM["source"] = f"خطا: {type(e).__name__}"
+        return False
+    return load_dominance(d)
+
+
+def load_dominance(dom_json):
+    """همان کار، ولی از dict که داشبورد/چرخه از قبل دارد."""
+    st_ = ((dom_json or {}).get("stables") or {}).get("alt_stance") or {}
+    if not st_.get("stance"):
+        DOM["source"] = "کلید stables.alt_stance روی dominance.json نیست"
+        return False
+    DOM.update({"stance": st_["stance"], "why": st_.get("why"),
+                "generated": dom_json.get("generated") or 0,
+                "cause": st_.get("cause"),
+                "disagrees_with_naive": st_.get("disagrees_with_naive"),
+                "source": "signals/dominance.json"})
+    return True
+
+
+def dominance_gate(symbol, now_ms, stance=None, generated=None):
+    """→ (ok, stance, detail). آلتِ بی‌بسترِ دامیننس سیگنال نمی‌گیرد."""
+    s = stance or DOM.get("stance")
+    gen = generated if generated is not None else DOM.get("generated") or 0
+    if not s:
+        return False, None, ("بسترِ دامیننس نرسیده — قانون ۰۱ بند ۳: "
+                             f"({DOM.get('source') or 'همگام نشده'})")
+    if gen:
+        age_min = (now_ms - gen) / 60_000.0
+        if age_min > P["dom_max_age_min"]:
+            return False, s, (f"عکس‌فوریِ دامیننس {age_min:.0f} دقیقه کهنه "
+                              f"(سقف {P['dom_max_age_min']}) — حدس ممنوع")
+    if s in DOM_VETO_SHORT:
+        return False, s, (f"بسترِ دامیننس «{s}» است — پول از استیبل بیرون "
+                          "آمده و به آلت رفته؛ شورت خلافِ اولویتِ اولِ حمید")
+    if s in DOM_FAVORS_SHORT:
+        return True, s, f"بسترِ دامیننس «{s}» — هم‌جهت با شورت"
+    return True, s, f"بسترِ دامیننس «{s}» — جهت نمی‌دهد، دروازه‌های بعدی تصمیم می‌گیرند"
 
 
 # ═══════════════════ ابزارهای کوچکِ قطعی ═══════════════════
@@ -363,12 +442,16 @@ def _no(symbol, tf, why, **extra):
 
 
 def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
-           equity=None, now_ms=None):
+           equity=None, now_ms=None, alt_stance=None, dom_generated=None):
     """تصمیمِ شورت. → dict با `action` ∈ {SHORT, NO_SIGNAL}.
 
-    ترتیب دروازه‌ها همان ترتیب قانون ۰۰ است: داده → بسترِ BTC → ساختار
-    ۴س → مکان → OB → نقدینگی → هندسه/کارمزد → اهرم/سایز. هیچ دروازه‌ای
-    جابه‌جا نمی‌شود بی‌دستور صریح حمید.
+    ترتیب دروازه‌ها همان ترتیب قانون ۰۰ است، با یک جابه‌جاییِ **دستوری**
+    (حمید، ۸ سپتامبر): داده → **دامیننس** → بسترِ BTC → ساختار ۴س →
+    مکان → OB → نقدینگی → هندسه/کارمزد → اهرم/سایز.
+
+    دامیننس از ترتیبِ قانون ۰۰ هم جدا نیست — همان بند ۱ آن ترتیب است
+    («USDT.D مستقل، اول از همه»)؛ تا امروز فقط داخل این موتور اعمال
+    نمی‌شد. مبنا STABLE.D است نه USDT.D تنها (شرح در `hamid/stables.py`).
     """
     now = now_ms or int(time.time() * 1000)
     funnel = []
@@ -395,11 +478,26 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
     if not price:
         return _no(symbol, tf, "قیمتِ کلوز خوانده نشد", funnel=funnel)
 
-    # ── ۲) بسترِ بیت‌کوین (قانون ۰۱ بند ۳ · قرارداد اجرا بند ۳) ──
+    is_btc = symbol.upper().startswith("BTC")
+
+    # ── ۲) اولویتِ اول: بسترِ دامیننس (دستور حمید، ۸ سپتامبر) ──
+    #
+    # برای آلت اجباری است (قانون ۰۱ بند ۳). برای خودِ بیت‌کوین شاهد
+    # است نه دروازه: دامیننسِ استیبل دربارهٔ کلِ بازار حرف می‌زند و
+    # بیت‌کوین خودش بخشِ بزرگِ همان مخرج است.
+    dom_ok, dom_stance, dom_why = dominance_gate(
+        symbol, now, stance=alt_stance, generated=dom_generated)
+    if not is_btc:
+        if not step("دامیننس (اولویت ۱)", dom_ok, dom_why):
+            return _no(symbol, tf, dom_why, funnel=funnel,
+                       alt_stance=dom_stance)
+    else:
+        step("دامیننس (شاهد — خودِ بیت‌کوین)", True, dom_why)
+
+    # ── ۳) بسترِ بیت‌کوین (قانون ۰۱ بند ۳ · قرارداد اجرا بند ۳) ──
     #
     # برای آلت، نبودِ بسترِ BTC یعنی NO_SIGNAL — نه عبورِ کور. برای خودِ
     # BTC این دروازه بی‌معناست و رد می‌شود.
-    is_btc = symbol.upper().startswith("BTC")
     if not is_btc:
         if btc_4h is None or btc_1h is None:
             return _no(symbol, tf, "بسترِ بیت‌کوین در دسترس نیست (قانون ۳)",
@@ -410,7 +508,7 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
                        funnel=funnel)
         step("بسترِ BTC", True, f"۴س={btc_4h} · ۱س={btc_1h}")
 
-    # ── ۳) ساختارِ خودِ تایم‌فریمِ ورود (اندازه‌گیری: +۰.۱۷۸R) ──
+    # ── ۴) ساختارِ خودِ تایم‌فریمِ ورود (اندازه‌گیری: +۰.۱۷۸R) ──
     #
     # این همان چیزی است که دفتر با نامِ گمراه‌کنندهٔ `trend_4h` ثبت کرده:
     # `structure.trend` روی **همان پنجرهٔ ورود**، نه روی کندل ۴ ساعته.
@@ -435,7 +533,7 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
                    funnel=funnel)
     step("تایم بالا (۴س)", True, t4 or "بدون کندل ۴س — وتو نمی‌کند")
 
-    # ── ۴) مکان: بالای کانال (اندازه‌گیری: +۰.۱۸۵R) ──
+    # ── ۵) مکان: بالای کانال (اندازه‌گیری: +۰.۱۸۵R) ──
     cp = channel_pos(cd)
     if cp is None:
         return _no(symbol, tf, "مکانِ کانال محاسبه نشد", funnel=funnel)
@@ -446,7 +544,7 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
                    funnel=funnel)
     step("مکان", True, f"chan_pos={cp:.2f}")
 
-    # ── ۵) اردر بلاکِ هم‌جهت و نشکسته (اندازه‌گیری: +۰.۱۷۱ / +۰.۱۸۵R) ──
+    # ── ۶) اردر بلاکِ هم‌جهت و نشکسته (اندازه‌گیری: +۰.۱۷۱ / +۰.۱۸۵R) ──
     #
     # شرطِ اعتبار همان شرطِ trainer است (نشکسته + هم‌جهت). «تازگی» فیلترِ
     # جداست و در آن اندازه‌گیری **اجباری نبود**؛ این‌جا هم اجباری نیست —
@@ -459,11 +557,11 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
     step("اردر بلاک", True,
          f"{ob['where']} باکس {ob['tf']} · سقف {ob['top']:.8g} · {_ob_tag}")
 
-    # ── ۶) نقدینگی: سوییپِ سقف (روش حمید؛ شاهد، نه وتو) ──
+    # ── ۷) نقدینگی: سوییپِ سقف (روش حمید؛ شاهد، نه وتو) ──
     sweep = swept_high(cd)
     step("نقدینگی", True, "سوییپِ سقف دیده شد" if sweep else "بدون سوییپ")
 
-    # ── ۷) هندسه: استاپ پشتِ باکس، با **ارتفاعِ باکس** نه ATR ──
+    # ── ۸) هندسه: استاپ پشتِ باکس، با **ارتفاعِ باکس** نه ATR ──
     #
     # `trainer.decide`: `sl = hi + height * 0.25` که height = hi − lo.
     # نسخهٔ ۱.۰ این‌جا `0.25 × ATR` می‌گذاشت — عددی کاملاً دیگر، و همان
@@ -492,7 +590,7 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
         return _no(symbol, tf, "تارگت زیر صفر — هندسهٔ نامعتبر", funnel=funnel)
     tp2 = entry - 2 * P["rr_target"] * risk
 
-    # ── ۸) دروازهٔ کارمزد (hamid/fees — منبع واحد، نه عددِ محلی) ──
+    # ── ۹) دروازهٔ کارمزد (hamid/fees — منبع واحد، نه عددِ محلی) ──
     try:
         from hamid import fees
         fee_r = fees.cost_in_r(entry, sl, symbol=symbol)
@@ -508,7 +606,7 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
                    fee_r=round(fee_r, 3), funnel=funnel)
     step("کارمزد", True, f"RR خالص {net_rr:.2f} · fee_r {fee_r:.3f}")
 
-    # ── ۹) اهرم و سایز ──
+    # ── ۱۰) اهرم و سایز ──
     lev = leverage_for(stop_pct)
     if not lev:
         return _no(symbol, tf, "اهرم محاسبه نشد", funnel=funnel)
@@ -527,6 +625,9 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
         "fee_r": round(fee_r, 3), "leverage": lev,
         "chan_pos": round(cp, 3), "trend_4h": t4,
         "btc_4h": btc_4h, "btc_1h": btc_1h,
+        # ردپای اولویتِ اول روی خودِ خروجی — تا ماشین شبانه بتواند
+        # سهمِ همین دروازه را از نتیجه جدا بسنجد (قانون انجینِ ردپادار)
+        "alt_stance": dom_stance, "dom_why": dom_why,
         "ob": ob, "sweep": sweep,
         "max_hold_bars": P["max_hold_bars"],
         "trail": {"arm_at": round(entry - fee_r * risk, 8),
@@ -553,9 +654,20 @@ def decide(symbol, cd, tf="15m", cd_4h=None, btc_4h=None, btc_1h=None,
     return out
 
 
-def signal(symbol, tf="15m", equity=None, fetch=None):
+def signal(symbol, tf="15m", equity=None, fetch=None, dom=None):
     """پوستهٔ شبکه‌دار. `fetch(sym, tf, n)` تزریق‌پذیر است تا آزمون
-    آفلاین بماند (هیچ آزمونی به شبکه وصل نمی‌شود)."""
+    آفلاین بماند (هیچ آزمونی به شبکه وصل نمی‌شود).
+
+    `dom` = محتوای `signals/dominance.json` اگر فراخواننده از قبل دارد؛
+    وگرنه از دیسک (چرخه) و در نهایت از ریپو (داشبورد) خوانده می‌شود."""
+    if dom is not None:
+        load_dominance(dom)
+    elif not DOM.get("stance"):
+        local = ROOT / "signals" / "dominance.json"
+        try:
+            load_dominance(json.loads(local.read_text(encoding="utf-8")))
+        except Exception:                            # noqa: BLE001
+            sync_dominance()
     if fetch is None:
         import sources
         fetch = lambda s, t, n: sources.klines(s, t, n)   # noqa: E731
@@ -661,7 +773,7 @@ def _selftest():
     cd4 = _zig(legs=6, down=10, up=5, end=now, tf_ms=14_400_000)
 
     d = decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="down", btc_1h="down",
-               equity=1000, now_ms=now)
+               equity=1000, now_ms=now, alt_stance="SHORT_ALT")
     chk("خروجی dict معتبر است", isinstance(d, dict) and "action" in d, str(d)[:120])
     chk("هرگز LONG نمی‌دهد", d["action"] in ("SHORT", "NO_SIGNAL"), d["action"])
     chk("قیفِ دروازه‌ها روی خروجی هست", isinstance(d.get("funnel"), list))
@@ -670,9 +782,9 @@ def _selftest():
     chk("تولید تأیید نشده است", d.get("production_approved") is False)
 
     # وتوی مطلقِ بسترِ BTC (قرارداد اجرا بند ۳)
-    v = decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="up", btc_1h="up", now_ms=now)
+    v = decide("AAAUSDT", cd, cd_4h=cd4, btc_4h="up", btc_1h="up", now_ms=now, alt_stance="SHORT_ALT")
     chk("هر دو تایمِ BTC صعودی = وتو", v["action"] == "NO_SIGNAL", v.get("why"))
-    m = decide("AAAUSDT", cd, cd_4h=cd4, now_ms=now)
+    m = decide("AAAUSDT", cd, cd_4h=cd4, now_ms=now, alt_stance="SHORT_ALT")
     chk("بسترِ BTC ناموجود = NO_SIGNAL نه عبورِ کور",
         m["action"] == "NO_SIGNAL" and "بیت‌کوین" in m["why"], m.get("why"))
     b = decide("BTCUSDT", cd, cd_4h=cd4, now_ms=now)
@@ -683,24 +795,24 @@ def _selftest():
     u4 = _zig(legs=6, down=10, up=5, direction="up", end=now,
               tf_ms=14_400_000)
     r = decide("AAAUSDT", cd, cd_4h=u4, btc_4h="down", btc_1h="down",
-               now_ms=now)
+               now_ms=now, alt_stance="SHORT_ALT")
     chk("۴س صعودی = رد", r["action"] == "NO_SIGNAL" and "۴س" in r["why"],
         f"{r['action']} · {r.get('why')} · t4={trend(u4)}")
 
     # ساختارِ صعودیِ خودِ تایم‌فریم = رد (این همان فیلترِ سنجیده‌شده است)
     up = _zig(direction="up", end=now, tf_ms=tf_ms, **REF)
     r = decide("AAAUSDT", up, cd_4h=cd4, btc_4h="down", btc_1h="down",
-               now_ms=now)
+               now_ms=now, alt_stance="SHORT_ALT")
     chk("ساختارِ صعودیِ تایمِ ورود = رد",
         r["action"] == "NO_SIGNAL", r.get("why"))
 
     # دادهٔ کم و کهنه
     chk("کندل کم = NO_SIGNAL",
-        decide("AAAUSDT", cd[:10], now_ms=now)["action"] == "NO_SIGNAL")
+        decide("AAAUSDT", cd[:10], now_ms=now, alt_stance="SHORT_ALT")["action"] == "NO_SIGNAL")
     stale = _zig(end=now - 10 * 86400_000, tf_ms=tf_ms, **REF)
     chk("کندل کهنه = NO_SIGNAL",
         decide("AAAUSDT", stale, cd_4h=cd4, btc_4h="down", btc_1h="down",
-               now_ms=now)["action"] == "NO_SIGNAL")
+               now_ms=now, alt_stance="SHORT_ALT")["action"] == "NO_SIGNAL")
 
     # روند از `structure.trend` می‌آید و **range** جوابِ معتبرش است، نه
     # گِردشده به up. عیب ۶ سپتامبر همین بود؛ حالا خودِ آن ماژول جوابگوست.
@@ -713,6 +825,41 @@ def _selftest():
     chk("بازارِ بی‌جهت شورت نمی‌سازد",
         decide("BTCUSDT", flat, now_ms=now)["action"] == "NO_SIGNAL",
         f"{trend(flat)}")
+
+    # ── اولویتِ اول: دامیننس (دستور حمید، ۸ سپتامبر) ──────────────────
+    #
+    # اثباتِ منفی: همان ستاپی که با بسترِ شورت سیگنال می‌دهد، با بسترِ
+    # لانگ باید رد شود — وگرنه این دروازه فقط تزئین است.
+    dom_args = dict(cd_4h=cd4, btc_4h="down", btc_1h="down",
+                    equity=1000, now_ms=now)
+    chk("بدونِ بسترِ دامیننس، آلت سیگنال نمی‌گیرد (قانون ۰۱ بند ۳)",
+        decide("AAAUSDT", cd, **dom_args)["action"] == "NO_SIGNAL")
+    veto = decide("AAAUSDT", cd, alt_stance="LONG_ALT_STRONG", **dom_args)
+    chk("بسترِ LONG_ALT_STRONG شورتِ آلت را وتو می‌کند",
+        veto["action"] == "NO_SIGNAL" and "دامیننس" in veto["why"],
+        veto.get("why"))
+    chk("و همان ستاپ با بسترِ SHORT_ALT سیگنال می‌دهد (اثباتِ منفی)",
+        d["action"] == "SHORT", d.get("why"))
+    neu = decide("AAAUSDT", cd, alt_stance="NEUTRAL", **dom_args)
+    chk("بسترِ خنثی وتو نمی‌کند — دروازه‌های بعدی تصمیم می‌گیرند",
+        neu["action"] == "SHORT", neu.get("why"))
+    lbo = decide("AAAUSDT", cd, alt_stance="LONG_BTC_ONLY", **dom_args)
+    chk("LONG_BTC_ONLY وتو نیست (ادعای بیش از داده ممنوع)",
+        lbo["action"] == "SHORT", lbo.get("why"))
+    old = decide("AAAUSDT", cd, alt_stance="SHORT_ALT",
+                 dom_generated=now - 3 * 3600_000, **dom_args)
+    chk("عکس‌فوریِ کهنهٔ دامیننس = NO_SIGNAL، نه عبورِ کور",
+        old["action"] == "NO_SIGNAL" and "کهنه" in old["why"], old.get("why"))
+    chk("دروازهٔ دامیننس **اولِ** قیف است، پیش از بسترِ BTC",
+        [g["gate"] for g in d["funnel"]][:2] == ["داده", "دامیننس (اولویت ۱)"],
+        str([g["gate"] for g in d["funnel"]][:3]))
+    chk("ردپای بستر روی خروجی می‌نشیند (سنجشِ شبانه)",
+        d.get("alt_stance") == "SHORT_ALT")
+    # خودِ بیت‌کوین از این دروازه وتو نمی‌خورد (شاهد است، نه دروازه)
+    btc_lb = decide("BTCUSDT", cd, cd_4h=cd4, now_ms=now,
+                    alt_stance="LONG_ALT_STRONG")
+    chk("برای خودِ BTC، دامیننس شاهد است نه وتو",
+        btc_lb["action"] == "SHORT", btc_lb.get("why"))
 
     # قرارداد اجرا روی خروجیِ سیگنال‌دار
     if d["action"] == "SHORT":

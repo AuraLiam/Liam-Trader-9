@@ -202,6 +202,13 @@ def build():
                     break
         except Exception:                            # noqa: BLE001
             pass
+        # تتر در کنارِ کلِ استیبل‌کوین‌ها (دستور حمید، ۸ سپتامبر) — سه خط
+        # کوتاه: STABLE.D، سوگیریِ آلت، و ریشهٔ حرکتِ USDT.D
+        try:
+            from hamid import stables as _stb
+            cap += _stb.fa_lines(dom.get("stables") or {})
+        except Exception:                            # noqa: BLE001
+            pass
         cap += _calendar_lines(dom)
         cap.append("📐 " + _scenario("USDT.D", u1))
         cap.append("📐 " + _scenario("BTC.D", b1))
