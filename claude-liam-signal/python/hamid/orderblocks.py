@@ -40,9 +40,28 @@ def _wicks(c):
     return (c["h"] - c["l"]) - _body(c)
 
 
-def hamid_candle(c):
-    """قانون حمید: بدنه از مجموع شدوها بزرگ‌تر باشد."""
-    return _body(c) > _wicks(c) and _body(c) > 0
+def hamid_candle(c, want=None):
+    """قانون حمید: بدنه از مجموع شدوها بزرگ‌تر باشد.
+
+    `want` (اختیاری، پیش‌فرض None = رفتار امروز): شرطِ **رنگ**.
+      · "up"   → کندل سبز (کلوز بالای اوپن)
+      · "down" → کندل قرمز
+
+    چرا اضافه شد (ممیزی اردر بلاک، ۸ سپتامبر): متنِ خودِ حمید در قانون ۱۱
+    می‌گوید «بعد از ریزش برمی‌گردیم تا **اولین کندل سبزِ قوی**». این تابع
+    تا امروز هیچ شرط رنگی نداشت، پس در الگویِ رایجِ «کندلِ قرمزِ بزرگ که
+    خودش سقف را ساخت» باکس می‌توانست **خودِ کندل ریزش** بشود — ارتفاعِ
+    باکس در نمونهٔ اندازه‌گیری‌شدهٔ ممیزی ۳ برابر شد، و ارتفاعِ باکس
+    مستقیم روی پهنای استاپ می‌نشیند.
+
+    **پیش‌فرض عوض نشد.** None یعنی همان رفتاری که تمام دفترِ تاریخی با آن
+    ساخته شده؛ وگرنه اندازه‌گیری و دفتر از هم جدا می‌افتند (همان عیبی که
+    موتور شورت نسخهٔ ۱.۰ را باطل کرد). حکم فقط از بک‌تست می‌آید.
+    """
+    ok = _body(c) > _wicks(c) and _body(c) > 0
+    if not ok or want is None:
+        return ok
+    return (c["c"] > c["o"]) if want == "up" else (c["c"] < c["o"])
 
 
 def _full_atr(cd):
@@ -93,10 +112,12 @@ def _impulses(cd):
     return out
 
 
-def _ob_candle(cd, start_i, lookback=6):
-    """از کندلِ قبل از حرکت به عقب برو؛ اولین کندلِ «بدنه > شدوها» — قانون حمید."""
+def _ob_candle(cd, start_i, lookback=6, want=None):
+    """از کندلِ قبل از حرکت به عقب برو؛ اولین کندلِ «بدنه > شدوها» — قانون حمید.
+
+    `want` به `hamid_candle` می‌رسد؛ None = رفتار امروز."""
     for j in range(start_i, max(-1, start_i - lookback), -1):
-        if hamid_candle(cd[j]):
+        if hamid_candle(cd[j], want=want):
             return j
     return None
 
@@ -186,17 +207,25 @@ def _noise_floor(cd, height, born_i, samples=20):
     return rates[int(len(rates) * 0.8)]
 
 
-def find(cd, tf="1h", min_reactions=2):
+def find(cd, tf="1h", min_reactions=2, ob_color=False):
     """همهٔ اردر بلاک‌های معتبر پنجره (تا ۳۰۰ کندل عقب) — رتبه با واکنش.
 
     خروجی هر باکس: قیمت‌ها، جهت حرکتی که ساختش، شمارش لمس/واکنش/هانت،
-    شکسته/تازه، و سن — همان چیزهایی که حمید روی چارت با دست می‌نویسد."""
+    شکسته/تازه، و سن — همان چیزهایی که حمید روی چارت با دست می‌نویسد.
+
+    `ob_color=True` شرطِ رنگِ متنِ حمید را اعمال می‌کند: باکسِ یک ریزش
+    باید کندلِ **سبز** باشد و باکسِ یک صعود کندلِ **قرمز**. پیش‌فرض
+    False = رفتار امروز (بازوی کنترل بک‌تست)."""
     if len(cd) < 60:
         return []
     px = cd[-1]["c"]
     boxes = []
     for imp in _impulses(cd):
-        j = _ob_candle(cd, imp["i"])
+        want = None
+        if ob_color:
+            # کندلِ مخالفِ جهتِ حرکت: ریزش → سبز، صعود → قرمز
+            want = "up" if imp["dir"] == "down" else "down"
+        j = _ob_candle(cd, imp["i"], want=want)
         if j is None:
             continue
         lo, hi = cd[j]["l"], cd[j]["h"]
@@ -233,12 +262,36 @@ def find(cd, tf="1h", min_reactions=2):
     return keep[:8]
 
 
-def near(cd, tf="1h"):
-    """باکس معتبرِ دربرگیرنده یا نزدیکِ قیمت فعلی — برای بازجویی و کپشن."""
+def near(cd, tf="1h", by_distance=False, ob_color=False):
+    """باکس معتبرِ دربرگیرنده یا نزدیکِ قیمت فعلی — برای بازجویی و کپشن.
+
+    **مسئله‌ای که `by_distance` می‌سنجد** (ممیزی ۸ سپتامبر): `find` خروجی
+    را با `sort(key=(-reactions, age))` مرتب می‌کند و این تابع **اولینِ**
+    همان ترتیب را برمی‌دارد — یعنی *پرواکنش‌ترین*، نه *نزدیک‌ترین*. در
+    ریزشِ پله‌ای هر پله باکسِ تازه‌ای با `reactions=0` می‌سازد که ته صف
+    می‌ایستد، پس موتور به باکسِ کهنهٔ پلهٔ اول می‌چسبد — دقیقاً همان
+    رفتاری که حمید ۸ سپتامبر توصیف کرد. اثباتِ اجراشدهٔ ممیزی: باکسِ
+    کهنهٔ [۱۰۲.۰–۱۰۲.۶] با ۳ واکنش (فاصله ۲.۰×ATR) بر باکسِ تازهٔ
+    [۱۰۰.۶–۱۰۱.۰] (فاصله ۰.۶×ATR) مقدم شد.
+
+    `by_distance=True` انتخاب را به **کمترین فاصله** عوض می‌کند.
+    پیش‌فرض False = رفتار امروز. کدام بهتر است، حکمِ بک‌تست است نه
+    حکمِ ممیزی (`hamid/ob_lab.py`).
+    """
     px = cd[-1]["c"]
     a = atr(cd) or px * 0.005
+    boxes = find(cd, tf=tf, ob_color=ob_color)
+    if by_distance:
+        # فاصله = صفر داخل باکس، وگرنه فاصله تا نزدیک‌ترین لبه. ترتیبِ
+        # ثانویه (سن) لازم است تا خروجی قطعی بماند و به ترتیبِ ورودی
+        # وابسته نشود.
+        def dist(b):
+            if b["low"] <= px <= b["high"]:
+                return 0.0
+            return min(abs(px - b["low"]), abs(px - b["high"]))
+        boxes = sorted(boxes, key=lambda b: (dist(b), b["age"]))
     best_in, best_near = None, None
-    for b in find(cd, tf=tf):
+    for b in boxes:
         if b["low"] <= px <= b["high"]:
             if best_in is None:
                 best_in = b

@@ -372,9 +372,12 @@ def _body (c ):
 def _wicks (c ):
     return (c ["h"]-c ["l"])-_body (c )
 
-def hamid_candle (c ):
+def hamid_candle (c ,want =None ):
     ""
-    return _body (c )>_wicks (c )and _body (c )>0 
+    ok =_body (c )>_wicks (c )and _body (c )>0 
+    if not ok or want is None :
+        return ok 
+    return (c ["c"]>c ["o"])if want =="up"else (c ["c"]<c ["o"])
 
 def _full_atr (cd ):
     ""
@@ -415,10 +418,10 @@ def _impulses (cd ):
                 last_up =j0 
     return out 
 
-def _ob_candle (cd ,start_i ,lookback =6 ):
+def _ob_candle (cd ,start_i ,lookback =6 ,want =None ):
     ""
     for j in range (start_i ,max (-1 ,start_i -lookback ),-1 ):
-        if hamid_candle (cd [j ]):
+        if hamid_candle (cd [j ],want =want ):
             return j 
     return None 
 
@@ -497,14 +500,18 @@ def _noise_floor (cd ,height ,born_i ,samples =20 ):
     rates .sort ()
     return rates [int (len (rates )*0.8 )]
 
-def find (cd ,tf ="1h",min_reactions =2 ):
+def find (cd ,tf ="1h",min_reactions =2 ,ob_color =False ):
     ""
     if len (cd )<60 :
         return []
     px =cd [-1 ]["c"]
     boxes =[]
     for imp in _impulses (cd ):
-        j =_ob_candle (cd ,imp ["i"])
+        want =None 
+        if ob_color :
+
+            want ="up"if imp ["dir"]=="down"else "down"
+        j =_ob_candle (cd ,imp ["i"],want =want )
         if j is None :
             continue 
         lo ,hi =cd [j ]["l"],cd [j ]["h"]
@@ -539,12 +546,20 @@ def find (cd ,tf ="1h",min_reactions =2 ):
     keep .sort (key =lambda b :(-b ["reactions"],b ["age"]))
     return keep [:8 ]
 
-def near (cd ,tf ="1h"):
+def near (cd ,tf ="1h",by_distance =False ,ob_color =False ):
     ""
     px =cd [-1 ]["c"]
     a =atr (cd )or px *0.005 
+    boxes =find (cd ,tf =tf ,ob_color =ob_color )
+    if by_distance :
+
+        def dist (b ):
+            if b ["low"]<=px <=b ["high"]:
+                return 0.0 
+            return min (abs (px -b ["low"]),abs (px -b ["high"]))
+        boxes =sorted (boxes ,key =lambda b :(dist (b ),b ["age"]))
     best_in ,best_near =None ,None 
-    for b in find (cd ,tf =tf ):
+    for b in boxes :
         if b ["low"]<=px <=b ["high"]:
             if best_in is None :
                 best_in =b 

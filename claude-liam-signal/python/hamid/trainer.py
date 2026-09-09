@@ -172,8 +172,13 @@ def _save_state(st):
     STATE.write_text(json.dumps(st, ensure_ascii=False, indent=1))
 
 
-def decide(window, tf="15m"):
+def decide(window, tf="15m", near_fn=None):
     """تصمیم روی آخرین کندلِ پنجره — فقط با گذشته. None یعنی ورود نکن.
+
+    `near_fn(window, tf=...)` تزریق‌پذیر است **فقط برای آزمایشگاه A/B**
+    (`hamid/ob_lab.py`). None = `orderblocks.near` یعنی همان رفتاری که
+    کلِ دفتر تاریخی با آن ساخته شده. هیچ مسیر تولیدی این را پر نمی‌کند —
+    وگرنه دفتر دو تعریف پیدا می‌کند و CI روی مخلوطِ دو چیز حساب می‌شود.
 
     دو ورودِ کتابچهٔ یادگرفته (هر دو در جهت روند — قانون حمید):
       A) پولبک به اردر بلاک معتبر: قیمت داخل/چسبیده به باکس نشکستهٔ
@@ -183,8 +188,9 @@ def decide(window, tf="15m"):
     تارگت هر دو ۲R. ماشین بونفرونی شبانه با فیلد setup فرقشان را می‌سنجد —
     این خودش همان «کشف نقطهٔ ضعف/قوت استراتژی از تکرار» است.
     """
-    from hamid.orderblocks import near
+    from hamid.orderblocks import near as _near
     from hamid.structure import trend
+    near = near_fn or _near
 
     t = trend(window)
     if t not in ("up", "down"):
@@ -361,7 +367,7 @@ def resolve(c15, i, s, max_hold=MAX_HOLD):
     return j, "timeout", round(r, 3), exc()
 
 
-def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m"):
+def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m", near_fn=None):
     """بازپخش یک ارز؛ فقط کندل‌های بعد از after_ms (ضدتکرار بین اجراها).
 
     خروجی: (معامله‌ها، مرز پیشروی). مرز = تا کجای تاریخ «بررسی» شد — نه
@@ -379,7 +385,11 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m"):
             i += 1
             continue
         window = c15[:i + 1]
-        s = decide(window, tf=tf)
+        # `near_fn` فقط وقتی پاس داده می‌شود که واقعاً چیزی باشد — تا
+        # مسیرِ پیش‌فرض **دقیقاً** همان امضای قبلی را صدا بزند و هر
+        # `decide` جایگزین‌شده (جاسوسِ آزمون) نشکند.
+        s = decide(window, tf=tf, near_fn=near_fn) if near_fn \
+            else decide(window, tf=tf)
         if not s:
             i += 1
             continue
