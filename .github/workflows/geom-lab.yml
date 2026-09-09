@@ -1,0 +1,135 @@
+# آزمایشگاه هندسه — «تارگتِ بزرگ‌تر، استاپِ گشادتر» (دستور حمید، ۹ سپتامبر:
+# «بله برو سراغ هندسه»)
+#
+# سهمِ کارمزد هر معامله = کارمزد٪ ÷ استاپ٪ — یک اتحادِ حسابی. سه میزِ این
+# سامانه با همین بیماری خوابیدند (اسکلپ ۱د، شوک، شورت) و آزمایشگاه اردر
+# بلاک نشان داد انتخابِ باکس گلوگاه نیست. پس نوبتِ هندسه است.
+#
+# شبکهٔ ۹ خانه: rr ∈ {2,3,4} × کفِ استاپ ∈ {0.15, 1.0, 1.5}٪.
+# کنترل = rr2.0/stop0.15 (رفتار امروز). ۸ مقایسه → Šidák α≈۰.۰۰۶۴.
+# سقفِ نگه‌داری در همهٔ خانه‌ها ثابت ۹۶ کندل — عمدی، شرحش در ماژول.
+#
+# PROMOTE_CANDIDATE = پیشنهاد، نه اجرا. `trainer.RR` فقط با تأیید صریح
+# حمید عوض می‌شود (قانون ۰۳/۱۲).
+name: Geometry lab (A/B)
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "N نمادِ برتر به حجم (پیش‌فرض ۱۰۰)"
+        default: "100"
+      bars:
+        description: "کندل بر نماد (پیش‌فرض ۲۰۰۰۰ ≈ ۷ ماهِ ۱۵د)"
+        default: "20000"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: geom-lab
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.geom_lab --selftest
+          python3 -m hamid.test_orderblocks
+          python3 -m hamid.test_trainer
+          python3 -m hamid.test_state_bus
+
+  shard:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: اجرای تکه
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: |
+          mkdir -p /tmp/geoml
+          python3 -m hamid.geom_lab \
+            --universe ${{ github.event.inputs.universe || '100' }} \
+            --bars ${{ github.event.inputs.bars || '20000' }} \
+            --shard ${{ matrix.shard }} --shards 12 \
+            --out /tmp/geoml/shard${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: geom-lab-shard-${{ matrix.shard }}
+          path: /tmp/geoml/shard${{ matrix.shard }}.json
+          retention-days: 7
+
+  merge:
+    needs: shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: geom-lab-shard-*
+          path: /tmp/geoml
+          merge-multiple: true
+      - name: ادغام و حکم
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.geom_lab --merge /tmp/geoml/*.json
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("signals/geom-lab.json")
+          if not p.exists():
+              sys.exit("geom-lab.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          assert d.get("control") == "rr2.0/stop0.15", d.get("control")
+          assert len(d.get("arms") or {}) == 9, len(d.get("arms") or {})
+          assert len(d.get("vs_control") or {}) == 8, len(d.get("vs_control") or {})
+          for a, v in d["vs_control"].items():
+              assert v["verdict"] in ("PROMOTE_CANDIDATE", "REJECT",
+                                      "UNDECIDED"), (a, v["verdict"])
+          # شرطِ پایانی روی **محصول**: مکانیزم باید گزارش شده باشد، وگرنه
+          # «بهتر شد» عددی بی‌توضیح است (درس ۶ سپتامبر).
+          for a, v in d["arms"].items():
+              for k in ("gross", "fee_r_median", "win_pct", "timeout_pct"):
+                  assert k in v, (a, k)
+          for a in sorted(d["arms"]):
+              v = d["arms"][a]
+              print(f"{a:<18} n={v.get('n'):<5} خالص={v.get('mean')} "
+                    f"ناخالص={v.get('gross')} کارمزد={v.get('fee_r_median')} "
+                    f"برد={v.get('win_pct')}% تایم‌اوت={v.get('timeout_pct')}%")
+          print()
+          for a in sorted(d["vs_control"]):
+              v = d["vs_control"][a]
+              print(f"{a:<18} اختلاف={v['diff']} CI={v['ci']} → {v['verdict']}")
+          print("پوشش:", d.get("n_symbols"), "نماد ·", d.get("n_skipped"),
+                "ردشده · بازه", d.get("span"))
+          PY
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "آزمایشگاه اردر بلاک $(date -u +%Y-%m-%d)" signals

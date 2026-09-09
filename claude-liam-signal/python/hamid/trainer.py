@@ -172,13 +172,18 @@ def _save_state(st):
     STATE.write_text(json.dumps(st, ensure_ascii=False, indent=1))
 
 
-def decide(window, tf="15m", near_fn=None):
+def decide(window, tf="15m", near_fn=None, rr=None,
+           min_stop=None, max_stop=None):
     """تصمیم روی آخرین کندلِ پنجره — فقط با گذشته. None یعنی ورود نکن.
 
     `near_fn(window, tf=...)` تزریق‌پذیر است **فقط برای آزمایشگاه A/B**
     (`hamid/ob_lab.py`). None = `orderblocks.near` یعنی همان رفتاری که
     کلِ دفتر تاریخی با آن ساخته شده. هیچ مسیر تولیدی این را پر نمی‌کند —
     وگرنه دفتر دو تعریف پیدا می‌کند و CI روی مخلوطِ دو چیز حساب می‌شود.
+
+    `rr` / `min_stop` / `max_stop` همان‌طور: **فقط برای آزمایشگاه هندسه**
+    (`hamid/geom_lab.py`). None یعنی `RR=2.0` و باندِ ۰.۱۵–۶٪ — دقیقاً
+    همان چیزی که ۱۷ هزار ردیفِ دفترِ تاریخی با آن ساخته شده.
 
     دو ورودِ کتابچهٔ یادگرفته (هر دو در جهت روند — قانون حمید):
       A) پولبک به اردر بلاک معتبر: قیمت داخل/چسبیده به باکس نشکستهٔ
@@ -198,12 +203,16 @@ def decide(window, tf="15m", near_fn=None):
     px = window[-1]["c"]
     long = t == "up"
 
+    _rr = RR if rr is None else rr
+    _lo = 0.15 if min_stop is None else min_stop
+    _hi = 6.0 if max_stop is None else max_stop
+
     def pack(d, sl, setup, ob=None):
         if (long and sl >= px) or (not long and sl <= px):
             return None
-        tp = px + (px - sl) * RR if long else px - (sl - px) * RR
+        tp = px + (px - sl) * _rr if long else px - (sl - px) * _rr
         stop_pct = abs(px - sl) / px * 100
-        if not 0.15 <= stop_pct <= 6:                 # نه در نویز، نه بی‌معنا
+        if not _lo <= stop_pct <= _hi:                # نه در نویز، نه بی‌معنا
             return None
         why = {"stage": "practice", "trainer": 1, "setup": setup,
                "tf": tf,                              # برچسب تایم‌فریم — بدون
@@ -219,6 +228,9 @@ def decide(window, tf="15m", near_fn=None):
                # `liam9_short_strategy` معنای واقعی را اجرا می‌کند نه
                # معنای اسم را.
                "trend_4h": t, "stop_pct": round(stop_pct, 2),
+               "rr": _rr,                             # اثرانگشتِ هندسه روی
+               # خودِ ردیف — بدون این، حکمِ یک بازو با دفترِ بازوی دیگر
+               # مخلوط می‌شود و CI روی مخلوطِ دو چیز حساب می‌شود.
                "ob_align": "with" if ob else None}
         if ob:
             why.update({"reactions": ob.get("reactions"),
@@ -344,7 +356,8 @@ def resolve(c15, i, s, max_hold=MAX_HOLD):
         if hit_sl:                                    # هم‌زمان → بدخیم‌ترین فرض
             return j, "stop", -1.0, exc()
         if hit_tp:
-            return j, "target", RR, exc()
+            return j, "target", round((tp - e) / risk if long
+                                      else (e - tp) / risk, 3), exc()
         # قانون تریل حمید (⅓ مسیر → استاپ در سود) — ساده‌شدهٔ میز تمرین:
         # اگر ⅓ مسیر رفت و بعد به ورود برگشت، خروج سربه‌سرِ کارمزددار
         third = e + (tp - e) / 3
@@ -354,7 +367,8 @@ def resolve(c15, i, s, max_hold=MAX_HOLD):
                 ck = c15[k]
                 track(ck, k)
                 if (ck["h"] >= tp) if long else (ck["l"] <= tp):
-                    return k, "target", RR, exc()
+                    return k, "target", round((tp - e) / risk if long
+                                              else (e - tp) / risk, 3), exc()
                 if (ck["l"] <= e) if long else (ck["h"] >= e):
                     return k, "trail", 0.15, exc()    # سود کارمزددار — قانون ۱۲ اوت
             k = min(i + max_hold, len(c15) - 1)
@@ -367,7 +381,8 @@ def resolve(c15, i, s, max_hold=MAX_HOLD):
     return j, "timeout", round(r, 3), exc()
 
 
-def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m", near_fn=None):
+def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m", near_fn=None,
+                  rr=None, min_stop=None, max_stop=None, max_hold=None):
     """بازپخش یک ارز؛ فقط کندل‌های بعد از after_ms (ضدتکرار بین اجراها).
 
     خروجی: (معامله‌ها، مرز پیشروی). مرز = تا کجای تاریخ «بررسی» شد — نه
@@ -375,7 +390,9 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m", near_fn=None):
     اجرای بعدی روی همان داده هیچ تکراری نمی‌سازد.
     """
     cfg = TFS.get(tf) or TFS["15m"]
-    max_hold, warmup = cfg["max_hold"], cfg["warmup"]
+    warmup = cfg["warmup"]
+    if max_hold is None:
+        max_hold = cfg["max_hold"]
     trades = []
     i = warmup
     last_entry = None                                 # برای ضدتکرار پلهٔ ۳
@@ -388,8 +405,12 @@ def replay_symbol(sym, c15, after_ms=0, cap=40, tf="15m", near_fn=None):
         # `near_fn` فقط وقتی پاس داده می‌شود که واقعاً چیزی باشد — تا
         # مسیرِ پیش‌فرض **دقیقاً** همان امضای قبلی را صدا بزند و هر
         # `decide` جایگزین‌شده (جاسوسِ آزمون) نشکند.
-        s = decide(window, tf=tf, near_fn=near_fn) if near_fn \
-            else decide(window, tf=tf)
+        geom = rr is not None or min_stop is not None or max_stop is not None
+        if near_fn or geom:
+            s = decide(window, tf=tf, near_fn=near_fn, rr=rr,
+                       min_stop=min_stop, max_stop=max_stop)
+        else:
+            s = decide(window, tf=tf)
         if not s:
             i += 1
             continue
