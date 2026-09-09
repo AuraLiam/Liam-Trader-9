@@ -263,6 +263,52 @@ try:
 finally:
     direction_autopsy.CLOSED = _old
 
+# ── ۸. کفِ استاپ ۱.۵٪ — تغییرِ سنجش‌شدهٔ ۹ سپتامبر (تأیید حمید) ────────────
+#
+# سه چیز اثبات می‌شود، و بندِ سوم مهم‌ترین است چون بندهای اول و دوم بدون آن
+# می‌توانند «توخالی» باشند (درسِ `all()` روی فهرستِ خالی):
+#   الف) ثابت همان عددی است که سنجیده شد
+#   ب)  مسیرِ **پیش‌فرض** (بی‌آرگومان) هیچ معامله‌ای زیر کف نمی‌سازد
+#   ج)  با کفِ صریحِ قدیمی (۰.۱۵) همان داده معامله‌های زیر ۱.۵٪ **می‌سازد**
+#       — یعنی بند (ب) واقعاً گاز می‌گیرد، نه این‌که داده خالی باشد
+#   د)  پیش‌فرض با `min_stop=1.5` صریح **دقیقاً یکی** است (اثباتِ محصول،
+#       نه اثباتِ متنِ کد — درسِ ۶ سپتامبر)
+check("ثابتِ کفِ استاپ = ۱.۵", trainer.MIN_STOP_PCT == 1.5,
+      str(trainer.MIN_STOP_PCT))
+check("ثابتِ سقفِ استاپ = ۶.۰", trainer.MAX_STOP_PCT == 6.0,
+      str(trainer.MAX_STOP_PCT))
+
+_floor_c = synth15(900, seed=23)
+t_def, _ = trainer.replay_symbol("FLOOR", _floor_c, after_ms=0, cap=400)
+t_old, _ = trainer.replay_symbol("FLOOR", _floor_c, after_ms=0, cap=400,
+                                 min_stop=0.15)
+t_exp, _ = trainer.replay_symbol("FLOOR", _floor_c, after_ms=0, cap=400,
+                                 min_stop=1.5)
+
+
+def _spct(t):
+    return abs(t["entry"] - t["sl"]) / t["entry"] * 100
+
+
+check("مسیرِ پیش‌فرض معامله می‌سازد (آزمون توخالی نیست)", len(t_def) > 0,
+      f"n={len(t_def)}")
+check("هیچ معاملهٔ پیش‌فرضی زیر کفِ ۱.۵٪ نیست",
+      all(_spct(t) >= 1.5 - 1e-9 for t in t_def),
+      f"کمینه={min((_spct(t) for t in t_def), default=None)}")
+check("اثباتِ منفی: با کفِ ۰.۱۵ همان داده زیر ۱.۵٪ هم می‌سازد",
+      any(_spct(t) < 1.5 for t in t_old),
+      f"n_old={len(t_old)} کمینه={min((_spct(t) for t in t_old), default=None)}")
+check("و کفِ تازه واقعاً نمونه کم می‌کند", len(t_def) < len(t_old),
+      f"{len(t_def)} در برابر {len(t_old)}")
+check("پیش‌فرض ≡ min_stop=1.5 صریح (مو به مو)",
+      json.dumps(t_def, sort_keys=True) == json.dumps(t_exp, sort_keys=True),
+      f"{len(t_def)} در برابر {len(t_exp)}")
+check("اثرانگشتِ کف روی خودِ ردیف ثبت می‌شود",
+      bool(t_def) and all(t["why"].get("min_stop") == 1.5 for t in t_def),
+      str((t_def[0]["why"].get("min_stop") if t_def else None)))
+check("و ردیفِ بازوی قدیمی اثرانگشتِ خودش را دارد",
+      bool(t_old) and all(t["why"].get("min_stop") == 0.15 for t in t_old))
+
 print()
 print(f"✓ همهٔ {ok} آزمون میز تمرین گذشت" if not fail else
       f"✗ {len(fail)} آزمون افتاد: {fail}")

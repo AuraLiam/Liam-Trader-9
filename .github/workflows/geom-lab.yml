@@ -109,8 +109,14 @@ jobs:
               sys.exit("geom-lab.json ساخته نشد")
           d = json.loads(p.read_text(encoding="utf-8"))
           assert d.get("control") == "rr2.0/stop0.15", d.get("control")
-          assert len(d.get("arms") or {}) == 9, len(d.get("arms") or {})
+          # ۹ خانهٔ شبکه + بازوی اثباتِ «پیش‌فرضِ موتور» که در شبکه نیست
+          assert len(d.get("arms") or {}) == 10, sorted(d.get("arms") or {})
           assert len(d.get("vs_control") or {}) == 8, len(d.get("vs_control") or {})
+          # شرطِ پایانی روی **محصول** (درس ۶ سپتامبر): کفِ استاپِ موتور
+          # واقعاً همان خانه‌ای است که سنجیده شد — نه «کد را عوض کردم».
+          pr = d.get("product_proof") or {}
+          assert pr.get("status") == "ok", pr
+          assert pr.get("engine_min_stop") == 1.5, pr
           for a, v in d["vs_control"].items():
               assert v["verdict"] in ("PROMOTE_CANDIDATE", "REJECT",
                                       "UNDECIDED"), (a, v["verdict"])
@@ -130,6 +136,7 @@ jobs:
               print(f"{a:<18} اختلاف={v['diff']} CI={v['ci']} → {v['verdict']}")
           print("پوشش:", d.get("n_symbols"), "نماد ·", d.get("n_skipped"),
                 "ردشده · بازه", d.get("span"))
+          print("اثباتِ محصول:", pr)
           PY
       - name: انتشار (ناشر مشترک، قانون ۱۴)
-        run: scripts/publish.sh -m "آزمایشگاه اردر بلاک $(date -u +%Y-%m-%d)" signals
+        run: scripts/publish.sh -m "آزمایشگاه هندسه $(date -u +%Y-%m-%d)" signals

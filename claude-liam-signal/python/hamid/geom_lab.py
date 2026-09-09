@@ -124,12 +124,26 @@ ARMS = {f"rr{r}/stop{s}": {"rr": r, "min_stop": s}
 COMPARISONS = [a for a in ARMS if a != CONTROL]
 ALPHA_SIDAK = 1 - (1 - 0.05) ** (1 / len(COMPARISONS))
 
+# ── بازوی «پیش‌فرض» — اثباتِ محصول، بیرون از تحلیلِ از-پیش-ثبت‌شده ─────────
+#
+# ۹ سپتامبر کفِ استاپِ تولید از ۰.۱۵ به ۱.۵ رفت (تأیید حمید). ادعای
+# «اعمال شد» بی‌اثبات، همان درسِ ۶ سپتامبر است: اسکریپتِ سبز ≠ محصولِ
+# درست. پس این بازو موتور را **بی هیچ آرگومانی** صدا می‌زند و باید مو به
+# مو با خانهٔ `rr2.0/stop1.5` یکی دربیاید.
+#
+# عمداً در `ARMS` نیست: ورودش به شبکه یعنی ۹ مقایسه به‌جای ۸ و آستانهٔ
+# Šidák جابه‌جا می‌شد — یعنی تحلیلِ از-پیش-ثبت‌شده بعد از دیدنِ نتیجه عوض
+# می‌شد. اثبات باید کنارِ تحلیل بنشیند، نه داخلش.
+PROOF_ARM = "defaults"
+PROOF_EQUALS = f"rr{TR.RR}/stop{TR.MIN_STOP_PCT}"
+LEDGERS = list(ARMS) + [PROOF_ARM]
+
 MIN_N_PROMOTE = 200
 MIN_N_REJECT = 500
 
 
 def run_symbol(sym, cd):
-    """یک نماد، ۹ خانه، همان کندل‌ها."""
+    """یک نماد، ۹ خانه + بازوی اثباتِ پیش‌فرض، همان کندل‌ها."""
     out = {}
     for arm, kw in ARMS.items():
         trades, _ = TR.replay_symbol(sym, cd, after_ms=0, cap=10_000, tf=TF,
@@ -137,6 +151,12 @@ def run_symbol(sym, cd):
         for t in trades:
             t["_arm"] = arm
         out[arm] = trades
+    # بی هیچ آرگومانِ هندسه‌ای — دقیقاً همان چیزی که تولید صدا می‌زند.
+    dflt, _ = TR.replay_symbol(sym, cd, after_ms=0, cap=10_000, tf=TF,
+                               max_hold=MAX_HOLD)
+    for t in dflt:
+        t["_arm"] = PROOF_ARM
+    out[PROOF_ARM] = dflt
     return out
 
 
@@ -173,6 +193,28 @@ def _mech(trades):
     }
 
 
+def _key(t):
+    """هویتِ یک معامله برای مقایسهٔ دو دفتر — بی‌برچسبِ بازو."""
+    return (t.get("sym"), t.get("opened"), t.get("dir"), t.get("entry"),
+            t.get("sl"), t.get("tp1"), t.get("outcome"), t.get("R"))
+
+
+def _proof(per_arm):
+    """اثباتِ محصول: مسیرِ پیش‌فرضِ موتور = همان خانهٔ سنجیده‌شده؟
+
+    اگر بازوی اثبات در این تکه نبود، `missing` برمی‌گردد — نه `True`.
+    ادعای اثباتِ نگرفته، بدتر از نگفتن است.
+    """
+    if PROOF_ARM not in per_arm:
+        return {"status": "missing", "expected_arm": PROOF_EQUALS}
+    a = [_key(t) for t in per_arm[PROOF_ARM]]
+    b = [_key(t) for t in per_arm.get(PROOF_EQUALS, [])]
+    return {"status": "ok" if a == b and a else "MISMATCH",
+            "expected_arm": PROOF_EQUALS,
+            "engine_min_stop": TR.MIN_STOP_PCT, "engine_rr": TR.RR,
+            "n_default": len(a), "n_expected": len(b)}
+
+
 def judge(per_arm):
     nets = {a: _net(t) for a, t in per_arm.items()}
     by_sym = {a: {s: _net(v) for s, v in _by_symbol(t).items()}
@@ -182,7 +224,8 @@ def judge(per_arm):
            "control": CONTROL,
            "max_hold_bars": MAX_HOLD,
            "arms": {a: dict(_stats(nets[a]), **_mech(per_arm[a]))
-                    for a in ARMS},
+                    for a in LEDGERS if a in per_arm},
+           "product_proof": _proof(per_arm),
            "vs_control": {}}
     for a in COMPARISONS:
         ci = _cluster_boot(by_sym[a], by_sym[CONTROL], ALPHA_SIDAK)
@@ -200,7 +243,7 @@ def judge(per_arm):
 
 
 def run(symbols=None, bars=2000, shard=0, shards=1, fetch=None, quiet=False):
-    per_arm = {a: [] for a in ARMS}
+    per_arm = {a: [] for a in LEDGERS}
     skipped = []
     if fetch is None:
         import sources
@@ -224,7 +267,7 @@ def run(symbols=None, bars=2000, shard=0, shards=1, fetch=None, quiet=False):
             skipped.append(f"{sym}: کندل کم ({len(cd)})")
             continue
         got = run_symbol(sym, cd)
-        for a in ARMS:
+        for a in LEDGERS:
             per_arm[a] += got[a]
         if not quiet:
             print(f"  {sym}: " + " · ".join(f"{a}={len(got[a])}"
@@ -233,10 +276,10 @@ def run(symbols=None, bars=2000, shard=0, shards=1, fetch=None, quiet=False):
 
 
 def _envelope(parts):
-    per_arm = {a: [] for a in ARMS}
+    per_arm = {a: [] for a in LEDGERS}
     skipped, nsym = [], 0
     for p in parts:
-        for a in ARMS:
+        for a in LEDGERS:
             per_arm[a] += p["per_arm"].get(a, [])
         skipped += p.get("skipped") or []
         nsym += p.get("n_symbols") or 0
@@ -400,6 +443,33 @@ def _selftest():
     # ۱۰) آمار قرض گرفته شده، بازنویسی نشده
     chk("from hamid.ob_lab import" in body,
         "آمار از ob_lab قرض گرفته نشده — خطرِ تعریفِ دوم از CI")
+
+    # ۱۱) بازوی اثباتِ محصول — کفِ تولید واقعاً همان خانهٔ سنجیده‌شده است
+    chk(PROOF_ARM not in ARMS, "بازوی اثبات وارد شبکه شد — Šidák جابه‌جا می‌شود")
+    chk(len(COMPARISONS) == 8, "بازوی اثبات شمارِ مقایسه‌ها را عوض کرد")
+    chk(PROOF_EQUALS in ARMS,
+        f"خانهٔ متناظرِ پیش‌فرضِ موتور در شبکه نیست: {PROOF_EQUALS}")
+    # فیکسچرِ نردبانِ اصلی همهٔ استاپ‌هایش گشاد است، پس کنترل و خانهٔ ۱.۵
+    # روی آن یکی درمی‌آیند و برابریِ پیش‌فرض چیزی را اثبات نمی‌کند. این
+    # فیکسچرِ دوم عمداً جوری کوک شده که **کف گاز بگیرد**: ۴ معامله در
+    # کنترل، ۲ تا بعد از کف.
+    cdp = stairs._ladder(steps=18, start=200.0, leg=3.5, back=1.3, bars=8)
+    got = run_symbol("XUSDT", cdp)
+    chk(len(got[CONTROL]) > len(got[PROOF_EQUALS]) > 0,
+        f"فیکسچرِ اثبات تفکیک نمی‌کند: کنترل={len(got[CONTROL])} "
+        f"· {PROOF_EQUALS}={len(got[PROOF_EQUALS])}")
+    chk(PROOF_ARM in got and len(got[PROOF_ARM]) > 0,
+        "بازوی اثبات معامله‌ای نساخت — اثباتِ توخالی")
+    pr = _proof(got)
+    chk(pr["status"] == "ok", f"مسیرِ پیش‌فرضِ موتور با {PROOF_EQUALS} یکی نیست: {pr}")
+    chk(pr["engine_min_stop"] == TR.MIN_STOP_PCT == 1.5,
+        f"کفِ تولید ۱.۵ نیست: {TR.MIN_STOP_PCT}")
+    # اثباتِ منفی: اگر پیش‌فرضِ موتور هنوز کنترل بود، همین بررسی می‌افتاد
+    _bad = dict(got, **{PROOF_EQUALS: got[CONTROL]})
+    chk(_proof(_bad)["status"] == "MISMATCH",
+        "بررسیِ اثبات گاز نمی‌گیرد — با دفترِ اشتباه هم ok گفت")
+    chk(_proof({a: [] for a in ARMS})["status"] == "missing",
+        "بازوی غایب «ok» گزارش شد — ادعای اثباتِ نگرفته")
 
     print(f"geom_lab: {ok} بررسی سبز" + (f" · {fails} قرمز" if fails else ""))
     return 1 if fails else 0
