@@ -1,9 +1,9 @@
 {
- "generated": 1789030718271,
+ "generated": 1789030898064,
  "usdt_dominance": 6.847,
  "btc_dominance": 58.56,
  "chg_1h": {
-  "usdt": -0.004,
+  "usdt": 0.001,
   "btc": 0.0
  },
  "chg_4h": {
@@ -11,11 +11,11 @@
   "btc": 0.02
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Main Refinancing Rate (3.3س) + Core PPI m/m (3.5س) + PPI m/m (3.5س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1249/2474 (50٪)؛ بنچمارکِ همیشه‌تخت 61٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Main Refinancing Rate (3.2س) + Core PPI m/m (3.5س) + PPI m/m (3.5س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س up · ۴س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1251/2476 (51٪)؛ بنچمارکِ همیشه‌تخت 60٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "Main Refinancing Rate",
-   "in_hours": 3.3,
+   "in_hours": 3.2,
    "country": "EUR"
   },
   {
@@ -45,20 +45,20 @@
   }
  ],
  "structure": {
-  "bars_1h": 277,
+  "bars_1h": 278,
   "bars_4h": 74,
-  "regime": "RANGE",
+  "regime": "TRANSITION",
   "usdt": {
-   "trend_1h": "range",
-   "px": 6.851,
+   "trend_1h": "up",
+   "px": 6.847,
    "level_above": 6.963,
-   "level_below": 6.847,
+   "level_below": 6.805,
    "trend_4h": "down"
   },
   "btc_d": {
    "trend_1h": "range"
   },
-  "why": "USDT.D ساختار ۱س range · ۴س down"
+  "why": "USDT.D ساختار ۱س up · ۴س down"
  },
  "multi_tf": {
   "usdt": {
@@ -80,20 +80,20 @@
     }
    },
    "1h": {
-    "trend": "range",
-    "px": 6.851,
+    "trend": "up",
+    "px": 6.847,
     "levels_above": [
      6.963
     ],
     "levels_below": [
-     6.847,
-     6.805
+     6.805,
+     6.794
     ],
     "trendline": {
      "kind": "support",
-     "touches": 15,
+     "touches": 16,
      "broken": true,
-     "value_now": 6.828
+     "value_now": 6.813
     }
    }
   },
@@ -127,14 +127,47 @@
      "kind": "resistance",
      "touches": 9,
      "broken": false,
-     "value_now": 58.898
+     "value_now": 58.894
     }
    }
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.067,
+     "DOWN": 0.1,
+     "FLAT": 0.833
+    },
+    "p_claim": 0.833,
+    "p_n": 30,
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "هیچ شاهد جهت‌داری نیست"
+    ],
+    "p": {
+     "UP": 0.259,
+     "DOWN": 0.222,
+     "FLAT": 0.519
+    },
+    "p_claim": 0.519,
+    "p_n": 27,
+    "ev_n": 0
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
     "n": 246,
@@ -142,12 +175,12 @@
     "hit_pct": 26.8,
     "dir_n": 4,
     "dir_hit_pct": 25.0,
-    "baseline_flat_pct": 24.3,
-    "skill": 2.5,
+    "baseline_flat_pct": 22.2,
+    "skill": 4.6,
     "brier": 0.6793,
     "brier_n": 104,
-    "brier_climate": 0.6545,
-    "brier_skill": -0.0248
+    "brier_climate": 0.6482,
+    "brier_skill": -0.0311
    },
    "BTC.D|1440m": {
     "n": 10,
@@ -168,30 +201,30 @@
     "skill": 3.9
    },
    "BTC.D|30m": {
-    "n": 921,
-    "hit": 392,
+    "n": 922,
+    "hit": 393,
     "hit_pct": 42.6,
     "dir_n": 19,
     "dir_hit_pct": 10.5,
-    "baseline_flat_pct": 53.2,
-    "skill": -10.6,
-    "brier": 0.6375,
-    "brier_n": 389,
-    "brier_climate": 0.6072,
-    "brier_skill": -0.0303
+    "baseline_flat_pct": 53.6,
+    "skill": -11.0,
+    "brier": 0.6368,
+    "brier_n": 390,
+    "brier_climate": 0.6052,
+    "brier_skill": -0.0316
    },
    "USDT.D|120m": {
     "n": 246,
     "hit": 123,
     "hit_pct": 50.0,
-    "dir_n": 14,
-    "dir_hit_pct": 28.6,
-    "baseline_flat_pct": 45.9,
-    "skill": 4.1,
+    "dir_n": 13,
+    "dir_hit_pct": 30.8,
+    "baseline_flat_pct": 44.4,
+    "skill": 5.6,
     "brier": 0.5427,
     "brier_n": 67,
-    "brier_climate": 0.6428,
-    "brier_skill": 0.1001
+    "brier_climate": 0.6482,
+    "brier_skill": 0.1055
    },
    "USDT.D|1440m": {
     "n": 10,
@@ -212,17 +245,17 @@
     "skill": 9.4
    },
    "USDT.D|30m": {
-    "n": 921,
-    "hit": 617,
+    "n": 922,
+    "hit": 618,
     "hit_pct": 67.0,
     "dir_n": 44,
     "dir_hit_pct": 6.8,
-    "baseline_flat_pct": 85.6,
-    "skill": -18.6,
-    "brier": 0.3177,
-    "brier_n": 372,
-    "brier_climate": 0.2568,
-    "brier_skill": -0.0609
+    "baseline_flat_pct": 85.7,
+    "skill": -18.7,
+    "brier": 0.3169,
+    "brier_n": 373,
+    "brier_climate": 0.2551,
+    "brier_skill": -0.0618
    }
   },
   "open": 8
@@ -231,19 +264,19 @@
   "60m": {
    "status": "OK",
    "minutes": 60,
-   "usdt_d_from": 6.851,
+   "usdt_d_from": 6.846,
    "usdt_d_to": 6.847,
-   "d_dom_pct": -0.058,
-   "supply_effect_pct": -0.047,
-   "mcap_effect_pct": -0.011,
-   "supply_share": 0.813,
-   "mcap_share": 0.187,
-   "supply_usd_from": 183005942650,
+   "d_dom_pct": 0.015,
+   "supply_effect_pct": 0.015,
+   "mcap_effect_pct": 0.0,
+   "supply_share": 0.999,
+   "mcap_share": 0.001,
+   "supply_usd_from": 182892366350,
    "supply_usd_to": 182919048794,
-   "mcap_usd_from": 2671229640192,
+   "mcap_usd_from": 2671521565146,
    "mcap_usd_to": 2671521086518,
-   "label": "SUPPLY_DRIVEN",
-   "story": "عرضهٔ تتر عوض شده، نه قیمتِ بازار — تتر از سیستم خارج شده (پول رفته یا خرج شده)",
+   "label": "FLAT",
+   "story": "دامیننس تتر در این بازه تکان معناداری نخورد",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
   },
   "240m": {
@@ -267,16 +300,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.762,
+   "usdt_d_from": 6.758,
    "usdt_d_to": 6.847,
-   "d_dom_pct": 1.249,
-   "supply_effect_pct": 0.019,
-   "mcap_effect_pct": 1.23,
-   "supply_share": 0.015,
-   "mcap_share": 0.985,
-   "supply_usd_from": 182883868920,
+   "d_dom_pct": 1.308,
+   "supply_effect_pct": -0.085,
+   "mcap_effect_pct": 1.394,
+   "supply_share": 0.058,
+   "mcap_share": 0.942,
+   "supply_usd_from": 183074942158,
    "supply_usd_to": 182919048794,
-   "mcap_usd_from": 2704582503997,
+   "mcap_usd_from": 2709010685978,
    "mcap_usd_to": 2671521086518,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -297,8 +330,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": 0.085,
-    "usdc_d_delta": 0.031,
+    "usdt_d_delta": 0.089,
+    "usdc_d_delta": 0.033,
     "usdt_d": 6.847,
     "usdc_d": 2.774,
     "label": "RISK_OFF",
@@ -324,10 +357,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": -1.222,
-    "total2_pct": -0.187,
-    "total3_pct": 0.408,
-    "gap_t3_total": 1.63,
+    "total_pct": -1.384,
+    "total2_pct": -0.374,
+    "total3_pct": 0.244,
+    "gap_t3_total": 1.628,
     "total_usd": 2671521086518,
     "total2_usd": 1107078338253,
     "total3_usd": 806265063911,
@@ -341,7 +374,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2590,
+    "bars": 2591,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -349,7 +382,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2590,
+    "bars": 2591,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -359,79 +392,79 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1025,
+    "bars": 1026,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 6.845,
+    "px": 6.847,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 1024,
+     "n": 1025,
      "pctl": 0.75,
      "median": 0.005,
      "p90": 0.017
     },
-    "delta": -0.004,
+    "delta": 0.002,
     "meaningful": false,
     "regime": "BEARISH",
-    "note": "USDT.D در 15m: روند up → رژیم BEARISH؛ تغییر آخرین کندل -0.0040 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 15m: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0020 در برابر آستانهٔ 0.0100 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1025,
+    "bars": 1026,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 58.57,
+    "px": 58.56,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1024,
+     "n": 1025,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.03
     },
-    "delta": 0.01,
+    "delta": -0.01,
     "meaningful": false,
-    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0100"
+    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل -0.0100"
    }
   },
   "1h": {
    "usdt": {
     "tf": "1h",
-    "bars": 277,
+    "bars": 278,
     "pts_per_bar": 16.0,
     "resolution_ok": true,
-    "trend": "range",
-    "px": 6.851,
+    "trend": "up",
+    "px": 6.847,
     "threshold": 0.022,
     "threshold_stats": {
-     "n": 276,
+     "n": 277,
      "pctl": 0.75,
      "median": 0.012,
-     "p90": 0.041
+     "p90": 0.039
     },
-    "delta": 0.029,
-    "meaningful": true,
-    "regime": "RANGE",
-    "note": "USDT.D در 1h: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0290 در برابر آستانهٔ 0.0220 (صدک 0.75 همین تایم‌فریم)"
+    "delta": -0.004,
+    "meaningful": false,
+    "regime": "BEARISH",
+    "note": "USDT.D در 1h: روند up → رژیم BEARISH؛ تغییر آخرین کندل -0.0040 در برابر آستانهٔ 0.0220 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "1h",
-    "bars": 277,
+    "bars": 278,
     "pts_per_bar": 16.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 58.56,
     "threshold": 0.04,
     "threshold_stats": {
-     "n": 276,
+     "n": 277,
      "pctl": 0.75,
      "median": 0.02,
      "p90": 0.07
     },
-    "delta": -0.01,
+    "delta": 0.0,
     "meaningful": false,
-    "note": "BTC.D در 1h: روند range؛ تغییر آخرین کندل -0.0100"
+    "note": "BTC.D در 1h: روند range؛ تغییر آخرین کندل +0.0000"
    }
   },
   "4h": {
@@ -523,9 +556,9 @@
   "regime": {
    "1h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.006، زیر میانهٔ 0.016) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.006، زیر میانهٔ 0.014) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "threshold": 0.016,
+    "threshold": 0.014,
     "stable_d": 9.621,
     "d_stable_d": -0.006,
     "usdt_d": 6.847,
