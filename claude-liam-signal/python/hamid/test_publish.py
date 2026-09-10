@@ -345,6 +345,54 @@ r = w.publish("signals", env={"PUBLISH_REMOTE": "nowhere", "PUBLISH_ATTEMPTS": "
 check("ریموتِ ناموجود: خروج غیرصفر (خرابیِ واقعی پنهان نمی‌شود)", r.returncode != 0)
 w.close()
 
+# ── ۱۰) درختِ کار بعد از انتشار کهنه نمی‌ماند (۹ سپتامبر) ───────────────
+#
+# علتِ اندازه‌گیری‌شده: ناشر فقط `PATHS` را همگام می‌کرد، پس هر مسیرِ
+# دیگری که origin در این فاصله جلو برده بود در درختِ محلی کهنه می‌ماند و
+# برای همیشه «تغییریافته» دیده می‌شد (۶۱ فایل، همه سمتِ کهنه). خطرش:
+# کامیتِ کورِ همان انبوه، که یک بار نزدیک بود ۲۲۳ پروندهٔ معامله را
+# «حذف‌شده» ثبت کند.
+w = World()
+(w.work / "signals/latest.json").write_text('{"generated": 1}')
+w.publish("signals")                              # نقطهٔ شروعِ مشترک
+
+# origin دو فایل را جلو می‌برد: یکی مسیرِ انتشارِ بعدی، یکی بیرون از آن.
+w.other_push({"signals/latest.json": '{"generated": 9}',
+              "brain/other.json": '{"v": "origin-new"}'})
+# و ما فقط `signals` را منتشر می‌کنیم.
+(w.work / "signals/latest.json").write_text('{"generated": 10}')
+r = w.publish("signals")
+check("انتشار موفق بود", r.returncode == 0, r.stdout + r.stderr)
+_dirty = git("status", "--short", "--untracked-files=no", cwd=w.work).stdout.strip()
+check("بعد از انتشار، درختِ کار پاک است",
+      _dirty == "", _dirty[:200])
+def _txt(path):
+    """محتوا، یا None اگر نبود — رگرسیون باید قرمزِ خوانا بدهد نه traceback."""
+    return path.read_text() if path.exists() else None
+
+
+check("و فایلِ بیرون از انتشار نسخهٔ origin را گرفت",
+      _txt(w.work / "brain/other.json") == '{"v": "origin-new"}',
+      str(_txt(w.work / "brain/other.json")))
+w.close()
+
+# اثباتِ منفی همین بند: ویرایشِ کامیت‌نشدهٔ ما **دور ریخته نمی‌شود**،
+# حتی وقتی origin همان فایل را جلو برده. بدون این مرز، همگام‌سازی
+# می‌توانست کارِ نیمه‌تمامِ ایجنت را پاک کند.
+w = World()
+(w.work / "signals/latest.json").write_text('{"generated": 1}')
+w.publish("signals")
+w.other_push({"brain/other.json": '{"v": "origin-new"}'})
+(w.work / "brain").mkdir(parents=True, exist_ok=True)
+(w.work / "brain/other.json").write_text('{"v": "MY-WIP"}')   # کارِ نیمه‌تمام
+(w.work / "signals/latest.json").write_text('{"generated": 11}')
+r = w.publish("signals")
+check("انتشار با کارِ نیمه‌تمام هم موفق شد", r.returncode == 0, r.stdout + r.stderr)
+check("ویرایشِ کامیت‌نشدهٔ ما دست‌نخورده ماند",
+      _txt(w.work / "brain/other.json") == '{"v": "MY-WIP"}',
+      str(_txt(w.work / "brain/other.json")))
+w.close()
+
 print()
 if FAIL:
     print(f"✗ {len(FAIL)} بررسی افتاد: {FAIL}")
