@@ -77,6 +77,17 @@ git commit -q -m "$MSG" || { _say "کامیت نشد"; exit 1; }
 OURS="$(git rev-parse HEAD)"
 _say "$(printf '%s\n' "$CHANGED" | wc -l | tr -d ' ') فایل کامیت شد"
 
+# فایل‌هایی که در درختِ کار دست‌خورده‌اند ولی جزوِ همین انتشار نبودند —
+# یعنی ویرایشِ نیمه‌کارهٔ ایجنت. `_sync_moved` پایین از همگام‌سازی
+# مستثنایشان می‌کند تا هرگز دور ریخته نشوند.
+#
+# **فایلِ ردیابی‌نشده هم باید این‌جا باشد** — و نسخهٔ اولِ همین وصله
+# نداشتش. آزمونِ اثباتِ منفی گرفتش: فایلی که محلی ساخته شده ولی هنوز
+# tracked نیست، در `git diff` دیده نمی‌شود؛ اگر origin بعداً همان مسیر را
+# اضافه کند، همگام‌سازی رویش می‌نوشت و کارِ نیمه‌تمام گم می‌شد.
+MINE="$(git -c core.quotepath=false diff --name-only
+git -c core.quotepath=false ls-files --others --exclude-standard)"
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -131,6 +142,36 @@ _build_on() {
   [ -s "$TMP/new" ] || return 1
 } 1>&2
 
+# ── ۳) همگام‌سازیِ آنچه origin جلو برده و ما ننوشته‌ایم ───────────────────
+#
+# خطِ `git checkout -- "${PATHS[@]}"` فقط مسیرهای **همین انتشار** را تازه
+# می‌کند. هر مسیرِ دیگری که CI در فاصلهٔ اجرای ما جلو برده، در درختِ محلی
+# کهنه می‌ماند و از آن پس همیشه «تغییریافته» دیده می‌شود.
+#
+# اندازه‌گیری ۹ سپتامبر: ۶۱ فایل «تغییریافته» که **همه‌شان سمتِ کهنه
+# بودند** (نمونه: signals/latest.json محلی ۵۰ دقیقه عقب‌تر از کامیت‌شده،
+# brain/events/*.jsonl محلی ۲۲۶ خط در برابر ۲۳۶). هیچ‌کدام دادهٔ
+# منتشرنشده نداشتند. خطرش نظری نیست: همین انبوهِ کاذب یک بار نزدیک بود
+# ۲۲۳ فایل را «حذف‌شده» کامیت کند — یعنی پاک‌کردنِ پرونده‌هایی که ایجنت
+# اصلاً نساخته بود.
+#
+# دو مرزِ ایمنی، هر دو لازم:
+#   الف) فقط فایلی که بین کامیتِ ما و کامیتِ منتشرشده فرق دارد — یعنی
+#        origin جلویش برده، نه ما.
+#   ب)  فایلی که خودمان در درختِ کار دست زده‌ایم (`MINE`) هرگز همگام
+#        نمی‌شود. ویرایشِ کامیت‌نشدهٔ ایجنت دور ریختنی نیست.
+_sync_moved() {
+  local ours="$1" new="$2" f n=0
+  [ "$ours" = "$new" ] && return 0
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    printf '%s\n' "$MINE" | grep -qxF -- "$f" && continue
+    git checkout -q "$new" -- "$f" 2>/dev/null && n=$((n + 1))
+  done < <(git -c core.quotepath=false diff --name-only "$ours" "$new" 2>/dev/null)
+  [ "$n" -gt 0 ] && _say "$n فایل از origin همگام شد"
+  return 0
+}
+
 for attempt in $(seq 1 "$ATTEMPTS"); do
   _say "fetch $REMOTE/$BRANCH (تلاش $attempt)"
   if ! _net git fetch -q --depth=1 "$REMOTE" "$BRANCH" 2>/dev/null; then
@@ -151,6 +192,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     # نه چک‌اوتِ کهنهٔ رانر را (درس ۲۵ اوت: pump-radar.json کهنه روی تازه).
     git reset -q "$NEW" 2>/dev/null || true
     git checkout -q -- "${PATHS[@]}" 2>/dev/null || true
+    _sync_moved "$OURS" "$NEW"
     _say "منتشر شد (تلاش $attempt)"
     exit 0
   fi
