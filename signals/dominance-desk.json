@@ -1,17 +1,17 @@
 {
- "generated": 1789164056390,
+ "generated": 1789164238692,
  "engine": "E03",
  "panel": "لیام تریدر ۹",
  "ok": true,
  "points": 4000,
  "base_rule": {
   "market": "DOWN",
-  "why": "USDT.D +0.007 — پول به حاشیه می‌رود: بازار رو به پایین"
+  "why": "USDT.D +0.012 — پول به حاشیه می‌رود: بازار رو به پایین"
  },
  "chg_1h": {
-  "usdt_d": 0.007,
+  "usdt_d": 0.012,
   "btc_d": 0.01,
-  "usdc_d": 0.003
+  "usdc_d": 0.005
  },
  "by_tf": {
   "4h": {
@@ -74,21 +74,10 @@
   "5m": {
    "tf": "5m",
    "bars": 2585,
-   "pts_per_bar": 2.0,
-   "resolution_ok": true,
-   "trend": "range",
-   "px": 6.875,
-   "threshold": 0.005,
-   "threshold_stats": {
-    "n": 2584,
-    "pctl": 0.75,
-    "median": 0.001,
-    "p90": 0.011
-   },
-   "delta": 0.003,
-   "meaningful": false,
-   "regime": "RANGE",
-   "note": "USDT.D در 5m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0030 در برابر آستانهٔ 0.0050 (صدک 0.75 همین تایم‌فریم)"
+   "pts_per_bar": 1.0,
+   "resolution_ok": false,
+   "regime": "LOW_RESOLUTION",
+   "note": "سریِ دامیننس برای کندل 5m رزولوشن ندارد (میانهٔ 1 نقطه در هر کندل، حداقل 2.0) — عدد جعل نمی‌شود (قانون ۱)"
   }
  },
  "btc_d_by_tf": {
@@ -149,24 +138,14 @@
   "5m": {
    "tf": "5m",
    "bars": 2585,
-   "pts_per_bar": 2.0,
-   "resolution_ok": true,
-   "trend": "range",
-   "px": 58.21,
-   "threshold": 0.01,
-   "threshold_stats": {
-    "n": 2584,
-    "pctl": 0.75,
-    "median": 0.0,
-    "p90": 0.02
-   },
-   "delta": 0.0,
-   "meaningful": false,
-   "note": "BTC.D در 5m: روند range؛ تغییر آخرین کندل +0.0000"
+   "pts_per_bar": 1.0,
+   "resolution_ok": false,
+   "regime": "LOW_RESOLUTION",
+   "note": "سریِ دامیننس برای کندل 5m رزولوشن ندارد (میانهٔ 1 نقطه در هر کندل، حداقل 2.0) — عدد جعل نمی‌شود (قانون ۱)"
   }
  },
  "weighted": {
-  "score": -0.304,
+  "score": -0.333,
   "regime": "BEARISH",
   "used": [
    {
@@ -183,15 +162,15 @@
     "tf": "15m",
     "regime": "BEARISH",
     "weight": 0.4
-   },
-   {
-    "tf": "5m",
-    "regime": "RANGE",
-    "weight": 0.2
    }
   ],
-  "skipped": [],
-  "why": "رأی وزنی -0.304 از 4 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
+  "skipped": [
+   {
+    "tf": "5m",
+    "why": "سریِ دامیننس برای کندل 5m رزولوشن ندارد (میانهٔ 1 نقطه در هر کندل، حداقل 2.0) — عدد جعل نمی‌شود (قانون ۱)"
+   }
+  ],
+  "why": "رأی وزنی -0.333 از 3 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
  },
  "tf_weights": {
   "4h": 1.0,
