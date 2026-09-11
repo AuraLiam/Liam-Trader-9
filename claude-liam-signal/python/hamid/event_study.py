@@ -302,6 +302,34 @@ def measure(events, series):
     return rows
 
 
+def cluster(rows, ref="BTCUSDT"):
+    """یک رویداد = یک مشاهده.
+
+    رویدادِ کلان روی BTC و ETH هم‌زمان اندازه گرفته می‌شود و آن دو
+    هم‌بسته‌اند؛ شمردنشان به‌عنوان دو مشاهدهٔ مستقل، n را دو برابر و
+    بازهٔ اطمینان را ساختگی تنگ می‌کند — همان بیماریِ ردیف‌های تکراری
+    که ۲۴ اوت یک ادعا را باطل کرد. پس بازده‌ها میانگین گرفته می‌شوند و
+    رژیم از نمادِ مرجع (بیت‌کوین) خوانده می‌شود.
+
+    شوکِ هم‌زمانِ BTC و ETH هم یک حرکتِ بازار است نه دو تا، پس همان
+    قاعده رویش اجرا می‌شود؛ شوکِ تک‌نماد خودش یک خوشهٔ تک‌عضوی است.
+    """
+    g = {}
+    for r in rows:
+        g.setdefault((r["cls"], r["at"]), []).append(r)
+    out = []
+    for _k, rs in g.items():
+        rs.sort(key=lambda r: (r["sym"] != ref, r["sym"]))
+        base = dict(rs[0])                 # رژیم و غافلگیریِ نمادِ مرجع
+        base["n_symbols"] = len(rs)
+        for f in [f"ret_{h}h" for h in HORIZONS] + ["drift_pre"]:
+            xs = [r[f] for r in rs if r.get(f) is not None]
+            base[f] = round(statistics.fmean(xs), 3) if xs else None
+        out.append(base)
+    out.sort(key=lambda r: r["at"])
+    return out
+
+
 def summarize(rows, by):
     """گروه‌بندی + بازهٔ اطمینان. زیر MIN_N فقط شمرده می‌شود."""
     g = {}
@@ -330,21 +358,52 @@ def summarize(rows, by):
     return out
 
 
-def conclusions(by_cls, by_cls_regime, by_cls_surprise):
-    """قاعده‌هایی که **بازهٔ اطمینانشان از صفر رد کرده** — و بس."""
-    found = []
+def _p_from_ci(mean, lo, hi):
+    """p دوطرفه از همان بازهٔ اطمینان (نصفِ پهنا = ۱.۹۶×خطای معیار)."""
+    if mean is None or lo is None or hi is None:
+        return None
+    se = (hi - lo) / (2 * 1.96)
+    if se <= 0:
+        return 0.0
+    z = abs(mean) / se
+    return 2 * (1 - 0.5 * (1 + math.erf(z / math.sqrt(2))))
+
+
+def conclusions(by_cls, by_cls_regime, by_cls_surprise, alpha=0.05):
+    """قاعده‌ها + **تصحیح چندآزمونی**.
+
+    بازهٔ اطمینانِ تنها کافی نیست: این مطالعه ده‌ها خانه را هم‌زمان
+    می‌سنجد (دسته × رژیم × غافلگیری × سه افق). با ۲۰۰ آزمون، ۱۰ خانه
+    فقط از شانس «معنادار» می‌شوند. پس همان انضباطی که در آزمایشگاه‌های
+    دیگرِ این مخزن هست این‌جا هم لازم است: آستانهٔ Šidák روی شمارِ
+    واقعیِ خانه‌های آزموده‌شده.
+
+    خروجی هر دو را نگه می‌دارد — «CI از صفر رد کرد» (نامزد) و
+    «از آستانهٔ چندآزمونی هم رد شد» (قاعده). فقط دستهٔ دوم حق ورود به
+    حافظه دارد؛ قفسهٔ خالی از قفسهٔ آلوده بهتر است.
+    """
+    found, tested = [], 0
     for label, table in (("دسته", by_cls), ("دسته×رژیم", by_cls_regime),
                          ("دسته×غافلگیری", by_cls_surprise)):
         for k, v in table.items():
             for h in HORIZONS:
                 d = v.get(f"ret_{h}h") or {}
+                if d.get("mean_pct") is None:
+                    continue
+                tested += 1
                 if d.get("clears_zero"):
                     found.append({
                         "scope": label, "key": k, "horizon_h": h,
                         "n": v["n"], "mean_pct": d["mean_pct"], "ci": d["ci"],
                         "direction": "صعودی" if d["mean_pct"] > 0 else "نزولی",
+                        "p": _p_from_ci(d["mean_pct"], *d["ci"]),
                     })
-    found.sort(key=lambda x: -abs(x["mean_pct"]))
+    thr = 1 - (1 - alpha) ** (1 / tested) if tested else alpha
+    for r in found:
+        r["m_tests"] = tested
+        r["alpha_sidak"] = round(thr, 6)
+        r["survives_multiple"] = bool(r["p"] is not None and r["p"] < thr)
+    found.sort(key=lambda x: (not x["survives_multiple"], -abs(x["mean_pct"])))
     return found
 
 
@@ -373,7 +432,12 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
         return {"status": "NO_DATA", "n_events": len(events),
                 "n_symbols": len(series), "families": families,
                 "generated": int(time.time() * 1000)}
-    rows = measure(events, series)
+    raw = measure(events, series)
+    # یک رویداد = یک مشاهده (BTC و ETH هم‌بسته‌اند) — وگرنه n دوبرابر و
+    # بازهٔ اطمینان ساختگی تنگ می‌شود.
+    rows = cluster(raw)
+    print(f"  {len(raw)} مشاهدهٔ خام → {len(rows)} خوشه (یک رویداد = یکی)",
+          flush=True)
     by_cls = summarize(rows, lambda r: r["cls"])
     by_reg = summarize(rows, lambda r: f'{r["cls"]} · {r.get("trend")} · {r.get("vol")}'
                        if r.get("trend") else None)
@@ -383,6 +447,7 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
     return {
         "generated": int(time.time() * 1000),
         "days": days, "n_events": len(events), "n_obs": len(rows),
+        "n_obs_raw": len(raw), "clustered_by": "یک رویداد = یک مشاهده",
         "families": families, "symbols": sorted(series),
         "span": [time.strftime("%Y-%m-%d", time.gmtime(min(spans) / 1000)),
                  time.strftime("%Y-%m-%d", time.gmtime(max(spans) / 1000))]
@@ -408,9 +473,14 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
 
 
 def write_memory(res):
-    """نتیجه‌ها به حافظهٔ دائمی — فقط قاعده‌های CI-گذشته (قانون ۰۳)."""
+    """حافظهٔ دائمی — فقط قاعده‌هایی که از **آستانهٔ چندآزمونی** هم رد شدند.
+
+    قانون ۰۳ می‌گوید CI بالای صفر؛ ولی با ده‌ها آزمونِ هم‌زمان، CI تنها
+    یعنی «نامزد»، نه «قاعده». حافظه فقط بازمانده‌های Šidák را می‌گیرد.
+    """
     MEM.parent.mkdir(parents=True, exist_ok=True)
-    rules = res.get("rules_ci_clears_zero") or []
+    rules = [r for r in (res.get("rules_ci_clears_zero") or [])
+             if r.get("survives_multiple")]
     doc = {
         "generated": res.get("generated"),
         "source": "hamid/event_study.py",
@@ -420,6 +490,9 @@ def write_memory(res):
         "usage": ("در شرایط مشابه (همان دسته + همان رژیم) این‌ها شاهدند، "
                   "نه دروازه. ورود به تصمیم فقط از مسیر قانون ۰۳."),
         "rules": rules[:40],
+        "n_candidates_ci_only": len(res.get("rules_ci_clears_zero") or []),
+        "multiple_testing": ("Šidák روی شمارِ واقعیِ خانه‌های آزموده‌شده؛ "
+                             "نامزدی که فقط CI را رد کرده وارد حافظه نشده."),
         "boundary": res.get("boundary"),
     }
     MEM.write_text(json.dumps(doc, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -498,6 +571,42 @@ def _selftest():
     fake2 = {"A": {"n": 20, "ret_1h": {"mean_pct": 1.0, "ci": [-0.5, 2.5],
                                        "clears_zero": False}}}
     chk(conclusions(fake2, {}, {}) == [], "قاعده‌ای با CI شاملِ صفر پذیرفته شد")
+
+    # ── خوشه‌بندی: یک رویداد = یک مشاهده ──────────────────────────────
+    ev1 = [{"cls": "تورم CPI", "at": cd[300]["t"] + 1000,
+            "actual": 3.1, "forecast": 3.0}]
+    two = measure(ev1, {"BTCUSDT": cd, "ETHUSDT": cd})
+    chk(len(two) == 2, f"دو نماد دو ردیف نساختند: {len(two)}")
+    cl = cluster(two)
+    chk(len(cl) == 1, f"دو مشاهدهٔ یک رویداد خوشه نشدند: {len(cl)}")
+    chk(cl[0]["sym"] == "BTCUSDT", "نمادِ مرجع بیت‌کوین نشد")
+    chk(cl[0]["n_symbols"] == 2, "شمارِ نماد در خوشه ثبت نشد")
+    chk(abs(cl[0]["ret_1h"] - two[0]["ret_1h"]) < 1e-9, "میانگینِ خوشه غلط")
+    # دو رویدادِ جدا در دو لحظه، خوشهٔ جدا می‌مانند
+    ev2 = ev1 + [{"cls": "تورم CPI", "at": cd[320]["t"] + 1000}]
+    chk(len(cluster(measure(ev2, {"BTCUSDT": cd}))) == 2,
+        "دو رویدادِ جدا به‌اشتباه یکی شدند")
+
+    # ── تصحیح چندآزمونی: CI-گذشته ≠ قاعده ─────────────────────────────
+    # یک خانه، به‌زور از صفر رد شده (p≈۰.۰۵): با یک آزمون می‌ماند…
+    weak = {"A": {"n": 20, "ret_1h": {"mean_pct": 1.0, "ci": [0.02, 1.98],
+                                      "clears_zero": True}}}
+    one = conclusions(weak, {}, {})
+    chk(len(one) == 1 and one[0]["m_tests"] == 1, f"شمارِ آزمون غلط: {one}")
+    chk(one[0]["survives_multiple"], "با یک آزمون هم رد شد — آستانه غلط است")
+    # …ولی کنارِ ۹۹ خانهٔ دیگر باید بیفتد
+    many = dict(weak)
+    for i in range(99):
+        many[f"X{i}"] = {"n": 20, "ret_1h": {"mean_pct": 0.1,
+                                             "ci": [-0.9, 1.1],
+                                             "clears_zero": False}}
+    got = conclusions(many, {}, {})
+    chk(got and got[0]["m_tests"] == 100, f"شمارِ آزمون: {got[:1]}")
+    chk(got and not got[0]["survives_multiple"],
+        "با ۱۰۰ آزمون، نامزدِ مرزی هنوز «قاعده» شمرده شد")
+    # و حافظه فقط بازمانده‌ها را می‌گیرد
+    doc_rules = [r for r in got if r.get("survives_multiple")]
+    chk(doc_rules == [], "نامزدِ نجات‌نیافته وارد فهرست حافظه شد")
 
     src = (HERE / "event_study.py").read_text(encoding="utf-8")
     body = src.split("def _selftest(")[0]
