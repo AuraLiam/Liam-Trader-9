@@ -197,6 +197,14 @@ NEWS_FEEDS = [
     ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
     ("Cointelegraph", "https://cointelegraph.com/rss"),
     ("Decrypt", "https://decrypt.co/feed"),
+    # Yahoo Finance — دستور حمید، ۱۱ سپتامبر. فید عمومیِ RSS همان صفحهٔ
+    # crypto است. ارزشِ افزوده‌اش نسبت به سه فید بالا این است که خبرِ
+    # **کلانِ** اثرگذار روی کریپتو (فد، CPI، دلار، نرخ بهره) را زودتر و
+    # پرشمارتر دارد — و همان‌ها در فهرست HOT وزن دارند.
+    ("YahooFinance",
+     "https://feeds.finance.yahoo.com/rss/2.0/headline?s=BTC-USD&region=US&lang=en-US"),
+    ("YahooFinance",
+     "https://feeds.finance.yahoo.com/rss/2.0/headline?s=ETH-USD&region=US&lang=en-US"),
 ]
 
 # واژه‌هایی که تجربه نشان داده قیمت را تکان می‌دهند. فهرست عمداً کوتاه است:
@@ -215,7 +223,7 @@ def news():
             return []
         titles = re.findall(r"<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>", raw)[1:14]
         return [{"source": name, "title": t.strip()} for t in titles if t.strip()]
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    with ThreadPoolExecutor(max_workers=len(NEWS_FEEDS)) as pool:
         for r in pool.map(one, NEWS_FEEDS):
             items += r
     # تریدینگ‌ویو هم — خواستهٔ حمید. JSON عمومی؛ اگر شکل عوض شد بی‌صدا رد

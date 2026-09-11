@@ -516,6 +516,34 @@ _paper = (PY / "hamid" / "paper.py").read_text(encoding="utf-8")
 check("دفترِ دروازهٔ دوام هم حالت شنی را رعایت می‌کند",
       'getattr(_b, "SANDBOX", False)' in _paper)
 
+# ── عمقِ چک‌اوت: بودجهٔ زمان را نخورد (کشف ۱۱ سپتامبر) ──────────────────
+#
+# ریشهٔ اندازه‌گیری‌شده: `hamid-cycle` با `fetch-depth: 0` کلِ تاریخچهٔ
+# ۴.۴ گیگابایتی را می‌کشید — **۱۰ دقیقه و ۴۵ ثانیه** از سقفِ ۲۵ دقیقه.
+# چرخه محاسبه را تمام می‌کرد و سرِ گامِ انتشار با سقفِ زمان کشته می‌شد؛
+# گیت‌هاب آن را `cancelled` ثبت می‌کند نه `failure`، پس آلارم «شکستِ
+# پیاپی» می‌داد بی‌آنکه علت پیدا باشد و `hamid-latest.json` کهنه می‌ماند.
+#
+# این بررسی **دو چیز را به هم گره می‌زند** تا دوباره از هم جدا نیفتند:
+# عمقِ چک‌اوت باید کراندار باشد، و باید از چیزی که تنها مصرف‌کنندهٔ
+# تاریخچه (`sentinel.recent_authors`) لازم دارد بیشتر باشد.
+# فقط خطِ کد، نه کامنت — کامنتِ توضیحیِ همین رفع خودش عبارت
+# `fetch-depth: 0` را دارد و نسخهٔ اولِ این بررسی روی همان افتاد.
+_cycle_lines = [ln.split("#", 1)[0] for ln
+                in (WF / "hamid-cycle.yml").read_text(encoding="utf-8").splitlines()]
+_cycle = "\n".join(_cycle_lines)
+_m = re.search(r"fetch-depth:\s*(\d+)", _cycle)
+check("چرخه عمقِ چک‌اوت اعلام‌شده دارد", _m is not None)
+_depth = int(_m.group(1)) if _m else 0
+check(f"عمقِ چک‌اوت چرخه کراندار است ({_depth}؛ ۰ = کلِ تاریخچه = بودجه‌سوز)",
+      _depth > 0)
+_sent = (Path(__file__).resolve().parent / "sentinel.py").read_text(encoding="utf-8")
+_ms = re.search(r"def recent_authors\(n=(\d+)\)", _sent)
+check("نیازِ تاریخچهٔ شکاک از کد خوانده شد", _ms is not None)
+_need = int(_ms.group(1)) if _ms else 10**9
+check(f"عمقِ چک‌اوت ({_depth}) از نیازِ شکاک ({_need}) بیشتر است",
+      _depth > _need)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

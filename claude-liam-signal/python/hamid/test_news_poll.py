@@ -7,6 +7,7 @@
 ۴. روش llm بی‌کلید چیزی جعل کند یا با کلید، پاسخ نامعتبر را قبول کند.
 """
 import json
+import pathlib
 import sys
 import tempfile
 import time
@@ -184,6 +185,32 @@ check("signals/news-poll.json در قرارداد وضعیت ثبت است (قا
 wf = (PY.parents[1] / ".github" / "workflows" / "news-hunt.yml").read_text(encoding="utf-8")
 check("شکار خبر نظرسنجی را می‌دواند و با ناشر مشترک منتشر می‌کند", "hamid.news_poll" in wf and "scripts/publish.sh" in wf and "HEAD:main" not in wf)
 check("سقف وزن لایهٔ اجتماعی ۵٪ است (قانون ۱۱)", NP.SOCIAL_CAP == 0.05)
+
+# ── منابع خبری: Yahoo Finance (دستور حمید، ۱۱ سپتامبر) ──────────────────
+#
+# سه بررسی. سومی مهم‌ترین است: منبعِ تازه نباید مرزِ قانون ۱۵ را جابه‌جا
+# کند — خبر «دیدگاه» است، نه دروازه.
+from hamid import intel as _intel                                # noqa: E402
+_srcs = [n for n, _ in _intel.NEWS_FEEDS]
+check("Yahoo Finance در منابع خبری هست", "YahooFinance" in _srcs, str(_srcs))
+check("منابعِ قبلی حذف نشدند",
+      {"CoinDesk", "Cointelegraph", "Decrypt"} <= set(_srcs), str(_srcs))
+check("استخرِ واکشی به اندازهٔ منابع است (منبعِ تازه در صف نماند)",
+      "max_workers=len(NEWS_FEEDS)" in
+      (pathlib.Path(__file__).resolve().parent / "intel.py").read_text(encoding="utf-8"))
+
+# مرزِ قانون ۱۵ — خبر هیچ دروازه‌ای را باز نمی‌کند. این‌جا دوباره سنجیده
+# می‌شود چون منبعِ تازه وسوسهٔ «حالا که داریم، وزنش بدهیم» می‌آورد.
+_gate_files = ("scan.py", "trend_gate.py", "premortem.py")
+_leak = []
+for _f in _gate_files:
+    _fp = pathlib.Path(__file__).resolve().parent / _f
+    if not _fp.exists():
+        _fp = pathlib.Path(__file__).resolve().parents[1] / _f
+    if _fp.exists() and "YahooFinance" in _fp.read_text(encoding="utf-8"):
+        _leak.append(_f)
+check("منبعِ خبری تازه وارد هیچ دروازهٔ تصمیم نشد (قانون ۱۵)",
+      not _leak, str(_leak))
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
