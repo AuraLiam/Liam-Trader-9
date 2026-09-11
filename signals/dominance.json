@@ -1,5 +1,5 @@
 {
- "generated": 1789165220350,
+ "generated": 1789165401373,
  "usdt_dominance": 6.896,
  "btc_dominance": 58.24,
  "chg_1h": {
@@ -229,16 +229,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.919,
+   "usdt_d_from": 6.917,
    "usdt_d_to": 6.896,
-   "d_dom_pct": -0.333,
-   "supply_effect_pct": 0.069,
-   "mcap_effect_pct": -0.402,
-   "supply_share": 0.146,
-   "mcap_share": 0.854,
-   "supply_usd_from": 183158892826,
+   "d_dom_pct": -0.304,
+   "supply_effect_pct": 0.125,
+   "mcap_effect_pct": -0.429,
+   "supply_share": 0.226,
+   "mcap_share": 0.774,
+   "supply_usd_from": 183055207357,
    "supply_usd_to": 183284692991,
-   "mcap_usd_from": 2647187351148,
+   "mcap_usd_from": 2646453771248,
    "mcap_usd_to": 2657840675624,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده",
@@ -259,8 +259,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": -0.023,
-    "usdc_d_delta": -0.003,
+    "usdt_d_delta": -0.021,
+    "usdc_d_delta": -0.002,
     "usdt_d": 6.896,
     "usdc_d": 2.794,
     "label": "PARTIAL",
@@ -286,10 +286,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": 0.402,
-    "total2_pct": 0.934,
-    "total3_pct": 0.402,
-    "gap_t3_total": 0.0,
+    "total_pct": 0.43,
+    "total2_pct": 0.962,
+    "total3_pct": 0.397,
+    "gap_t3_total": -0.033,
     "total_usd": 2657840675624,
     "total2_usd": 1109914266141,
     "total3_usd": 802933668106,
@@ -303,14 +303,14 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2584,
+    "bars": 2583,
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 6.905,
     "threshold": 0.005,
     "threshold_stats": {
-     "n": 2583,
+     "n": 2582,
      "pctl": 0.75,
      "median": 0.001,
      "p90": 0.011
@@ -322,14 +322,14 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2584,
+    "bars": 2583,
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 58.24,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 2583,
+     "n": 2582,
      "pctl": 0.75,
      "median": 0.0,
      "p90": 0.02
@@ -469,21 +469,9 @@
   },
   "cause": {
    "1h": {
-    "cause": "NEW_MONEY",
-    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "cause": "INSUFFICIENT",
     "window_min": 60,
-    "d_usdt_d": 0.021,
-    "d_stable_d": 0.029,
-    "supply_growth": {
-     "USDT": 0.001112,
-     "USDC": 0.00093
-    },
-    "supply_growth_total": 0.00106,
-    "mcap_growth": -0.001938,
-    "usdt_d": 6.896,
-    "stable_d": 9.69,
-    "misleading": true,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
    },
    "4h": {
     "cause": "NEW_MONEY",
@@ -505,19 +493,9 @@
   },
   "regime": {
    "1h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.661 به 9.690 رفت (+0.029، بالاتر از میانهٔ 0.017) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "INSUFFICIENT",
     "window_min": 60,
-    "threshold": 0.017,
-    "stable_d": 9.69,
-    "d_stable_d": 0.029,
-    "usdt_d": 6.896,
-    "d_usdt_d": 0.021,
-    "cause": "NEW_MONEY",
-    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
-    "naive_usdt_only": "SHORT_BIAS",
-    "disagrees_with_naive": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
    },
    "4h": {
     "bias": "NEUTRAL",
