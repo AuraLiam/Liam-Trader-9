@@ -1,0 +1,74 @@
+# واکنشِ بازار به رویداد و خبر — مطالعهٔ یک‌ساله (دستور حمید، ۱۱ سپتامبر).
+#
+# «نتیجه‌گیری کن که در چه شرایطی مارکت نسبت به اتفاق‌ها و اخبار و
+# رویدادها چه واکنشی نشان داده، و همه را در حافظه بسپار.»
+#
+# شبکه این‌جا کار می‌کند (بر خلاف نشستِ ایجنت)، پس تقویمِ یک‌ساله و کندلِ
+# ۱ساعته از همین‌جا کشیده می‌شود. خروجی علاوه بر عکس‌فوری، **حافظهٔ
+# دائمی** را هم می‌نویسد — ولی فقط قاعده‌هایی که CI از صفر رد کرده‌اند
+# (قانون ۰۳). قاعدهٔ بی‌CI وارد حافظه نمی‌شود.
+name: Event study (1y)
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "روزِ گذشته (پیش‌فرض ۳۶۵)"
+        default: "365"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: event-study
+  cancel-in-progress: false
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.event_study --selftest
+      - name: اجرای مطالعه
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: python3 -m hamid.event_study --days ${{ github.event.inputs.days || '365' }}
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("signals/event-study.json")
+          m = pathlib.Path("brain/memory/event-reactions.json")
+          if not p.exists():
+              sys.exit("event-study.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          # شرطِ پایانی روی **محصول**: فایلِ خالی قبول نیست.
+          if d.get("status") == "NO_DATA":
+              sys.exit(f"دادهٔ کافی نیامد: {d}")
+          assert d.get("n_obs", 0) > 0, d.get("n_obs")
+          assert d.get("min_n") == 8, d.get("min_n")
+          assert m.exists(), "حافظه نوشته نشد"
+          mem = json.loads(m.read_text(encoding="utf-8"))
+          # هیچ قاعده‌ای بدون CI-گذشته وارد حافظه نشده باشد (قانون ۰۳)
+          for r in mem.get("rules", []):
+              lo, hi = r["ci"]
+              assert (lo > 0) or (hi < 0), r
+          print(f"رویداد={d['n_events']} مشاهده={d['n_obs']} "
+                f"بازه={d.get('span')} قاعده={len(mem.get('rules') or [])}")
+          for r in (d.get("rules_ci_clears_zero") or [])[:15]:
+              print(f"  {r['key']} · +{r['horizon_h']}س · n={r['n']} · "
+                    f"{r['mean_pct']:+.2f}% CI={r['ci']}")
+          PY
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "مطالعهٔ یک‌سالهٔ واکنش بازار به رویداد $(date -u +%Y-%m-%d)" signals brain/memory

@@ -1,0 +1,127 @@
+# میزِ جدای ۱۲ مراقب ققنوس — پیپرمودِ هر متخصص، جدا از بقیه.
+#
+# دستور حمید (۱۱ سپتامبر شب): «پیپرمود تریدینگ رو کامل برای هر ۱۲ متخصص
+# به صورت جدا اجرا کن و نتیجهٔ پیپرمود هر استراتژی که هر متخصص دارد را
+# دقیق فردا ساعت ۱۰ صبح بهم اعلام می‌کنی.»
+#
+# هر مراقب ماشهٔ خودش را دارد: از میانِ همان جهانِ ستاپِ میز تمرین، فقط
+# آن‌هایی را می‌گیرد که **رأیِ خودش** از آستانهٔ تأیید قانون ۱۶ (+۰.۱۵)
+# رد شود. ممتنع = ورود نکن (قانون ۱).
+#
+# چک‌اوتِ کم‌عمق عمدی است — درسِ همین شب: `fetch-depth: 0` روی مخزنِ ۴.۴
+# گیگابایتی ۱۰.۷ دقیقه از بودجه می‌خورد و چرخهٔ حمید را با سقفِ زمان
+# می‌کشت. این ورک‌فلو تاریخچه لازم ندارد.
+name: Guardian desks (12)
+
+on:
+  workflow_dispatch:
+    inputs:
+      universe:
+        description: "N نمادِ برتر به حجم (پیش‌فرض ۱۲۰)"
+        default: "120"
+      bars:
+        description: "کندل بر نماد (پیش‌فرض ۲۰۰۰۰ ≈ ۷ ماهِ ۱۵د)"
+        default: "20000"
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: guardian-desks
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.guardian_desk --selftest
+          python3 -m hamid.test_phoenix
+          python3 -m hamid.test_trainer
+
+  shard:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 320
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: اجرای تکه
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: |
+          mkdir -p /tmp/gd
+          python3 -m hamid.guardian_desk \
+            --universe ${{ github.event.inputs.universe || '120' }} \
+            --bars ${{ github.event.inputs.bars || '20000' }} \
+            --shard ${{ matrix.shard }} --shards 12 \
+            --out /tmp/gd/shard${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guardian-desks-shard-${{ matrix.shard }}
+          path: /tmp/gd/shard${{ matrix.shard }}.json
+          retention-days: 7
+
+  merge:
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: guardian-desks-shard-*
+          path: /tmp/gd
+          merge-multiple: true
+      - name: ادغام و حکم
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.guardian_desk --merge /tmp/gd/*.json
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("signals/guardian-desks.json")
+          if not p.exists():
+              sys.exit("guardian-desks.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          # شرطِ پایانی روی **محصول** (درس ۶ سپتامبر): وجود فایل کافی نیست.
+          assert len(d.get("desks") or {}) == 12, sorted(d.get("desks") or {})
+          assert d.get("vote_min") == 0.15, d.get("vote_min")
+          for g, v in d["desks"].items():
+              assert "verdict" in v and v.get("fa"), (g, sorted(v))
+          traded = [g for g, v in d["desks"].items() if (v.get("n") or 0) > 0]
+          print(f"میزهای دارای معامله: {len(traded)} از ۱۲")
+          for g in sorted(d["desks"], key=lambda k: -(d["desks"][k].get("n") or 0)):
+              v = d["desks"][g]
+              print(f"{v['fa']:<22} n={v.get('n') or 0:<6} خالص={v.get('mean')} "
+                    f"CI=[{v.get('lo')},{v.get('hi')}] برد={v.get('win_pct')}% "
+                    f"ممتنع={v.get('abstained')} → {v.get('verdict')}")
+          print("پوشش:", d.get("n_symbols"), "نماد ·", d.get("n_skipped"),
+                "ردشده · بازه", d.get("span"))
+          PY
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "میز ۱۲ مراقب $(date -u +%Y-%m-%d)" signals
