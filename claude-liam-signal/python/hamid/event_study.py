@@ -89,10 +89,36 @@ CLASSES = [
 ]
 
 
-def _json(url):
-    req = urllib.request.Request(url, headers=UA)
+def _json(url, headers=None):
+    req = urllib.request.Request(url, headers={**UA, **(headers or {})})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
+
+
+def _why(e):
+    """چرا نیامد — کد و تکه‌ای از بدنه. «HTTPError» خالی تشخیص نیست."""
+    code = getattr(e, "code", None)
+    body = ""
+    try:
+        body = e.read()[:120].decode("utf8", "replace").replace("\n", " ")
+    except Exception:                                    # noqa: BLE001
+        pass
+    return f"{type(e).__name__}" + (f" {code}" if code else "") + \
+           (f" · {body}" if body else "")
+
+
+# تقویم: چند شکلِ درخواست، به ترتیب. اولی که جواب داد قفل می‌شود تا بقیهٔ
+# تکه‌ها همان را بزنند. دلیلِ چندشکلی: میزبانِ تقویم گاهی بدون Origin رد
+# می‌کند و شکستِ آن، کلِ مطالعه را صفر می‌کرد (شبِ ۱۱ سپتامبر).
+_TV = "https://economic-calendar.tradingview.com/events"
+_TV_HDR = {"Origin": "https://www.tradingview.com",
+           "Referer": "https://www.tradingview.com/"}
+CAL_VARIANTS = [
+    ("tv+origin", _TV + "?from={f}&to={t}&minImportance=1", _TV_HDR),
+    ("tv+origin+countries", _TV + "?from={f}&to={t}&countries=US", _TV_HDR),
+    ("tv+origin+bare", _TV + "?from={f}&to={t}", _TV_HDR),
+    ("tv+plain", _TV + "?from={f}&to={t}&minImportance=1", {}),
+]
 
 
 def classify(title):
@@ -108,17 +134,26 @@ def calendar_year(days=365, chunk=30):
     now = datetime.now(timezone.utc)
     out, seen = [], set()
     start = now - timedelta(days=days)
+    locked = None                       # شکلِ درخواستی که جواب داد
     while start < now:
         end = min(start + timedelta(days=chunk), now)
-        url = ("https://economic-calendar.tradingview.com/events"
-               f"?from={start.strftime('%Y-%m-%dT00:00:00.000Z')}"
-               f"&to={end.strftime('%Y-%m-%dT00:00:00.000Z')}&minImportance=1")
-        try:
-            j = _json(url)
-            rows = j.get("result") if isinstance(j, dict) else j
-        except Exception as e:                           # noqa: BLE001
-            print(f"  تقویم {start:%Y-%m-%d}: {type(e).__name__}", flush=True)
-            rows = []
+        f = start.strftime("%Y-%m-%dT00:00:00.000Z")
+        t = end.strftime("%Y-%m-%dT00:00:00.000Z")
+        rows = []
+        for name, tmpl, hdr in ([locked] if locked else CAL_VARIANTS):
+            try:
+                j = _json(tmpl.format(f=f, t=t), hdr)
+                rows = j.get("result") if isinstance(j, dict) else j
+                if locked is None:
+                    locked = (name, tmpl, hdr)
+                    print(f"  تقویم: شکلِ «{name}» جواب داد", flush=True)
+                break
+            except Exception as e:                       # noqa: BLE001
+                if locked is None:
+                    print(f"  تقویم {start:%Y-%m-%d} «{name}»: {_why(e)}",
+                          flush=True)
+                else:
+                    print(f"  تقویم {start:%Y-%m-%d}: {_why(e)}", flush=True)
         for e in rows or []:
             cls = classify(e.get("title"))
             if not cls or (e.get("country") or "").upper() not in ("US", ""):
@@ -183,6 +218,42 @@ def regime(cd, i):
     return {"trend": trend, "vol": vol, "atr_pct": round(atr, 3)}
 
 
+def shocks(cd, sym, k=2.5, floor_pct=1.0, cooldown_h=24):
+    """خانوادهٔ دومِ رویداد — از خودِ کندل، بی‌نیاز به هیچ منبع بیرونی.
+
+    چرا لازم است: شبِ ۱۱ سپتامبر تقویم HTTP خطا داد و کلِ مطالعه صفر شد.
+    مطالعه‌ای که تنها پایش یک میزبانِ بیرونی است، یک قطعیِ شبکه فاصله دارد
+    تا هیچ. این خانواده همیشه هست چون کندل هست.
+
+    تعریفِ از پیش ثبت‌شده (تغییرش = دفترِ حکم از صفر): حرکتِ یک کندل ۱ساعته
+    ≥ k×ATR(۲۴) **و** ≥ کفِ مطلق؛ ATR فقط از کندل‌های قبل. لحظهٔ رویداد =
+    بستهٔ همان کندل، پس افق‌ها کاملاً در آینده‌اند و آینده‌نگری ندارد.
+    فاصلهٔ اجباری cooldown_h بین دو شوکِ هم‌جهت، وگرنه یک ریزشِ ممتد ده
+    «مشاهدهٔ مستقل» جعل می‌کند و بازهٔ اطمینان را ساختگی تنگ می‌کند
+    (همان درسِ ۲۴ اوت دربارهٔ ردیف‌های تکراری).
+    """
+    out, last = [], {}
+    for i in range(200, len(cd)):
+        prev = cd[i - 1]["c"]
+        if not prev:
+            continue
+        mv = (cd[i]["c"] - prev) / prev * 100
+        trs = [max(c["h"] - c["l"], abs(c["h"] - p["c"]), abs(c["l"] - p["c"]))
+               for p, c in zip(cd[i - 25:i - 1], cd[i - 24:i])]
+        atr = statistics.fmean(trs) / prev * 100 if trs else 0.0
+        if atr <= 0 or abs(mv) < max(k * atr, floor_pct):
+            continue
+        d = "مثبت" if mv > 0 else "منفی"
+        at = cd[i]["t"] + 3_600_000 - 1          # بستهٔ همان کندل
+        if at - last.get(d, 0) < cooldown_h * 3_600_000:
+            continue
+        last[d] = at
+        out.append({"cls": f"شوک {d} ۱ساعته", "at": at, "sym": sym,
+                    "title": f"{sym} {mv:+.2f}٪ در یک ساعت",
+                    "actual": None, "forecast": None, "move_pct": round(mv, 3)})
+    return out
+
+
 def surprise(ev):
     a, f = ev.get("actual"), ev.get("forecast")
     try:
@@ -211,6 +282,9 @@ def measure(events, series):
     rows = []
     for ev in events:
         for sym, cd in series.items():
+            # رویدادِ نمادی (شوک) فقط روی نمادِ خودش؛ رویدادِ کلان روی همه.
+            if ev.get("sym") and ev["sym"] != sym:
+                continue
             i = _idx_at(cd, ev["at"])
             if i is None or i < 200 or i + max(HORIZONS) >= len(cd):
                 continue
@@ -276,8 +350,8 @@ def conclusions(by_cls, by_cls_regime, by_cls_surprise):
 
 def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
     print(f"تقویم {days} روز…", flush=True)
-    events = calendar_year(days)
-    print(f"  {len(events)} رویدادِ دسته‌بندی‌شده", flush=True)
+    cal = calendar_year(days)
+    print(f"  {len(cal)} رویدادِ تقویمیِ دسته‌بندی‌شده", flush=True)
     hours = days * 24 + 300
     series = {}
     for s in symbols:
@@ -287,10 +361,18 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
                 series[s] = cd
                 print(f"  {s}: {len(cd)} کندل ۱س", flush=True)
         except Exception as e:                           # noqa: BLE001
-            print(f"  {s}: {type(e).__name__}", flush=True)
+            print(f"  {s}: {_why(e)}", flush=True)
+    shock = []
+    for s, cd in series.items():
+        got = shocks(cd, s)
+        shock += got
+        print(f"  {s}: {len(got)} شوکِ کندلی", flush=True)
+    events = cal + shock
+    families = {"تقویم اقتصادی": len(cal), "شوکِ کندلی": len(shock)}
     if not events or not series:
         return {"status": "NO_DATA", "n_events": len(events),
-                "n_symbols": len(series), "generated": int(time.time() * 1000)}
+                "n_symbols": len(series), "families": families,
+                "generated": int(time.time() * 1000)}
     rows = measure(events, series)
     by_cls = summarize(rows, lambda r: r["cls"])
     by_reg = summarize(rows, lambda r: f'{r["cls"]} · {r.get("trend")} · {r.get("vol")}'
@@ -301,7 +383,7 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
     return {
         "generated": int(time.time() * 1000),
         "days": days, "n_events": len(events), "n_obs": len(rows),
-        "symbols": sorted(series),
+        "families": families, "symbols": sorted(series),
         "span": [time.strftime("%Y-%m-%d", time.gmtime(min(spans) / 1000)),
                  time.strftime("%Y-%m-%d", time.gmtime(max(spans) / 1000))]
         if spans else None,
@@ -314,7 +396,13 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
                      "از رویداد هم گزارش می‌شود — اگر حرکت قبلش شروع شده، "
                      "ورود بعد از خبر دیر است. n زیر ۸ عدد نمی‌گیرد. "
                      "دفتر خبرِ داخلی فقط ۳۸ روز دارد، پس این مطالعه روی "
-                     "تقویمِ اقتصادی و کندل بنا شده نه روی تیترها."),
+                     "تقویمِ اقتصادی و کندل بنا شده نه روی تیترها. "
+                     "BTC و ETH هم‌بسته‌اند: دو مشاهده از یک رویدادِ کلان "
+                     "کاملاً مستقل نیستند، پس بازهٔ اطمینان کمی تنگ‌تر از "
+                     "واقع است. خانوادهٔ «شوکِ کندلی» با فاصلهٔ اجباری ۲۴ "
+                     "ساعته شمرده می‌شود تا یک حرکتِ ممتد چند مشاهده جعل "
+                     "نکند. اگر شمارِ خانوادهٔ تقویم صفر باشد، یعنی منبعِ "
+                     "تقویم آن اجرا نیامد — نه این‌که رویدادی نبوده."),
         "panel": "لیام تریدر ۹",
     }
 
@@ -374,6 +462,28 @@ def _selftest():
     chk(rows[0]["surprise"] == "بالاتر از انتظار", "غافلگیری غلط")
     chk(rows[0]["ret_1h"] > 0, "بازدهِ سریِ صعودی مثبت نشد")
     chk("drift_pre" in rows[0], "رانشِ قبل ثبت نشد")
+
+    # ── خانوادهٔ شوک: بی‌نیاز از تقویم ─────────────────────────────────
+    chk(shocks(cd, "X") == [], "سریِ آرام شوک ساخت")
+    # پله (نه تیزه): بالا بردنِ یک کندلِ تنها، کندلِ بعدی را هم شوکِ
+    # برگشتی می‌کند و آزمون را از موضوعش دور می‌اندازد.
+    sc = [dict(c) for c in cd]
+    for j in (260, 268, 400):                    # ۲۶۰ و ۲۶۸ داخل cooldown
+        for q in range(j, len(sc)):
+            for f in ("o", "h", "l", "c"):
+                sc[q][f] *= 1.05
+    sh = shocks(sc, "X")
+    chk(len(sh) == 2, f"شوک: انتظار ۲ (cooldown یکی را بخورد)، شد {len(sh)}")
+    chk(all(s["sym"] == "X" for s in sh), "شوک بی‌نمادِ مالک ساخته شد")
+    chk(all(s["cls"].startswith("شوک") for s in sh), "برچسبِ شوک غلط")
+    # لحظهٔ شوک باید به همان کندل نگاشت شود، نه بعدی (ضدآینده‌نگری)
+    chk(_idx_at(sc, sh[0]["at"]) == 260, "لحظهٔ شوک به کندلِ دیگری افتاد")
+    # اثباتِ منفی برای cooldown: بی‌فاصله باید ۳ بشود
+    chk(len(shocks(sc, "X", cooldown_h=0)) == 3, "بی‌cooldown شمار عوض نشد")
+    # رویدادِ نمادی نباید روی نمادِ دیگر اندازه گرفته شود
+    cross = measure([{"cls": "ش", "at": cd[300]["t"] + 1000, "sym": "Y"}],
+                    {"X": cd})
+    chk(cross == [], "رویدادِ نمادِ Y روی نمادِ X اندازه گرفته شد")
 
     # زیر آستانه: عدد نمی‌گیرد
     sm = summarize(rows * 3, lambda r: r["cls"])

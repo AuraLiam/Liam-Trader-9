@@ -21,6 +21,25 @@ def frontmatter(path: Path) -> dict:
     return yaml.safe_load(text[4:end]) or {}
 
 
+def _tracked(root: Path):
+    """فقط فایل‌هایی که گیت واقعاً می‌شناسد.
+
+    خاصیتی که این بررسی محافظش است «هیچ سکرتی داخل گیت نیست» (قانون ۰۵).
+    اسکنِ کلِ پوشه، چیزِ دیگری را می‌سنجد: یک `.venv` محلیِ ignore-شده
+    چرخه را بی‌دلیل قرمز می‌کند. آزمون باید خاصیت را بسنجد نه شکل را
+    (درسِ ۶ سپتامبر). اگر گیت در دسترس نبود، به اسکنِ کامل برمی‌گردیم.
+    """
+    import subprocess
+    try:
+        r = subprocess.run(["git", "-C", str(root), "ls-files", "-z"],
+                           capture_output=True, timeout=60)
+        if r.returncode == 0:
+            return [root / p for p in r.stdout.decode("utf8", "replace").split("\0") if p]
+    except Exception:                                    # noqa: BLE001
+        pass
+    return list(root.rglob("*"))
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     registry_path = root / "config/engine_registry.yaml"
@@ -76,7 +95,7 @@ def validate(root: Path) -> list[str]:
         errors.append("signal policy live_execution must be false")
 
     secret_patterns = [re.compile(r"(?i)(api[_-]?key|secret|token)\s*[=:]\s*['\"][A-Za-z0-9_\-]{16,}")]
-    for path in root.rglob("*"):
+    for path in _tracked(root):
         if path.is_file() and path.suffix.lower() in {".md", ".txt", ".yaml", ".yml", ".json", ".py"}:
             text = path.read_text(encoding="utf-8", errors="ignore")
             for pat in secret_patterns:

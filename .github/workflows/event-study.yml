@@ -58,6 +58,14 @@ jobs:
               sys.exit(f"دادهٔ کافی نیامد: {d}")
           assert d.get("n_obs", 0) > 0, d.get("n_obs")
           assert d.get("min_n") == 8, d.get("min_n")
+          # کفِ مطالعه: خانوادهٔ «شوکِ کندلی» از خودِ کندل می‌آید و به هیچ
+          # میزبانِ بیرونی وابسته نیست. صفر بودنش یعنی همان خرابیِ ۱۱
+          # سپتامبر برگشته (کلِ مطالعه بندِ یک منبع بود).
+          fam = d.get("families") or {}
+          assert (fam.get("شوکِ کندلی") or 0) > 0, fam
+          print("خانواده‌ها:", json.dumps(fam, ensure_ascii=False))
+          if not fam.get("تقویم اقتصادی"):
+              print("⚠️ تقویم اقتصادی آن اجرا نیامد — نتیجه فقط از شوکِ کندلی")
           assert m.exists(), "حافظه نوشته نشد"
           mem = json.loads(m.read_text(encoding="utf-8"))
           # هیچ قاعده‌ای بدون CI-گذشته وارد حافظه نشده باشد (قانون ۰۳)
