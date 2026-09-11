@@ -164,8 +164,23 @@ def t_viability_gate():
         exp = dict(tight, stage_tag="vetoed")
         n = paper.open_from([exp], {})
         check("دفتر آزمایش (vetoed) همان ورود را گرفت", n == 1, f"n={n}")
-        check("ردِ دروازه در sandbox ثبت شد، نه دفتر تولید",
-              paper.GATELOG.exists())
+        # قاعدهٔ خودِ ماژول (قانون ۰۵): در حالت شنی **هیچ‌چیز** نوشته
+        # نمی‌شود. پس خاصیتِ درست این است که دفترِ تولید دست‌نخورده بماند،
+        # نه این‌که فایلی ساخته شود. (متنِ قبلیِ آزمون وجودِ فایل را
+        # می‌خواست و همیشه قرمز بود — آزمونی که با کد حرف نمی‌زد.)
+        check("در حالت شنی هیچ ردِ دروازه‌ای نوشته نشد",
+              not paper.GATELOG.exists() and not old_gl.exists(),
+              f"sandbox={paper.GATELOG.exists()} تولید={old_gl.exists()}")
+        # و اثبات منفی: بیرونِ حالت شنی، همان تابع واقعاً می‌نویسد
+        import brain as _b
+        was = getattr(_b, "SANDBOX", False)
+        try:
+            _b.SANDBOX = False
+            paper._append_gatelog("SOLUSDT", "test", {"k": 1})
+            check("بیرون از حالت شنی، ردِ دروازه نوشته می‌شود",
+                  paper.GATELOG.exists(), str(paper.GATELOG))
+        finally:
+            _b.SANDBOX = was
     finally:
         paper.OPEN, paper.GATELOG = old, old_gl
 
@@ -258,8 +273,12 @@ def t_trailing_stop():
     # می‌رود و بعد تا ۹۸ برمی‌گردد → باید تریل در سود ببندد، نه استاپ کامل
     euri = [bar(0, 100.2, 99.8), bar(1, 101.2, 100.0), bar(2, 100.4, 99.6),
             bar(3, 99.8, 98.0)]
-    # سناریوی ⅔: تا ۱۰۲.۱ می‌رود (>⅔=۱۰۲) بعد کامل برمی‌گردد → استاپ در ⅓=۱۰۱
-    deep = [bar(0, 100.2, 99.8), bar(1, 102.1, 100.0), bar(2, 101.5, 100.8),
+    # سناریوی سودِ عمیق — **نسخهٔ سهِ تریل** (۶ سپتامبر): استاپ روی ۸۰٪
+    # بهترین سودِ دیده‌شده. کندل ۰ عمداً کم‌سود است (۰.۱ < کارمزدِ ~۰.۱۵)
+    # تا تریل هنوز مسلح نشود و نقطهٔ مسلح‌شدن بی‌ابهام بماند؛ کندل ۱ تا
+    # ۱۰۲.۱ می‌رود و کندل ۲ برمی‌گردد → باید دقیقاً روی ۸۰٪ همان ۲.۱ ببندد.
+    # (متنِ قبلیِ این آزمون نردبانِ ⅓/⅔ نسخهٔ یک را می‌سنجید که بازنشسته شد.)
+    deep = [bar(0, 100.1, 99.8), bar(1, 102.1, 100.0), bar(2, 101.5, 100.8),
             bar(3, 99.5, 98.0)]
     series = {"EURIUSDT": euri, "DEEPUSDT": deep}
     paper._candles_since = lambda sym, since: series[sym]
@@ -276,8 +295,13 @@ def t_trailing_stop():
               e["outcome"] == "trail" and 0 < e["R"] < 0.3,
               f"outcome={e['outcome']} R={e['R']}")
         dp = next(t for t in closed if t["sym"] == "DEEPUSDT")
-        check("⅔ مسیر → استاپ در ⅓ مسیر (R≈+۱)",
-              dp["outcome"] == "trail" and 0.9 <= dp["R"] <= 1.1,
+        # انتظار از خودِ ثابتِ تولید مشتق می‌شود، نه از عددِ دستی — وگرنه
+        # با هر تغییرِ قاعده دوباره کهنه می‌شود (همان چیزی که ۵ روز میز
+        # تمرین را خواباند).
+        want = paper.PROD_TRAIL_FRAC * 2.1       # ۸۰٪ بهترین سود، R=ریسک ۱
+        check(f"سودِ عمیق → استاپ روی {paper.PROD_TRAIL_FRAC:.0%} بهترین سود "
+              f"(R≈{want:+.2f})",
+              dp["outcome"] == "trail" and abs(dp["R"] - want) < 0.05,
               f"outcome={dp['outcome']} R={dp['R']}")
     finally:
         paper.CLOSED, paper.OPEN, paper.EQUITY, paper._candles_since = old

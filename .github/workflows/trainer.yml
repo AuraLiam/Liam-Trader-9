@@ -41,6 +41,10 @@ jobs:
           python3 -m hamid.test_levels_db
           python3 -m hamid.test_coin_history
           python3 -m hamid.test_bridge
+          # ۱۱ سپتامبر: `test_paper` در هیچ ورک‌فلویی نبود، پس دو انتظارِ
+          # کهنه‌اش (نردبانِ بازنشستهٔ تریل) ماه‌ها نامرئی ماند. آزمونی که
+          # هیچ‌جا اجرا نمی‌شود، محافظ نیست.
+          python3 -m hamid.test_paper
 
       - name: تمرین — ۱۰۰ ارز برتر × سه تایم‌فریم، بازپخش بدون look-ahead
         working-directory: claude-liam-signal/python
