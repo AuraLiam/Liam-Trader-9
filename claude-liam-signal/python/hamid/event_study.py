@@ -369,6 +369,16 @@ def _p_from_ci(mean, lo, hi):
     return 2 * (1 - 0.5 * (1 + math.erf(z / math.sqrt(2))))
 
 
+def count_tests(*tables):
+    """شمارِ خانه‌هایی که واقعاً آزموده شدند.
+
+    این عدد باید **همیشه** گزارش شود، حتی وقتی هیچ قاعده‌ای پیدا نشد —
+    «هیچ قاعده‌ای از ۸۱ آزمون» با «هیچ قاعده‌ای از ۳ آزمون» یکی نیست.
+    """
+    return sum(1 for t in tables for v in t.values() for h in HORIZONS
+               if (v.get(f"ret_{h}h") or {}).get("mean_pct") is not None)
+
+
 def conclusions(by_cls, by_cls_regime, by_cls_surprise, alpha=0.05):
     """قاعده‌ها + **تصحیح چندآزمونی**.
 
@@ -443,6 +453,7 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
                        if r.get("trend") else None)
     by_sur = summarize(rows, lambda r: f'{r["cls"]} · {r["surprise"]}')
     rules = conclusions(by_cls, by_reg, by_sur)
+    n_tests = count_tests(by_cls, by_reg, by_sur)
     spans = [r["at"] for r in rows]
     return {
         "generated": int(time.time() * 1000),
@@ -452,7 +463,9 @@ def build(days=365, symbols=("BTCUSDT", "ETHUSDT")):
         "span": [time.strftime("%Y-%m-%d", time.gmtime(min(spans) / 1000)),
                  time.strftime("%Y-%m-%d", time.gmtime(max(spans) / 1000))]
         if spans else None,
-        "min_n": MIN_N, "horizons_h": list(HORIZONS),
+        "min_n": MIN_N, "horizons_h": list(HORIZONS), "n_tests": n_tests,
+        "n_rules_survive_multiple": sum(1 for r in rules
+                                        if r.get("survives_multiple")),
         "by_class": by_cls, "by_class_regime": by_reg,
         "by_class_surprise": by_sur,
         "rules_ci_clears_zero": rules,
