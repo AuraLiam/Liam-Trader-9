@@ -1,5 +1,5 @@
 {
- "generated": 1789166997147,
+ "generated": 1789167200877,
  "usdt_dominance": 6.894,
  "btc_dominance": 58.25,
  "chg_1h": {
@@ -7,7 +7,7 @@
   "btc": 0.04
  },
  "chg_4h": {
-  "usdt": 0.007,
+  "usdt": -0.006,
   "btc": 0.08
  },
  "points": 4000,
@@ -213,16 +213,16 @@
   "240m": {
    "status": "OK",
    "minutes": 240,
-   "usdt_d_from": 6.887,
+   "usdt_d_from": 6.9,
    "usdt_d_to": 6.894,
-   "d_dom_pct": 0.102,
-   "supply_effect_pct": 0.306,
-   "mcap_effect_pct": -0.205,
-   "supply_share": 0.599,
-   "mcap_share": 0.401,
-   "supply_usd_from": 182742347782,
+   "d_dom_pct": -0.087,
+   "supply_effect_pct": 0.268,
+   "mcap_effect_pct": -0.355,
+   "supply_share": 0.43,
+   "mcap_share": 0.57,
+   "supply_usd_from": 182811892620,
    "supply_usd_to": 183303194890,
-   "mcap_usd_from": 2653439055927,
+   "mcap_usd_from": 2649447719131,
    "mcap_usd_to": 2658880111543,
    "label": "MIXED",
    "story": "هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع",
@@ -250,8 +250,8 @@
    "240m": {
     "status": "OK",
     "minutes": 240,
-    "usdt_d_delta": 0.007,
-    "usdc_d_delta": 0.0,
+    "usdt_d_delta": -0.006,
+    "usdc_d_delta": -0.005,
     "usdt_d": 6.894,
     "usdc_d": 2.794,
     "label": "FLAT",
@@ -274,9 +274,9 @@
    "240m": {
     "status": "OK",
     "minutes": 240,
-    "total_pct": 0.205,
-    "total2_pct": 0.013,
-    "total3_pct": 0.205,
+    "total_pct": 0.356,
+    "total2_pct": 0.164,
+    "total3_pct": 0.356,
     "gap_t3_total": 0.0,
     "total_usd": 2658880111543,
     "total2_usd": 1110082446569,
@@ -309,7 +309,7 @@
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 6.898,
+    "px": 6.894,
     "threshold": 0.005,
     "threshold_stats": {
      "n": 2582,
@@ -317,10 +317,10 @@
      "median": 0.001,
      "p90": 0.011
     },
-    "delta": 0.0,
+    "delta": -0.004,
     "meaningful": false,
     "regime": "BEARISH",
-    "note": "USDT.D در 5m: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0000 در برابر آستانهٔ 0.0050 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 5m: روند up → رژیم BEARISH؛ تغییر آخرین کندل -0.0040 در برابر آستانهٔ 0.0050 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "5m",
@@ -328,7 +328,7 @@
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 58.26,
+    "px": 58.25,
     "threshold": 0.01,
     "threshold_stats": {
      "n": 2582,
@@ -336,9 +336,9 @@
      "median": 0.0,
      "p90": 0.02
     },
-    "delta": 0.0,
-    "meaningful": false,
-    "note": "BTC.D در 5m: روند up؛ تغییر آخرین کندل +0.0000"
+    "delta": -0.01,
+    "meaningful": true,
+    "note": "BTC.D در 5m: روند up؛ تغییر آخرین کندل -0.0100"
    }
   },
   "15m": {
@@ -471,21 +471,9 @@
   },
   "cause": {
    "1h": {
-    "cause": "NEW_MONEY",
-    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "cause": "INSUFFICIENT",
     "window_min": 60,
-    "d_usdt_d": 0.022,
-    "d_stable_d": 0.031,
-    "supply_growth": {
-     "USDT": 0.001528,
-     "USDC": 0.001558
-    },
-    "supply_growth_total": 0.001537,
-    "mcap_growth": -0.001668,
-    "usdt_d": 6.894,
-    "stable_d": 9.688,
-    "misleading": true,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
    },
    "4h": {
     "cause": "NEW_MONEY",
@@ -507,25 +495,15 @@
   },
   "regime": {
    "1h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.657 به 9.688 رفت (+0.031، بالاتر از میانهٔ 0.017) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "INSUFFICIENT",
     "window_min": 60,
-    "threshold": 0.017,
-    "stable_d": 9.688,
-    "d_stable_d": 0.031,
-    "usdt_d": 6.894,
-    "d_usdt_d": 0.022,
-    "cause": "NEW_MONEY",
-    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
-    "naive_usdt_only": "SHORT_BIAS",
-    "disagrees_with_naive": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (+0.007، زیر میانهٔ 0.032) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (+0.007، زیر میانهٔ 0.036) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.032,
+    "threshold": 0.036,
     "stable_d": 9.688,
     "d_stable_d": 0.007,
     "usdt_d": 6.894,
@@ -539,7 +517,7 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (+0.007، زیر میانهٔ 0.032) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (+0.007، زیر میانهٔ 0.036) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
    "d_btc_d": 0.08,
    "cause": "NEW_MONEY",
