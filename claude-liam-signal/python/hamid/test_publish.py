@@ -393,6 +393,41 @@ check("ویرایشِ کامیت‌نشدهٔ ما دست‌نخورده مان�
       str(_txt(w.work / "brain/other.json")))
 w.close()
 
+# ── ۱۱) تغییرِ نام: حذفِ مبدأ هم منتشر می‌شود (۱۱ سپتامبر) ──────────────
+#
+# علتِ اندازه‌گیری‌شده: گیت تغییرِ نام را یک ردیفِ R100 می‌بیند و
+# `diff --cached --name-only` فقط **مقصد** را چاپ می‌کند. مسیرِ مبدأ از
+# فهرستِ تغییرات می‌افتاد و چون بازسازیِ کامیت روی نوکِ origin همان
+# فهرست را می‌پیماید، حذف بی‌صدا منتشر نمی‌شد. نتیجه در عمل: نامِ موتور
+# داشبورد ققنوس شد ولی فایلِ قدیمی سرِ جایش ماند — دو نسخه از یک موتور.
+#
+# origin عمداً وسطِ کار جلو برده می‌شود تا **مسیرِ بازسازی** اجرا شود؛
+# بدون این، عیب اصلاً ظاهر نمی‌شود (نسخهٔ اولِ همین آزمون سبز شد و
+# چیزی را اثبات نکرد).
+w = World()
+(w.work / "signals/a.json").write_text('{"generated": 1}')
+w.publish("signals")
+check("فایل قبل از تغییرِ نام روی origin هست",
+      w.on_origin("signals/a.json") is not None)
+
+git("mv", "signals/a.json", "signals/b.json", cwd=w.work)
+git("fetch", "-q", "origin", "main", cwd=w.other)
+git("reset", "-q", "--hard", "FETCH_HEAD", cwd=w.other)
+w.other_push({"signals/z.json": '{"generated": 5}'})      # origin تکان خورد
+r = w.publish("signals/a.json", "signals/b.json")
+check("انتشارِ تغییرِ نام موفق بود", r.returncode == 0, r.stdout + r.stderr)
+check("مقصد روی origin نشست",
+      w.on_origin("signals/b.json") == '{"generated": 1}',
+      str(w.on_origin("signals/b.json")))
+check("مبدأ از origin حذف شد (کلاسِ تکثیر بسته شد)",
+      w.on_origin("signals/a.json") is None,
+      str(w.on_origin("signals/a.json")))
+check("کارِ هم‌زمانِ دیگران پاک نشد",
+      w.on_origin("signals/z.json") == '{"generated": 5}',
+      str(w.on_origin("signals/z.json")))
+check("مبدأ روی دیسک هم نماند", not (w.work / "signals/a.json").exists())
+w.close()
+
 print()
 if FAIL:
     print(f"✗ {len(FAIL)} بررسی افتاد: {FAIL}")
