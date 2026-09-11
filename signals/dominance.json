@@ -1,5 +1,5 @@
 {
- "generated": 1789088961091,
+ "generated": 1789089143328,
  "usdt_dominance": 6.942,
  "btc_dominance": 58.46,
  "chg_1h": {
@@ -258,16 +258,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.842,
+   "usdt_d_from": 6.821,
    "usdt_d_to": 6.942,
-   "d_dom_pct": 1.451,
-   "supply_effect_pct": 0.082,
-   "mcap_effect_pct": 1.369,
-   "supply_share": 0.056,
-   "mcap_share": 0.944,
-   "supply_usd_from": 183032118149,
+   "d_dom_pct": 1.758,
+   "supply_effect_pct": -0.095,
+   "mcap_effect_pct": 1.853,
+   "supply_share": 0.049,
+   "mcap_share": 0.951,
+   "supply_usd_from": 183355795764,
    "supply_usd_to": 183181678087,
-   "mcap_usd_from": 2675125959504,
+   "mcap_usd_from": 2688107253535,
    "mcap_usd_to": 2638745002701,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -288,8 +288,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": 0.1,
-    "usdc_d_delta": 0.033,
+    "usdt_d_delta": 0.121,
+    "usdc_d_delta": 0.042,
     "usdt_d": 6.942,
     "usdc_d": 2.808,
     "label": "RISK_OFF",
@@ -315,9 +315,9 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": -1.36,
-    "total2_pct": -1.074,
-    "total3_pct": -1.393,
+    "total_pct": -1.836,
+    "total2_pct": -1.599,
+    "total3_pct": -1.869,
     "gap_t3_total": -0.033,
     "total_usd": 2638745002701,
     "total2_usd": 1096134674122,
@@ -332,7 +332,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2590,
+    "bars": 2591,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -340,7 +340,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2590,
+    "bars": 2591,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -477,9 +477,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "NEW_MONEY",
+    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.03,
+    "d_stable_d": -0.042,
+    "supply_growth": {
+     "USDT": 0.001192,
+     "USDC": 0.00124
+    },
+    "supply_growth_total": 0.001206,
+    "mcap_growth": 0.005504,
+    "usdt_d": 6.942,
+    "stable_d": 9.75,
+    "misleading": true,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "NEW_MONEY",
@@ -501,9 +513,19 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "LONG_BIAS",
+    "why": "STABLE.D از 9.792 به 9.750 آمد (-0.042، بزرگ‌تر از میانهٔ 0.017) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.017,
+    "stable_d": 9.75,
+    "d_stable_d": -0.042,
+    "usdt_d": 6.942,
+    "d_usdt_d": -0.03,
+    "cause": "NEW_MONEY",
+    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "naive_usdt_only": "LONG_BIAS",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "SHORT_BIAS",
