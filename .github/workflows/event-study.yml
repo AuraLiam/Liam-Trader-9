@@ -72,11 +72,22 @@ jobs:
           for r in mem.get("rules", []):
               lo, hi = r["ci"]
               assert (lo > 0) or (hi < 0), r
-          print(f"رویداد={d['n_events']} مشاهده={d['n_obs']} "
-                f"بازه={d.get('span')} قاعده={len(mem.get('rules') or [])}")
-          for r in (d.get("rules_ci_clears_zero") or [])[:15]:
-              print(f"  {r['key']} · +{r['horizon_h']}س · n={r['n']} · "
-                    f"{r['mean_pct']:+.2f}% CI={r['ci']}")
+          # حافظه فقط بازمانده‌های چندآزمونی را می‌گیرد؛ نامزدِ CI-تنها نه.
+          for r in mem.get("rules", []):
+              assert r.get("survives_multiple"), r
+          cand = d.get("rules_ci_clears_zero") or []
+          print(f"رویداد={d['n_events']} مشاهدهٔ خام={d.get('n_obs_raw')} "
+                f"خوشه={d['n_obs']} بازه={d.get('span')}")
+          # شمارِ آزمون‌ها همیشه گزارش می‌شود — «صفر قاعده از ۸۱ آزمون» با
+          # «صفر قاعده از ۳ آزمون» یکی نیست.
+          assert d.get("n_tests") is not None, "شمارِ آزمون گزارش نشد"
+          print(f"خانه‌های آزموده‌شده={d['n_tests']} · "
+                f"نامزد (CI از صفر رد کرد)={len(cand)} · "
+                f"قاعدهٔ واردشده به حافظه={len(mem.get('rules') or [])}")
+          for r in cand[:15]:
+              mark = "✅" if r.get("survives_multiple") else "· "
+              print(f"  {mark} {r['key']} · +{r['horizon_h']}س · n={r['n']} · "
+                    f"{r['mean_pct']:+.2f}% CI={r['ci']} p={r.get('p'):.4f}")
           PY
       - name: انتشار (ناشر مشترک، قانون ۱۴)
         run: scripts/publish.sh -m "مطالعهٔ یک‌سالهٔ واکنش بازار به رویداد $(date -u +%Y-%m-%d)" signals brain/memory
