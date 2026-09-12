@@ -54,6 +54,13 @@ OUT = ROOT / "signals" / "phoenix.json"
 CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
 DOMINANCE = ROOT / "signals" / "dominance.json"
 BTC_SENS = ROOT / "signals" / "btc-sensitivity.json"
+FOMO = ROOT / "signals" / "fomo.json"
+NEWS_POLL = ROOT / "signals" / "news-poll.json"
+
+# سقفِ کهنگیِ شاهدِ اجتماعی. از قرارداد وضعیت می‌آید (هر دو ۴۲۰/۷۲۰
+# دقیقه) ولی برای رأی سخت‌گیرتر است: شاهدِ دیروز دربارهٔ امروز حرفی
+# ندارد، و دادهٔ کهنه در فیلدِ رأی یعنی امتناع، نه عبورِ کور (قانون ۱).
+SOCIAL_MAX_AGE_MIN = 180
 
 MIN_N = 12
 BAND_EXPLORATORY = 0.15
@@ -476,7 +483,65 @@ def _context(s, now_ms=None):
         ctx["btc_sens"] = json.loads(BTC_SENS.read_text(encoding="utf-8")).get("coins") or {}
     except Exception:                                # noqa: BLE001
         ctx["btc_sens"] = {}
+    ctx.update(_social(s, ctx["now_ms"]))
     return ctx
+
+
+def _fresh(doc, now_ms, max_min=SOCIAL_MAX_AGE_MIN):
+    """سندِ وضعیت تازه است؟ بی‌مهرِ زمان = نه (قانون ۱، نه حدس)."""
+    g = (doc or {}).get("generated")
+    if not isinstance(g, (int, float)):
+        return False
+    return (now_ms - float(g)) / 60000.0 <= max_min
+
+
+def _social(s, now_ms):
+    """شاهدِ لایهٔ اجتماعی برای دلو و قوس — از همان فایل‌هایی که تولید می‌شوند.
+
+    شکافِ اندازه‌گیری‌شدهٔ ۱۲ سپتامبر: امتحانِ ققنوس نشان داد دلو روی
+    **۱۰۰٪ از ۱۴۰ رأی** ممتنع مانده با دلیلِ «شاهد جمعیت ندارد» — در
+    حالی که `signals/fomo.json` هم داغیِ بازار را داشت و هم داغیِ
+    نمادها. یعنی داده بود و به دستِ رأی‌دهنده نمی‌رسید. حمید: «هیچ
+    استثنایی وجود نداره.»
+
+    مرز (قانون ۱۵/۱۱ — تغییرناپذیر): این داده فقط **دیدگاه** است. وزنِ
+    پایهٔ دلو و قوس ۰.۳ با سقفِ مشترک ۵٪ است و همین‌جا هم می‌ماند؛ این
+    تابع هیچ دروازه‌ای را باز نمی‌کند و هیچ عددِ سیگنالی را عوض
+    نمی‌کند. فقط جلوی «امتناع به‌خاطر سیم‌کشی» را می‌گیرد.
+    """
+    out = {}
+    sym = (s or {}).get("sym") or ""
+    try:
+        f = json.loads(FOMO.read_text(encoding="utf-8"))
+        if _fresh(f, now_ms):
+            by = f.get("heat_by_symbol") or {}
+            heat = by.get(sym)
+            if heat is None:
+                heat = ((f.get("market") or {}).get("heat"))
+            if heat is not None:
+                out["fomo_heat"] = heat
+            wit = [w for w in (f.get("witness_recent") or [])
+                   if (w or {}).get("sym") == sym]
+            if wit:
+                out["fomo_witness"] = True
+    except Exception:                                # noqa: BLE001
+        pass
+    try:
+        n = json.loads(NEWS_POLL.read_text(encoding="utf-8"))
+        if _fresh(n, now_ms):
+            cons = n.get("consensus") or {}
+            base = sym[:-4] if sym.endswith("USDT") else sym
+            row = cons.get(base) or cons.get("BTC") or {}
+            bias = row.get("bias")
+            # وزنِ صفر یعنی هیچ ایجنتی هنوز اعتبار نگرفته (قانون ۱۵) —
+            # آن وقت اجماعی در کار نیست و قوس **باید** ممتنع بماند.
+            if bias and (row.get("weight") or 0) > 0:
+                d = _sign((s or {}).get("dir"))
+                up = str(bias).lower() in ("up", "bull", "bullish", "صعودی")
+                out["news_align"] = "with" if (up == (d > 0)) else "against"
+    except Exception:                                # noqa: BLE001
+        pass
+    return out
 
 
 def judge(s, ctx=None, scores=None, write=False, now_ms=None):

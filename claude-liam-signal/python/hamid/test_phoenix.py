@@ -221,6 +221,51 @@ if _pj.exists():
     if _flat:
         print(f"  ⚠️ رأی‌دهندهٔ تک‌مقدار (n≥۳۰): {_flat} — وزنشان از مبنا سنجیده می‌شود")
 
+# ── سیم‌کشی لایهٔ اجتماعی (۱۲ سپتامبر) ─────────────────────────────────
+#
+# امتحان ققنوس نشان داد دلو روی ۱۰۰٪ از ۱۴۰ رأی ممتنع مانده بود، در حالی
+# که `signals/fomo.json` داغی را داشت — داده بود، سیم نبود. این بررسی
+# همان سیم را می‌سنجد، و هم‌زمان مرزش را: دادهٔ کهنه نباید رأی بسازد.
+import json as _js, time as _t                        # noqa: E402
+_now = _t.time() * 1000
+_old_fomo, _old_news = P.FOMO, P.NEWS_POLL
+try:
+    _f = tmp / "fomo.json"
+    _f.write_text(_js.dumps({"generated": _now - 60_000,
+                             "market": {"heat": 61.0},
+                             "heat_by_symbol": {"AAAUSDT": 83.0},
+                             "witness_recent": [{"sym": "AAAUSDT"}]}),
+                  encoding="utf-8")
+    P.FOMO = _f
+    _c = P._social({"sym": "AAAUSDT", "dir": "LONG"}, _now)
+    check("داغیِ همان نماد به دلو می‌رسد", _c.get("fomo_heat") == 83.0)
+    check("شاهد فومو به دلو می‌رسد", _c.get("fomo_witness") is True)
+    _c2 = P._social({"sym": "ZZZUSDT", "dir": "LONG"}, _now)
+    check("نمادِ بی‌داغی، داغیِ بازار را می‌گیرد", _c2.get("fomo_heat") == 61.0)
+    check("شاهدِ نمادِ دیگر به این نماد نمی‌چسبد", _c2.get("fomo_witness") is None)
+    # و حالا رأیِ واقعیِ دلو — دیگر نباید ممتنع باشد
+    _v, _why = P.VOTERS["aquarius"]({"sym": "AAAUSDT", "dir": "LONG"}, _c)
+    check("دلو با دادهٔ موجود رأی می‌دهد", _v is not None)
+    # کهنه = امتناع (قانون ۱)
+    _f.write_text(_js.dumps({"generated": _now - 999_000_000,
+                             "market": {"heat": 61.0}}), encoding="utf-8")
+    _c3 = P._social({"sym": "AAAUSDT", "dir": "LONG"}, _now)
+    check("دادهٔ کهنه رأی نمی‌سازد (قانون ۱)", "fomo_heat" not in _c3)
+    # قوس: اجماعِ بی‌وزن رأی نمی‌سازد (قانون ۱۵)
+    _n = tmp / "news.json"
+    _n.write_text(_js.dumps({"generated": _now - 60_000,
+                             "consensus": {"BTC": {"bias": "up", "weight": 0.0}}}),
+                  encoding="utf-8")
+    P.NEWS_POLL = _n
+    check("اجماعِ بی‌وزن وارد رأی نمی‌شود (قانون ۱۵)", "news_align" not in P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now))
+    _n.write_text(_js.dumps({"generated": _now - 60_000,
+                             "consensus": {"BTC": {"bias": "up", "weight": 0.7}}}),
+                  encoding="utf-8")
+    check("اجماعِ وزن‌دارِ هم‌جهت «with» می‌شود", P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now).get("news_align") == "with")
+    check("اجماعِ وزن‌دارِ خلاف «against» می‌شود", P._social({"sym": "BTCUSDT", "dir": "SHORT"}, _now).get("news_align") == "against")
+finally:
+    P.FOMO, P.NEWS_POLL = _old_fomo, _old_news
+
 import shutil                                         # noqa: E402
 shutil.rmtree(tmp, ignore_errors=True)
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
