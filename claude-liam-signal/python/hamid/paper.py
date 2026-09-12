@@ -59,6 +59,20 @@ EQUITY = BOOK / "equity.json"
 # خودبه‌خود همه‌جا جدا می‌ماند. محافظ: `test_trail_arms`.
 EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
                      "exp-trail-g65", "exp-trail-g80")
+# میزِ جدای ۱۲ مراقب ققنوس — دفترِ هر متخصص، نه سیگنالِ ارسالی.
+#
+# عمداً **رشتهٔ ثابت** است نه ساخته‌شده از `phoenix.GUARDIANS`: این ماژول
+# نباید به شورا وابسته شود. در عوض `test_paper` این فهرست را با خودِ
+# شورا مقایسه می‌کند، پس واگرایی ناممکن است.
+#
+# چرا حیاتی است (کشفِ ۱۲ سپتامبر): تا امروز هیچ‌کدام از این دوازده در
+# `_NOT_SIGNAL` نبودند، و بررسیِ `guardian_desk` که ادعا می‌کرد هستند
+# `or True` داشت — یعنی همیشه سبز، بی‌آنکه چیزی بسنجد. اگر میزِ زنده با
+# همین وضع روشن می‌شد، هر ردیفِ هر مراقب «سیگنال ارسالی» شمرده می‌شد و
+# آمار محصول را دوازده برابر می‌کرد (همان درسِ ۳×ETH، در مقیاس بدتر).
+GUARDIAN_STAGES = tuple(f"gd-{g}" for g in (
+    "scorpio", "gemini", "taurus", "aries", "leo", "cancer",
+    "pisces", "libra", "capricorn", "virgo", "sagittarius", "aquarius"))
 # دفترهایی که ادعای عملکردِ استراتژی نیستند (آزمایش، تمرین، ضدواقع).
 # `gate-vetoed` (۶ سپتامبر): ستاپی که فقط دروازهٔ **روند** جلویش را گرفت.
 # ضدواقع است نه سیگنال — اگر این‌جا نباشد، هر ستاپِ وتوشده «سیگنال ارسالی»
@@ -66,7 +80,8 @@ EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
 # `stage-vetoed` (۶ سپتامبر): برشِ دومِ ضدواقع — تنزلِ مرحلهٔ منتشرشونده.
 # جدا از `gate-vetoed` می‌ماند و هرگز با آن جمع نمی‌شود (دو سؤال جدا).
 _NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "gate-vetoed",
-               "stage-vetoed", "v2", "scalp", "shock") + EXPERIMENT_STAGES
+               "stage-vetoed", "v2", "scalp", "shock") + EXPERIMENT_STAGES \
+              + GUARDIAN_STAGES
 
 START_BALANCE = 1000.0
 RISK_FRACTION = 0.01          # 1% of balance per trade

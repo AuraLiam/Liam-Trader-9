@@ -307,6 +307,30 @@ def t_trailing_stop():
         paper.CLOSED, paper.OPEN, paper.EQUITY, paper._candles_since = old
 
 
+def t_guardian_stages_never_count_as_signal():
+    """مرحله‌های میزِ ۱۲ مراقب هرگز «سیگنال ارسالی» شمرده نمی‌شوند.
+
+    کشفِ ۱۲ سپتامبر: هیچ‌کدام از دوازده در `_NOT_SIGNAL` نبودند، و
+    بررسیِ `guardian_desk` که ادعا می‌کرد هستند `or True` داشت — یعنی
+    همیشه سبز بود بی‌آنکه چیزی بسنجد. با روشن‌شدن میزِ زنده، هر ردیفِ
+    هر مراقب وارد آمارِ محصول می‌شد.
+
+    فهرست در `paper` عمداً رشتهٔ ثابت است (تا به شورا وابسته نشود)؛ این
+    آزمون همان فهرست را با خودِ شورا تطبیق می‌دهد، پس واگرایی ناممکن
+    است — نه امروز، نه وقتی مراقبی اضافه شود.
+    """
+    from hamid import phoenix
+    gids = [g["id"] for g in phoenix.GUARDIANS]
+    check("فهرستِ مرحله‌های مراقبان با شورا یکی است",
+          set(paper.GUARDIAN_STAGES) == {f"gd-{g}" for g in gids},
+          f"{sorted(set(paper.GUARDIAN_STAGES) ^ {f'gd-{g}' for g in gids})}")
+    check("هر ۱۲ مرحله از شمارشِ سیگنال مستثنا است",
+          all(f"gd-{g}" in paper._NOT_SIGNAL for g in gids),
+          str([g for g in gids if f"gd-{g}" not in paper._NOT_SIGNAL]))
+    # اثبات منفی: یک مرحلهٔ ساختگیِ ثبت‌نشده **نباید** مستثنا باشد
+    check("مرحلهٔ ثبت‌نشده مستثنا نیست", "gd-notaguardian" not in paper._NOT_SIGNAL)
+
+
 def main():
     print("\nیادگیری از دلیل درست — تست خصمانه\n")
     t_small_sample_refuses()
@@ -315,6 +339,7 @@ def main():
     t_expired_not_scored()
     t_stables_rejected()
     t_viability_gate()
+    t_guardian_stages_never_count_as_signal()
     t_no_candle_expiry()
     t_poison_row_isolated()
     t_trailing_stop()

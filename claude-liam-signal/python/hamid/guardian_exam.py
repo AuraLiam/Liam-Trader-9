@@ -59,6 +59,12 @@ sys.path.insert(0, str(HERE.parent))
 ROOT = HERE.parents[2]
 OUT = ROOT / "signals" / "guardian-exam.json"
 VERDICTS = ROOT / "brain" / "phoenix" / "verdicts.jsonl"
+# دفترِ دومِ رأی: میزِ زندهٔ اسکن (hamid/guardian_live.py). جدا نگه داشته
+# می‌شود چون دو جمعیتِ متفاوت‌اند — `verdicts` فقط ستاپ‌هایی که واقعاً
+# برای حمید رفتند، `live-votes` کلِ جریانِ SIGNAL. برای «مشارکت و تمایز»
+# هر دو معتبرند و با هم شمرده می‌شوند؛ ولی شمارِ هرکدام جدا گزارش
+# می‌شود تا کسی این دو را یکی نگیرد (قانون ضد-merge).
+LIVE_VOTES = ROOT / "brain" / "guardians" / "live-votes.jsonl"
 CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
 REGISTRY = ROOT / "config" / "state_registry.json"
 
@@ -304,10 +310,26 @@ def engines():
             "n_owners": len(by_owner), "by_owner": by_owner}
 
 
+def _live_as_verdicts(rows):
+    """ردیفِ میزِ زنده را به همان شکلِ دفترِ رأی می‌آورد.
+
+    `guardian_live` رأی و دلیل را در دو دیکشنریِ جدا می‌نویسد؛ این‌جا به
+    شکلِ `votes[gid] = {v, why}` برمی‌گردد تا `participation` یک مسیر
+    داشته باشد نه دو تا.
+    """
+    out = []
+    for r in rows:
+        vs, ws = r.get("votes") or {}, r.get("why") or {}
+        out.append({"votes": {g: {"v": vs.get(g), "why": ws.get(g)}
+                              for g in vs}})
+    return out
+
+
 def build(n_recent=None):
     v = _rows(VERDICTS, n_recent)
+    live = _rows(LIVE_VOTES, n_recent)
     c = _rows(CLOSED)
-    part = participation(v)
+    part = participation(v + _live_as_verdicts(live))
     sc = scored(c)
     rows = {}
     for gid in GIDS:
@@ -326,6 +348,7 @@ def build(n_recent=None):
         "owner": "E00",
         "advisory": True,
         "n_verdicts": len(v),
+        "n_live_votes": len(live),
         "base_win_rate": sc.get("_base_win_rate"),
         "n_population": sc.get("_n_population"),
         "alpha_sidak": sc.get("_alpha_sidak"),
@@ -349,7 +372,8 @@ def build(n_recent=None):
 
 def render(d):
     b = d.get("base_win_rate")
-    L = [f"🔥 امتحانِ ققنوس — {d['n_verdicts']} رأی · "
+    L = [f"🔥 امتحانِ ققنوس — {d['n_verdicts']} رأیِ ارسالی + "
+         f"{d.get('n_live_votes', 0)} رأیِ میزِ زنده · "
          f"{d['n_closed_with_votes']} معاملهٔ بسته با رأی · "
          f"پایهٔ برد {('%.1f%%' % (b*100)) if b else '—'}"]
     for gid in GIDS:

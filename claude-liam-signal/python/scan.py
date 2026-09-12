@@ -660,6 +660,22 @@ def main():
         print(f"short sampler failed: {type(_e).__name__} — "
               "نمونه‌گیری اختیاری است، اسکن ادامه دارد", flush=True)
 
+    # میزِ زندهٔ ۱۲ مراقب (دستور حمید ۱۲ سپتامبر: «پیپرمود بی‌وقفه بر
+    # اساس استراتژی خودشان»). هر مراقب که رأیِ خودش از +۰.۱۵ رد شود، در
+    # دفترِ `gd-<id>` خودش ردیف باز می‌کند. به stage هیچ ستاپی دست
+    # نمی‌زند و مرحله‌هایش در `_NOT_SIGNAL` است، پس نه وارد مسیر ارسال
+    # می‌شود نه آمار محصول را تکان می‌دهد. مرزها: hamid/guardian_live.py
+    try:
+        from hamid import guardian_live
+        _gl = guardian_live.desk(setups)
+        print(f"guardian desks: setups={_gl['n_setups']} "
+              f"opened={_gl['opened']} " + ", ".join(
+                  f"{k}×{v}" for k, v in (_gl.get("per_guardian") or {}).items()),
+              flush=True)
+    except Exception as _e:                          # noqa: BLE001
+        print(f"guardian desks failed: {type(_e).__name__} — "
+              "میزِ مراقبان اختیاری است، اسکن ادامه دارد", flush=True)
+
     counts = {k: sum(1 for s in setups if s["stage"] == k) for k in STAGE_RANK}
     signals = [s for s in setups if s["stage"] == "SIGNAL"]
 
