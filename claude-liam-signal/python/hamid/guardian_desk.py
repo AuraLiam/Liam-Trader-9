@@ -91,6 +91,10 @@ MIN_N_VERDICT = 200
 MIN_N_REJECT = 500
 
 GIDS = [g["id"] for g in PH.GUARDIANS]
+
+# دوازده میز، دوازده مقایسه با همان جهانِ ستاپ — پس آستانه باید تصحیح
+# چندآزمونی داشته باشد، وگرنه از هر ۲۰ مقایسه یکی شانسی «معنادار» می‌شود.
+ALPHA_SIDAK = 1 - (1 - 0.05) ** (1 / len(GIDS))
 FA = {g["id"]: f'{g["sign"]} {g["name"]}' for g in PH.GUARDIANS}
 SPEC = {g["id"]: g["specialty"] for g in PH.GUARDIANS}
 
@@ -321,7 +325,11 @@ def judge(per_gid, abst=None):
               for g, t in per_gid.items()}
     all_tr = [t for ts in per_gid.values() for t in ts]
     pool = _net(all_tr)
+    # هر دو طرفِ بوت‌استرپ باید «نماد → فهرست R خالص» باشند؛ دادنِ ردیفِ
+    # خام به‌جای R، همان خطایی بود که jobِ ادغام را انداخت.
+    pool_by_sym = {s: _net(v) for s, v in _by_symbol(all_tr).items()}
     res = {"vote_min": VOTE_MIN, "tf": TF, "max_hold_bars": MAX_HOLD,
+           "alpha_sidak": round(ALPHA_SIDAK, 5),
            "stopping_rule": {"verdict_min_n": MIN_N_VERDICT,
                              "reject_min_n": MIN_N_REJECT,
                              "metric": "خالص از کارمزد (hamid/fees)",
@@ -331,7 +339,8 @@ def judge(per_gid, abst=None):
     for gid in GIDS:
         st = dict(_stats(nets[gid]), **_mech(per_gid[gid]))
         # اختلاف با «همهٔ ستاپ‌ها» — یعنی انتخابِ این تخصص چقدر ارزش افزود
-        ci = _cluster_boot(by_sym[gid], _by_symbol(all_tr)) if nets[gid] else None
+        ci = (_cluster_boot(by_sym[gid], pool_by_sym, ALPHA_SIDAK)
+              if nets[gid] else None)
         seen = (abst or {}).get(gid) or {}
         st.update({
             "fa": FA[gid], "specialty": SPEC[gid],
@@ -472,6 +481,30 @@ def _selftest():
         "بی‌نمونه حکم صادر شد")
     chk(all(d.get("fa") and d.get("specialty") for d in j["desks"].values()),
         "نام/تخصص مراقب روی خروجی نیست")
+
+    # داورِ **پرشده** — مسیرِ واقعیِ ادغام.
+    #
+    # درسِ شبِ ۱۲ سپتامبر: نسخهٔ اولِ همین بررسی فقط دفترِ **خالی** را
+    # می‌داد، پس شاخهٔ `nets[gid]` هرگز اجرا نمی‌شد و یک آرگومانِ
+    # جامانده در `_cluster_boot` تا jobِ ادغام زنده ماند — بعد از ۱۲ تکه
+    # و چهار ساعت محاسبه. آزمونی که فقط مسیرِ خالی را می‌رود، چیزی را
+    # اثبات نمی‌کند.
+    import random as _r
+    _rng = _r.Random(11)
+    full = {}
+    for i, g in enumerate(GIDS):
+        full[g] = [{"sym": f"S{k % 9}USDT", "entry": 100.0, "sl": 99.0,
+                    "R": round(_rng.gauss(0.05 if i % 2 else -0.05, 1.0), 3)}
+                   for k in range(30)]
+    jf = judge(full, None)
+    chk(jf["alpha_sidak"] < 0.05, "تصحیح چندآزمونی روی خروجی نیست یا شل است")
+    chk(all(d.get("n") == 30 for d in jf["desks"].values()),
+        "شمارِ معاملهٔ میزها درست نیامد")
+    chk(any(d.get("vs_pool_ci") for d in jf["desks"].values()),
+        "بازهٔ اختلاف با جهانِ ستاپ اصلاً محاسبه نشد")
+    chk(all(d["verdict"].startswith("بی‌حکم") for d in jf["desks"].values()),
+        f"با n=۳۰ (زیر {MIN_N_VERDICT}) حکم صادر شد")
+    chk(jf["pool"]["n"] == 30 * len(GIDS), "جهانِ ستاپ درست جمع نشد")
 
     # ── نشتِ آینده: مهم‌ترین بررسیِ این فایل ───────────────────────────
     #

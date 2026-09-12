@@ -1,0 +1,80 @@
+# ادغامِ تکه‌های یک اجرای قبلیِ «میز ۱۲ مراقب» — بدون اجرای دوبارهٔ محاسبه.
+#
+# چرا هست: شبِ ۱۲ سپتامبر هر ۱۲ تکه سالم تمام شدند (~۴ ساعت محاسبه) ولی
+# jobِ ادغام روی یک باگِ کد افتاد. دور انداختنِ چهار ساعت محاسبه به‌خاطر
+# یک خطِ خراب، اتلاف است؛ خروجیِ تکه‌ها هفت روز روی آرتیفکت می‌ماند و
+# ادغام کارِ ثانیه‌ای است. این ورک‌فلو همان را با **کدِ امروزِ main**
+# دوباره می‌چیند.
+name: Guardian desks — merge only
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "شناسهٔ اجرایی که تکه‌هایش را باید ادغام کرد"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: guardian-desks          # با خودِ اجرای اصلی هم‌زمان نشود
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip -q install -r requirements-ci.txt
+      - name: آزمون آفلاین (کدِ ادغام باید سبز باشد)
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.guardian_desk --selftest
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: guardian-desks-shard-*
+          path: /tmp/gd
+          merge-multiple: true
+          run-id: ${{ github.event.inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: شمارشِ تکه‌ها
+        run: |
+          n=$(ls /tmp/gd/*.json | wc -l)
+          echo "تکه‌های دریافتی: $n"
+          # ادغامِ ناقص = عددِ ناقص. کمتر از ۱۲ تکه گزارش نمی‌شود.
+          test "$n" -eq 12 || { echo "::error::انتظار ۱۲ تکه، دریافت $n"; exit 1; }
+      - name: ادغام و حکم
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.guardian_desk --merge /tmp/gd/*.json
+      - name: اثباتِ خروجی
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          p = pathlib.Path("signals/guardian-desks.json")
+          if not p.exists():
+              sys.exit("guardian-desks.json ساخته نشد")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          assert len(d.get("desks") or {}) == 12, sorted(d.get("desks") or {})
+          assert d.get("vote_min") == 0.15, d.get("vote_min")
+          assert d.get("alpha_sidak") and d["alpha_sidak"] < 0.05, d.get("alpha_sidak")
+          for g, v in d["desks"].items():
+              assert "verdict" in v and v.get("fa"), (g, sorted(v))
+          traded = [g for g, v in d["desks"].items() if (v.get("n") or 0) > 0]
+          print(f"میزهای دارای معامله: {len(traded)} از ۱۲")
+          for g in sorted(d["desks"], key=lambda k: -(d["desks"][k].get("n") or 0)):
+              v = d["desks"][g]
+              print(f"{v['fa']:<22} n={v.get('n') or 0:<6} خالص={v.get('mean')} "
+                    f"CI=[{v.get('lo')},{v.get('hi')}] برد={v.get('win_pct')}% "
+                    f"ممتنع={v.get('abstained')} → {v.get('verdict')}")
+          print("پوشش:", d.get("n_symbols"), "نماد ·", d.get("n_skipped"),
+                "ردشده · بازه", d.get("span"))
+          PY
+      - name: انتشار (ناشر مشترک، قانون ۱۴)
+        run: scripts/publish.sh -m "میز ۱۲ مراقب — ادغامِ اجرای ${{ github.event.inputs.run_id }}" signals
