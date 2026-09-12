@@ -94,7 +94,18 @@ def open_keys():
 
 
 def _log_vote(v, sym, tf, direction, now_ms):
-    """دفترِ رأیِ زنده — append-only، جدا از دفترِ ارسال (قانون ضد-merge)."""
+    """دفترِ رأیِ زنده — append-only، جدا از دفترِ ارسال (قانون ضد-merge).
+
+    در حالت شنی (`LIAM9_SANDBOX=1`) هیچ‌چیز نوشته نمی‌شود — همان الگوی
+    `paper._append_gatelog`. نسخهٔ اولِ این تابع این شرط را نداشت و
+    خودآزماییِ همین فایل ۹۶ ردیفِ ساختگی (`AAAUSDT`، دلیل «آزمون») در
+    دفترِ واقعی ریخت. اگر منتشر می‌شد، امتحانِ ققنوس آن‌ها را «مشارکت»
+    می‌شمرد و کارنامهٔ هر دوازده مراقب مسموم می‌شد — دقیقاً همان دری که
+    `test_paper` سالِ پیش برای `brain` بست، این بار از سمتِ میزِ زنده.
+    """
+    import brain as _b
+    if getattr(_b, "SANDBOX", False):
+        return
     try:
         VOTES.parent.mkdir(parents=True, exist_ok=True)
         row = {"at": int(now_ms), "sym": sym, "tf": tf, "dir": direction,
@@ -285,6 +296,20 @@ def _selftest():
     for bad in ("telegram", "send_signals", "sent.json", "DAILY_CAP"):
         chk(bad not in code, f"میزِ زنده به مسیرِ ارسال دست زد: {bad}")
     chk("telegram" in src, "نگهبان دیگر چیزی برای سنجیدن ندارد")
+
+    # ── دفترِ واقعی در حالت شنی دست‌نخورده می‌ماند ─────────────────────
+    #
+    # اثباتِ منفیِ لازم: خودِ همین آزمون‌ها بالا `desk()` را ده‌ها بار صدا
+    # زدند. اگر `_log_vote` حالت شنی را نمی‌دید، تا این خط ده‌ها ردیفِ
+    # ساختگی در دفترِ تولید نشسته بود — و دقیقاً همین اتفاق در نسخهٔ اول
+    # افتاد (۹۶ ردیف).
+    _before = VOTES.exists() and VOTES.stat().st_size or 0
+    desk([sig], judge=judge_all, opener=fake_open)
+    _after = VOTES.exists() and VOTES.stat().st_size or 0
+    chk(_after == _before, f"دفترِ رأیِ تولید در آزمون رشد کرد: {_before}→{_after}")
+    import brain as _b
+    chk(getattr(_b, "SANDBOX", False),
+        "آزمون در حالت شنی اجرا نشد — LIAM9_SANDBOX=1 لازم است")
 
     print(f"guardian_live: {ok} بررسی سبز" + (f" · {fails} قرمز" if fails else ""))
     return 1 if fails else 0
