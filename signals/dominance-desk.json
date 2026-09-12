@@ -1,17 +1,17 @@
 {
- "generated": 1789192961557,
+ "generated": 1789193337015,
  "engine": "E03",
  "panel": "لیام تریدر ۹",
  "ok": true,
  "points": 4000,
  "base_rule": {
-  "market": "UP",
-  "why": "USDT.D -0.001 — پول از حاشیه به بازار می‌آید: بازار رو به بالا"
+  "market": "DOWN",
+  "why": "USDT.D +0.001 — پول به حاشیه می‌رود: بازار رو به پایین"
  },
  "chg_1h": {
-  "usdt_d": -0.001,
-  "btc_d": 0.0,
-  "usdc_d": -0.001
+  "usdt_d": 0.001,
+  "btc_d": 0.01,
+  "usdc_d": 0.0
  },
  "by_tf": {
   "4h": {
@@ -54,14 +54,14 @@
   },
   "15m": {
    "tf": "15m",
-   "bars": 978,
+   "bars": 977,
    "pts_per_bar": 4.0,
    "resolution_ok": true,
    "trend": "range",
    "px": 6.889,
    "threshold": 0.01,
    "threshold_stats": {
-    "n": 977,
+    "n": 976,
     "pctl": 0.75,
     "median": 0.005,
     "p90": 0.017
@@ -76,7 +76,7 @@
    "bars": 2577,
    "pts_per_bar": 2.0,
    "resolution_ok": true,
-   "trend": "up",
+   "trend": "range",
    "px": 6.889,
    "threshold": 0.005,
    "threshold_stats": {
@@ -85,10 +85,10 @@
     "median": 0.001,
     "p90": 0.011
    },
-   "delta": -0.001,
+   "delta": 0.0,
    "meaningful": false,
-   "regime": "BEARISH",
-   "note": "USDT.D در 5m: روند up → رژیم BEARISH؛ تغییر آخرین کندل -0.0010 در برابر آستانهٔ 0.0050 (صدک 0.75 همین تایم‌فریم)"
+   "regime": "RANGE",
+   "note": "USDT.D در 5m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0000 در برابر آستانهٔ 0.0050 (صدک 0.75 همین تایم‌فریم)"
   }
  },
  "btc_d_by_tf": {
@@ -130,14 +130,14 @@
   },
   "15m": {
    "tf": "15m",
-   "bars": 978,
+   "bars": 977,
    "pts_per_bar": 4.0,
    "resolution_ok": true,
    "trend": "down",
    "px": 58.25,
    "threshold": 0.02,
    "threshold_stats": {
-    "n": 977,
+    "n": 976,
     "pctl": 0.75,
     "median": 0.01,
     "p90": 0.03
@@ -151,7 +151,7 @@
    "bars": 2577,
    "pts_per_bar": 2.0,
    "resolution_ok": true,
-   "trend": "down",
+   "trend": "range",
    "px": 58.25,
    "threshold": 0.01,
    "threshold_stats": {
@@ -160,14 +160,14 @@
     "median": 0.0,
     "p90": 0.02
    },
-   "delta": 0.01,
-   "meaningful": true,
-   "note": "BTC.D در 5m: روند down؛ تغییر آخرین کندل +0.0100"
+   "delta": 0.0,
+   "meaningful": false,
+   "note": "BTC.D در 5m: روند range؛ تغییر آخرین کندل +0.0000"
   }
  },
  "weighted": {
-  "score": 0.217,
-  "regime": "RANGE",
+  "score": 0.304,
+  "regime": "BULLISH",
   "used": [
    {
     "tf": "4h",
@@ -186,12 +186,12 @@
    },
    {
     "tf": "5m",
-    "regime": "BEARISH",
+    "regime": "RANGE",
     "weight": 0.2
    }
   ],
   "skipped": [],
-  "why": "رأی وزنی 0.217 از 4 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
+  "why": "رأی وزنی 0.304 از 4 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
  },
  "tf_weights": {
   "4h": 1.0,
@@ -340,13 +340,13 @@
  },
  "usdc": {
   "ok": true,
-  "state": "TO_RISK",
-  "why": "هر دو استیبل پایین (-0.001 و -0.001) — پول واقعاً وارد بازار می‌شود",
-  "usdt_d": 6.889,
-  "usdc_d": 2.79,
-  "usdt_d_delta": -0.001,
-  "usdc_d_delta": -0.001,
-  "stable_total": 9.679,
+  "state": "TO_STABLE",
+  "why": "هر دو استیبل بالا (+0.004 و +0.001) — پول واقعاً از بازار بیرون می‌رود",
+  "usdt_d": 6.893,
+  "usdc_d": 2.792,
+  "usdt_d_delta": 0.004,
+  "usdc_d_delta": 0.001,
+  "stable_total": 9.685,
   "window_min": 240,
   "note": "USDC استیبلِ اجباریِ اروپاست (دستور حمید) — سهمش جدا شمرده می‌شود، نه داخل تتر"
  },
@@ -356,9 +356,9 @@
   "why": "هیچ سهمی بیش از 0.03 جابه‌جا نشده — چرخهٔ پول در این پنجره خبری ندارد",
   "window_min": 240,
   "legs": {
-   "stable": -0.002,
+   "stable": 0.005,
    "btc": -0.02,
-   "alt": 0.022
+   "alt": 0.015
   },
   "missing": [],
   "note": "سهم آلت باقی‌ماندهٔ حسابی است نه اندازه‌گیری مستقل؛ پس خطای دو سریِ دیگر رویش جمع می‌شود"
