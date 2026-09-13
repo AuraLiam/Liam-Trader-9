@@ -483,8 +483,35 @@ def _context(s, now_ms=None):
         ctx["btc_sens"] = json.loads(BTC_SENS.read_text(encoding="utf-8")).get("coins") or {}
     except Exception:                                # noqa: BLE001
         ctx["btc_sens"] = {}
+    ctx["candle_src"] = _candle_src()
     ctx.update(_social(s, ctx["now_ms"]))
     return ctx
+
+
+def _candle_src():
+    """صرافیِ کندلِ همین فرایند، برای سنبله — نبود = None، نه حدس.
+
+    شکافِ اندازه‌گیری‌شدهٔ ۱۳ سپتامبر: `_v_virgo` از روز اول
+    `s.get("candle_src") or ctx.get("candle_src")` را می‌خواند، ولی **هیچ
+    کدام هرگز پر نمی‌شد** — نه ستاپ‌های اسکن این فیلد را دارند (۰ از ۳۶
+    ستاپِ منتشرشده) و نه `_context` آن را می‌ساخت. نتیجه‌اش روی دفترِ
+    رأی: سنبله در ۴٬۱۸۴ رأی **هیچ‌گاه** تأیید نداد (میانگین −۰.۳۰، یعنی
+    فقط شاخهٔ جریمهٔ `barsAgo`)، چون تنها شاخهٔ مثبتش به فیلدی وصل بود که
+    وجود نداشت. مسیرِ پشتیبانی که پر نشود، مسیر نیست.
+
+    منبع همان چیزی است که `paper` برای ردپای هر معامله استفاده می‌کند
+    (`sources.used()["klines"]`)، پس رأیِ سنبله و ردپای دفتر هرگز از هم
+    جدا نمی‌افتند.
+
+    مرز: این فقط یک سیم است. آستانه‌های خود سنبله (+۰.۵ بازار اجرا /
+    +۰.۱۵ پشتیبان) دست‌نخورده‌اند و هیچ دروازه‌ای عوض نمی‌شود؛ حکم ققنوس
+    طبق قانون ۱۶ مشاوره‌ای می‌ماند.
+    """
+    try:
+        from hamid import paper as _p
+        return _p._candle_src_now()
+    except Exception:                                # noqa: BLE001
+        return None
 
 
 def _fresh(doc, now_ms, max_min=SOCIAL_MAX_AGE_MIN):

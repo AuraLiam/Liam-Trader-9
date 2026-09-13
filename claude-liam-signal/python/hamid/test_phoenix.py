@@ -266,6 +266,34 @@ try:
 finally:
     P.FOMO, P.NEWS_POLL = _old_fomo, _old_news
 
+# ── سنبله: سیمِ candle_src (۱۳ سپتامبر) ────────────────────────────────
+# اثباتِ **محصول** نه اثباتِ اسکریپت: خودِ `_context` باید فیلد را بسازد،
+# و سنبله با همان فیلد باید از امتناع/جریمه به تأیید برسد. بی این دو
+# بررسی، مسیرِ پشتیبان دوباره می‌تواند سال‌ها خالی بماند و کسی نفهمد.
+print("\n— سنبله: سیمِ منبع کندل —")
+_old_src = P._candle_src
+try:
+    P._candle_src = lambda: "bitunix-perp"
+    _cx = P._context({"sym": "AAAUSDT", "dir": "LONG"})
+    check("_context فیلد candle_src را می‌سازد", _cx.get("candle_src") == "bitunix-perp")
+    _v, _why = P.VOTERS["virgo"]({"sym": "AAAUSDT", "dir": "LONG"}, _cx)
+    check("سنبله با بازار اجرا تأیید می‌دهد (≥+۰.۱۵)", _v is not None and _v >= 0.15, f"v={_v} why={_why}")
+    check("دلیلِ سنبله بازار اجرا را نام می‌برد", "بیت‌یونیکس" in (_why or ""))
+    P._candle_src = lambda: "mexc"
+    _v2, _ = P.VOTERS["virgo"]({"sym": "AAAUSDT", "dir": "LONG"}, P._context({"sym": "AAAUSDT"}))
+    check("پشتیبان کمتر از بازار اجرا وزن می‌گیرد", _v2 is not None and 0 < _v2 < _v)
+    # اثباتِ منفی: سیمِ خالی = همان امتناعِ قبلی، نه ادعای بیت‌یونیکس
+    P._candle_src = lambda: None
+    _cx0 = P._context({"sym": "AAAUSDT", "dir": "LONG"})
+    check("بی‌منبع، ctx ادعای جعلی نمی‌سازد (قانون ۱)", _cx0.get("candle_src") is None)
+    _v0, _why0 = P.VOTERS["virgo"]({"sym": "AAAUSDT", "dir": "LONG"}, _cx0)
+    check("بی‌منبع و بی‌هم‌زمانی، سنبله ممتنع می‌ماند", _v0 is None)
+    # ستاپی که خودش candle_src دارد بر ctx مقدم است
+    _vs, _ = P.VOTERS["virgo"]({"sym": "AAAUSDT", "dir": "LONG", "candle_src": "bitunix-perp"}, _cx0)
+    check("candle_src روی خودِ ستاپ بر ctx مقدم است", _vs is not None and _vs >= 0.15)
+finally:
+    P._candle_src = _old_src
+
 import shutil                                         # noqa: E402
 shutil.rmtree(tmp, ignore_errors=True)
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
