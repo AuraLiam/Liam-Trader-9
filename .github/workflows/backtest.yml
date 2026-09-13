@@ -28,8 +28,8 @@ on:
         description: "How many of the most-traded pairs"
         default: "60"
       bars:
-        description: "Candles per series per timeframe"
-        default: "5000"
+        description: "Candles per timeframe: a number, or 15m:17000,5m:12000"
+        default: "15m:17000,5m:12000"
       tf:
         description: "Timeframes, comma separated"
         default: "15m,5m"
@@ -66,7 +66,7 @@ jobs:
           set -o pipefail
           python3 claude-liam-signal/python/backtest.py \
             --symbols "${{ github.event.inputs.symbols || '60' }}" \
-            --bars "${{ github.event.inputs.bars || '5000' }}" \
+            --bars "${{ github.event.inputs.bars || '15m:17000,5m:12000' }}" \
             --tf "${{ github.event.inputs.tf || '15m,5m' }}" \
             | tee backtest-output.txt
 

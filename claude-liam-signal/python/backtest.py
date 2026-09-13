@@ -255,14 +255,48 @@ def line(d):
     return f"  {d['name']:<34} n={d['n']:>5}  win={d['win']:>5.1f}%  E={d['exp']:+.3f}R  {ci}{mark}"
 
 
+def parse_bars(spec, tfs):
+    """"5000" → همان عدد برای همه؛ "15m:17000,5m:12000" → جدا برای هر تایم.
+
+    تایمی که در رشته نیامده، عددِ بی‌نامِ رشته را می‌گیرد؛ اگر آن هم نبود
+    خطا — حدس نمی‌زنیم (قانون ۱).
+    """
+    spec = str(spec).strip()
+    out, default = {}, None
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if ":" in part:
+            tf, n = part.split(":", 1)
+            out[tf.strip()] = int(n)
+        else:
+            default = int(part)
+    res = {}
+    for tf in tfs:
+        if tf in out:
+            res[tf] = out[tf]
+        elif default is not None:
+            res[tf] = default
+        else:
+            raise SystemExit(f"--bars: no bar count for {tf} in {spec!r}")
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", type=int, default=60)
-    ap.add_argument("--bars", type=int, default=5000)
+    # ۱۳ سپتامبر: bars می‌تواند برای هر تایم جدا باشد ("15m:17000,5m:12000").
+    # دلیلش اندازه‌گیری‌شده است: داورِ هندسه با ۶۰۰۰ کندل روی ۱۵د ۶۲ روز و
+    # روی ۵د فقط ۲۱ روز می‌دید، و محدودکنندهٔ CI «تعداد روز» بود نه «تعداد
+    # معامله» (خوشه‌بندی روزانه). عددِ تنها همان معنای قبلی را دارد.
+    ap.add_argument("--bars", type=str, default="5000")
     ap.add_argument("--tf", default="15m,5m")
     ap.add_argument("--cores", type=int, default=os.cpu_count() or 4)
     args = ap.parse_args()
     tfs = [t.strip() for t in args.tf.split(",") if t.strip()]
+    bars_by_tf = parse_bars(args.bars, tfs)
+    bars_for = bars_by_tf.__getitem__
 
     t0 = time.time()
     print(f"symbols: fetching the {args.symbols} most-traded USDT pairs", flush=True)
@@ -270,10 +304,10 @@ def main():
     print(f"  {', '.join(syms[:12])}{' …' if len(syms) > 12 else ''}", flush=True)
 
     pairs = [(s, tf) for tf in tfs for s in syms]
-    print(f"candles: {len(pairs)} series × {args.bars} bars", flush=True)
+    print("candles: " + ", ".join(f"{tf}×{bars_by_tf[tf]}" for tf in tfs) + f" bars over {len(syms)} symbols", flush=True)
     jobs, failed = [], []
     with ThreadPoolExecutor(max_workers=8) as ex:
-        futs = {ex.submit(klines, s, tf, args.bars): (s, tf) for s, tf in pairs}
+        futs = {ex.submit(klines, s, tf, bars_for(tf)): (s, tf) for s, tf in pairs}
         for f, (s, tf) in futs.items():
             try:
                 cd = f.result()
@@ -288,7 +322,7 @@ def main():
     if not jobs:
         sys.exit("no candles fetched — check network reachability to Binance")
 
-    span_days = args.bars * MS[tfs[0]] / 86_400_000
+    span_days = bars_for(tfs[0]) * MS[tfs[0]] / 86_400_000
     print(f"  {len(jobs)} series in hand, ≈{span_days:.0f} days of {tfs[0]} history each", flush=True)
 
     tmp = HERE / ".bt-tmp"
@@ -313,7 +347,7 @@ def main():
         print(f"  {len(results[variant])} trades", flush=True)
 
     report = {"generated": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
-              "source": "real Binance candles", "symbols": len(syms), "bars": args.bars,
+              "source": "real Binance candles", "symbols": len(syms), "bars": bars_by_tf,
               "timeframes": tfs, "series": len(jobs), "strategies": {}}
 
     print("\n" + "=" * 78)

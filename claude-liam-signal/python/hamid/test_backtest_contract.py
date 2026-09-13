@@ -23,6 +23,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
+ROOT = HERE.parents[2]
 sys.path.insert(0, str(PY))
 
 OK = 0
@@ -181,6 +182,20 @@ def run():
         check(f"جعبهٔ ×{k:.0f}: سهم کارمزد {k:.0f} برابر کم می‌شود",
               abs((0.15 / ((risk1 / entry) * 100))
                   - (0.15 / ((risk0 / entry) * 100)) / k) < 1e-9)
+
+    # ── D6 (۱۳ سپتامبر): bars برای هر تایم جدا — محدودکننده «روز» است ────
+    import importlib.util as _iu
+    _sp = _iu.spec_from_file_location("bt2", PY / "backtest.py"); _bt = _iu.module_from_spec(_sp); _sp.loader.exec_module(_bt)
+    check("--bars عددی برای همهٔ تایم‌ها یکسان است", _bt.parse_bars("5000", ["15m", "5m"]) == {"15m": 5000, "5m": 5000})
+    check("--bars تفکیکی برای هر تایم جدا خوانده می‌شود", _bt.parse_bars("15m:17000,5m:12000", ["15m", "5m"]) == {"15m": 17000, "5m": 12000})
+    check("تایمِ بی‌عدد با پیش‌فرضِ بی‌نام پر می‌شود", _bt.parse_bars("15m:17000,6000", ["15m", "5m"]) == {"15m": 17000, "5m": 6000})
+    try:
+        _bt.parse_bars("15m:17000", ["15m", "5m"]); _bad = False
+    except SystemExit:
+        _bad = True
+    check("تایمِ بی‌عدد و بی‌پیش‌فرض خطا می‌دهد، حدس نمی‌زند", _bad)
+    _wf = (ROOT / ".github" / "workflows" / "backtest.yml").read_text(encoding="utf-8")
+    check("پیش‌فرضِ شبانه تاریخچهٔ بلند برای هر دو تایم دارد", "15m:17000,5m:12000" in _wf)
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
