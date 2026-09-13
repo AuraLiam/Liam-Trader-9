@@ -141,9 +141,15 @@ def collect_state(now_ms=None, registry=None):
         it = {"id": f"state:{name}", "family": "state", "source": name,
               "owner": row.get("owner"), "layer": row.get("layer"),
               "consumer": row.get("consumer"), "critical": bool(row.get("critical")),
+              "optional": bool(row.get("optional")),
               "max_age_min": row.get("max_age_min")}
         if not p.exists():
-            it.update(ok=False, err="missing")
+            # اثبات محصول ۱۳ سپتامبر: دورِ اول روی رانر ۵ «شکست» داد که سه‌تایش
+            # فایل‌های اختیاریِ سرویس محلی بودند (liam9d، beacon، feed-health)
+            # و دوتایش خروجیِ خودِ همین دو ابزار که هنوز ساخته نشده بود.
+            # غایبِ اختیاری شکست نیست — همان تفکیکی که state_bus می‌کند؛
+            # وگرنه شمارِ «شکست» بی‌معنا می‌شود و بعدش نادیده گرفته می‌شود.
+            it.update(ok=False, err="absent-optional" if it["optional"] else "missing")
             items.append(it)
             continue
         try:
@@ -200,11 +206,15 @@ def build(now_ms=None, external=True, intel=None, registry=None,
     ext = collect_external(timeout_s=timeout_s, intel=intel) if external else []
     items = state + ext
     ok = sum(1 for i in items if i.get("ok"))
+    absent_opt = sorted(i["source"] for i in items if i.get("err") == "absent-optional")
+    failed = sorted(i["source"] for i in items
+                    if not i.get("ok") and i.get("err") != "absent-optional")
     return {"generated": int(now),
-            "n_items": len(items), "n_ok": ok, "n_failed": len(items) - ok,
+            "n_items": len(items), "n_ok": ok, "n_failed": len(failed),
+            "n_absent_optional": len(absent_opt),
             "n_state": len(state), "n_external": len(ext),
             "stale": sorted(i["source"] for i in state if i.get("ok") and not i.get("fresh")),
-            "failed": sorted(i["source"] for i in items if not i.get("ok")),
+            "failed": failed, "absent_optional": absent_opt,
             "items": items,
             "boundary": ("صندوقِ ورودی فقط می‌گوید چه هست و چقدر تازه است؛ هیچ "
                          "حکم و امتیازی نمی‌سازد. خوراکِ خبر/جمعیت دیدگاه است "
@@ -264,6 +274,14 @@ def _selftest():
         check("فایلِ خراب «خراب» ثبت می‌شود، نه حدس", d["ok"] is False and "unreadable" in d["err"])
         check("فایلِ غایب «غایب» ثبت می‌شود",
               collect_state(now, registry={"zz.json": {"kind": "live"}})[0]["err"] == "missing")
+        check("فایلِ غایبِ اختیاری «شکست» نیست — تفکیک همان state_bus",
+              collect_state(now, registry={"zz.json": {"kind": "live", "optional": True}})[0]["err"] == "absent-optional")
+        _d2 = build(now, external=False,
+                    registry={"zz.json": {"kind": "live", "optional": True},
+                              "qq.json": {"kind": "live"}})
+        check("شمارِ شکست فقط غایبِ اجباری را می‌شمرد",
+              _d2["n_failed"] == 1 and _d2["failed"] == ["qq.json"] and _d2["absent_optional"] == ["zz.json"],
+              str((_d2["n_failed"], _d2["failed"], _d2["absent_optional"])))
 
         # خوراک بیرونی با intel جعلی — یکی موفق، یکی خطا، یکی کند
         class FakeIntel:

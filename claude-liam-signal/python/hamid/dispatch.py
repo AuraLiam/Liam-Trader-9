@@ -147,7 +147,9 @@ def build(intake, prev=None, now_ms=None):
                 b["changed"].append(it["id"])
             if it.get("ok") and it.get("family") == "state" and not it.get("fresh"):
                 b["stale"].append(it["source"])
-            if not it.get("ok"):
+            # غایبِ اختیاری (فایل‌های سرویس محلی روی رانر) شکست نیست —
+            # همان تفکیکِ intake/state_bus؛ وگرنه شمارِ شکست بی‌معنا می‌شود.
+            if not it.get("ok") and it.get("err") != "absent-optional":
                 b["failed"].append(it["source"])
             if it.get("family") == "state" and (it["id"] in changed_ids or
                                                 (it.get("ok") and not it.get("fresh"))):
