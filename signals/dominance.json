@@ -1,5 +1,5 @@
 {
- "generated": 1789293752031,
+ "generated": 1789293934011,
  "usdt_dominance": 7.004,
  "btc_dominance": 58.83,
  "chg_1h": {
@@ -11,21 +11,21 @@
   "btc": 0.11
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: CPI m/m (26.5س) + Median CPI y/y (26.5س) + Trimmed CPI y/y (26.5س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BEARISH (USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1494/2856 (52٪)؛ بنچمارکِ همیشه‌تخت 68٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: CPI m/m (26.4س) + Median CPI y/y (26.4س) + Trimmed CPI y/y (26.4س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BEARISH (USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1494/2856 (52٪)؛ بنچمارکِ همیشه‌تخت 68٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
  "macro": [
   {
    "title": "CPI m/m",
-   "in_hours": 26.5,
+   "in_hours": 26.4,
    "country": "CAD"
   },
   {
    "title": "Median CPI y/y",
-   "in_hours": 26.5,
+   "in_hours": 26.4,
    "country": "CAD"
   },
   {
    "title": "Trimmed CPI y/y",
-   "in_hours": 26.5,
+   "in_hours": 26.4,
    "country": "CAD"
   }
  ],
@@ -332,10 +332,10 @@
      "median": 0.001,
      "p90": 0.01
     },
-    "delta": -0.003,
+    "delta": 0.0,
     "meaningful": false,
     "regime": "BEARISH",
-    "note": "USDT.D در 5m: روند up → رژیم BEARISH؛ تغییر آخرین کندل -0.0030 در برابر آستانهٔ 0.0040 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 5m: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0000 در برابر آستانهٔ 0.0040 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "5m",
@@ -351,9 +351,9 @@
      "median": 0.0,
      "p90": 0.02
     },
-    "delta": -0.01,
-    "meaningful": true,
-    "note": "BTC.D در 5m: روند up؛ تغییر آخرین کندل -0.0100"
+    "delta": 0.0,
+    "meaningful": false,
+    "note": "BTC.D در 5m: روند up؛ تغییر آخرین کندل +0.0000"
    }
   },
   "15m": {
@@ -486,9 +486,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "MIXED",
+    "why": "هیچ ریشه‌ای غالب نیست — حکمِ تک‌علتی صادر نمی‌شود",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": 0.005,
+    "d_stable_d": 0.007,
+    "supply_growth": {
+     "USDT": 0.000202,
+     "USDC": 0.000193
+    },
+    "supply_growth_total": 0.000199,
+    "mcap_growth": -0.000512,
+    "usdt_d": 7.004,
+    "stable_d": 9.839,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "MARKET_FALL",
@@ -510,9 +522,19 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (+0.007، زیر میانهٔ 0.015) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.015,
+    "stable_d": 9.839,
+    "d_stable_d": 0.007,
+    "usdt_d": 7.004,
+    "d_usdt_d": 0.005,
+    "cause": "MIXED",
+    "cause_why": "هیچ ریشه‌ای غالب نیست — حکمِ تک‌علتی صادر نمی‌شود",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "SHORT_BIAS",
