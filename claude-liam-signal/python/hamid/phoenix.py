@@ -61,6 +61,11 @@ NEWS_POLL = ROOT / "signals" / "news-poll.json"
 # دقیقه) ولی برای رأی سخت‌گیرتر است: شاهدِ دیروز دربارهٔ امروز حرفی
 # ندارد، و دادهٔ کهنه در فیلدِ رأی یعنی امتناع، نه عبورِ کور (قانون ۱).
 SOCIAL_MAX_AGE_MIN = 180
+# قانون ۱۸ بند ۴ (۱۳ سپتامبر): دادهٔ متخصص با ابزار به بافت می‌رسد، نه با تحقیقِ ایجنت.
+DOM_DESK = ROOT / "signals" / "dominance-desk.json"
+BTC_PAT = ROOT / "signals" / "btc-patterns.json"
+INTAKE = ROOT / "signals" / "intake.json"
+INTAKE_MAX_AGE_MIN = 20
 
 MIN_N = 12
 BAND_EXPLORATORY = 0.15
@@ -167,7 +172,25 @@ def _v_gemini(s, ctx):
         return -0.7 * damp, f"بستر BTC خلاف: {cons[0][:60]}" + (" (نماد مستقل: نصف)" if damp < 1 else "")
     if hits and cons:
         return 0.0, "شواهد BTC دو طرفه"
-    return None, "شاهد BTC در بازجویی نبود"
+    # بستر ساختاری از ابزارها (قانون ۱۸ بند ۴) — وقتی بازجویی خطِ BTC ندارد
+    d = _sign(s.get("dir"))
+    reg = ctx.get("btc_regime")
+    pb = ctx.get("btc_pattern_bias")
+    if reg in ("BULLISH", "BEARISH") or pb in ("bull", "bear"):
+        want = 1 if d > 0 else -1
+        r_sign = (1 if reg == "BULLISH" else -1 if reg == "BEARISH" else 0)
+        p_sign = (1 if pb == "bull" else -1 if pb == "bear" else 0)
+        agree = sum(1 for x in (r_sign, p_sign) if x == want)
+        against = sum(1 for x in (r_sign, p_sign) if x == -want)
+        tag = f"رژیم {reg or '—'} · الگوی BTC {pb or '—'}"
+        if agree and not against:
+            return 0.6 * damp, f"بستر BTC هم‌جهت: {tag}" + (" (نماد مستقل: نصف)" if damp < 1 else "")
+        if against and not agree:
+            return -0.6 * damp, f"بستر BTC خلاف: {tag}" + (" (نماد مستقل: نصف)" if damp < 1 else "")
+        return 0.0, f"بستر BTC دو طرفه: {tag}"
+    if reg == "RANGE":
+        return 0.0, "بستر BTC رنج — نه هم‌جهت نه خلاف"
+    return None, "شاهد BTC در بازجویی و ابزارها نبود"
 
 
 def _v_taurus(s, ctx):
@@ -352,10 +375,13 @@ def _v_virgo(s, ctx):
 
 def _v_sagittarius(s, ctx):
     na = s.get("news_align") or ctx.get("news_align")
+    w = ctx.get("news_weighted", s.get("news_weighted", True))
+    k = 0.5 if w else 0.25                 # اجماعِ بی‌وزن: دیدگاهِ نصف‌قوت (قانون ۱۵)
+    tag = "" if w else " · بی‌وزن"
     if na == "with":
-        return 0.5, "اجماع خبری هم‌جهت (دیدگاه)"
+        return k, f"اجماع خبری هم‌جهت (دیدگاه{tag})"
     if na == "against":
-        return -0.5, "اجماع خبری خلاف (دیدگاه)"
+        return -k, f"اجماع خبری خلاف (دیدگاه{tag})"
     return None, "اجماع خبری ندارد"
 
 
@@ -376,6 +402,28 @@ def _v_aquarius(s, ctx):
                 parts.append(f"داغی {heat:.0f}")
         except (TypeError, ValueError):
             pass
+    # جمعیت از ابزارها (قانون ۱۸ بند ۴): فاندینگ = کدام سمت سنگین است؛
+    # ترس‌وطمع = دمای جمعیت. هر دو ضعیف و ضدجهت‌ِ شلوغی، سقفِ ۵٪ لایهٔ اجتماعی.
+    d = _sign(s.get("dir"))
+    fb = ctx.get("funding_btc")
+    if isinstance(fb, (int, float)) and abs(fb) >= 0.0003:
+        crowded_long = fb > 0
+        if (crowded_long and d > 0) or ((not crowded_long) and d < 0):
+            v -= 0.3
+            parts.append(f"فاندینگ {fb*100:+.3f}٪ — جمعیت همین سمت شلوغ است")
+        else:
+            v += 0.2
+            parts.append(f"فاندینگ {fb*100:+.3f}٪ — جمعیت سمتِ مقابل")
+    fg = ctx.get("fear_greed")
+    if isinstance(fg, (int, float)):
+        if fg >= 80 and d > 0:
+            v -= 0.3
+            parts.append(f"طمع {fg:.0f} در لانگ")
+        elif fg <= 20 and d > 0:
+            v += 0.2
+            parts.append(f"ترس {fg:.0f} در لانگ — ضدجهت جمعیت")
+        else:
+            parts.append(f"ترس‌وطمع {fg:.0f}")
     if not parts:
         return None, "شاهد جمعیت ندارد"
     return max(-1.0, min(1.0, v)), " · ".join(parts)
@@ -485,7 +533,63 @@ def _context(s, now_ms=None):
         ctx["btc_sens"] = {}
     ctx["candle_src"] = _candle_src()
     ctx.update(_social(s, ctx["now_ms"]))
+    ctx.update(_btc_ctx(ctx["now_ms"]))
+    ctx.update(_crowd(ctx["now_ms"]))
     return ctx
+
+
+def _btc_ctx(now_ms):
+    """بسترِ ساختاریِ BTC برای جوزا — از ابزارها، نه از متنِ بازجویی.
+
+    اندازه‌گیری ۱۳ سپتامبر: جوزا در ۴٬۱۸۴ رأی ۱۰۰٪ ممتنع بود، چون تنها
+    منبعش خطِ BTC در متنِ بازجویی بود که فقط وقتی BTC در یک ساعت >۱٪ حرکت
+    کند ساخته می‌شود. دستور حمید: «همه متخصص‌ها فعال، داده با ابزار». پس
+    رژیمِ وزنیِ اتاق دامیننس (`weighted.regime`، ۴س سنگین‌تر از ۵د) و
+    الگوی روزانهٔ BTC (`btc.1d[].bias`) به بافت می‌آیند. قاعدهٔ رأیِ جوزا
+    عوض نشده: COUPLED بدون همراهیِ BTC حق ورود ندارد.
+    """
+    out = {}
+    try:
+        d = json.loads(DOM_DESK.read_text(encoding="utf-8"))
+        if _fresh(d, now_ms, 90):
+            w = d.get("weighted") or {}
+            if w.get("regime") in ("BULLISH", "BEARISH", "RANGE"):
+                out["btc_regime"] = w["regime"]
+                out["btc_regime_score"] = w.get("score")
+    except Exception:                                # noqa: BLE001
+        pass
+    try:
+        b = json.loads(BTC_PAT.read_text(encoding="utf-8"))
+        if _fresh(b, now_ms, 180):
+            pats = ((b.get("btc") or {}).get("1d") or []) + ((b.get("btc") or {}).get("4h") or [])
+            biases = [x.get("bias") for x in pats if x.get("bias") in ("bull", "bear")]
+            if biases:
+                out["btc_pattern_bias"] = ("bull" if biases.count("bull") > biases.count("bear")
+                                           else "bear" if biases.count("bear") > biases.count("bull") else "mixed")
+    except Exception:                                # noqa: BLE001
+        pass
+    return out
+
+
+def _crowd(now_ms):
+    """جمعیت برای دلو — فاندینگ و ترس‌وطمع از صندوقِ ورودیِ اسکن‌بردار (قانون ۱۷)."""
+    out = {}
+    try:
+        it = json.loads(INTAKE.read_text(encoding="utf-8"))
+        if not _fresh(it, now_ms, INTAKE_MAX_AGE_MIN):
+            return out
+        for i in it.get("items") or []:
+            if i.get("family") != "external" or not i.get("ok"):
+                continue
+            if i.get("source") == "fear_greed" and isinstance((i.get("payload") or {}).get("value"), (int, float)):
+                out["fear_greed"] = float(i["payload"]["value"])
+            if i.get("source") == "funding" and isinstance(i.get("payload"), dict):
+                f = i["payload"].get("BTC")
+                if isinstance(f, (int, float)):
+                    out["funding_btc"] = float(f)
+    except Exception:                                # noqa: BLE001
+        pass
+    return out
 
 
 def _candle_src():
@@ -562,7 +666,11 @@ def _social(s, now_ms):
             bias = row.get("bias")
             # وزنِ صفر یعنی هیچ ایجنتی هنوز اعتبار نگرفته (قانون ۱۵) —
             # آن وقت اجماعی در کار نیست و قوس **باید** ممتنع بماند.
-            if bias and (row.get("weight") or 0) > 0:
+            # ۱۳ سپتامبر (قانون ۱۸ بند ۴): اجماعِ بی‌وزن هم به قوس می‌رسد،
+            # ولی با برچسبِ news_weighted=False تا رأیش نصف‌قوت باشد.
+            # وزنِ صفر یعنی هیچ ایجنتی هنوز اعتبار نگرفته (قانون ۱۵).
+            if bias:
+                out["news_weighted"] = (row.get("weight") or 0) > 0
                 d = _sign((s or {}).get("dir"))
                 up = str(bias).lower() in ("up", "bull", "bullish", "صعودی")
                 out["news_align"] = "with" if (up == (d > 0)) else "against"

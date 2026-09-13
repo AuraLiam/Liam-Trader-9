@@ -257,7 +257,10 @@ try:
                              "consensus": {"BTC": {"bias": "up", "weight": 0.0}}}),
                   encoding="utf-8")
     P.NEWS_POLL = _n
-    check("اجماعِ بی‌وزن وارد رأی نمی‌شود (قانون ۱۵)", "news_align" not in P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now))
+    # ۱۳ سپتامبر (قانون ۱۸ بند ۴): اجماعِ بی‌وزن دیگر امتناع نمی‌سازد؛ می‌آید
+    # ولی با برچسبِ news_weighted=False تا قوس نصف‌قوت رأی بدهد (قانون ۱۵).
+    _s0 = P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now)
+    check("اجماعِ بی‌وزن با برچسبِ «بی‌وزن» وارد می‌شود (قانون ۱۵/۱۸)", _s0.get("news_align") == "with" and _s0.get("news_weighted") is False)
     _n.write_text(_js.dumps({"generated": _now - 60_000,
                              "consensus": {"BTC": {"bias": "up", "weight": 0.7}}}),
                   encoding="utf-8")
@@ -265,6 +268,44 @@ try:
     check("اجماعِ وزن‌دارِ خلاف «against» می‌شود", P._social({"sym": "BTCUSDT", "dir": "SHORT"}, _now).get("news_align") == "against")
 finally:
     P.FOMO, P.NEWS_POLL = _old_fomo, _old_news
+
+# ── قانون ۱۸ بند ۴: جوزا/قوس/دلو از دادهٔ ابزارها رأی می‌دهند ──────────
+print("\n— سه متخصصِ خاموش: داده از ابزارها —")
+import tempfile as _tf2, json as _js2, time as _tm2
+_t2 = Path(_tf2.mkdtemp(prefix="ph18-"))
+_now2 = int(_tm2.time() * 1000)
+_old2 = (P.DOM_DESK, P.BTC_PAT, P.INTAKE, P.NEWS_POLL)
+try:
+    P.DOM_DESK = _t2 / "dd.json"; P.BTC_PAT = _t2 / "bp.json"; P.INTAKE = _t2 / "in.json"; P.NEWS_POLL = _t2 / "np.json"
+    P.DOM_DESK.write_text(_js2.dumps({"generated": _now2 - 60_000, "weighted": {"regime": "BEARISH", "score": -0.5}}))
+    P.BTC_PAT.write_text(_js2.dumps({"generated": _now2 - 60_000, "btc": {"1d": [{"bias": "bear"}], "4h": []}}))
+    P.INTAKE.write_text(_js2.dumps({"generated": _now2 - 60_000, "items": [
+        {"family": "external", "source": "fear_greed", "ok": True, "payload": {"value": 85}},
+        {"family": "external", "source": "funding", "ok": True, "payload": {"BTC": 0.0009, "ETH": 0.0}}]}))
+    P.NEWS_POLL.write_text(_js2.dumps({"generated": _now2 - 60_000, "consensus": {"BTC": {"bias": "down", "weight": 0.0}}}))
+    _cx = P._context({"sym": "AAAUSDT", "dir": "LONG"}, _now2)
+    check("بستر BTC از اتاق دامیننس و الگو به بافت می‌رسد", _cx.get("btc_regime") == "BEARISH" and _cx.get("btc_pattern_bias") == "bear")
+    check("جمعیت (فاندینگ/ترس‌وطمع) از صندوق ورودی به بافت می‌رسد", _cx.get("funding_btc") == 0.0009 and _cx.get("fear_greed") == 85)
+    _g, _gw = P.VOTERS["gemini"]({"sym": "AAAUSDT", "dir": "LONG", "premortem": {"pro": [], "con": []}}, _cx)
+    check("جوزا: لانگ در بستر نزولی → مخالف (نه ممتنع)", _g is not None and _g < -0.15, f"v={_g} {_gw}")
+    _g2, _ = P.VOTERS["gemini"]({"sym": "AAAUSDT", "dir": "SHORT", "premortem": {"pro": [], "con": []}}, _cx)
+    check("جوزا: شورت در بستر نزولی → موافق", _g2 is not None and _g2 > 0.15)
+    _q, _qw = P.VOTERS["sagittarius"]({"sym": "BTCUSDT", "dir": "LONG"}, _cx)
+    check("قوس: اجماعِ بی‌وزن رأیِ نصف‌قوت می‌دهد (−۰.۲۵)، نه امتناع", _q == -0.25 and "بی‌وزن" in _qw, f"v={_q} {_qw}")
+    _a, _aw = P.VOTERS["aquarius"]({"sym": "AAAUSDT", "dir": "LONG"}, _cx)
+    check("دلو: طمع ۸۵ + فاندینگ مثبت در لانگ → مخالف", _a is not None and _a <= -0.5, f"v={_a} {_aw}")
+    _a2, _ = P.VOTERS["aquarius"]({"sym": "AAAUSDT", "dir": "SHORT"}, _cx)
+    check("دلو: همان جمعیت در شورت → موافقِ ضعیف", _a2 is not None and _a2 > 0)
+    # امتناعِ واقعی همچنان معتبر است (قانون ۱): دادهٔ کهنه
+    P.INTAKE.write_text(_js2.dumps({"generated": _now2 - 999_000_000, "items": []}))
+    P.DOM_DESK.write_text(_js2.dumps({"generated": _now2 - 999_000_000, "weighted": {"regime": "BEARISH"}}))
+    P.BTC_PAT.write_text(_js2.dumps({"generated": _now2 - 999_000_000, "btc": {"1d": [{"bias": "bear"}]}}))
+    _cx0 = P._context({"sym": "AAAUSDT", "dir": "LONG"}, _now2)
+    check("دادهٔ کهنه به بافت نمی‌رسد (قانون ۱)", "btc_regime" not in _cx0 and "fear_greed" not in _cx0)
+    _g0, _ = P.VOTERS["gemini"]({"sym": "AAAUSDT", "dir": "LONG", "premortem": {"pro": [], "con": []}}, _cx0)
+    check("و جوزا بی‌داده صادقانه ممتنع می‌ماند", _g0 is None)
+finally:
+    P.DOM_DESK, P.BTC_PAT, P.INTAKE, P.NEWS_POLL = _old2
 
 # ── سنبله: سیمِ candle_src (۱۳ سپتامبر) ────────────────────────────────
 # اثباتِ **محصول** نه اثباتِ اسکریپت: خودِ `_context` باید فیلد را بسازد،

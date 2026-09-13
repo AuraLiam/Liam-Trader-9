@@ -365,6 +365,16 @@ jobs:
       # نسخهٔ انتقال به چتِ تازه (دستور حمید ۱۳ سپتامبر) — هر چرخه از
       # فایل‌های وضعیت بازساخته می‌شود تا هر وقت خواست، همان لحظه آماده
       # باشد. بخش دست‌نویسش OPEN-THREADS.md است.
+      # قانون ۱۸ — سه ابزارِ روتینِ بی‌پرسش: صندوق هولدینگ، نتایج لایو
+      # بیت‌یونیکس (از فایلِ صادرشده)، دلتای ۱۲ مراقب. هیچ‌کدام ریزنینگ
+      # نمی‌خواهد؛ خروجی‌شان در سطل‌های قانون ۱۷ دیده می‌شود.
+      - name: صندوق هولدینگ + نتایج لایو + دلتای مراقبان (قانون ۱۸)
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.holding_intake --write || true
+          python3 -m hamid.live_results --write || true
+          python3 -m hamid.guardian_delta --write || true
+
       - name: نسخهٔ انتقال (HANDOFF.md)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.handoff --write || true
