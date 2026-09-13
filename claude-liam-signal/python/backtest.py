@@ -300,7 +300,14 @@ def main():
                            # رفع D1 (ممیزی ۳۰ اوت): ibs تولیدکنندهٔ ۸۲٪
                            # شورت‌های ارسالی بود و تا امروز هرگز در مرجعِ
                            # ادعای عملکرد ریپلی نشده بود.
-                           ("ibs", "IBS + پولبک — استراتژی اصلی ارسال، اولین ریپلی")):
+                           ("ibs", "IBS + پولبک — استراتژی اصلی ارسال، اولین ریپلی"),
+                           # هندسهٔ بزرگ‌تر (دستور حمید، ۱۳ سپتامبر). هیچ
+                           # دروازه‌ای شل نشد: همان ستاپ، جعبهٔ ×۲/×۳ و
+                           # سقفِ زمانِ متناسب. `floor` جدا می‌سنجد که سود
+                           # از بزرگ‌کردن می‌آید یا از انتخابِ ستاپِ درشت.
+                           ("ibs_g2", "IBS — جعبهٔ ×۲ (استاپ و تارگت‌ها)"),
+                           ("ibs_g3", "IBS — جعبهٔ ×۳"),
+                           ("ibs_floor", "IBS — فقط ستاپِ طبیعتاً استاپ ≥۱٪")):
         print(f"replay: {variant} on {args.cores} cores", flush=True)
         results[variant] = run_variant(variant, jobs, args.cores, tmp)
         print(f"  {len(results[variant])} trades", flush=True)
@@ -314,7 +321,10 @@ def main():
     print("=" * 78)
     for variant, label in (("base", "base — as shipped"), ("channel", "channel — three rules required"),
                            ("widebuf", "widebuf — stop = edge ± max(box×0.30, atr×0.50)"),
-                           ("ibs", "ibs — IBS+پولبک، اولین ریپلیِ استراتژی اصلی ارسال")):
+                           ("ibs", "ibs — IBS+پولبک، اولین ریپلیِ استراتژی اصلی ارسال"),
+                           ("ibs_g2", "ibs_g2 — همان ستاپ، جعبهٔ ×۲ (استاپ+تارگت+سقف زمان)"),
+                           ("ibs_g3", "ibs_g3 — همان ستاپ، جعبهٔ ×۳"),
+                           ("ibs_floor", "ibs_floor — فقط ستاپِ طبیعتاً استاپ ≥۱٪")):
         tr = results[variant]
         print(f"\n{label}")
         overall = describe("overall", tr)

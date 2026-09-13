@@ -52,6 +52,31 @@ const WARMUP = 300;          // enough bars behind the first decision
 const TIMEOUT_MS = 288e5;    // eight hours, as on the paper desk
 const COOLDOWN = 6;          // bars between entries on one symbol
 
+/* ══════════════════════════════════════════════════════════════════════
+   هندسهٔ بزرگ‌تر — آزمایشِ ۱۳ سپتامبر (دستور حمید بعد از بک‌تست ۸۰نمادی)
+   ══════════════════════════════════════════════════════════════════════
+
+   تشخیصِ اندازه‌گیری‌شده: سهم کارمزد از R دقیقاً `کارمزد٪ ÷ استاپ٪` است.
+   روی همان اجرا: استاپ زیر ۰.۵٪ کارمزدش ۰.۵۲۵R بود و استاپ ≥۱.۵٪ فقط
+   ۰.۰۵۹R — یعنی همان لبه‌ای که در استاپِ تنگ خورده می‌شود، در هندسهٔ
+   بزرگ‌تر شاید بماند. این بازوها همان فرضیه را می‌سنجند، نه بیشتر.
+
+   `ibs_g2` / `ibs_g3`: **همان ستاپِ موتور**، بدون هیچ شل‌شدنِ دروازه —
+   فقط جعبه ×k می‌شود: استاپ و هر دو تارگت به همان نسبت از ورود دور
+   می‌شوند. RR دست‌نخورده می‌ماند (هر دو سمت ×k)، پس تنها چیزی که عوض
+   می‌شود سهمِ کارمزد است: fee_r به k تقسیم می‌شود.
+
+   `ibs_floor`: جعبه دست‌نخورده، ولی فقط ستاپ‌هایی که **طبیعتاً** استاپ
+   ≥۱.۰٪ دارند. این بازو جواب می‌دهد که آیا سودِ هندسهٔ بزرگ از خودِ
+   بزرگ‌کردن می‌آید یا از انتخابِ ستاپ‌های درشت‌تر — دو چیزِ متفاوت که
+   بی این بازو با هم قاطی می‌شدند.
+
+   قیدِ انصاف: سقفِ زمانِ نگهداری هم ×k می‌شود. جعبهٔ دو برابر با همان
+   ۸ ساعت یعنی آزمایشی که از پیش علیه فرضیه تنظیم شده — تارگتِ دورتر
+   وقت می‌خواهد، و timeout در این مدل با R=۰ بسته می‌شود.                */
+const GEO_SCALE = { ibs_g2: 2.0, ibs_g3: 3.0 };
+const STOP_FLOOR_PCT = { ibs_floor: 1.0 };
+
 /* One bar's worth of management, ordered pessimistically: when a bar could have
    hit either side, assume it hit the losing one first. */
 function step(tr, bar) {
@@ -80,7 +105,7 @@ for (const job of jobs) {
 
     if (open) {
       const done = step(open, bar);
-      const timedOut = !done && bar.t - open.t0 > TIMEOUT_MS;
+      const timedOut = !done && bar.t - open.t0 > (open.tmo || TIMEOUT_MS);
       if (done || timedOut) {
         const res = done || { r: open.t1 ? open.R1 : 0, why: "timeout" };
         /* هندسه و کارمزد روی خودِ ردیف (رفع D2 ممیزی ۳۰ اوت): بدون
@@ -106,7 +131,7 @@ for (const job of jobs) {
     if (i - lastEntry < COOLDOWN) continue;
     const view = cd.slice(Math.max(0, i - WINDOW + 1), i + 1);
     let x = null;
-    if (variant === "ibs") {
+    if (variant.startsWith("ibs")) {
       /* واریانت ibs (رفع D1 ممیزی ۳۰ اوت): مرجعِ ادعای عملکرد تا امروز
          فقط smcSetup را ریپلی می‌کرد، در حالی که ۸۲٪ شورت‌های ارسالی از
          ibsPullback آمده بود — یعنی استراتژیِ اصلیِ موضوعِ بحث اصلاً
@@ -121,15 +146,33 @@ for (const job of jobs) {
       if (!x || x.stage !== "SIGNAL" || !x.tp1) continue;
     }
 
-    const risk = Math.abs(x.entry - x.sl);
+    let risk = Math.abs(x.entry - x.sl);
     if (!risk || risk / x.entry < 0.0008) continue;
-    const R1 = Math.min(Math.abs(x.tp1 - x.entry) / risk, 8);
+
+    /* کفِ استاپ — انتخاب، نه بزرگ‌کردن. قبل از هر مقیاسی سنجیده می‌شود
+       تا «طبیعتاً درشت» با «درشت‌شده» قاطی نشود. */
+    const floorPct = STOP_FLOOR_PCT[variant];
+    if (floorPct != null && (risk / x.entry) * 100 < floorPct) continue;
+
+    /* مقیاسِ جعبه — استاپ و هر دو تارگت با یک ضریب از ورود دور می‌شوند،
+       پس RR عوض نمی‌شود و تنها اثرش روی سهمِ کارمزد است. */
+    const k = GEO_SCALE[variant] || 1;
+    let sl = x.sl, tp1 = x.tp1, tp2 = x.tp2;
+    if (k !== 1) {
+      sl = x.entry + (x.sl - x.entry) * k;
+      tp1 = x.entry + (x.tp1 - x.entry) * k;
+      if (tp2 != null) tp2 = x.entry + (x.tp2 - x.entry) * k;
+      risk = Math.abs(x.entry - sl);
+    }
+
+    const R1 = Math.min(Math.abs(tp1 - x.entry) / risk, 8);
     if (R1 < 1) continue;
-    const R2 = x.tp2 != null ? Math.min(Math.abs(x.tp2 - x.entry) / risk, 12) : R1;
+    const R2 = tp2 != null ? Math.min(Math.abs(tp2 - x.entry) / risk, 12) : R1;
 
     lastEntry = i;
     open = {
-      i, t0: bar.t, dir: x.dir, entry: x.entry, sl: x.sl, tp1: x.tp1, tp2: x.tp2,
+      i, t0: bar.t, dir: x.dir, entry: x.entry, sl, tp1, tp2,
+      tmo: TIMEOUT_MS * k,
       stopPct: (risk / x.entry) * 100,
       R1, R2, t1: false,
       room: x.room ? x.room.r : null, swept: x.swept ? 1 : 0,

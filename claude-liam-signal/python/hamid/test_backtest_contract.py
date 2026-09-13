@@ -61,7 +61,13 @@ def run():
     ssrc = (PY / "scan_worker.js").read_text(encoding="utf-8")
 
     # ── D1: واریانت ibs، با شرطِ شلیکِ آینه‌ای ─────────────────────────
-    check("ورکر واریانت ibs دارد", 'variant === "ibs"' in wsrc)
+    # خاصیت را بسنج نه شکل را (درس ۶ سپتامبر): این بررسی قبلاً دنبال
+    # رشتهٔ دقیقِ `variant === "ibs"` می‌گشت، و وقتی ۱۳ سپتامبر بازوهای
+    # `ibs_g2/g3/floor` اضافه شدند و شرط به `startsWith("ibs")` تبدیل شد،
+    # بی‌آنکه چیزی خراب شده باشد قرمز شد. چیزی که واقعاً باید تضمین شود
+    # این است که مسیرِ ibs وجود دارد و هر بازوی ibs از همان در رد می‌شود.
+    check("ورکر مسیر واریانت ibs دارد",
+          'variant === "ibs"' in wsrc or 'variant.startsWith("ibs")' in wsrc)
     check("و ibsPullback را ریپلی می‌کند", "E.ibsPullback(view)" in wsrc)
     m = re.search(r"quality\s*>=\s*(\d+)\s*&&\s*\(x\.inOB\s*\|\|\s*x\.nearOB\)",
                   wsrc.replace("x.quality", "quality"))
@@ -146,8 +152,35 @@ def run():
             # اثبات که بررسی توخالی نیست: ردیفی با سربه‌سر لازم است
             check("نمونهٔ آزمون واقعاً ردیفِ breakeven دارد",
                   any(t.get("why") == "breakeven" for t in tr))
+
         except Exception as e:                       # noqa: BLE001
             check("ماژول backtest بارگذاری شد", False, repr(e)[:150])
+
+    # ── D5 (۱۳ سپتامبر): بازوهای هندسهٔ بزرگ‌تر ────────────────────────
+    # فرضیه مکانیکی است (`fee_r = کارمزد٪ ÷ استاپ٪`)، پس آزمونش هم باید
+    # مکانیکی باشد: جعبهٔ ×k باید استاپ را ×k و سهم کارمزد را ÷k کند و
+    # RR را **دست‌نخورده** بگذارد. اگر RR هم عوض می‌شد، دو تغییر با هم
+    # سنجیده می‌شد و هیچ‌کدام قابل‌انتساب نبود.
+    check("بازوهای مقیاس تعریف شده‌اند", "GEO_SCALE" in wsrc and "ibs_g2" in wsrc)
+    check("کفِ استاپ بازوی جداگانه دارد (انتخاب ≠ بزرگ‌کردن)",
+          "STOP_FLOOR_PCT" in wsrc)
+    check("سقفِ زمان هم با k بزرگ می‌شود — وگرنه آزمایش علیه فرضیه تنظیم است",
+          "TIMEOUT_MS * k" in wsrc and "open.tmo" in wsrc)
+    check("هر سه بازوی تازه در فهرست اجرای بک‌تست هستند",
+          all(f'"{a}"' in bsrc for a in ("ibs_g2", "ibs_g3", "ibs_floor")))
+    # مقیاس روی ریاضیِ خودش — همان فرمولی که در ورکر است
+    for k in (2.0, 3.0):
+        entry, sl, tp1 = 100.0, 99.0, 103.0
+        sl2 = entry + (sl - entry) * k
+        tp2_ = entry + (tp1 - entry) * k
+        risk0, risk1 = abs(entry - sl), abs(entry - sl2)
+        check(f"جعبهٔ ×{k:.0f}: استاپ {k:.0f} برابر می‌شود",
+              abs(risk1 - k * risk0) < 1e-9)
+        check(f"جعبهٔ ×{k:.0f}: RR دست‌نخورده می‌ماند",
+              abs(abs(tp2_ - entry) / risk1 - abs(tp1 - entry) / risk0) < 1e-9)
+        check(f"جعبهٔ ×{k:.0f}: سهم کارمزد {k:.0f} برابر کم می‌شود",
+              abs((0.15 / ((risk1 / entry) * 100))
+                  - (0.15 / ((risk0 / entry) * 100)) / k) < 1e-9)
 
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0

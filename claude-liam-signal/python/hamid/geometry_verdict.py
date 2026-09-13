@@ -1,0 +1,337 @@
+#!/usr/bin/env python3
+"""داورِ هندسهٔ بزرگ‌تر و شورتِ جدا (دستور حمید، ۱۳ سپتامبر).
+
+حمید: «همین کار رو بکن، هندسه بزرگتر و شورت جدا.»
+
+═══════════════════════════════════════════════════════════════════════
+  چرا این فایل جداست و چرا قاعده‌اش از پیش نوشته شد
+═══════════════════════════════════════════════════════════════════════
+
+بک‌تست ۸۰نمادیِ ۱۳ سپتامبر دو چیز را قطعی کرد:
+
+  · سهم کارمزد از R دقیقاً `کارمزد٪ ÷ استاپ٪` است. استاپ زیر ۰.۵٪ سهمش
+    ۰.۵۲۵R بود، استاپ ≥۱.۵٪ فقط ۰.۰۵۹R. پس فرضیهٔ «هندسهٔ بزرگ‌تر لبه را
+    نگه می‌دارد» فرضیهٔ مکانیکی است، نه آرزو.
+  · شورت در هر سه بازو بدتر از لانگ بود و در base با CI کاملاً زیر صفر
+    (−۰.۲۲۳R). قاطی‌کردنِ دو جهت یعنی میانگینی که هیچ‌کدام را توصیف
+    نمی‌کند.
+
+قاعدهٔ توقف **قبل از دیدن هر عددِ این آزمایش** ثبت شد — همان انضباطی که
+`scalp_verdict` و `gate_verdict` دارند. بی این، هر نتیجه‌ای بعداً
+قابل‌توجیه است و آزمایش به تشریفات تبدیل می‌شود.
+
+┌─────────────────┬────────────────────────────────────────────────────┐
+│ کاندیدای ترفیع  │ CI سختگیرانهٔ شیداک‌شده کاملاً بالای صفر · n ≥ ۴۰۰ ·│
+│                 │ و همان جهت در **هر دو** تایم ۱۵د و ۵د              │
+│ رد              │ CI سختگیرانهٔ شیداک‌شده کاملاً زیر صفر روی n ≥ ۳۰۰۰ │
+│ بلاتکلیف        │ بقیه، با برآوردِ «چند معاملهٔ دیگر»                 │
+└─────────────────┴────────────────────────────────────────────────────┘
+
+سه قیدی که این داور را از «حکمِ راحت» جدا می‌کند:
+
+۱. **معیار سختگیرانه است، نه خالصِ ساده.** `bt_worker.step()` به خروجِ
+   «سربه‌سر» پاداشِ کاملِ R1 می‌دهد در حالی که اجرای واقعی آن را ≈صفر
+   می‌بندد؛ روی همان اجرا این یک فرض ۸۵٪ از برتریِ ظاهریِ ibs را
+   می‌ساخت. این داور فقط `strict` را می‌بیند.
+۲. **شیداک روی شمارِ واقعیِ خانه‌ها.** هر بازو × هر جهت یک آزمون است؛
+   با ۶ بازو و ۳ برش (کل/لانگ/شورت) ۱۸ خانه می‌شود و آستانه از همان
+   شمار درمی‌آید، نه از ۰.۰۵ ثابت.
+۳. **ترفیع یعنی پیشنهاد، نه اجرا.** هیچ دروازه و هیچ عددی از این مسیر
+   خودکار عوض نمی‌شود (قانون ۰۳/۱۲). حکم `PROMOTE` فقط می‌گوید شواهد
+   جمع شد؛ تصمیم با حمید است.
+
+    python3 -m hamid.geometry_verdict --write
+    python3 -m hamid.geometry_verdict --selftest
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import random
+import statistics
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+ROOT = HERE.parents[2]
+
+BACKTESTS = ROOT / "claude-liam-signal" / "backtests"
+OUT = ROOT / "signals" / "geometry-verdict.json"
+
+MIN_N_PROMOTE = 400
+MIN_N_REJECT = 3000
+ALPHA = 0.05
+BOOT = 3000
+CUTS = ("overall", "long", "short")
+
+
+def strict_r(t):
+    """R سختگیرانه: خروجِ «سربه‌سر» صفر می‌گیرد، نه پاداشِ کاملِ R1."""
+    r = 0.0 if t.get("why") == "breakeven" else t.get("r")
+    if r is None:
+        return None
+    return r - (t.get("fee_r") or 0.0)
+
+
+def sidak(m, alpha=ALPHA):
+    """آستانهٔ تک‌آزمونی وقتی m آزمون هم‌زمان می‌دهیم."""
+    m = max(1, int(m))
+    return 1.0 - (1.0 - alpha) ** (1.0 / m)
+
+
+def boot_ci(xs, alpha, seed=17, b=BOOT):
+    """بازهٔ بوت‌استرپ در سطحِ داده‌شده. نمونهٔ کم = None، نه عددِ ساختگی."""
+    n = len(xs)
+    if n < 30:
+        return None
+    rnd = random.Random(seed)
+    cap = min(n, 4000)
+    means = []
+    for _ in range(b):
+        s = 0.0
+        for _ in range(cap):
+            s += xs[rnd.randrange(n)]
+        means.append(s / cap)
+    means.sort()
+    lo = means[int((alpha / 2) * b)]
+    hi = means[min(b - 1, int((1 - alpha / 2) * b))]
+    return round(lo, 4), round(hi, 4)
+
+
+def _slice(trades, cut):
+    if cut == "long":
+        return [t for t in trades if t.get("dir") == "LONG"]
+    if cut == "short":
+        return [t for t in trades if t.get("dir") == "SHORT"]
+    return trades
+
+
+def more_needed(xs, alpha):
+    """چند نمونهٔ دیگر تا CI از صفر رد کند — برآورد، با مرزِ صریح.
+
+    از رابطهٔ `نیم‌پهنا ∝ ۱/√n` می‌آید: اگر میانگین همین بماند، n لازم
+    حدوداً `n × (نیم‌پهنا ÷ |میانگین|)²` است. اگر میانگین صفر یا منفی
+    باشد عددی برنمی‌گردد — «بیشتر جمع کن» آن‌جا حرفِ بی‌معنایی است.
+    """
+    n = len(xs)
+    if n < 30:
+        return None
+    m = statistics.fmean(xs)
+    ci = boot_ci(xs, alpha, seed=23)
+    if not ci or m <= 0:
+        return None
+    half = (ci[1] - ci[0]) / 2.0
+    if half <= 0:
+        return None
+    need = n * (half / abs(m)) ** 2
+    return max(0, int(math.ceil(need - n)))
+
+
+def judge(by_arm, alpha_per_test=None):
+    """{بازو: [معامله‌ها]} → جدولِ حکم برای هر بازو × هر جهت."""
+    cells = [(a, c) for a in by_arm for c in CUTS]
+    alpha = alpha_per_test if alpha_per_test is not None else sidak(len(cells))
+    rows = {}
+    for arm, trades in by_arm.items():
+        for cut in CUTS:
+            sub = _slice(trades, cut)
+            xs = [v for v in (strict_r(t) for t in sub) if v is not None]
+            key = f"{arm}|{cut}"
+            if not xs:
+                rows[key] = {"arm": arm, "cut": cut, "n": 0,
+                             "verdict": "UNDECIDED", "why": "بی‌نمونه"}
+                continue
+            ci = boot_ci(xs, alpha)
+            mean = round(statistics.fmean(xs), 4)
+            win = round(100 * sum(1 for t in sub if (t.get("r") or 0) > 0) / len(sub), 1)
+            # هم‌جهتی دو تایم — شرطِ ترفیع، نه تزئین
+            tfs = {}
+            for tf in sorted({t.get("tf") for t in sub if t.get("tf")}):
+                sx = [v for v in (strict_r(t) for t in sub if t.get("tf") == tf)
+                      if v is not None]
+                if sx:
+                    tfs[tf] = round(statistics.fmean(sx), 4)
+            consistent = len(tfs) >= 2 and (all(v > 0 for v in tfs.values())
+                                            or all(v < 0 for v in tfs.values()))
+            row = {"arm": arm, "cut": cut, "n": len(xs), "win": win,
+                   "strict": mean, "ci": list(ci) if ci else None,
+                   "by_tf": tfs, "consistent": consistent,
+                   "alpha": round(alpha, 5)}
+            if ci and ci[0] > 0 and len(xs) >= MIN_N_PROMOTE and consistent:
+                row["verdict"] = "PROMOTE"
+                row["why"] = (f"CI سختگیرانه [{ci[0]:+.3f},{ci[1]:+.3f}] بالای صفر "
+                              f"روی n={len(xs)} و هر دو تایم هم‌جهت")
+            elif ci and ci[1] < 0 and len(xs) >= MIN_N_REJECT:
+                row["verdict"] = "REJECT"
+                row["why"] = (f"CI سختگیرانه [{ci[0]:+.3f},{ci[1]:+.3f}] زیر صفر "
+                              f"روی n={len(xs)}")
+            else:
+                row["verdict"] = "UNDECIDED"
+                need = more_needed(xs, alpha)
+                if ci and ci[0] > 0 and not consistent:
+                    row["why"] = "CI بالای صفر ولی دو تایم هم‌جهت نیستند"
+                elif need:
+                    row["why"] = f"~{need} معاملهٔ دیگر لازم است اگر میانگین همین بماند"
+                else:
+                    row["why"] = "شواهد کافی نیست و جهتِ میانگین ترفیع را نمی‌سازد"
+            rows[key] = row
+    return {"alpha_per_test": round(alpha, 5), "n_cells": len(cells), "rows": rows}
+
+
+def latest_backtest():
+    """تازه‌ترین بک‌تستی که **واقعاً ردیف معامله دارد**.
+
+    `latest.json` فقط خلاصه است و کلید `trades` ندارد؛ اگر مستقیم از آن
+    می‌خواندیم، داور برای همیشه و بی‌صدا NO_DATA می‌داد و کسی نمی‌فهمید.
+    فایل‌های تاریخ‌دار ردیف‌ها را دارند، پس از تازه‌ترینِ آن‌ها شروع
+    می‌کنیم و فقط اگر هیچ‌کدام نداشت سراغ latest می‌رویم.
+    """
+    dated = sorted(BACKTESTS.glob("backtest-*.json"), reverse=True)
+    for p in dated[:3]:
+        try:
+            doc = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:                            # noqa: BLE001
+            continue
+        if doc.get("trades"):
+            doc["_file"] = p.name
+            return doc
+    p = BACKTESTS / "latest.json"
+    if not p.exists():
+        return None
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def build(doc=None):
+    doc = doc or latest_backtest()
+    if not doc or not doc.get("trades"):
+        return {"generated": int(time.time() * 1000), "status": "NO_DATA",
+                "why": "فایل معامله‌های بک‌تست موجود نیست — داور عددی نمی‌سازد"}
+    out = judge(doc["trades"])
+    out.update({"generated": int(time.time() * 1000), "status": "OK",
+                "source": doc.get("source"), "symbols": doc.get("symbols"),
+                "bars": doc.get("bars"), "series": doc.get("series"),
+                "backtest_at": doc.get("generated"),
+                "rule": {"promote": f"CI سختگیرانهٔ شیداک بالای صفر · n≥{MIN_N_PROMOTE} · هر دو تایم هم‌جهت",
+                         "reject": f"CI سختگیرانهٔ شیداک زیر صفر · n≥{MIN_N_REJECT}",
+                         "registered": "۱۳ سپتامبر، پیش از اجرای بازوها"},
+                "boundary": ("ترفیع = پیشنهاد، نه اجرا. هیچ دروازه و هیچ عددی از "
+                             "این مسیر خودکار عوض نمی‌شود (قانون ۰۳/۱۲).")})
+    return out
+
+
+def render(v):
+    if v.get("status") != "OK":
+        return f"داور هندسه: {v.get('status')} — {v.get('why')}"
+    L = [f"داور هندسه — {v.get('symbols')} نماد · {v.get('series')} سری · "
+         f"آستانهٔ شیداک {v['alpha_per_test']} روی {v['n_cells']} خانه"]
+    for key in sorted(v["rows"]):
+        r = v["rows"][key]
+        if not r.get("n"):
+            continue
+        ci = r.get("ci")
+        cis = f"[{ci[0]:+.3f},{ci[1]:+.3f}]" if ci else "—"
+        L.append(f"  {r['arm']:<10} {r['cut']:<7} n={r['n']:>6} "
+                 f"strict={r['strict']:+.3f}R {cis:<20} {r['verdict']}")
+    return "\n".join(L)
+
+
+def _selftest():
+    ok, fail = 0, []
+
+    def check(name, cond, extra=""):
+        nonlocal ok
+        if cond:
+            ok += 1
+            print(f"  ✓ {name}")
+        else:
+            fail.append(name)
+            print(f"  ✗ {name}" + (f"\n      ↳ {extra}" if extra else ""))
+
+    # ۱) معیار سختگیرانه
+    check("خروجِ سربه‌سر صفر می‌گیرد نه R1",
+          strict_r({"why": "breakeven", "r": 2.0, "fee_r": 0.1}) == -0.1)
+    check("خروجِ عادی همان R منهای کارمزد است",
+          abs(strict_r({"why": "stop", "r": -1.0, "fee_r": 0.2}) + 1.2) < 1e-9)
+    check("ردیفِ بی‌R عدد نمی‌سازد (قانون ۱)",
+          strict_r({"why": "stop", "fee_r": 0.2}) is None)
+
+    # ۲) شیداک
+    check("شیداک با آزمونِ بیشتر سخت‌تر می‌شود", sidak(18) < sidak(4) < ALPHA)
+    check("یک آزمون همان ۰.۰۵ است", abs(sidak(1) - ALPHA) < 1e-12)
+
+    # ۳) داور روی دادهٔ ساخته‌شده
+    def mk(n, r, dirn, tf, why="target2"):
+        return [{"r": r, "fee_r": 0.05, "why": why, "dir": dirn, "tf": tf}
+                for _ in range(n)]
+
+    strong = mk(400, 1.0, "LONG", "15m") + mk(400, 1.0, "LONG", "5m")
+    bad = mk(1600, -1.0, "SHORT", "15m") + mk(1600, -1.0, "SHORT", "5m")
+    v = judge({"arm": strong + bad})
+    check("لانگِ قوی PROMOTE می‌گیرد", v["rows"]["arm|long"]["verdict"] == "PROMOTE",
+          str(v["rows"]["arm|long"]))
+    check("شورتِ بد REJECT می‌گیرد", v["rows"]["arm|short"]["verdict"] == "REJECT",
+          str(v["rows"]["arm|short"]))
+    check("لانگ و شورت جدا داوری شده‌اند — نه یک میانگینِ قاطی",
+          v["rows"]["arm|long"]["strict"] > 0 > v["rows"]["arm|short"]["strict"])
+    check("آستانهٔ هر خانه از شمارِ واقعیِ خانه‌ها آمده",
+          v["n_cells"] == 3 and abs(v["alpha_per_test"] - sidak(3)) < 1e-5)
+
+    # ۴) قیدهایی که ترفیعِ ارزان را می‌گیرند
+    small = mk(120, 1.0, "LONG", "15m") + mk(120, 1.0, "LONG", "5m")
+    check("نمونهٔ کم ترفیع نمی‌گیرد حتی با میانگینِ عالی",
+          judge({"a": small})["rows"]["a|long"]["verdict"] == "UNDECIDED")
+    split = mk(400, 1.0, "LONG", "15m") + mk(400, -0.2, "LONG", "5m")
+    r_split = judge({"a": split})["rows"]["a|long"]
+    check("دو تایمِ ناهم‌جهت ترفیع نمی‌گیرد",
+          r_split["verdict"] == "UNDECIDED" and not r_split["consistent"],
+          str(r_split))
+    check("و دلیلش صریح نوشته می‌شود", "هم‌جهت" in r_split["why"])
+    mid = mk(1000, 0.02, "LONG", "15m") + mk(1000, 0.02, "LONG", "5m")
+    r_mid = judge({"a": mid})["rows"]["a|long"]
+    check("بلاتکلیفِ نزدیکِ صفر برآوردِ «چند تا دیگر» می‌دهد",
+          r_mid["verdict"] in ("PROMOTE", "UNDECIDED"))
+
+    # ۵) مرزها
+    check("بی‌دادهٔ بک‌تست، NO_DATA می‌دهد نه عددِ ساختگی",
+          build({"trades": {}})["status"] == "NO_DATA")
+    b = build({"trades": {"a": strong}, "symbols": 3, "series": 4})
+    check("خروجی مرزِ صادقانه دارد (قانون ۱۲)", "قانون ۰۳" in b["boundary"])
+    check("و قاعدهٔ توقف روی خروجی ثبت است", "registered" in b["rule"])
+    check("رندر بدون خطا کار می‌کند", "داور هندسه" in render(b))
+
+    # ۶) ضدِ بررسیِ توخالی — داور باید واقعاً به دادهٔ متفاوت جواب متفاوت بدهد
+    flat = mk(4000, 0.0, "LONG", "15m") + mk(4000, 0.0, "LONG", "5m")
+    check("دادهٔ کاملاً صفر ترفیع نمی‌گیرد",
+          judge({"a": flat})["rows"]["a|long"]["verdict"] != "PROMOTE")
+
+    print(f"\ngeometry_verdict: {ok} بررسی سبز"
+          + (f" · {len(fail)} قرمز: {fail}" if fail else ""))
+    return 1 if fail else 0
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--write", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
+    a = ap.parse_args(argv)
+    if a.selftest:
+        return _selftest()
+    v = build()
+    print(render(v))
+    if a.write:
+        try:
+            import brain as _b
+            if getattr(_b, "SANDBOX", False):
+                return 0
+        except Exception:                            # noqa: BLE001
+            pass
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        OUT.write_text(json.dumps(v, ensure_ascii=False, indent=1), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
