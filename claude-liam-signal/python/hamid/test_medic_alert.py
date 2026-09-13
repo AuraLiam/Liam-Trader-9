@@ -207,6 +207,44 @@ check("و تولیدکننده (pump-review) خودش pump-radar.json را من�
       'cp signals/pump-radar.json "$BK/"' in _review
       or ("scripts/publish.sh" in _review and " signals" in _review))
 
+# ── اجرای گیرکرده در صف (۱۳ سپتامبر) ──────────────────────────────────
+# دو انجین خاموش بودند و هیچ آلارمی نداشتند، چون پاسبان فقط اجرای
+# `completed` را می‌شمرد. این بخش هم خودِ داور را می‌سنجد و هم سیم‌کشی‌اش.
+import time as _t                                    # noqa: E402
+_now = _t.time()
+
+
+def _run(status, mins_ago, name="Scalp desk (1m)", num=449):
+    ts = _t.strftime("%Y-%m-%dT%H:%M:%SZ", _t.gmtime(_now - mins_ago * 60))
+    return {"status": status, "created_at": ts, "name": name, "run_number": num}
+
+
+_f, _s = M.stuck_runs([_run("queued", 15 * 60)], now=_now)
+check("اجرای ۱۵ساعتهٔ در صف خرابی است", _s and len(_f) == 1)
+check("و نام ورک‌فلو در متنِ خرابی هست", "Scalp desk" in (_f[0] if _f else ""))
+_f2, _s2 = M.stuck_runs([_run("queued", 10)], now=_now)
+check("اجرای ۱۰دقیقه‌ای در صف خرابی نیست (ازدحام عادی)", not _s2 and not _f2)
+_f3, _s3 = M.stuck_runs([_run("in_progress", 300)], now=_now)
+check("اجرای در حالِ اجرا خرابی نیست — ضربان ۳۵۵ دقیقه‌ای عمدی است",
+      not _s3 and not _f3)
+_f4, _s4 = M.stuck_runs([_run("pending", 20 * 60),
+                         _run("waiting", 25 * 24 * 60, "Mine the past", 2)],
+                        now=_now)
+check("pending و waiting هم مثل queued شمرده می‌شوند", _s4 and len(_f4) == 2)
+check("سنِ زیر ۴۸ ساعت به «ساعت» گزارش می‌شود", "ساعت" in _f4[0])
+check("و سنِ ۲۵روزه به «روز» — همان نمونهٔ واقعیِ Mine the past",
+      "25 روز" in _f4[1] or "۲۵ روز" in _f4[1], _f4[1])
+_f5, _s5 = M.stuck_runs([{"status": "queued", "created_at": "زمانِ خراب"}],
+                        now=_now)
+check("مهرِ زمانِ ناخوانا حدس زده نمی‌شود (قانون ۱)", not _s5 and not _f5)
+check("آستانه از کادنس واقعی آمده، نه سلیقه (≥۶۰ دقیقه)",
+      M.STUCK_QUEUED_MIN >= 60)
+# سیم‌کشی: بی این، داور درست می‌ماند و باز هیچ‌کس خبردار نمی‌شود
+check("examine پرسشِ جدای صف را می‌زند (بدون فیلترِ ۶ساعته)",
+      "status=queued" in _msrc and "stuck_runs(" in _msrc)
+check("و نتیجه‌اش هم در finds هم در faults می‌نشیند (درس ۲۵ اوت)",
+      _msrc.count("st_faults") >= 2)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
