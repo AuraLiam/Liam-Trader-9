@@ -154,6 +154,24 @@ JOBS = [
          cmd=["python3", "-m", "hamid.skill_ledger", "--write"]),
     dict(key="agent_scores", every=1800, wf="hamid-cycle.yml", timeout=300,
          desc="امتیاز ایجنت‌ها", cmd=["python3", "-m", "hamid.agent_scores"]),
+    # سه تولیدکننده‌ای که چرخه می‌زند و جدول محلی جا انداخته بود (۱۳ سپتامبر).
+    # بی این‌ها سرویس محلی سه فایل وضعیت کمتر می‌ساخت از Actions، و همان
+    # واگراییِ خاموشی می‌شد که این جدول برای جلوگیری از آن هست.
+    dict(key="gate_verdict", every=1800, wf="hamid-cycle.yml", timeout=300,
+         desc="داور دفترِ ضدواقعیتِ دروازهٔ روند (E17)",
+         cmd=["python3", "-m", "hamid.gate_verdict", "--write"]),
+    dict(key="msg_budget", every=1800, wf="hamid-cycle.yml", timeout=180,
+         desc="بودجهٔ پیام تلگرام (E25)",
+         cmd=["python3", "-m", "hamid.msg_budget", "--write", "--check"]),
+    dict(key="direction_lessons", every=1800, wf="hamid-cycle.yml", timeout=300,
+         desc="درس‌های جهت از دفتر بسته (E20)",
+         cmd=["python3", "-m", "hamid.direction_lessons", "--write"]),
+    dict(key="guardian_exam", every=1800, wf="hamid-cycle.yml", timeout=300,
+         desc="امتحان مهارت و تجربهٔ ۱۲ مراقب (E00)",
+         cmd=["python3", "-m", "hamid.guardian_exam", "--write"]),
+    dict(key="signal_audit", every=900, wf="pump-radar.yml", tg=True, timeout=240,
+         desc="بازرس شکاکِ مسیر سیگنال (E23)",
+         cmd=["python3", "-m", "hamid.signal_audit", "--write", "--alert"]),
     dict(key="position_watch", every=1800, wf="hamid-cycle.yml", tg=True,
          timeout=240, desc="پاسبان پوزیشن‌های مانده",
          cmd=["python3", "-m", "hamid.position_watch", "--alert"]),
@@ -230,6 +248,12 @@ GIT_ONLY = {
         "اجتماع دفتر ضدتکرارِ دو رانر — یک نویسنده بیشتر نداریم",
     "hamid.selfcheck":
         "خودآزمایی دروازهٔ CI — روی لپ‌تاپ کارِ دکتر است",
+    "hamid.ob_lab --selftest":
+        "خودآزمایی آزمایشگاه اردر بلاک — دروازهٔ CI است، نه تولیدکنندهٔ وضعیت",
+    "hamid.geom_lab --selftest":
+        "خودآزمایی آزمایشگاه هندسه — دروازهٔ CI است، نه تولیدکنندهٔ وضعیت",
+    "hamid.short_backtest --selftest":
+        "خودآزمایی بک‌تست شورت — دروازهٔ CI است، نه تولیدکنندهٔ وضعیت",
     "hamid.sentinel --alert":
         "پاسبان نویسندهٔ کامیت — وقتی کامیتی در مسیر سیگنال نیست، بی‌موضوع است",
     "hamid.escalation":
