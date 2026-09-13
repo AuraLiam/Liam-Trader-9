@@ -82,19 +82,69 @@ def sidak(m, alpha=ALPHA):
     return 1.0 - (1.0 - alpha) ** (1.0 / m)
 
 
-def boot_ci(xs, alpha, seed=17, b=BOOT):
-    """بازهٔ بوت‌استرپ در سطحِ داده‌شده. نمونهٔ کم = None، نه عددِ ساختگی."""
+def boot_ci(xs, alpha, seed=17, b=1000):
+    """بازهٔ بوت‌استرپ سادهٔ iid در سطحِ داده‌شده. نمونهٔ کم = None.
+
+    تصحیح ۱۳ سپتامبر: نسخهٔ اول نمونه‌گیری را به ۴٬۰۰۰ ردیف سقف می‌زد تا
+    سریع بماند؛ برای n=۴۰٬۰۰۰ یعنی بازه‌ای ~۳ برابر پهن‌تر از واقعی. همان
+    سقف بود که ibs را «شاملِ صفر» نشان می‌داد در حالی که بوت‌استرپ
+    خوشه‌ای (که هیچ سقفی ندارد) از صفر رد می‌کرد. حالا با تمامِ n و
+    `random.choices` (پیاده‌سازی C) نمونه می‌گیرد؛ داور روی خوشه‌ای حکم
+    می‌دهد و این فقط برای مقایسهٔ دو راه کنارش می‌ماند.
+    """
     n = len(xs)
     if n < 30:
         return None
     rnd = random.Random(seed)
-    cap = min(n, 4000)
     means = []
     for _ in range(b):
-        s = 0.0
-        for _ in range(cap):
-            s += xs[rnd.randrange(n)]
-        means.append(s / cap)
+        means.append(sum(rnd.choices(xs, k=n)) / n)
+    means.sort()
+    lo = means[int((alpha / 2) * b)]
+    hi = means[min(b - 1, int((1 - alpha / 2) * b))]
+    return round(lo, 4), round(hi, 4)
+
+
+DAY_MS = 24 * 3600 * 1000
+
+
+def _day_of(t):
+    a = t.get("openedAt")
+    return int(a // DAY_MS) if isinstance(a, (int, float)) else "?"
+
+
+def cluster_boot_ci(trades, alpha, seed=17, b=BOOT, min_clusters=10, key="sym"):
+    """بوت‌استرپ خوشه‌ای — معامله‌های یک نماد، یا یک روز، مستقل نیستند.
+
+    درس ۲۴ اوت (دفترِ باددار): CI فرض می‌کند هر ردیف یک مشاهدهٔ مستقل
+    است؛ ۵۰ معاملهٔ هم‌زمانِ یک نماد در یک روند، پنجاه مشاهده نیستند.
+    واحدِ نمونه‌گیری `key` است: «نماد» (وابستگیِ درون‌نماد) یا «روز»
+    (وابستگیِ رژیمِ بازار بین همهٔ نمادها). زیر ۱۰ خوشه، None — نه بازهٔ
+    ساختگی.
+
+    اندازه‌گیری ۱۳ سپتامبر که این دو-خوشه‌ای‌بودن را اجباری کرد: با
+    خوشه‌بندی فقط روی نماد، ۸ خانه ترفیع می‌گرفتند؛ با خوشه‌بندی روی
+    روز، فقط یکی. یعنی بیشترِ آن ۸ تا وابستگیِ روزانه بودند نه لبه.
+    """
+    groups = {}
+    for t in trades:
+        v = strict_r(t)
+        if v is None:
+            continue
+        k = _day_of(t) if key == "day" else (t.get("sym") or "?")
+        groups.setdefault(k, []).append(v)
+    keys = list(groups)
+    if len(keys) < min_clusters:
+        return None
+    rnd = random.Random(seed)
+    means = []
+    for _ in range(b):
+        s = n = 0.0
+        for _ in range(len(keys)):
+            g = groups[keys[rnd.randrange(len(keys))]]
+            s += sum(g)
+            n += len(g)
+        means.append(s / n)
     means.sort()
     lo = means[int((alpha / 2) * b)]
     hi = means[min(b - 1, int((1 - alpha / 2) * b))]
@@ -144,7 +194,14 @@ def judge(by_arm, alpha_per_test=None):
                 rows[key] = {"arm": arm, "cut": cut, "n": 0,
                              "verdict": "UNDECIDED", "why": "بی‌نمونه"}
                 continue
-            ci = boot_ci(xs, alpha)
+            # داور روی **پهن‌ترینِ** دو CI خوشه‌ای حکم می‌دهد (نماد و روز)
+            # — دو-خوشه‌ایِ محافظه‌کارانه؛ CI سادهٔ iid فقط برای مقایسه.
+            ci_iid = boot_ci(xs, alpha)
+            ci_sym = cluster_boot_ci(sub, alpha, key="sym")
+            ci_day = cluster_boot_ci(sub, alpha, key="day")
+            both = [c for c in (ci_sym, ci_day) if c]
+            ci = (round(min(c[0] for c in both), 4), round(max(c[1] for c in both), 4)) \
+                if both else ci_iid
             mean = round(statistics.fmean(xs), 4)
             win = round(100 * sum(1 for t in sub if (t.get("r") or 0) > 0) / len(sub), 1)
             # هم‌جهتی دو تایم — شرطِ ترفیع، نه تزئین
@@ -158,6 +215,11 @@ def judge(by_arm, alpha_per_test=None):
                                             or all(v < 0 for v in tfs.values()))
             row = {"arm": arm, "cut": cut, "n": len(xs), "win": win,
                    "strict": mean, "ci": list(ci) if ci else None,
+                   "ci_iid": list(ci_iid) if ci_iid else None,
+                   "ci_sym": list(ci_sym) if ci_sym else None,
+                   "ci_day": list(ci_day) if ci_day else None,
+                   "n_symbols": len({t.get("sym") for t in sub}),
+                   "n_days": len({_day_of(t) for t in sub}),
                    "by_tf": tfs, "consistent": consistent,
                    "alpha": round(alpha, 5)}
             if ci and ci[0] > 0 and len(xs) >= MIN_N_PROMOTE and consistent:
@@ -264,8 +326,36 @@ def _selftest():
 
     # ۳) داور روی دادهٔ ساخته‌شده
     def mk(n, r, dirn, tf, why="target2"):
-        return [{"r": r, "fee_r": 0.05, "why": why, "dir": dirn, "tf": tf}
-                for _ in range(n)]
+        # ۲۰ نماد و ۳۰ روز، تا هر دو خوشه‌بندی واقعاً خوشه داشته باشند
+        return [{"r": r, "fee_r": 0.05, "why": why, "dir": dirn, "tf": tf,
+                 "sym": f"S{i % 20}", "openedAt": (i % 30) * DAY_MS}
+                for i in range(n)]
+
+    # خوشهٔ روز: لبه‌ای که فقط در چند روزِ خاص است، نباید ترفیع بگیرد
+    daysy = [{"r": (2.0 if (i % 30) < 3 else -0.02), "fee_r": 0.0, "why": "target2",
+              "dir": "LONG", "tf": ("15m" if i % 2 else "5m"), "sym": f"S{i % 20}",
+              "openedAt": (i % 30) * DAY_MS} for i in range(3000)]
+    _d = cluster_boot_ci(daysy, 0.05, key="day")
+    _s = cluster_boot_ci(daysy, 0.05, key="sym")
+    check("خوشهٔ روز، لبهٔ متمرکز در چند روز را پهن‌تر از خوشهٔ نماد می‌بیند",
+          _d is not None and _s is not None and (_d[1] - _d[0]) > (_s[1] - _s[0]),
+          f"day={_d} sym={_s}")
+    _r = judge({"a": daysy})["rows"]["a|long"]
+    check("و داور پهن‌ترین را می‌گیرد — ترفیع نمی‌دهد",
+          _r["verdict"] != "PROMOTE" and _r["ci"][0] <= min(_d[0], _s[0]) + 1e-9, str(_r["ci"]))
+
+    # بوت‌استرپ خوشه‌ای: یک نمادِ «طلایی» نباید به‌تنهایی ترفیع بسازد
+    mixed = [{"r": (3.0 if i % 20 == 0 else -0.05), "fee_r": 0.0, "why": "target2",
+              "dir": "LONG", "tf": ("15m" if i % 2 else "5m"), "sym": f"S{i % 20}"}
+             for i in range(2000)]
+    _xs = [strict_r(t) for t in mixed]
+    _iid = boot_ci(_xs, 0.05)
+    _cl = cluster_boot_ci(mixed, 0.05)
+    check("خوشه‌ای: میانگینِ مثبتِ وابسته به یک نماد، CI پهن‌تر می‌گیرد",
+          _cl is not None and _iid is not None and (_cl[1] - _cl[0]) > (_iid[1] - _iid[0]),
+          f"iid={_iid} cluster={_cl}")
+    check("زیر ۱۰ خوشه بازه ساخته نمی‌شود (قانون ۱)",
+          cluster_boot_ci(mixed[:5], 0.05) is None)
 
     strong = mk(400, 1.0, "LONG", "15m") + mk(400, 1.0, "LONG", "5m")
     bad = mk(1600, -1.0, "SHORT", "15m") + mk(1600, -1.0, "SHORT", "5m")

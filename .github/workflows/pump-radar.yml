@@ -121,6 +121,7 @@ jobs:
           python3 -m hamid.test_short_strategy
           python3 -m hamid.short_backtest --selftest
           python3 -m hamid.test_state_bus
+          python3 -m hamid.test_intake
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
           python3 -m hamid.test_fomo
@@ -229,6 +230,13 @@ jobs:
               # loop_audit، چون از خروجی همان‌ها می‌خواند. سقف کهنگی‌اش ۴۵د
               # است، پس باید در همین زنجیرهٔ */15 باشد نه جای کم‌کادنس‌تر.
               (cd claude-liam-signal/python && python3 -m hamid.scorecard --write) || true
+              # اسکن‌بردار + دسته‌بند (قانون ۱۷، دستور حمید ۱۳ سپتامبر):
+              # هر دور یک صندوقِ ورودی و سطلِ هر انجین — تا ایجنت‌ها
+              # به‌جای بازکردنِ ده فایل، سطل خودشان را بخوانند و فقط روی
+              # «تغییر» ریزنینگ کنند. بعد از state_bus/scorecard چون از
+              # قرارداد و تازگیِ همان‌ها می‌خواند.
+              (cd claude-liam-signal/python && python3 -m hamid.intake --write) || true
+              (cd claude-liam-signal/python && python3 -m hamid.dispatch --write) || true
               # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
               # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را

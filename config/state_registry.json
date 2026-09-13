@@ -950,6 +950,28 @@
    "kind": "snapshot",
    "cadence_note": "بک‌تست تاریخی کرون روزانه دارد (۰۵:۳۷ UTC)؛ سقف ۲۸۸۰ یعنی دو نوبت — داورِ هندسه/شورت، عکس‌فوریِ سنجش است نه فیدِ تصمیم",
    "optional": true
+  },
+  "intake.json": {
+   "layer": "L7_health",
+   "owner": "E00",
+   "producer": "hamid/intake.py --write (pump-radar.yml هر دور · liam9d هر ۵ دقیقه)",
+   "max_age_min": 20,
+   "consumer": "all",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "اسکن‌بردار: هر دورِ زنجیره (~۵ دقیقه، روی Actions عملاً ۵–۱۵)؛ سقف ۲۰ مثل feed-health. فهرستِ داده از خودِ همین قرارداد مشتق می‌شود",
+   "optional": true
+  },
+  "buckets.json": {
+   "layer": "L7_health",
+   "owner": "E00",
+   "producer": "hamid/dispatch.py --write (بعد از intake، همان کادنس)",
+   "max_age_min": 20,
+   "consumer": "all",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "دسته‌بند: سطلِ هر انجین/ایجنت با read_next — ایجنت اول این را می‌خواند، بعد فقط فایل‌های تغییرکرده/کهنه را",
+   "optional": true
   }
  }
 }

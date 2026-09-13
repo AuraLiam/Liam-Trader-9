@@ -362,6 +362,13 @@ jobs:
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.work_report --hours 24 || true
 
+      # نسخهٔ انتقال به چتِ تازه (دستور حمید ۱۳ سپتامبر) — هر چرخه از
+      # فایل‌های وضعیت بازساخته می‌شود تا هر وقت خواست، همان لحظه آماده
+      # باشد. بخش دست‌نویسش OPEN-THREADS.md است.
+      - name: نسخهٔ انتقال (HANDOFF.md)
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.handoff --write || true
+
       # لایهٔ نقدشوندگی برتر ۶۰ (دستور حمید، ۲۱ اوت: «همینو استراتژی کن»).
       # سنجیده روی dash-backtest واقعی: top60 CI[+0.199,+0.669] کاملاً بالای
       # صفر، رتبهٔ ۶۱+ هنوز صفر داخلش. از این پس liam9_strategy.analyze()

@@ -24,3 +24,12 @@ When invoked:
 5. Return an `ENGINE_REVIEW_PACKET` containing: scope, files read, evidence, defects, race risks, missing tests, safe patch plan, acceptance tests, research references.
 6. Do not edit shared files. The lead Fable 5 integrator serializes changes after comparing all specialist packets.
 7. Never promote research into production or activate live execution.
+
+<!-- bucket-rule -->
+## سطلِ من (قانون ۱۷ — اول بخوان، بعد فکر کن)
+
+قبل از هر تحلیل: `python3 -m hamid.dispatch --bucket E21` (یا
+`signals/buckets.json`). فایلِ خام را **فقط** از `read_next` باز کن؛ اگر
+خالی بود یعنی از دورِ قبل چیزی عوض نشده — هیچ فایلی باز نکن و چیزی را
+دوباره نفهم. آیتم‌های `viewpoint` (خبر/تقویم/جمعیت/ترند/آنلاک) دیدگاه‌اند
+نه دروازه (قانون ۱۵). ریزنینگ فقط روی `changed`.
