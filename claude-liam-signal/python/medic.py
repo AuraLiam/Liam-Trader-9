@@ -58,6 +58,56 @@ def age_min(j):
     return None if not g else (time.time() * 1000 - g) / 60000
 
 
+STUCK_QUEUED_MIN = 90   # سنگین‌ترین اجرا ~۳۰د طول می‌کشد؛ ۹۰د یعنی صف، نه ازدحام
+
+
+def stuck_runs(runs, now=None, max_min=STUCK_QUEUED_MIN):
+    """اجراهایی که در صف گیر کرده‌اند → (faults, sick).
+
+    نقطهٔ کورِ اندازه‌گیری‌شدهٔ ۱۳ سپتامبر — دو انجین خاموش بودند و هیچ
+    آلارمی نداشتند:
+
+      · «Scalp desk (1m)» اجرای ۴۴۹ از ۱۲ سپتامبر ۱۹:۳۲ در صف ماند (~۱۵
+        ساعت). چون `concurrency` گروهش `cancel-in-progress: false` است،
+        همان یک اجرای گیرکرده سرِ صف را بست و هر اجرای بعدی، اجرای
+        پندینگِ قبلی را کنسل کرد — یعنی میز اسکلپ **هرگز دوباره اجرا
+        نشد**. `scalp.json` و `scalp-exec.json` ۱۱۶۹ دقیقه کهنه شدند.
+      · «Mine the past» اجرای ۲ از ۱۹ اوت در صف ماند — **۲۵ روز**.
+
+    چرا هیچ‌کس ندید: `github_health` فقط `status == "completed"` را
+    می‌شمارد، و پرسشِ API هم `created>۶ ساعت اخیر` دارد. اجرای گیرکرده
+    نه کامل است نه تازه — پس از هر دو فیلتر می‌افتاد. پاسبانی که فقط
+    «کارِ تمام‌شده» را می‌بیند، «کارِ شروع‌نشده» را هرگز نمی‌بیند.
+
+    درمان روی خودِ کلاس است نه روی این دو نمونه: هر اجرای
+    queued/pending/waiting که از `max_min` بگذرد خرابی است، هر ورک‌فلویی
+    که باشد.
+    """
+    now = now or time.time()
+    faults, seen = [], set()
+    for x in runs or []:
+        if str(x.get("status")) not in ("queued", "pending", "waiting"):
+            continue
+        ts = x.get("created_at") or ""
+        try:
+            t0 = time.mktime(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")) - time.timezone
+        except Exception:                            # noqa: BLE001 — مهرِ ناخوانا
+            continue                                 # حدس نمی‌زنیم (قانون ۱)
+        mins = (now - t0) / 60.0
+        if mins < max_min:
+            continue
+        name = str(x.get("name") or "؟")
+        if name in seen:
+            continue
+        seen.add(name)
+        hrs = mins / 60.0
+        age = f"{hrs:.0f} ساعت" if hrs < 48 else f"{hrs/24:.0f} روز"
+        faults.append(f"⛔ «{name}» {age} در صف گیر کرده (اجرای "
+                      f"{x.get('run_number') or x.get('id')}) — تا کنسل نشود "
+                      "هیچ اجرای بعدیِ همان گروه شروع نمی‌شود")
+    return faults, bool(faults)
+
+
 def github_health(runs):
     """وضعِ فعلی هر ورک‌فلو از فهرست اجراهای اخیر → (faults, infos, sick, wake).
 
@@ -228,6 +278,23 @@ def examine():
         with urllib.request.urlopen(req, timeout=25) as r:
             runs = json.load(r).get("workflow_runs", [])
         gh_faults, gh_infos, gh_sick, gh_wake = github_health(runs)
+        # اجرای گیرکرده در صف: پرسشِ جدا و **بدون فیلترِ تاریخ**. اجرای
+        # ۲۵روزهٔ «Mine the past» با `created>۶ ساعت` اصلاً برنمی‌گشت —
+        # پس افزودنِ بررسی به `runs` بالا کافی نبود، خودِ پرسش هم کور بود.
+        try:
+            qreq = urllib.request.Request(
+                "https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/runs"
+                "?status=queued&per_page=30", headers=hdr)
+            with urllib.request.urlopen(qreq, timeout=25) as qr:
+                qruns = json.load(qr).get("workflow_runs", [])
+            st_faults, st_sick = stuck_runs(qruns)
+            for f_ in st_faults:
+                finds.append(f_)
+                faults.append(f_)
+            if st_sick:
+                sick = True
+        except Exception as e:                       # noqa: BLE001
+            finds.append(f"صفِ گیت‌هاب خوانده نشد: {type(e).__name__}")
         for f_ in gh_faults:
             finds.append(f_)
             faults.append(f_)

@@ -37,6 +37,18 @@ old = (DR.DOM, DR.STATE, DR.SERIES)
 DR.DOM = TMP / "dominance.json"
 DR.STATE = TMP / "state.json"
 DR.SERIES = TMP / "series.json"
+
+# ضدتکرار از ۷ سپتامبر سه‌منبعی شد (نشانگر + کنارگذاشتهٔ /tmp + دفترِ فید)
+# ولی این آزمون فقط نشانگر را جابه‌جا می‌کرد. یعنی از همان روز داشت به
+# وضعیتِ **تولید** نگاه می‌کرد: وقتی گزارشِ ساعتیِ واقعی تازه رفته بود،
+# بررسیِ «بعد از یک ساعت آزاد است» می‌افتاد — و وقتی نرفته بود، سبز
+# می‌شد به دلیلِ درست‌نبودن. محافظِ ساعت‌وابسته، محافظ نیست؛ هر سه منبع
+# باید ایزوله شوند وگرنه این آزمون چیزی را که ادعا می‌کند نمی‌سنجد.
+from hamid import cadence_gate as CG                 # noqa: E402
+old_cg = (CG.SIDECAR, CG.FEED, CG.ARCHIVE)
+CG.SIDECAR = TMP / "sidecar.json"
+CG.FEED = TMP / "feed.json"
+CG.ARCHIVE = TMP / "archive"
 try:
     fresh = {"generated": now, "usdt_dominance": 6.9, "btc_dominance": 59.2,
              "verdict": "آزمایشی",
@@ -119,6 +131,7 @@ try:
           DR.MIN_GAP_MIN >= 50, str(DR.MIN_GAP_MIN))
 finally:
     DR.DOM, DR.STATE, DR.SERIES = old
+    CG.SIDECAR, CG.FEED, CG.ARCHIVE = old_cg
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
