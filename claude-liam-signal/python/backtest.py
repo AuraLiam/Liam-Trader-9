@@ -203,6 +203,26 @@ def describe(name, trades):
         out["ci_net"] = [round(nci[0], 3), round(nci[1], 3)] if nci else None
         out["fee_r_mean"] = round(statistics.fmean(
             [t["fee_r"] for t in trades if t.get("fee_r") is not None]), 3)
+    # سختگیرانه — اندازه‌گیری ۱۳ سپتامبر. `bt_worker.step()` به معامله‌ای
+    # که تی‌پی۱ را لمس کرده و بعد به ورود برگشته، **پاداش کاملِ R1** را
+    # می‌دهد و برچسبش را «breakeven» می‌گذارد. اجرای واقعی این نیست:
+    # نردبان خروج ⅓ را در تی‌پی۱ می‌بندد و بقیه را روی سربه‌سرِ
+    # کارمزددار، و تریل نسخهٔ سه هم روی ۸۰٪ بهترین سود می‌نشیند — پس
+    # برگشتِ کامل تقریباً صفر می‌دهد نه R1.
+    #
+    # اندازهٔ اثر روی همین اجرا (۸۰ نماد، ۶۰۰۰ کندل): base از −۰.۱۱۴ به
+    # −۰.۲۵۱ و ibs از **+۰.۳۸۴ به +۰.۰۵۹** — یعنی ۸۵٪ از برتریِ
+    # ظاهریِ ibs فقط همین یک فرضِ مدل بود.
+    #
+    # عمداً **کنارِ** عدد قبلی می‌نشیند نه جایش (قانون ضد-merge): اعداد
+    # تاریخی معنایشان عوض نمی‌شود، ولی از این پس هیچ گزارشی نمی‌تواند
+    # فقط نسخهٔ خوش‌بین را نقل کند.
+    ss = [(0.0 if t.get("why") == "breakeven" else t["r"]) - (t.get("fee_r") or 0.0)
+          for t in trades if t.get("r_net") is not None]
+    if ss:
+        sci = boot(ss)
+        out["exp_strict"] = round(statistics.fmean(ss), 3)
+        out["ci_strict"] = [round(sci[0], 3), round(sci[1], 3)] if sci else None
     return out
 
 
@@ -306,6 +326,13 @@ def main():
             print(f"  {'net of 0.15% fee':<34} E={overall['exp_net']:+.3f}R  "
                   + (f"[{nci[0]:+.3f}, {nci[1]:+.3f}]  " if nci else "")
                   + f"fee≈{overall.get('fee_r_mean')}R  {nm}")
+        if overall.get("exp_strict") is not None:
+            sci = overall.get("ci_strict")
+            sm = ("✓ سختگیرانه بالای صفر" if sci and sci[0] > 0
+                  else "✗ سختگیرانه زیر صفر" if sci and sci[1] < 0
+                  else "— سختگیرانه شامل صفر")
+            print(f"  {'strict (breakeven paid 0)':<34} E={overall['exp_strict']:+.3f}R  "
+                  + (f"[{sci[0]:+.3f}, {sci[1]:+.3f}]  " if sci else "") + sm)
         per_tf = {}
         for tf in tfs:
             d = describe(f"{tf} only", [t for t in tr if t["tf"] == tf])

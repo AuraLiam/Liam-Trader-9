@@ -129,6 +129,23 @@ def run():
                   d["exp_net"] < d["exp"])
             geo = bt.by_geometry(tr)
             check("تفکیک هندسه سطل می‌سازد", len(geo) >= 1, str(list(geo)))
+            # D4 (۱۳ سپتامبر) — `bt_worker.step()` به معامله‌ای که تی‌پی۱
+            # را لمس کرده و به ورود برگشته، پاداش کاملِ R1 می‌دهد و
+            # «breakeven» صدایش می‌زند. اجرای واقعی ⅓ را می‌بندد و بقیه
+            # را روی سربه‌سر، پس برگشتِ کامل ≈ صفر است نه R1. اندازهٔ
+            # اثر روی اجرای ۸۰نمادیِ ۱۳ سپتامبر: ibs از +۰.۳۸۴ به
+            # +۰.۰۵۹ (۸۵٪ از برتری‌اش) و base از −۰.۱۱۴ به −۰.۲۵۱.
+            check("describe نسخهٔ سختگیرانه را هم می‌دهد (سربه‌سر = ۰)",
+                  d.get("exp_strict") is not None and d.get("ci_strict") is not None,
+                  str({k: d.get(k) for k in ('exp_strict', 'ci_strict')}))
+            check("و سختگیرانه از خالص بیشتر نیست",
+                  d["exp_strict"] <= d["exp_net"] + 1e-9,
+                  f"strict={d['exp_strict']} net={d['exp_net']}")
+            check("و روی گزارش چاپ می‌شود — وگرنه کسی فقط خوش‌بین را نقل می‌کند",
+                  "strict (breakeven paid 0)" in bsrc)
+            # اثبات که بررسی توخالی نیست: ردیفی با سربه‌سر لازم است
+            check("نمونهٔ آزمون واقعاً ردیفِ breakeven دارد",
+                  any(t.get("why") == "breakeven" for t in tr))
         except Exception as e:                       # noqa: BLE001
             check("ماژول backtest بارگذاری شد", False, repr(e)[:150])
 
