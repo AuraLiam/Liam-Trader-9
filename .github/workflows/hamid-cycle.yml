@@ -138,6 +138,7 @@ jobs:
           python3 -m hamid.test_structure_room
           python3 -m hamid.test_newsboard
           python3 -m hamid.test_council
+          python3 -m hamid.test_history_room
           python3 -m hamid.test_risk_desk
           python3 -m hamid.test_brand
           python3 -m hamid.test_skill_ledger
@@ -226,6 +227,12 @@ jobs:
       - name: رادار هوش اردر بلاک
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.ob_intel --symbols 40 || true
+
+      # اتاق تمرین تاریخی (دستور ۱۴ سپتامبر): تابلوی بسته‌های تاریخی و
+      # بازپخش برای کارت پنل — فقط از فایل‌های موجود می‌خواند، عدد نمی‌سازد.
+      - name: اتاق تمرین تاریخی
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.history_room --write || true
 
       # کارنامهٔ تجربه برای مصرف بیرونی (داشبورد حمید). سنجیده روی ۴۴۴
       # معاملهٔ سیگنال‌گرید: با تجربه ۸۶.۹٪ برد / +۰.۳۱۹R، بدون تجربه

@@ -294,6 +294,9 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>تمرین تاریخی و حافظهٔ پایدار <span class="dim" style="font-size:11px;font-weight:400" id="hroomMeta">بازپخش بدون نگاه به آینده — فقط دادهٔ واقعی؛ کمبود صریح اعلام می‌شود</span></h3><div id="hroomBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>ناظر کل (E26) <span class="dim" style="font-size:11px;font-weight:400" id="ovsMeta">هد-تریدر سخت‌گیر — دستور تمرکز مستدل برای ایجنت‌های متخصص؛ بدون وتو</span></h3><div id="ovsBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>جایزهٔ انجین‌ها <span class="dim" style="font-size:11px;font-weight:400" id="rwdMeta">TARGET=+۳ · TRAIL=+۱ · STOP=−۱ · TP از تجربه ۲× — انگیزشی/عیب‌یابانه، بدون وتو و وزن</span></h3><div id="rwdBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🪙 اتاق دامیننس <span class="dim" style="font-size:11px;font-weight:400" id="ddMeta">قاعدهٔ پایه، رأی وزنی تایم‌ها، کانال ۴س/۱س، USDC.D و چرخهٔ پول</span></h3><div id="domDeskBox"></div></div>
@@ -3784,6 +3787,89 @@ function renderFomo(){
 }
 setInterval(fomoFetch,180000);setTimeout(fomoFetch,5200);
 (()=>{const f=DB.get("fomo_cache");if(f&&!FOMO.data){FOMO.data=f;setTimeout(renderFomo,700);}})();
+/* تمرین تاریخی (۱۴ سپتامبر) — تابلوی بسته‌های تاریخی و بازپخش چندساله؛
+   منبع: signals/history-room.json (hamid/history_room.py). عدد جعل نمی‌شود:
+   بخش غایب با دلیل «ندارد» می‌آید. */
+const HROOM={data:null};
+async function hroomFetch(){
+  try{
+    const r=await fetch("./signals/history-room.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){HROOM.data=j;DB.set("hroom_cache",j);renderHroom();}}
+  }catch(e){}
+}
+function renderHroom(){
+  const el=$("#hroomBox");if(!el)return;
+  const j=HROOM.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">اتاق تمرین تاریخی هنوز عکس‌فوری نساخته (چرخهٔ بعدی).</div>`;return;}
+  const meta=$("#hroomMeta");
+  if(meta)meta.textContent="بازپخش بدون نگاه به آینده · "+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const ab=(o)=>o&&o.absent?`<span class="dim" style="font-size:11px">${o.absent}</span>`:null;
+  const b15=j.bundle_15m||{},r3=j.replay_3y||{},ni=j.nightly||{},b5=j.bundle_5m||{};
+  const l15=ab(b15)||`۲۹۸→<b>${b15.symbols_ok}</b> نماد ۱۵د · ${Math.round((b15.total_bytes||0)/1e6)}MB · ${b15.meta_files||0} متا (دامیننس/فاندینگ/جهان) · ${b15.validation||""}`;
+  const ov=r3.overall||{},w=r3.rr3wide||{};
+  const ci=(o)=>o&&o.ci95?`CI [${o.ci95[0]}, ${o.ci95[1]}]`:"";
+  const l3=ab(r3)||`n=<b>${(ov.n||0).toLocaleString("fa-IR")}</b> · خالص <b>${ov.mean_r_net}R</b> ${ci(ov)} · استاپ‌گشاد+rr۳: ${w.mean_r_net??"—"}R ${ci(w)} · ${(r3.trade_span||[]).join(" تا ")}`;
+  const ln=ab(ni)||`${(ni.trades||0).toLocaleString("fa-IR")} ریپلی · ${ni.pairs||0} جفت ارز×جهت · ${ni.generated||""}`;
+  let l5;
+  if(b5.absent){l5=`<span class="dim" style="font-size:11px">${b5.absent}</span>`;}
+  else{const pct=b5.total?Math.round(100*b5.done/b5.total):0;
+    l5=`<b>${b5.done}</b>/${b5.total} نماد (${pct}٪) · ${(b5.rows||0).toLocaleString("fa-IR")} کندل <span style="display:inline-block;width:90px;height:6px;background:#333;border-radius:3px;vertical-align:middle"><span style="display:block;width:${pct}%;height:6px;background:#4a9;border-radius:3px"></span></span>`;}
+  const gaps=(j.gaps||[]).map(g=>`<div class="dim" style="font-size:11px">⛔ ${g}</div>`).join("");
+  el.innerHTML=`<div style="font-size:12px;margin:2px 0"><span class="dim">بستهٔ ۱۵د (درایو حمید):</span> ${l15}</div>
+    <div style="font-size:12px;margin:2px 0"><span class="dim">بازپخش ۳ساله (موتور داشبورد):</span> ${l3}</div>
+    <div style="font-size:12px;margin:2px 0"><span class="dim">تمرین شبانه (backtest.py):</span> ${ln}</div>
+    <div style="font-size:12px;margin:2px 0"><span class="dim">بستهٔ ۵د (در حال جمع‌آوری):</span> ${l5}</div>${gaps}`;
+}
+setInterval(hroomFetch,300000);setTimeout(hroomFetch,5600);
+(()=>{const h=DB.get("hroom_cache");if(h&&!HROOM.data){HROOM.data=h;setTimeout(renderHroom,750);}})();
+/* ناظر کل E26 (۱۴ سپتامبر — «نظارت بر ایجنت‌های متخصص هم روی پنل») —
+   منبع: signals/overseer.json (hamid/overseer.py)؛ فقط نمایش دستورهای تمرکز. */
+const OVS={data:null};
+async function ovsFetch(){
+  try{
+    const r=await fetch("./signals/overseer.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){OVS.data=j;DB.set("ovs_cache",j);renderOvs();}}
+  }catch(e){}
+}
+function renderOvs(){
+  const el=$("#ovsBox");if(!el)return;
+  const j=OVS.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">ناظر کل هنوز دستوری صادر نکرده (هر چرخه).</div>`;return;}
+  const meta=$("#ovsMeta");
+  if(meta)meta.textContent=(j.note||"")+" · "+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const sev={crit:"🔴",warn:"🟠",info:"⚪"};
+  const rows=(j.directives||[]).slice(0,8).map(d=>
+    `<div style="font-size:12px;margin:3px 0">${sev[d.sev]||"⚪"} <b>${d.engine==="*"?"همه":d.engine}</b> — ${d.order} <span class="dim" style="font-size:11px">(${d.reason||""})</span></div>`).join("");
+  el.innerHTML=rows||`<div class="dim" style="font-size:12px">دستوری فعال نیست.</div>`;
+}
+setInterval(ovsFetch,300000);setTimeout(ovsFetch,6000);
+(()=>{const o=DB.get("ovs_cache");if(o&&!OVS.data){OVS.data=o;setTimeout(renderOvs,800);}})();
+/* جایزهٔ انجین‌ها (۱۴ سپتامبر — تکمیل تابلوهای نظارت روی پنل) —
+   منبع: signals/rewards.json (hamid/rewards.py، قانون شب اجرا ۱۷ اوت). */
+const RWD={data:null};
+async function rwdFetch(){
+  try{
+    const r=await fetch("./signals/rewards.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){RWD.data=j;DB.set("rwd_cache",j);renderRwd();}}
+  }catch(e){}
+}
+function renderRwd(){
+  const el=$("#rwdBox");if(!el)return;
+  const j=RWD.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">هنوز جایزه‌ای ثبت نشده.</div>`;return;}
+  const meta=$("#rwdMeta");
+  if(meta)meta.textContent=(j.note||"")+" · "+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const b=(j.board||[]).slice(0,10);
+  const mx=Math.max(1,...b.map(x=>x.points||0));
+  const rows=b.map((x,i)=>
+    `<div style="font-size:12px;margin:3px 0">${["🥇","🥈","🥉"][i]||"·"} <b>${x.engine}</b>
+     <span style="display:inline-block;width:${Math.max(4,Math.round(120*(x.points||0)/mx))}px;height:7px;background:#4a9;border-radius:3px;vertical-align:middle;margin:0 6px"></span>
+     <b>${(x.points||0).toLocaleString("fa-IR")}</b>
+     <span class="dim" style="font-size:11px">تارگت ${x.target||0} · تریل ${x.trail||0} · استاپ ${x.stop||0}</span></div>`).join("");
+  el.innerHTML=rows||`<div class="dim" style="font-size:12px">تابلو خالی است.</div>`;
+}
+setInterval(rwdFetch,300000);setTimeout(rwdFetch,6400);
+(()=>{const w=DB.get("rwd_cache");if(w&&!RWD.data){RWD.data=w;setTimeout(renderRwd,850);}})();
 /* نظرسنجی خبر (۲ سپتامبر) — هر ایجنت دربارهٔ هر خبر چه گفت و چند بار درست
    بود. وزن فقط از کارنامه و با سقف ۵٪؛ این کارت هیچ امتیاز/دروازه‌ای نمی‌سازد. */
 const NPOLL={data:null};
