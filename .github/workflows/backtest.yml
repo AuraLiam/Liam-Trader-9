@@ -44,7 +44,8 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # ۱۴ سپتامبر: بک‌فیل ۵د ۲۵۰روزه (۷۲٬۰۰۰ کندل × ۶۰ نماد) از ۹۰ دقیقه بیشتر است.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,6 +100,15 @@ jobs:
       # اثباتِ محصول، نه اثباتِ اسکریپت: بازوهای تازه باید واقعاً معامله
       # ساخته باشند و داور باید هر سه برشِ هر بازو را داوری کرده باشد.
       # بی این، یک بازوی خاموش سال‌ها «نتیجه نداد» گزارش می‌شد.
+      # داورِ برش رژیم (دستور حمید ۱۴ سپتامبر: «بک‌فیل ۵د تا ۲۵۰ روز با برش
+      # رژیم»). BULL/BEAR از کلوزِ دیروزِ BTC در برابر SMA20، بی‌نگاه به
+      # آینده؛ قاعدهٔ توقف از پیش ثبت‌شده. پیشنهاد است، نه دروازه.
+      - name: داور برش رژیم BULL/BEAR
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.regime_verdict --selftest
+          python3 -m hamid.regime_verdict --write
+
       - name: اثبات محصول — بازوهای هندسه واقعاً معامله دارند
         run: |
           python3 - <<'PY'
@@ -123,6 +133,18 @@ jobs:
           if not rows["ibs_floor|overall"]["n"]:
               print("یادداشت: ibs_floor بی‌معامله — هیچ ستاپی استاپ ≥۱٪ نداشت")
           print(f"داور: {v['n_cells']} خانه · آستانهٔ شیداک {v['alpha_per_test']}")
+          # برش رژیم: نقشهٔ رژیم باید واقعاً پر شده باشد و هر بازوی ibs در هر
+          # دو رژیم خانه داشته باشد — وگرنه «بی‌نتیجه» بی‌صدا می‌ماند.
+          rv = json.loads(pathlib.Path("signals/regime-verdict.json").read_text(encoding="utf-8"))
+          assert rv.get("status") == "OK", f"داور رژیم داده نداشت: {rv.get('status')} {rv.get('why')}"
+          assert (rv.get("n_bull_days") or 0) + (rv.get("n_bear_days") or 0) >= 200, "نقشهٔ رژیم کمتر از ۲۰۰ روز دارد"
+          for arm in ("ibs", "ibs_g2", "ibs_g3"):
+              for tf in v["bars"]:
+                  for rg in ("BULL", "BEAR"):
+                      assert rv["rows"].get(f"{arm}|{tf}|{rg}|overall", {}).get("n", 0) > 0, f"{arm}|{tf}|{rg} بی‌معامله"
+          print("رژیم:", rv["n_bull_days"], "BULL /", rv["n_bear_days"], "BEAR")
+          for k, r in sorted(rv["robust"].items()):
+              print(f"  {k:<10} {r['verdict']:<9} BULL {r['bull'].get('strict')} {r['bull'].get('ci')} · BEAR {r['bear'].get('strict')} {r['bear'].get('ci')}")
           for k in sorted(rows):
               r = rows[k]
               if r.get("n"):
@@ -135,7 +157,7 @@ jobs:
           BRANCH: main
         run: |
           git add claude-liam-signal/backtests
-          for _f in brain/history-stats.json signals/geometry-verdict.json; do [ -f "$_f" ] && git add "$_f"; done
+          for _f in brain/history-stats.json signals/geometry-verdict.json signals/regime-verdict.json; do [ -f "$_f" ] && git add "$_f"; done
           if git diff --cached --quiet; then
             echo "nothing new"
             exit 0

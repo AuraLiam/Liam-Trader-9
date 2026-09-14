@@ -197,6 +197,38 @@ def run():
     _wf = (ROOT / ".github" / "workflows" / "backtest.yml").read_text(encoding="utf-8")
     check("پیش‌فرضِ شبانه تاریخچهٔ بلند برای هر دو تایم دارد", "15m:17000,5m:12000" in _wf)
 
+    # ── D7 (۱۴ سپتامبر): برش رژیم بی‌نگاه به آینده + خروجی فشرده ─────────
+    import gzip as _gz, json as _js, tempfile as _tf, time as _tm
+    _d0 = 1_770_000_000_000
+    _daily = [{"t": _d0 + i * 86_400_000, "c": 100.0 + i} for i in range(40)]
+    _r1 = _bt.btc_regime_days(_daily)
+    _daily2 = [dict(k) for k in _daily]; _daily2[30]["c"] = 1.0          # فقط کلوزِ خودِ روز ۳۰ عوض شود
+    _r2 = _bt.btc_regime_days(_daily2)
+    _k30 = _tm.strftime("%Y-%m-%d", _tm.gmtime(_daily[30]["t"] / 1000))
+    check("رژیمِ روز D به کلوزِ خودِ D وابسته نیست (بی‌نگاه به آینده)", _r1[_k30] == _r2[_k30], f"{_r1[_k30]} vs {_r2[_k30]}")
+    _k31 = _tm.strftime("%Y-%m-%d", _tm.gmtime(_daily[31]["t"] / 1000))
+    check("ولی روز D+1 آن را می‌بیند (کلوزِ دیروز در برابر SMA20)", _r1[_k31] == "BULL" and _r2[_k31] == "BEAR")
+    check(f"۲۰ روز اولِ گرم‌شدن برچسب ندارند", len(_r1) == 40 - _bt.REGIME_SMA)
+    check("روند صعودیِ یکنواخت همه BULL", all(v == "BULL" for v in _r1.values()))
+    from hamid import geometry_verdict as _GV
+    with _tf.TemporaryDirectory() as _td:
+        _pz = Path(_td) / "backtest-2099-01-01-0000.json.gz"
+        with _gz.open(_pz, "wt", encoding="utf-8") as _f:
+            _js.dump({"trades": {"ibs": [{"r": 1}]}, "regime": {"days": {}}}, _f)
+        check("خوانندهٔ گزارش، فایل gzip را می‌خواند", _GV.read_report(_pz)["trades"]["ibs"][0]["r"] == 1)
+        _old = _GV.BACKTESTS
+        try:
+            _GV.BACKTESTS = Path(_td)
+            check("latest_backtest فایل .json.gz را هم پیدا می‌کند", (_GV.latest_backtest() or {}).get("_file") == _pz.name)
+        finally:
+            _GV.BACKTESTS = _old
+    _src = (PY / "backtest.py").read_text(encoding="utf-8")
+    check("ردیف‌های معامله فشرده نوشته می‌شوند (سقف ۱۰۰MB گیت‌هاب؛ پوشه ۴۹۳MB بود)", "gzip.open" in _src and '.json.gz"' in _src)
+    check("گزارش نقشهٔ رژیم دارد و شکستش صریح ثبت می‌شود", '"regime": regime' in _src and '"error"' in _src)
+    _wf = (ROOT / ".github" / "workflows" / "backtest.yml").read_text(encoding="utf-8")
+    check("زنجیرهٔ بک‌تست داور رژیم را می‌زند و فایلش را منتشر می‌کند",
+          "hamid.regime_verdict --write" in _wf and "signals/regime-verdict.json" in _wf)
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

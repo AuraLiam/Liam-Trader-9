@@ -31,7 +31,7 @@ OUT = ROOT / "claude-liam-signal" / "backtests"
 HOSTS = ["https://api.binance.com", "https://data-api.binance.vision", "https://api1.binance.com"]
 FUTURES_HOSTS = ["https://fapi.binance.com"]
 STABLE = ("USDCUSDT", "FDUSDUSDT", "TUSDUSDT", "BUSDUSDT", "EURUSDT", "DAIUSDT", "USDPUSDT")
-MS = {"5m": 300_000, "15m": 900_000, "1h": 3_600_000}
+MS = {"5m": 300_000, "15m": 900_000, "1h": 3_600_000, "1d": 86_400_000}
 
 
 def _elsewhere(path):
@@ -283,6 +283,27 @@ def parse_bars(spec, tfs):
     return res
 
 
+REGIME_SMA = 20
+
+
+def btc_regime_days(daily):
+    """روزِ BULL/BEAR از کندل‌های روزانهٔ BTC — **بدون نگاه به آینده**.
+
+    قاعدهٔ از پیش ثبت‌شده (۱۴ سپتامبر، قبل از دیدن نتیجه): رژیمِ روز D =
+    کلوزِ روز D−۱ در برابر میانگین سادهٔ ۲۰ روزِ پیش از آن (D−۲۰…D−۱).
+    بالاتر = BULL، وگرنه BEAR. یعنی برچسبِ هر روز فقط از کندل‌های بستهٔ
+    قبلش می‌آید و معامله‌ای که در D باز می‌شود از فردایش خبر ندارد.
+    """
+    out = {}
+    cl = [(k["t"], k["c"]) for k in daily]
+    for i in range(REGIME_SMA, len(cl)):
+        prev_close = cl[i - 1][1]
+        sma = sum(c for _, c in cl[i - REGIME_SMA:i]) / REGIME_SMA
+        day = time.strftime("%Y-%m-%d", time.gmtime(cl[i][0] / 1000))
+        out[day] = "BULL" if prev_close > sma else "BEAR"
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", type=int, default=60)
@@ -346,9 +367,23 @@ def main():
         results[variant] = run_variant(variant, jobs, args.cores, tmp)
         print(f"  {len(results[variant])} trades", flush=True)
 
+    # نقشهٔ رژیم BTC برای برشِ رژیم (دستور حمید ۱۴ سپتامبر: «با برش رژیم»).
+    # شکستِ گرفتنِ کندل روزانه، بک‌تست را نمی‌کشد ولی صریح ثبت می‌شود.
+    try:
+        _daily = klines("BTCUSDT", "1d", 420)
+        regime_days = btc_regime_days(_daily)
+        regime = {"rule": f"BULL اگر کلوزِ دیروز > SMA{REGIME_SMA}ِ ۲۰ روزِ قبلش، وگرنه BEAR — بی‌نگاه به آینده",
+                  "n_bull": sum(1 for v in regime_days.values() if v == "BULL"),
+                  "n_bear": sum(1 for v in regime_days.values() if v == "BEAR"),
+                  "days": regime_days}
+        print(f"regime: {regime['n_bull']} BULL / {regime['n_bear']} BEAR days (BTC 1d, SMA{REGIME_SMA})", flush=True)
+    except Exception as e:                           # noqa: BLE001
+        regime = {"rule": None, "error": f"{type(e).__name__}: {e}", "days": {}}
+        print(f"regime map failed: {regime['error']}", flush=True)
+
     report = {"generated": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
               "source": "real Binance candles", "symbols": len(syms), "bars": bars_by_tf,
-              "timeframes": tfs, "series": len(jobs), "strategies": {}}
+              "timeframes": tfs, "series": len(jobs), "strategies": {}, "regime": regime}
 
     print("\n" + "=" * 78)
     print("HISTORICAL BACKTEST — real candles, not simulated")
@@ -454,10 +489,15 @@ def main():
 
     OUT.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y-%m-%d-%H%M", time.gmtime())
-    (OUT / f"backtest-{stamp}.json").write_text(json.dumps(
-        {**report, "trades": {k: v for k, v in results.items()}}, indent=1))
+    # ردیف‌های معامله فشرده نوشته می‌شوند (۱۴ سپتامبر): نسخهٔ indent=1 برای
+    # ۱۵۹k معامله ۶۴MB بود و پوشهٔ backtests به ۴۹۳MB رسیده بود؛ اجرای ۵د
+    # ۲۵۰روزه ۴–۵ برابر ردیف دارد و از سقف ۱۰۰MB گیت‌هاب رد می‌شد. gzip
+    # همان JSON است، ~۱۵× کوچک‌تر؛ داورها هر دو پسوند را می‌خوانند.
+    import gzip
+    with gzip.open(OUT / f"backtest-{stamp}.json.gz", "wt", encoding="utf-8", compresslevel=6) as gz:
+        json.dump({**report, "trades": {k: v for k, v in results.items()}}, gz, separators=(",", ":"))
     (OUT / "latest.json").write_text(json.dumps(report, indent=1))
-    print(f"\nwritten to claude-liam-signal/backtests/backtest-{stamp}.json")
+    print(f"\nwritten to claude-liam-signal/backtests/backtest-{stamp}.json.gz")
     print(f"took {time.time()-t0:.0f}s")
 
 

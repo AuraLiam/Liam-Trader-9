@@ -243,6 +243,16 @@ def judge(by_arm, alpha_per_test=None):
     return {"alpha_per_test": round(alpha, 5), "n_cells": len(cells), "rows": rows}
 
 
+def read_report(p):
+    """گزارش بک‌تست، خام یا gzip — از ۱۴ سپتامبر ردیف‌ها فشرده نوشته می‌شوند."""
+    p = Path(p)
+    if p.name.endswith(".gz"):
+        import gzip
+        with gzip.open(p, "rt", encoding="utf-8") as gz:
+            return json.load(gz)
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
 def latest_backtest():
     """تازه‌ترین بک‌تستی که **واقعاً ردیف معامله دارد**.
 
@@ -251,10 +261,11 @@ def latest_backtest():
     فایل‌های تاریخ‌دار ردیف‌ها را دارند، پس از تازه‌ترینِ آن‌ها شروع
     می‌کنیم و فقط اگر هیچ‌کدام نداشت سراغ latest می‌رویم.
     """
-    dated = sorted(BACKTESTS.glob("backtest-*.json"), reverse=True)
+    dated = sorted(list(BACKTESTS.glob("backtest-*.json")) + list(BACKTESTS.glob("backtest-*.json.gz")),
+                   key=lambda p: p.name.replace(".gz", ""), reverse=True)
     for p in dated[:3]:
         try:
-            doc = json.loads(p.read_text(encoding="utf-8"))
+            doc = read_report(p)
         except Exception:                            # noqa: BLE001
             continue
         if doc.get("trades"):
