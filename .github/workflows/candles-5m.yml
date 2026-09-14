@@ -1,0 +1,75 @@
+# جمع‌آوری تدریجی کندل ۵ دقیقه (دستور حمید، ۱۴ سپتامبر — «هر دو رو انجام بده»)
+#
+# بستهٔ تاریخی درایو فقط ۱۵د دارد؛ ۵د جعل‌شدنی نیست (قانون ۱). این ورک‌فلو
+# برای همان جهان ۲۹۸ نمادیِ inventory کندل ۵د دو سال اخیر را تکه‌تکه
+# می‌کشد، راستی‌آزمایی می‌کند (زمان صعودی، بی‌تکرار، ثبت شکاف، OHLC سالم)
+# و فایل‌های gzip را به GitHub Release با تگ history-5m-v1 می‌فرستد —
+# دادهٔ بزرگ در گیت نمی‌رود (قانون ۰۵)؛ فقط مانیفستِ کوچک کامیت می‌شود.
+# پیشرفت روی کارت «تمرین تاریخی» پنل از راه hamid/history_room دیده می‌شود.
+#
+# هر اجرا ~۱۲ دقیقه بودجه دارد (چند نماد کامل)؛ ادامه از مانیفست. با ۴
+# نوبت در روز، کل جهان در حدود دو هفته کامل می‌شود — تدریجی و بی‌قحطی
+# (قانون ۰۷: هیچ چیزی از خط سیگنال قحطی‌زده نمی‌شود).
+name: Candles 5m history
+
+on:
+  workflow_dispatch:
+  schedule:
+    # دقیقهٔ صریح، نه */N — پنجره‌های پرترافیک رانر رایگان را می‌اندازند.
+    - cron: "41 1,7,13,19 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: candles-5m
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: محیط مشترک
+        run: pip -q install -r requirements-ci.txt
+
+      - name: آزمون آفلاین
+        env:
+          LIAM9_SANDBOX: "1"
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.test_candles5m
+
+      - name: جمع‌آوری و راستی‌آزمایی
+        id: run
+        continue-on-error: true
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.candles5m --budget-min 12 --out-dir /tmp/c5m
+
+      - name: آپلود به Release (دادهٔ بزرگ بیرون از گیت)
+        if: steps.run.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view history-5m-v1 >/dev/null 2>&1 || \
+            gh release create history-5m-v1 --title "بستهٔ تاریخی ۵ دقیقه" \
+              --notes "کندل ۵د راستی‌آزمایی‌شده؛ شناسنامه: brain/research/history/5m-manifest.json"
+          if [ -s /tmp/c5m/_uploads.txt ]; then
+            while read -r f; do gh release upload history-5m-v1 "$f" --clobber; done < /tmp/c5m/_uploads.txt
+          fi
+
+      - name: شکست (فقط اجرای دستی بلند)
+        if: steps.run.outcome == 'failure' && github.event_name != 'schedule'
+        run: exit 1
+
+      - name: Git identity
+        if: steps.run.outcome == 'success'
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+      - name: ثبت مانیفست (ناشر مشترک، قانون ۱۴)
+        if: steps.run.outcome == 'success'
+        run: scripts/publish.sh -m "کندل ۵د — پیشرفت جمع‌آوری $(date -u +%H:%M) UTC" brain/research/history/5m-manifest.json
