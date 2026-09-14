@@ -122,6 +122,8 @@ jobs:
           python3 -m hamid.short_backtest --selftest
           python3 -m hamid.test_state_bus
           python3 -m hamid.test_intake
+          python3 -m hamid.review_queue --selftest
+          python3 -m hamid.test_mcp_server
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
           python3 -m hamid.test_fomo
@@ -237,6 +239,7 @@ jobs:
               # قرارداد و تازگیِ همان‌ها می‌خواند.
               (cd claude-liam-signal/python && python3 -m hamid.intake --write) || true
               (cd claude-liam-signal/python && python3 -m hamid.dispatch --write) || true
+              (cd claude-liam-signal/python && python3 -m hamid.review_queue --write) || true
               # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
               # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را

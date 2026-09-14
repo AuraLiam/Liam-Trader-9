@@ -1005,6 +1005,17 @@
    "kind": "live",
    "cadence_note": "دلتای رأی/دفتر ۱۲ مراقب، هر چرخهٔ حمید",
    "optional": true
+  },
+  "review-queue.json": {
+   "layer": "L7_health",
+   "owner": "E00",
+   "producer": "hamid/review_queue.py --write (بعد از dispatch، همان کادنس ۵د)",
+   "max_age_min": 20,
+   "consumer": "E00 (ارکستراتور) + MCP review_queue",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "صف بازبینی «تولز اول، بعد ایجنت» (دستور ۱۴ سپتامبر): فقط ایجنت‌های needs_reasoning صدا زده می‌شوند",
+   "optional": true
   }
  }
 }
