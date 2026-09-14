@@ -299,7 +299,7 @@ def apply_learned_rules(setups, jobs, rules):
 
 
 def funnel_report(setups, sent, demoted, held, series, failed,
-                  pre_gate=None, demoted_dirs=None):
+                  pre_gate=None, demoted_dirs=None, rule_vetoed=None):
     """قیف سلامت سیگنال — قانون ۰۷ (E23). سکوت باید با شواهد توضیح داده شود.
 
     تا امروز دلیل رد فقط در لاگ Actions چاپ می‌شد و بعد گم می‌شد؛ هر بار
@@ -341,6 +341,7 @@ def funnel_report(setups, sent, demoted, held, series, failed,
         "stage_dir_post_gate": {f"{k[0]}|{k[1]}": v for k, v in
                                 Counter((s.get("stage"), s.get("dir") or "?")
                                         for s in setups).items()},
+        "rule_vetoed": rule_vetoed,
         "stage_dir_pre_gate": ({f"{k[0]}|{k[1]}": v
                                 for k, v in (pre_gate or {}).items()}
                                if pre_gate else None),
@@ -377,7 +378,7 @@ def funnel_report(setups, sent, demoted, held, series, failed,
 STAGE_VETO_CAP = 12
 
 
-def _stage_veto_open_keys():
+def _stage_veto_open_keys(tag="stage-vetoed"):
     """(نماد، جهت)هایی که همین حالا ردیفِ بازِ برشِ مرحله دارند."""
     out = set()
     try:
@@ -393,7 +394,7 @@ def _stage_veto_open_keys():
             except Exception:                        # noqa: BLE001
                 continue
             st = (r.get("why") or {}).get("stage") or r.get("stage_tag")
-            if st == "stage-vetoed":
+            if st == tag:
                 out.add((r.get("sym"), (r.get("dir") or "").upper()))
     except Exception:                                # noqa: BLE001
         pass
@@ -429,6 +430,72 @@ def _stage_veto_ledger(s, a, was_stage, sv):
     except Exception as e:                           # noqa: BLE001
         print(f"  ⚠️ برشِ مرحله {s.get('sym')}: {type(e).__name__}: {e}",
               flush=True)
+
+
+# ── وتوی قانونِ تأییدشدهٔ منفی (ممیزی تلگرام ۱۴ سپتامبر) ─────────────────
+#
+# اندازه‌گیری (۳۰ روز، ۳۳۹ سیگنالِ ارسالی با تطبیق دقیق): خالص −۰.۱۸۷R،
+# فقط ۱۶ تارگت، ibs −۰.۲۶۵R. در همان حال ماشین شبانه قانون‌هایی با CI زیر
+# صفر داشت (ibs «شورت خلاف بیت‌کوین» −۰.۳۹۶R n=۳۱۳؛ smc «شورت همسو با
+# بیت‌کوین» −۰.۴۸۹R n=۴۲۹؛ «CHOCH دارد» −۰.۱۸۸R n=۵۱۷) که در ارسال فقط
+# **ترتیب** را عوض می‌کردند، نه تصمیم را — یعنی یادگیریِ CI‌گذشته ذخیره
+# می‌شد ولی به کار نمی‌رفت (نقض «finding acted on once its CI clears
+# zero»). از این پس ستاپِ SIGNAL که جمعِ قانون‌های تأییدشده‌اش ≤ RULE_VETO_R
+# باشد ارسال نمی‌شود و به ARMED برمی‌گردد، و همان ستاپ با
+# stage_tag="rule-vetoed" در دفتر کاغذی باز می‌شود تا داورِ دروازه
+# (gate_verdict) با کندل واقعی بگوید وتو پول را نجات داد یا روی میز گذاشت.
+# آستانه از پیش ثبت شده (کوچک‌ترین قانونِ منفیِ تأییدشده −۰.۱۶۷R است) و
+# بعد از دیدن نتیجه عوض نمی‌شود. هیچ قانونی این‌جا ساخته نمی‌شود — فقط
+# قانون‌هایی که خودِ ماشین شبانه با CI رد کرده.
+RULE_VETO_R = -0.15
+RULE_VETO_CAP = 12
+
+
+def _rule_veto_ledger(s, was_stage, rv):
+    if was_stage != "SIGNAL" or rv["n"] >= RULE_VETO_CAP:
+        return
+    key = (s.get("sym"), (s.get("dir") or "").upper())
+    if key in rv["open"]:
+        return
+    if not (s.get("entry") and s.get("sl")):
+        return
+    try:
+        from hamid import paper as _p
+        lr = s.get("learned") or {}
+        n = _p.open_from(
+            [{"symbol": s["sym"], "dir": s["dir"], "entry": s["entry"],
+              "sl": s["sl"], "tp1": s.get("tp1") or s["entry"],
+              "tp2": s.get("tp2"), "stage_tag": "rule-vetoed",
+              "tf": s.get("tf")}],
+            {"veto_why": "confirmed_rule", "boost": lr.get("boost"),
+             "rules": [r.get("rule") for r in (lr.get("rules") or [])],
+             "strategy": s.get("strategy"), "quality": s.get("quality"),
+             "was_stage": was_stage})
+        if n:
+            rv["n"] += 1
+            rv["open"].add(key)
+    except Exception as e:                           # noqa: BLE001
+        print(f"  ⚠️ وتوی قانون {s.get('sym')}: {type(e).__name__}: {e}", flush=True)
+
+
+def rule_veto(setups, ledger=True, open_keys=None):
+    """ستاپ‌های SIGNAL با جمعِ قانونِ تأییدشدهٔ ≤ RULE_VETO_R → ARMED + ردیف ضدواقع. → شمار."""
+    rv = {"n": 0, "open": open_keys if open_keys is not None else
+          (_stage_veto_open_keys("rule-vetoed") if ledger else set())}
+    n = 0
+    for s in setups:
+        b = (s.get("learned") or {}).get("boost")
+        if s.get("stage") != "SIGNAL" or b is None or b > RULE_VETO_R:
+            continue
+        neg = [r["rule"] for r in (s["learned"].get("rules") or []) if (r.get("delta") or 0) < 0]
+        was = s["stage"]
+        s["stage"] = "ARMED"
+        s["skip"] = f"قانون تأییدشدهٔ بک‌تست منفی است ({b:+.2f}R: {'، '.join(neg)})"
+        s["rule_vetoed"] = True
+        n += 1
+        if ledger:
+            _rule_veto_ledger(s, was, rv)
+    return n
 
 
 def gate_stages(setups, kget=None):
@@ -634,6 +701,8 @@ def main():
                          f"برد {best['hit']}٪، انتظار {best['ev']:+.2f}R")
             held += 1
     print(f"learning room consulted on {consulted} setups, held back {held}", flush=True)
+    rule_vetoed = rule_veto(setups)
+    print(f"confirmed-negative rule veto: {rule_vetoed} SIGNAL setups → ARMED (ledger rule-vetoed)", flush=True)
 
     # عکسِ جهت **پیش از** دروازه (۶ سپتامبر). باید این‌جا گرفته شود، چون
     # `gate_stages` خودِ `stage` را عوض می‌کند و بعدش دیگر بازیابی‌پذیر
@@ -770,7 +839,8 @@ def main():
     # قیف سلامت (قانون ۰۷) — پاسخ «چرا سیگنال نیامد» با شواهد، نه حدس
     _fn = funnel_report(setups, sent=_sent_n, demoted=demoted, held=held,
                         series=len(jobs), failed=failed,
-                        pre_gate=_pre_gate, demoted_dirs=_dmt_dirs)
+                        pre_gate=_pre_gate, demoted_dirs=_dmt_dirs,
+                        rule_vetoed=rule_vetoed)
     (OUT / "funnel.json").write_text(json.dumps(_fn, ensure_ascii=False, indent=1))
     print(f"funnel: {_fn['classification']} · {_fn['setups']} setups · "
           f"{_fn['telegram_sent']} sent", flush=True)
