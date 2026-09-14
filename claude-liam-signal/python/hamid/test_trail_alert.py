@@ -31,19 +31,20 @@ def check(name, cond, extra=""):
             print(f"      ↳ {extra}")
 
 
-print("— پله‌ها همان قانون تریل‌اند:")
+print("— پله‌ها همان قانون تریل نسخهٔ سه‌اند (نه نردبان ⅓/⅔ بازنشسته):")
 r = TA.rungs(100.0, 106.0, "LONG")                   # TP1 در +۶٪
-check("سه پله ساخته می‌شود", len(r) == 3)
-check("پلهٔ ۱ = ⅓ مسیر (۱۰۲)", abs(r[0][0] - 102.0) < 1e-9, str(r[0]))
-check("و استاپش سودِ کارمزددار است (ورود+۰.۱۵٪)",
-      abs(r[0][1] - 100.15) < 1e-9, str(r[0][1]))
-check("پلهٔ ۲ = ⅔ مسیر و استاپ به سطحِ ⅓",
-      abs(r[1][0] - 104.0) < 1e-9 and abs(r[1][1] - 102.0) < 1e-9)
-check("پلهٔ ۳ = خودِ TP1 و دستور ⅓ بستن دارد",
-      abs(r[2][0] - 106.0) < 1e-9 and "⅓ حجم" in r[2][2])
+check("دو پله ساخته می‌شود", len(r) == 2, str(len(r)))
+check("پلهٔ ۱ = گذشتن از کارمزد (۱۰۰.۱۵)", abs(r[0][0] - 100.15) < 1e-9, str(r[0]))
+check("و استاپش ۸۰٪ همان سود است (ورود+۰.۱۲)", abs(r[0][1] - 100.12) < 1e-9, str(r[0][1]))
+check("پلهٔ ۲ = خودِ TP1 و استاپ روی ۸۰٪ مسیر (۱۰۴.۸)",
+      abs(r[1][0] - 106.0) < 1e-9 and abs(r[1][1] - 104.8) < 1e-9, str(r[1]))
+check("متن‌ها با دفتر پیپر هم‌قراردادند: «۸۰٪» هست، «⅓ حجم» نیست",
+      all("80" in x[2] for x in r) and not any("⅓" in x[2] or "⅔" in x[2] for x in r), str([x[2] for x in r]))
+from hamid import paper as _paper
+check("درصد قفل از خودِ paper خوانده می‌شود (یک منبع)", abs(r[1][1] - (100 + _paper.PROD_TRAIL_FRAC * 6)) < 1e-9)
 s = TA.rungs(100.0, 94.0, "SHORT")
-check("شورت قرینهٔ کامل است (پلهٔ ۱ = ۹۸، استاپ ۹۹.۸۵)",
-      abs(s[0][0] - 98.0) < 1e-9 and abs(s[0][1] - 99.85) < 1e-9, str(s[0]))
+check("شورت قرینهٔ کامل است (پلهٔ ۱ = ۹۹.۸۵، استاپ ۹۹.۸۸)",
+      abs(s[0][0] - 99.85) < 1e-9 and abs(s[0][1] - 99.88) < 1e-9, str(s[0]))
 check("هندسهٔ خراب (TP1 سمت اشتباه) پله نمی‌سازد",
       TA.rungs(100.0, 95.0, "LONG") == [])
 check("عبور جهت‌دار است: لانگ بالا، شورت پایین",
@@ -84,7 +85,7 @@ with tempfile.TemporaryDirectory() as td:
     TA.OUT = Path(td) / "out.json"
     try:
         r1 = TA.run(quiet=True, open_path=op, state_path=st,
-                    price_fn=lambda s: 2.05)         # بالای پلهٔ ۱ (۲.۰۴)
+                    price_fn=lambda s: 2.05)         # بالای پلهٔ ۱ (۲.۰۰۳)
         r2 = TA.run(quiet=True, open_path=op, state_path=st,
                     price_fn=lambda s: 2.05)
         r3 = TA.run(quiet=True, open_path=op, state_path=st,
@@ -101,11 +102,11 @@ with tempfile.TemporaryDirectory() as td:
         TA.OUT = _out
 check("عبور از پلهٔ ۱ → یک اعلام", len(r1["alerts"]) == 1
       and r1["alerts"][0]["rung"] == 1, str(r1["alerts"]))
-check("و استاپِ اعلامی همان سودِ کارمزددار است",
-      abs(r1["alerts"][0]["new_sl"] - 2.003) < 1e-9, str(r1["alerts"]))
+check("و استاپِ اعلامی ۸۰٪ سودِ کارمزددار است (۲.۰۰۲۴)",
+      abs(r1["alerts"][0]["new_sl"] - 2.0024) < 1e-9, str(r1["alerts"]))
 check("نوبت بعد با همان قیمت → هیچ اعلامِ تکراری", r2["alerts"] == [])
-check("جهش تا TP1 → پله‌های ۲ و ۳ با هم، هر کدام یک بار",
-      [a["rung"] for a in r3["alerts"]] == [2, 3], str(r3["alerts"]))
+check("جهش تا TP1 → پلهٔ ۲، یک بار",
+      [a["rung"] for a in r3["alerts"]] == [2], str(r3["alerts"]))
 check("برگشتِ قیمت پله‌های خورده را دوباره نمی‌زند", r4["alerts"] == [])
 check("قیمتِ گیرنیامده = رد و شمارش، نه حدس",
       rn["alerts"] == [] and rn["price_unavailable"] == 1)

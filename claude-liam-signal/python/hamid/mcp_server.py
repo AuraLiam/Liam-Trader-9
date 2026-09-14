@@ -155,6 +155,12 @@ def t_signal_file(name: str):
             "age_source": src, "doc": d}
 
 
+def t_tg_audit(days: int = 7):
+    from hamid import tg_audit as TA
+    a = TA.build(days=int(days))
+    return {"text": TA.render(a), "census": a["census"], "signals": a["signals"], "outcomes": a["outcomes"]}
+
+
 def t_run_intake(external: bool = True):
     from hamid import intake as IN
     doc = IN.build(external=bool(external))
@@ -207,6 +213,8 @@ TOOLS = {
                     desc="نسخهٔ انتقال به چت تازه (HANDOFF.md): وضعیت زنده + حکم‌ها + رشته‌های باز."),
     "killswitch_status": dict(fn=t_killswitch_status, schema=_schema(), readonly=True,
                               desc="وضعیت کیل‌سوییچ چندماشه (فقط خواندن؛ trip/reset از این‌جا ممکن نیست)."),
+    "tg_audit": dict(fn=t_tg_audit, schema=_schema({"days": {"type": "integer", "minimum": 1, "maximum": 60, "default": 7}}), readonly=True,
+                     desc="ممیزی پیام‌های تلگرام در N روز: سرشماری هر نوع، پیام‌های بی‌مخاطب (قانون ۱۱)، و نتیجهٔ سیگنال‌های ارسالی با تطبیق دقیق به دفتر پیپر."),
     "run_intake": dict(fn=t_run_intake, schema=_schema({"external": {"type": "boolean", "default": True, "description": "خوراک‌های بیرونی هم گرفته شود؟"}}), readonly=False,
                        desc="اجرای دستی اسکن‌بردار (همان تولیدکنندهٔ رسمی signals/intake.json). روی زنجیره/سرویس محلی خودش هر ۵ دقیقه می‌چرخد."),
     "run_dispatch": dict(fn=t_run_dispatch, schema=_schema(), readonly=False,

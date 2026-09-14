@@ -375,6 +375,13 @@ jobs:
           python3 -m hamid.live_results --write || true
           python3 -m hamid.guardian_delta --write || true
 
+      # ممیزی تلگرام (دستور حمید ۱۴ سپتامبر): هر پیامی که بات فرستاده، هر
+      # هفته سرشماری و نتیجهٔ سیگنال‌های ارسالی با تطبیق دقیق — تا «پیامِ
+      # بی‌مخاطب» و «سیگنالِ بی‌نتیجه» عدد داشته باشند، نه حس.
+      - name: ممیزی تلگرام ۷ روزه
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.tg_audit --write || true
+
       - name: نسخهٔ انتقال (HANDOFF.md)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.handoff --write || true
