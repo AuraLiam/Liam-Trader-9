@@ -161,8 +161,46 @@ try:
                                             {"title": "Tea party", "in_hours": 1.0}]}
     _ev3, _ok3, _ = dominance.macro_events_status()
     check("فیلتر کلان همان است: فقط عنوانِ کلان می‌ماند", [e["title"] for e in _ev3] == ["CPI"], str(_ev3))
+    _intel.calendar = lambda: {"next_48h": [{"title": "CPI", "in_hours": 1.5}], "cached": True,
+                               "cache_age_min": 40, "source_error": "HTTPError:403 / HTTPError:403"}
+    _ev4, _ok4, _why4 = dominance.macro_events_status()
+    check("پاسخِ حافظه‌ای: رویدادها می‌مانند، ok=CACHED با سن و علتِ منبع",
+          _ev4 and _ok4 == "CACHED" and "40" in _why4 and "403" in _why4, str((_ev4, _ok4, _why4)))
 finally:
     _intel.calendar = _saved_cal
+
+# حافظهٔ ۶ساعتهٔ خودِ intel.calendar — هر دو منبع ۴۰۳، حافظه تازه → پاسخِ برچسب‌دار
+import time as _time                                            # noqa: E402
+_sv = (_intel._json, _intel._tv_calendar, _intel.CAL_CACHE)
+try:
+    class _H(Exception):
+        code = 403
+    def _no(*a, **k):
+        raise _H("blocked")
+    _intel._json = _no; _intel._tv_calendar = _no
+    with tempfile.TemporaryDirectory() as _td:
+        _intel.CAL_CACHE = Path(_td) / "calendar-last.json"
+        try:
+            _intel.calendar(); _raised = False
+        except Exception:
+            _raised = True
+        check("بی‌حافظه و بی‌منبع → استثنا (حدس نمی‌زند)", _raised)
+        _fut = (_time.time() + 3600)
+        import datetime as _dt
+        _iso = _dt.datetime.fromtimestamp(_fut, _dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        _intel.CAL_CACHE.write_text(json.dumps({"generated": int(_time.time() * 1000) - 30 * 60000,
+                                                "high": [{"title": "FOMC", "country": "USD", "date": _iso, "impact": "High"}]}), encoding="utf-8")
+        _c = _intel.calendar()
+        check("حافظهٔ ۳۰دقیقه‌ای: رویداد برمی‌گردد با cached/سن/علت", _c.get("cached") is True and _c.get("cache_age_min") == 30
+              and "403" in _c.get("source_error", "") and _c["next_48h"][0]["title"] == "FOMC", str(_c))
+        _intel.CAL_CACHE.write_text(json.dumps({"generated": int(_time.time() * 1000) - 7 * 3600 * 1000, "high": []}), encoding="utf-8")
+        try:
+            _intel.calendar(); _raised2 = False
+        except Exception:
+            _raised2 = True
+        check("حافظهٔ ۷ساعته مرده است → استثنا", _raised2)
+finally:
+    _intel._json, _intel._tv_calendar, _intel.CAL_CACHE = _sv
 _dsrc = Path(dominance.__file__).read_text(encoding="utf-8")
 check("حکم دامیننس شکست تقویم را چاپ می‌کند و روی خروجی calendar_ok می‌نشیند",
       "calendar_ok" in _dsrc and "محافظ رویداد ≤۲س این نوبت کور است" in _dsrc)

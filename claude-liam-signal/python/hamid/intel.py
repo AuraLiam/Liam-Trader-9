@@ -117,14 +117,58 @@ def _tv_calendar():
             for e in (rows or []) if e.get("title")]
 
 
+CAL_CACHE = ROOT / "brain" / "calendar-last.json"
+CAL_CACHE_MAX_MIN = 360   # تقویم هفتگی است؛ ۶ ساعت کهنگی رویدادِ ≤۲ساعته را از دست نمی‌دهد
+
+
+def _cal_cache_write(high):
+    try:
+        import brain as _b
+        if getattr(_b, "SANDBOX", False):
+            return
+        CAL_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        CAL_CACHE.write_text(json.dumps({"generated": int(time.time() * 1000), "high": high},
+                                        ensure_ascii=False), encoding="utf-8")
+    except Exception:                                # noqa: BLE001 — حافظه اختیاری است
+        pass
+
+
+def _cal_cache_read():
+    try:
+        d = json.loads(CAL_CACHE.read_text(encoding="utf-8"))
+        age = (time.time() * 1000 - d["generated"]) / 60000
+        if age <= CAL_CACHE_MAX_MIN and isinstance(d.get("high"), list):
+            return d["high"], round(age)
+    except Exception:                                # noqa: BLE001
+        pass
+    return None, None
+
+
 def calendar():
     """تقویم اقتصادی — در روزهای آرام مهم‌ترین چیزی است که بازار را تکان می‌دهد.
-    منبع اصلی faireconomy؛ اگر نداد، تقویم تریدینگ‌ویو جایگزین می‌شود."""
+    منبع اصلی faireconomy؛ اگر نداد، تقویم تریدینگ‌ویو؛ اگر هر دو ندادند،
+    **آخرین پاسخِ سالم تا ۶ ساعت** با برچسب `cached` و سنش.
+
+    چرا حافظه (۱۴ سپتامبر): رانر Actions گاه‌به‌گاه از هر دو منبع ۴۰۳
+    می‌گیرد (۱–۳ نوبت پشت‌سرهم، بعد باز می‌شود). تقویمِ هفتگی در آن چند
+    دقیقه عوض نمی‌شود؛ ولی بی‌حافظه، محافظِ «رویداد ≤۲س = UNSAFE» در همان
+    نوبت‌ها کور می‌شد. حافظه شکست را پنهان نمی‌کند — روی خروجی می‌نشیند
+    (`cached`, `cache_age_min`, `source_error`) و بعد از ۶ ساعت می‌میرد."""
+    err = None
     try:
         j = _json("https://nfs.faireconomy.media/ff_calendar_thisweek.json")
         high = [e for e in j if (e.get("impact") or "").lower() == "high"]
-    except Exception:                                # noqa: BLE001 - پشتیبان TV
-        high = _tv_calendar()
+    except Exception as e1:                          # noqa: BLE001 - پشتیبان TV
+        try:
+            high = _tv_calendar()
+        except Exception as e2:                      # noqa: BLE001 - حافظهٔ ۶ساعته
+            err = (type(e1).__name__ + (f":{e1.code}" if hasattr(e1, "code") else "")
+                   + " / " + type(e2).__name__ + (f":{e2.code}" if hasattr(e2, "code") else ""))
+            high, age = _cal_cache_read()
+            if high is None:
+                raise
+    if err is None:
+        _cal_cache_write(high)
     now = datetime.now(timezone.utc)
     soon = []
     for e in high:
@@ -137,7 +181,10 @@ def calendar():
             soon.append({"title": e.get("title"), "country": e.get("country"),
                          "in_hours": round(hrs, 1)})
     soon.sort(key=lambda x: x["in_hours"])
-    return {"high_this_week": len(high), "next_48h": soon[:8]}
+    out = {"high_this_week": len(high), "next_48h": soon[:8]}
+    if err is not None:
+        out.update(cached=True, cache_age_min=age, source_error=err)
+    return out
 
 
 UNLOCK_SHAPE_LOG = ROOT / "signals" / "unlocks-shape.json"

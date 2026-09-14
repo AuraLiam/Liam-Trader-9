@@ -202,6 +202,9 @@ def macro_events_status():
     except Exception as e:                       # noqa: BLE001
         why = type(e).__name__ + (f":{e.code}" if hasattr(e, "code") else "")
         return [], False, why
+    if isinstance(cal, dict) and cal.get("cached"):
+        # منبع نداد ولی حافظهٔ ≤۶س هست — محافظ رویداد کار می‌کند، با برچسب
+        return _macro_filter(cal), "CACHED", f"حافظهٔ {cal.get('cache_age_min')}د پیش؛ منبع: {cal.get('source_error')}"
     return _macro_filter(cal), True, ""
 
 
@@ -249,7 +252,9 @@ def run():
     u4, b4 = _chg(series, 240)
     mac, cal_ok, cal_why = macro_events_status()
     verdict = opinion(u1, b1, u4)
-    if not cal_ok:
+    if cal_ok == "CACHED":
+        verdict += f"؛ ℹ️ تقویم از {cal_why}"
+    elif not cal_ok:
         verdict += f"؛ ⚠️ تقویم در دسترس نبود ({cal_why}) — محافظ رویداد ≤۲س این نوبت کور است"
     if mac:
         # همهٔ رویدادها، نه فقط نزدیک‌ترین — سخنرانی فد نباید پشت GDP گم شود
