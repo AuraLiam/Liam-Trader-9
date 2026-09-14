@@ -76,6 +76,13 @@ const COOLDOWN = 6;          // bars between entries on one symbol
    وقت می‌خواهد، و timeout در این مدل با R=۰ بسته می‌شود.                */
 const GEO_SCALE = { ibs_g2: 2.0, ibs_g3: 3.0 };
 const STOP_FLOOR_PCT = { ibs_floor: 1.0 };
+/* مدل فیلِ همان ارسال (دستور حمید ۱۴ سپتامبر): بازوی ibs_fill سفارش را
+   لیمیت می‌گذارد و فقط وقتی کندلی ورود را لمس کند (l ≤ entry ≤ h) پر
+   می‌شود؛ پرنشده تا اعتبارِ تایم‌فریم = «expired»، نه معامله. دقیقه‌ها
+   آینهٔ paper.PENDING_VALID_MIN است (محافظ: test_backtest_contract). روی
+   کندلِ پرشدن، استاپ اول سنجیده می‌شود — همان محافظه‌کاریِ paper.mark. */
+const PENDING_VALID_MIN = { "1m": 45, "3m": 90, "5m": 240, "15m": 720, "1h": 2880 };
+const FILL_MODEL = { ibs_fill: true };
 
 /* One bar's worth of management, ordered pessimistically: when a bar could have
    hit either side, assume it hit the losing one first. */
@@ -103,6 +110,19 @@ for (const job of jobs) {
   for (let i = WARMUP; i < cd.length; i++) {
     const bar = cd[i];
 
+    if (open && open.pending) {
+      if (bar.l <= open.entry && open.entry >= bar.l && bar.h >= open.entry) {
+        open.pending = false; open.t0 = bar.t; open.i = i;   // پر شد: مدیریت از همین کندل
+      } else if (bar.t - open.placedAt > open.validMs) {
+        out.push({ sym: job.sym, tf: job.tf, dir: open.dir, r: 0, why: "expired", w: 0,
+                   bars: i - open.i, R: open.R2, stop_pct: +open.stopPct.toFixed(4),
+                   fee_r: 0, r_net: 0, room: open.room, swept: open.swept, inside: open.inside,
+                   volr: open.volr, thin: open.thin, adx: open.adx, conf: open.conf,
+                   openedAt: open.placedAt, closedAt: bar.t });
+        open = null;
+        continue;
+      } else continue;
+    }
     if (open) {
       const done = step(open, bar);
       const timedOut = !done && bar.t - open.t0 > (open.tmo || TIMEOUT_MS);
@@ -180,6 +200,10 @@ for (const job of jobs) {
       thin: x.thin && x.thin.thin ? 1 : 0, adx: x.dmi ? x.dmi.adx : null,
       conf: x.conf != null ? x.conf : null
     };
+    if (FILL_MODEL[variant]) {
+      open.pending = true; open.placedAt = bar.t;
+      open.validMs = (PENDING_VALID_MIN[job.tf] || 240) * 60000;
+    }
   }
 }
 

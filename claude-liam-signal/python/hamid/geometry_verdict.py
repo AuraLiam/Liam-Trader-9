@@ -69,7 +69,10 @@ CUTS = ("overall", "long", "short")
 
 
 def strict_r(t):
-    """R سختگیرانه: خروجِ «سربه‌سر» صفر می‌گیرد، نه پاداشِ کاملِ R1."""
+    """R سختگیرانه: خروجِ «سربه‌سر» صفر می‌گیرد، نه پاداشِ کاملِ R1.
+    «expired» (لیمیتِ پرنشده، بازوی ibs_fill) معامله نیست → None."""
+    if t.get("why") == "expired":
+        return None
     r = 0.0 if t.get("why") == "breakeven" else t.get("r")
     if r is None:
         return None
@@ -152,6 +155,7 @@ def cluster_boot_ci(trades, alpha, seed=17, b=BOOT, min_clusters=10, key="sym"):
 
 
 def _slice(trades, cut):
+    trades = [t for t in trades if t.get("why") != "expired"]   # پرنشده معامله نیست
     if cut == "long":
         return [t for t in trades if t.get("dir") == "LONG"]
     if cut == "short":
@@ -213,7 +217,9 @@ def judge(by_arm, alpha_per_test=None):
                     tfs[tf] = round(statistics.fmean(sx), 4)
             consistent = len(tfs) >= 2 and (all(v > 0 for v in tfs.values())
                                             or all(v < 0 for v in tfs.values()))
+            n_exp = sum(1 for t in trades if t.get("why") == "expired") if cut == "overall" else None
             row = {"arm": arm, "cut": cut, "n": len(xs), "win": win,
+                   "expired": n_exp, "expired_pct": (round(100 * n_exp / (n_exp + len(sub)), 1) if n_exp else None),
                    "strict": mean, "ci": list(ci) if ci else None,
                    "ci_iid": list(ci_iid) if ci_iid else None,
                    "ci_sym": list(ci_sym) if ci_sym else None,

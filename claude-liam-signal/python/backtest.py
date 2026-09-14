@@ -362,7 +362,10 @@ def main():
                            # از بزرگ‌کردن می‌آید یا از انتخابِ ستاپِ درشت.
                            ("ibs_g2", "IBS — جعبهٔ ×۲ (استاپ و تارگت‌ها)"),
                            ("ibs_g3", "IBS — جعبهٔ ×۳"),
-                           ("ibs_floor", "IBS — فقط ستاپِ طبیعتاً استاپ ≥۱٪")):
+                           ("ibs_floor", "IBS — فقط ستاپِ طبیعتاً استاپ ≥۱٪"),
+                           # مدل فیلِ همان ارسال (دستور حمید ۱۴ سپتامبر): همان ibs،
+                           # ولی لیمیت + انقضای اعتبار تایم‌فریم — پرنشده معامله نیست.
+                           ("ibs_fill", "IBS — مدل فیلِ ارسال: لیمیت + انقضا (paper.PENDING_VALID_MIN)")):
         print(f"replay: {variant} on {args.cores} cores", flush=True)
         results[variant] = run_variant(variant, jobs, args.cores, tmp)
         print(f"  {len(results[variant])} trades", flush=True)
@@ -393,7 +396,8 @@ def main():
                            ("ibs", "ibs — IBS+پولبک، اولین ریپلیِ استراتژی اصلی ارسال"),
                            ("ibs_g2", "ibs_g2 — همان ستاپ، جعبهٔ ×۲ (استاپ+تارگت+سقف زمان)"),
                            ("ibs_g3", "ibs_g3 — همان ستاپ، جعبهٔ ×۳"),
-                           ("ibs_floor", "ibs_floor — فقط ستاپِ طبیعتاً استاپ ≥۱٪")):
+                           ("ibs_floor", "ibs_floor — فقط ستاپِ طبیعتاً استاپ ≥۱٪"),
+                           ("ibs_fill", "ibs_fill — مدل فیل ارسال (لیمیت + انقضا)")):
         tr = results[variant]
         print(f"\n{label}")
         overall = describe("overall", tr)

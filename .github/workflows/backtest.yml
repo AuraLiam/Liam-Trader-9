@@ -118,7 +118,7 @@ jobs:
           rows = v["rows"]
           # هر بازو × هر جهت باید حکم داشته باشد — «حکم نداشتن» یعنی
           # داور خاموش بوده، و آن خرابی است.
-          for arm in ("ibs", "ibs_g2", "ibs_g3", "ibs_floor"):
+          for arm in ("ibs", "ibs_g2", "ibs_g3", "ibs_floor", "ibs_fill"):
               for cut in ("overall", "long", "short"):
                   r = rows.get(f"{arm}|{cut}")
                   assert r and r.get("verdict"), f"{arm}|{cut} حکم ندارد"
@@ -127,7 +127,7 @@ jobs:
           # ≥۱٪ نداشت، خالی‌بودنش نتیجهٔ آزمایش است نه خرابیِ خط لوله —
           # و سرخ‌کردنِ چرخه بابتِ یک نتیجهٔ منفی، همان آلارمِ کاذبی است
           # که قانون ۰۷ منع می‌کند.
-          for arm in ("ibs", "ibs_g2", "ibs_g3"):
+          for arm in ("ibs", "ibs_g2", "ibs_g3", "ibs_fill"):
               n = rows[f"{arm}|overall"]["n"]
               assert n > 0, f"{arm} هیچ معامله‌ای نساخت — بازو خاموش است"
           if not rows["ibs_floor|overall"]["n"]:
@@ -138,7 +138,7 @@ jobs:
           rv = json.loads(pathlib.Path("signals/regime-verdict.json").read_text(encoding="utf-8"))
           assert rv.get("status") == "OK", f"داور رژیم داده نداشت: {rv.get('status')} {rv.get('why')}"
           assert (rv.get("n_bull_days") or 0) + (rv.get("n_bear_days") or 0) >= 200, "نقشهٔ رژیم کمتر از ۲۰۰ روز دارد"
-          for arm in ("ibs", "ibs_g2", "ibs_g3"):
+          for arm in ("ibs", "ibs_g2", "ibs_g3", "ibs_fill"):
               for tf in v["bars"]:
                   for rg in ("BULL", "BEAR"):
                       assert rv["rows"].get(f"{arm}|{tf}|{rg}|overall", {}).get("n", 0) > 0, f"{arm}|{tf}|{rg} بی‌معامله"
@@ -148,7 +148,7 @@ jobs:
           for k in sorted(rows):
               r = rows[k]
               if r.get("n"):
-                  print(f"  {k:<22} n={r['n']:>6} strict={r['strict']:+.3f} {r['verdict']}")
+                  print(f"  {k:<22} n={r['n']:>6} strict={r['strict']:+.3f} {r['verdict']}" + (f"  expired={r['expired_pct']}%" if r.get('expired_pct') is not None else ""))
           PY
 
       - name: Commit the report

@@ -38,7 +38,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
 OUT = ROOT / "signals" / "regime-verdict.json"
 
-ARMS = ("ibs", "ibs_g2", "ibs_g3")
+ARMS = ("ibs", "ibs_g2", "ibs_g3", "ibs_fill")
 REGIMES = ("BULL", "BEAR")
 CUTS = ("overall", "long", "short")
 MIN_N_PROMOTE = 400

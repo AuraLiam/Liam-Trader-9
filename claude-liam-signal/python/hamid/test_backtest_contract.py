@@ -229,6 +229,26 @@ def run():
     check("زنجیرهٔ بک‌تست داور رژیم را می‌زند و فایلش را منتشر می‌کند",
           "hamid.regime_verdict --write" in _wf and "signals/regime-verdict.json" in _wf)
 
+    # ── D8 (۱۴ سپتامبر): مدل فیلِ همان ارسال — ibs_fill ─────────────────
+    _js = (PY / "bt_worker.js").read_text(encoding="utf-8")
+    from hamid import paper as _pp
+    _m = re.search(r"const PENDING_VALID_MIN = \{([^}]*)\}", _js)
+    _jsmap = dict((k.strip().strip('"'), int(v)) for k, v in re.findall(r'"(\w+)":\s*(\d+)', _m.group(1))) if _m else {}
+    check("اعتبارِ لیمیت در بک‌تست آینهٔ paper.PENDING_VALID_MIN است (یک قرارداد)", _jsmap == dict(_pp.PENDING_VALID_MIN), str((_jsmap, _pp.PENDING_VALID_MIN)))
+    check("بازوی ibs_fill پرنشده را «expired» و بی‌کارمزد ثبت می‌کند", 'why: "expired"' in _js and "FILL_MODEL" in _js and '("ibs_fill"' in _src)
+    check("داور، expired را معامله نمی‌شمارد (strict None، از برش‌ها بیرون)",
+          _GV.strict_r({"why": "expired", "r": 0}) is None and _GV._slice([{"why": "expired", "dir": "LONG"}, {"why": "stop", "dir": "LONG", "r": -1}], "overall") == [{"why": "stop", "dir": "LONG", "r": -1}])
+    _rj = _GV.judge({"ibs_fill": [{"why": "expired", "r": 0, "dir": "LONG", "sym": "A", "tf": "5m", "openedAt": 1}] * 3
+                                 + [{"why": "stop", "r": -1, "fee_r": 0.2, "dir": "LONG", "sym": "A", "tf": "5m", "openedAt": 1}] * 7})
+    check("سهم انقضا روی ردیف داور می‌نشیند (۳ از ۱۰ = ۳۰٪)", _rj["rows"]["ibs_fill|overall"].get("expired_pct") == 30.0 and _rj["rows"]["ibs_fill|overall"]["n"] == 7, str(_rj["rows"]["ibs_fill|overall"]))
+    # اجرای واقعیِ کارگر روی سری مصنوعی: پرنشدنِ اجباری باید expired بسازد
+    import subprocess as _sp, json as _js2, tempfile as _tf2
+    _cand = [{"t": 1_700_000_000_000 + i * 300_000, "o": 100, "h": 100.5, "l": 99.5, "c": 100 + (0.3 if i % 2 else -0.3), "v": 1000} for i in range(400)]
+    with _tf2.TemporaryDirectory() as _td:
+        _jp = Path(_td) / "jobs.json"; _jp.write_text(_js2.dumps([{"sym": "TESTUSDT", "tf": "5m", "candles": _cand}]))
+        _r = _sp.run(["node", str(PY / "bt_worker.js"), "ibs_fill", str(_jp)], capture_output=True, text=True, timeout=120)
+        check("کارگر با بازوی ibs_fill بی‌خطا اجرا می‌شود", _r.returncode == 0, _r.stderr[-300:])
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 
