@@ -1,5 +1,5 @@
 {
- "generated": 1789387592827,
+ "generated": 1789387772299,
  "usdt_dominance": 6.86,
  "btc_dominance": 58.4,
  "chg_1h": {
@@ -11,12 +11,33 @@
   "btc": -0.49
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1543/2990 (52٪)؛ بنچمارکِ همیشه‌تخت 67٪؛ بسترِ استیبل: LONG_ALT_STRONG",
- "macro": [],
+ "verdict": "USDT.D خنثی است؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رویدادهای کلان پیش رو: CPI m/m (0.3س) + Median CPI y/y (0.3س) + Trimmed CPI y/y (0.3س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: UNSAFE (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1543/2992 (52٪)؛ بنچمارکِ همیشه‌تخت 67٪؛ بسترِ استیبل: LONG_ALT_STRONG",
+ "macro": [
+  {
+   "title": "CPI m/m",
+   "in_hours": 0.3,
+   "country": "CAD"
+  },
+  {
+   "title": "Median CPI y/y",
+   "in_hours": 0.3,
+   "country": "CAD"
+  },
+  {
+   "title": "Trimmed CPI y/y",
+   "in_hours": 0.3,
+   "country": "CAD"
+  },
+  {
+   "title": "CPI y/y",
+   "in_hours": 41.8,
+   "country": "GBP"
+  }
+ ],
  "structure": {
   "bars_1h": 253,
   "bars_4h": 67,
-  "regime": "TRANSITION",
+  "regime": "UNSAFE",
   "usdt": {
    "trend_1h": "down",
    "px": 6.913,
@@ -27,6 +48,7 @@
   "btc_d": {
    "trend_1h": "up"
   },
+  "unsafe_reason": "رویداد کلان تا ۲ ساعت: CPI m/m",
   "why": "USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س up"
  },
  "multi_tf": {
@@ -100,21 +122,54 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.222,
+     "DOWN": 0.148,
+     "FLAT": 0.63
+    },
+    "p_claim": 0.63,
+    "p_n": 27,
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/2↓)"
+    ],
+    "p": {
+     "UP": 0.424,
+     "DOWN": 0.273,
+     "FLAT": 0.303
+    },
+    "p_claim": 0.303,
+    "p_n": 33,
+    "ev_n": 3
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
-    "n": 294,
+    "n": 295,
     "hit": 85,
-    "hit_pct": 28.9,
-    "dir_n": 4,
-    "dir_hit_pct": 75.0,
-    "baseline_flat_pct": 29.7,
-    "skill": -0.8,
+    "hit_pct": 28.8,
+    "dir_n": 5,
+    "dir_hit_pct": 60.0,
+    "baseline_flat_pct": 28.9,
+    "skill": -0.1,
     "brier": 0.6827,
     "brier_n": 147,
-    "brier_climate": 0.6647,
-    "brier_skill": -0.018
+    "brier_climate": 0.6638,
+    "brier_skill": -0.0189
    },
    "BTC.D|1440m": {
     "n": 14,
@@ -140,25 +195,25 @@
     "hit_pct": 44.9,
     "dir_n": 12,
     "dir_hit_pct": 16.7,
-    "baseline_flat_pct": 61.7,
-    "skill": -16.8,
+    "baseline_flat_pct": 62.1,
+    "skill": -17.2,
     "brier": 0.6216,
     "brier_n": 557,
-    "brier_climate": 0.546,
-    "brier_skill": -0.0756
+    "brier_climate": 0.5422,
+    "brier_skill": -0.0794
    },
    "USDT.D|120m": {
-    "n": 294,
+    "n": 295,
     "hit": 148,
-    "hit_pct": 50.3,
+    "hit_pct": 50.2,
     "dir_n": 11,
     "dir_hit_pct": 27.3,
-    "baseline_flat_pct": 59.5,
-    "skill": -9.2,
-    "brier": 0.5649,
-    "brier_n": 96,
-    "brier_climate": 0.5643,
-    "brier_skill": -0.0006
+    "baseline_flat_pct": 57.9,
+    "skill": -7.7,
+    "brier": 0.5711,
+    "brier_n": 97,
+    "brier_climate": 0.5762,
+    "brier_skill": 0.0051
    },
    "USDT.D|1440m": {
     "n": 14,
@@ -184,12 +239,12 @@
     "hit_pct": 67.4,
     "dir_n": 40,
     "dir_hit_pct": 5.0,
-    "baseline_flat_pct": 90.1,
-    "skill": -22.7,
+    "baseline_flat_pct": 90.0,
+    "skill": -22.6,
     "brier": 0.2923,
     "brier_n": 529,
-    "brier_climate": 0.1838,
-    "brier_skill": -0.1085
+    "brier_climate": 0.185,
+    "brier_skill": -0.1073
    }
   },
   "open": 8
@@ -234,16 +289,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 7.002,
+   "usdt_d_from": 7.005,
    "usdt_d_to": 6.86,
-   "d_dom_pct": -2.049,
-   "supply_effect_pct": 0.083,
-   "mcap_effect_pct": -2.132,
-   "supply_share": 0.038,
-   "mcap_share": 0.962,
-   "supply_usd_from": 183006352467,
+   "d_dom_pct": -2.092,
+   "supply_effect_pct": 0.046,
+   "mcap_effect_pct": -2.138,
+   "supply_share": 0.021,
+   "mcap_share": 0.979,
+   "supply_usd_from": 183073457629,
    "supply_usd_to": 183158592695,
-   "mcap_usd_from": 2613629712465,
+   "mcap_usd_from": 2613468345884,
    "mcap_usd_to": 2669950330830,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده",
@@ -264,8 +319,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": -0.142,
-    "usdc_d_delta": -0.057,
+    "usdt_d_delta": -0.145,
+    "usdc_d_delta": -0.058,
     "usdt_d": 6.86,
     "usdc_d": 2.776,
     "label": "RISK_ON",
@@ -291,10 +346,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": 2.155,
-    "total2_pct": 3.247,
-    "total3_pct": 4.018,
-    "gap_t3_total": 1.863,
+    "total_pct": 2.161,
+    "total2_pct": 3.278,
+    "total3_pct": 4.059,
+    "gap_t3_total": 1.898,
     "total_usd": 2669950330830,
     "total2_usd": 1110699337625,
     "total3_usd": 804990024745,
