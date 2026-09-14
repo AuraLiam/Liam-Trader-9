@@ -267,6 +267,38 @@ def run():
           res["n"] == len(res["answers"])
           and res["proved"] + res["unproved"] + res["no_data"] == res["n"])
 
+    # ── ممیزی ۱۴ سپتامبر: streak پیاپی است، نه جمعِ خالص ──────────────
+    import json as _json, tempfile as _tmp
+    _old = S.LOG
+    try:
+        _d = Path(_tmp.mkdtemp()); S.LOG = _d / "log.jsonl"
+        _row = lambda v: {"env": "ci", "answers": [{"engine": "E13", "q": "گ", "verdict": v}]}
+        S.LOG.write_text("\n".join(_json.dumps(_row(v), ensure_ascii=False)
+                                   for v in ["PROVED"] + ["UNPROVED"] * 4) + "\n", encoding="utf-8")
+        check("یک PROVED تاریخی و بعد چهار UNPROVED پیاپی = streak ۴ (نه ۰ — عیبِ −۹۹)",
+              S._history().get(("E13", "گ"), 0) == 4, str(S._history()))
+        S.LOG.write_text("\n".join(_json.dumps(_row(v), ensure_ascii=False)
+                                   for v in ["UNPROVED"] * 3 + ["PROVED"] + ["UNPROVED"]) + "\n", encoding="utf-8")
+        check("PROVED در وسط، شمارنده را صفر می‌کند و از نو می‌شمارد",
+              S._history().get(("E13", "گ"), 0) == 1)
+        S.LOG.write_text("\n".join(_json.dumps(_row(v), ensure_ascii=False)
+                                   for v in ["UNPROVED", "NO_DATA", "UNPROVED"]) + "\n", encoding="utf-8")
+        check("NO_DATA نه می‌شکند نه صفر می‌کند", S._history().get(("E13", "گ"), 0) == 2)
+    finally:
+        S.LOG = _old
+    # مهرِ رشته‌ای (depth-health.json) خوانده می‌شود، NO_DATAی کاذب نمی‌سازد
+    _now = 1_789_400_000_000
+    _saved = S._j
+    try:
+        S._j = lambda rel, d=None: {"at": "2026-09-14 12:14 UTC"}
+        _a = S._age_min("x.json", _now)
+        check("مهرِ رشته‌ایِ «%Y-%m-%d %H:%M UTC» به دقیقه تبدیل می‌شود",
+              isinstance(_a, int) and 0 < _a < 10_000, str(_a))
+        S._j = lambda rel, d=None: {"at": "دیروز"}
+        check("رشتهٔ ناخوانا همچنان None (حدس نمی‌زنیم)", S._age_min("x.json", _now) is None)
+    finally:
+        S._j = _saved
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 

@@ -142,6 +142,31 @@ rv3 = premortem.review(dict(SIG), quiet_c15())
 check("INSUFFICIENT → برگشت به دلتای عددی (وزن ۱)",
       any("USDT.D در حال رشد" in x for x in rv3["con"]), str(rv3["con"]))
 
+# ── ممیزی ۱۴ سپتامبر: «تقویم در دسترس نبود» ≠ «تقویم خالی» ─────────────
+from hamid import intel as _intel                               # noqa: E402
+_saved_cal = _intel.calendar
+try:
+    class _E(Exception):
+        code = 429
+    def _boom():
+        raise _E("rate")
+    _intel.calendar = _boom
+    _ev, _ok, _why = dominance.macro_events_status()
+    check("شکست تقویم صریح برمی‌گردد: ok=False با علت و کد HTTP", _ev == [] and _ok is False and _why == "_E:429", str((_ev, _ok, _why)))
+    check("سازگاری: macro_events() هنوز فهرست خالی می‌دهد", dominance.macro_events() == [])
+    _intel.calendar = lambda: {"next_48h": [], "high_this_week": 0}
+    _ev2, _ok2, _ = dominance.macro_events_status()
+    check("تقویم خالیِ سالم: ok=True و فهرست خالی", _ev2 == [] and _ok2 is True)
+    _intel.calendar = lambda: {"next_48h": [{"title": "CPI", "in_hours": 1.5, "country": "USD"},
+                                            {"title": "Tea party", "in_hours": 1.0}]}
+    _ev3, _ok3, _ = dominance.macro_events_status()
+    check("فیلتر کلان همان است: فقط عنوانِ کلان می‌ماند", [e["title"] for e in _ev3] == ["CPI"], str(_ev3))
+finally:
+    _intel.calendar = _saved_cal
+_dsrc = Path(dominance.__file__).read_text(encoding="utf-8")
+check("حکم دامیننس شکست تقویم را چاپ می‌کند و روی خروجی calendar_ok می‌نشیند",
+      "calendar_ok" in _dsrc and "محافظ رویداد ≤۲س این نوبت کور است" in _dsrc)
+
 print()
 if FAIL:
     print(f"✗ {FAIL} آزمون شکست")

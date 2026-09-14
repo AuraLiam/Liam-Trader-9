@@ -190,12 +190,27 @@ def structural(points, macro=None):
     return out
 
 
-def macro_events():
-    """رویدادهای کلان (تورم/بیکاری/فدرال) ۴۸ ساعت پیش رو از تقویم رسمی."""
+def macro_events_status():
+    """رویدادهای کلان ۴۸ ساعت پیش رو → (events, calendar_ok, why).
+
+    «تقویم خالی» و «تقویم در دسترس نبود» دو چیزند (ممیزی data-quality،
+    ۱۴ سپتامبر): نسخهٔ قبلی هر دو را `[]` می‌داد و محافظِ UNSAFE≤۲س
+    بی‌صدا خاموش می‌شد. حالا شکست صریح برمی‌گردد و روی حکم چاپ می‌شود.
+    """
     try:
         cal = intel.calendar()
-    except Exception:                            # noqa: BLE001
-        return []
+    except Exception as e:                       # noqa: BLE001
+        why = type(e).__name__ + (f":{e.code}" if hasattr(e, "code") else "")
+        return [], False, why
+    return _macro_filter(cal), True, ""
+
+
+def macro_events():
+    """سازگاری: فقط فهرست (شکست = خالی). مصرف‌کنندهٔ حکم از نسخهٔ status می‌خواند."""
+    return macro_events_status()[0]
+
+
+def _macro_filter(cal):
     evs = (cal.get("next_48h") if isinstance(cal, dict) else cal) or []
     out = []
     for e in evs:
@@ -232,8 +247,10 @@ def run():
 
     u1, b1 = _chg(series, 60)
     u4, b4 = _chg(series, 240)
-    mac = macro_events()
+    mac, cal_ok, cal_why = macro_events_status()
     verdict = opinion(u1, b1, u4)
+    if not cal_ok:
+        verdict += f"؛ ⚠️ تقویم در دسترس نبود ({cal_why}) — محافظ رویداد ≤۲س این نوبت کور است"
     if mac:
         # همهٔ رویدادها، نه فقط نزدیک‌ترین — سخنرانی فد نباید پشت GDP گم شود
         # (درس ۲۷ اوت: وارش در داده بود ولی از رأی افتاده بود)
@@ -303,6 +320,7 @@ def run():
         "usdt_dominance": u, "btc_dominance": b,
         "chg_1h": {"usdt": u1, "btc": b1}, "chg_4h": {"usdt": u4, "btc": b4},
         "points": len(series), "verdict": verdict, "macro": mac,
+        "calendar_ok": cal_ok, "calendar_why": cal_why or None,
         "structure": struct, "multi_tf": mtf, "forecast": fc,
         "decomposition": decomp, "tf_map": tfm, "stables": stb,
     }, ensure_ascii=False, indent=1))

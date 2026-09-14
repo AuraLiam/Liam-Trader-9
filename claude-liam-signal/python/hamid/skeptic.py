@@ -79,7 +79,17 @@ def _age_min(rel, now):
     d = _j(rel, {}) or {}
     g = d.get("generated") or d.get("at")
     if isinstance(g, str):
-        return None
+        # مهرِ رشته‌ای (مثل depth-health.json: «2026-09-14 12:14 UTC») —
+        # خوانده می‌شود، نه دور انداخته (ممیزی ۱۴ سپتامبر: NO_DATAی کاذب).
+        for fmt in ("%Y-%m-%d %H:%M UTC", "%Y-%m-%d %H:%M:%S UTC", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                import calendar as _cal
+                g = _cal.timegm(time.strptime(g, fmt)) * 1000
+                break
+            except ValueError:
+                continue
+        else:
+            return None
     return round((now - g) / 60000) if g else None
 
 
@@ -427,10 +437,16 @@ def _history():
                     continue
                 for a in r.get("answers") or []:
                     k = (a["engine"], a["q"])
-                    out[k] = out.get(k, 0) + (1 if a["verdict"] == "UNPROVED" else -99)
+                    # شمارِ **پیاپی**: PROVED صفر می‌کند، UNPROVED یکی اضافه.
+                    # (نسخهٔ قبلی −۹۹ کم می‌کرد و در پایان max(0,·) می‌گرفت —
+                    # یعنی بعد از یک PROVEDِ تاریخی، تا ۹۹ شکستِ بعدی هم
+                    # «streak=۰» می‌ماند. ممیزی ۱۴ سپتامبر: ۳٬۱۶۳ نوبتِ پیاپیِ
+                    # UNPROVED روی گذرگاه، ولی فیلد streak=۱.)
+                    out[k] = 0 if a["verdict"] == "PROVED" else out.get(k, 0) + (
+                        1 if a["verdict"] == "UNPROVED" else 0)
     except Exception:                                # noqa: BLE001
         pass
-    return {k: max(0, v) for k, v in out.items()}
+    return out
 
 
 def interrogate(now_ms=None, rnd=None):

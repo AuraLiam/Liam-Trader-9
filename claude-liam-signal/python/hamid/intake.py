@@ -194,7 +194,8 @@ def collect_external(timeout_s=SOURCE_TIMEOUT_S, intel=None):
                 except FutTimeout:
                     it.update(ok=False, err=f"timeout>{timeout_s}s")
                 except Exception as e:               # noqa: BLE001
-                    it.update(ok=False, err=f"{type(e).__name__}")
+                    # کدِ وضعیت HTTP هم ثبت می‌شود (۴۰۳/۴۲۹/۵۰۳ سه علتِ متفاوت‌اند)
+                    it.update(ok=False, err=type(e).__name__ + (f":{e.code}" if hasattr(e, "code") else ""))
             items.append(it)
     return items
 

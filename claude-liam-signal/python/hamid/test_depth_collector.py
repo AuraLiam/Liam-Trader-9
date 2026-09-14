@@ -439,6 +439,18 @@ check("بودجهٔ داخل شل با سقفِ واقعیِ job یکی است (
       bool(_m_to and _m_bg) and _m_to.group(1) == _m_bg.group(1),
       f"timeout={_m_to and _m_to.group(1)} budget={_m_bg and _m_bg.group(1)}")
 
+# ── ممیزی ۱۴ سپتامبر: مهرِ عددی کنارِ مهرِ رشته‌ای ──────────────────────
+with tempfile.TemporaryDirectory() as _td:
+    _oldH = DC.HEALTH
+    try:
+        DC.HEALTH = Path(_td) / "depth-health.json"
+        _h = DC.write_health({"rejected": {}}, outdir=Path(_td))
+        _doc = json.loads(DC.HEALTH.read_text(encoding="utf-8"))
+        check("depth-health.json مهرِ عددی generated (ms) دارد — شکاک/قرارداد از این می‌خوانند",
+              isinstance(_doc.get("generated"), int) and _doc["generated"] > 1e12, str(list(_doc)[:6]))
+    finally:
+        DC.HEALTH = _oldH
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

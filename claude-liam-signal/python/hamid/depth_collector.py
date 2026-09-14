@@ -420,6 +420,7 @@ def write_health(result, outdir=None):
                          "missed": sum(x.get("miss", 0) for x in r)})
     payload = {
         "at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+        "generated": int(time.time() * 1000),   # مهرِ عددی — قرارداد وضعیت و شکاک از این می‌خوانند
         "symbols": rows,
         "total_minutes": sum(r["minutes"] for r in rows),
         # همان چیزی که دو بار در لاگ گم شد:
