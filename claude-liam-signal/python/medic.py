@@ -31,7 +31,7 @@ Heartbeat را dispatch می‌کند. این همان کاری است که تا
 
 اجرای دستی:  python3 claude-liam-signal/python/medic.py
 """
-import json, os, sys, time, urllib.request
+import json, os, re, sys, time, urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -106,6 +106,125 @@ def stuck_runs(runs, now=None, max_min=STUCK_QUEUED_MIN):
                       f"{x.get('run_number') or x.get('id')}) — تا کنسل نشود "
                       "هیچ اجرای بعدیِ همان گروه شروع نمی‌شود")
     return faults, bool(faults)
+
+
+DIED_MIN = 10   # کنسلِ کوتاه = concurrency (بی‌گناه)؛ کنسلِ بلند = مرگ در سقفِ timeout-minutes
+
+
+def _run_minutes(x):
+    try:
+        f = "%Y-%m-%dT%H:%M:%SZ"
+        t0 = time.mktime(time.strptime(x.get("run_started_at") or x.get("created_at"), f))
+        t1 = time.mktime(time.strptime(x.get("updated_at"), f))
+        return max(0.0, (t1 - t0) / 60.0)
+    except Exception:                                # noqa: BLE001
+        return None
+
+
+def run_diagnosis(runs, now=None, died_min=DIED_MIN):
+    """علتِ سکوتِ یک ورک‌فلو از آخرین اجراهایش → (code, detail, sick).
+
+    نقطهٔ کورِ ۱۴ سپتامبر (میز اسکلپ، اجراهای ۴۵۹–۴۶۲): چهار اجرای پیاپی
+    دقیقاً در دقیقهٔ ۱۲ «cancelled» شدند — timeout-minutes، چون
+    `fetch-depth: 0` روی مخزنِ ۴.۴ گیگابایتی ۱۱–۱۲ دقیقه می‌گرفت. گذرگاه
+    وضعیت فایل را «کهنه» می‌گفت (DEGRADED) ولی هیچ‌کس **علت** را نمی‌گفت،
+    و `github_health` کنسل را عمداً خنثی می‌شمرد (درسِ ۲۵ اوت: کنسلِ
+    concurrency آلارم کاذب می‌ساخت). تفکیکِ کلاس: کنسلِ *کوتاه* همان
+    concurrency است و خنثی می‌ماند؛ کنسلِ *بلند* (≥ died_min دقیقه) یعنی
+    job تا سقفش دوید و کشته شد — این مرگ است، نه خنثی.
+
+      DIED_AT_TIMEOUT  ≥۲ کنسلِ بلندِ پیاپی در انتها          → sick
+      FAILING          ≥۲ شکست/timed_out پیاپی در انتها       → sick
+      QUEUED           آخرین اجرا هنوز شروع نشده (stuck_runs سنش را می‌سنجد)
+      NO_RUNS          هیچ اجرایی — کرون شلیک نشده                → sick
+      ONE_BAD          فقط یک اجرای بدِ اخیر (نوسان)             → هشدار
+      OK               آخرین اجرای کامل سبز
+    """
+    now = now or time.time()
+    rs = sorted([x for x in runs or [] if x.get("status")],
+                key=lambda x: x.get("created_at") or "", reverse=True)
+    if not rs:
+        return "NO_RUNS", "هیچ اجرایی ثبت نشده — کرون شلیک نمی‌شود", True
+    if str(rs[0].get("status")) in ("queued", "pending", "waiting"):
+        return "QUEUED", f"اجرای {rs[0].get('run_number') or '?'} هنوز شروع نشده", False
+    died = fails = 0
+    for x in rs:
+        if x.get("status") != "completed":
+            continue
+        c = x.get("conclusion")
+        if c == "success":
+            break
+        if c == "cancelled" and (_run_minutes(x) or 0) >= died_min:
+            died += 1
+        elif c in ("failure", "timed_out"):
+            fails += 1
+        # کنسلِ کوتاه / skipped: خنثی
+    if died >= 2:
+        m = _run_minutes(rs[0]) or 0
+        return "DIED_AT_TIMEOUT", (f"{died} اجرای پیاپی در سقف زمان کشته شدند (~{m:.0f}د) — "
+                                   "job تا timeout-minutes دویده؛ معمولاً چک‌اوتِ تمام‌تاریخچه یا مرحلهٔ آویزان"), True
+    if fails >= 2:
+        return "FAILING", f"{fails} شکستِ پیاپی در انتها", True
+    if died or fails:
+        return "ONE_BAD", "یک اجرای بدِ اخیر — هنوز الگو نیست", False
+    ok = next((x for x in rs if x.get("conclusion") == "success"), None)
+    age = None
+    if ok:
+        try:
+            t = time.mktime(time.strptime(ok.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")) - time.timezone
+            age = (now - t) / 60.0
+        except Exception:                            # noqa: BLE001
+            pass
+    return "OK", (f"آخرین اجرای سبز {age:.0f}د پیش" if age is not None else "آخرین اجرا سبز"), False
+
+
+def workflow_for_file(name, registry=None, jobs=None):
+    """فایل وضعیت → ورک‌فلوی تولیدکننده‌اش، از قرارداد (producer) و جدول سرویس محلی (wf)."""
+    try:
+        if registry is None:
+            registry = json.loads((ROOT / "config" / "state_registry.json").read_text(encoding="utf-8"))["files"]
+        if jobs is None:
+            from hamid import liam9d as D
+            jobs = D.JOBS
+    except Exception:                                # noqa: BLE001
+        return None
+    prod = str((registry.get(name) or {}).get("producer") or "")
+    m = re.search(r"hamid/([a-z0-9_]+)\.py", prod)
+    if not m:
+        return None
+    mod = "hamid." + m.group(1)
+    for j in jobs:
+        cmd = j.get("cmd") or []
+        if len(cmd) > 2 and cmd[1] == "-m" and cmd[2] == mod:
+            return j.get("wf")
+    return None
+
+
+def explain_stale(stale, fetch_runs, now=None, limit=4):
+    """برای هر فایلِ کهنهٔ گذرگاه وضعیت، علت را از اجراهای ورک‌فلوی تولیدکننده‌اش بگو.
+
+    `fetch_runs(wf)` فهرست اجراهای همان ورک‌فلو را می‌دهد (تزریق‌شدنی برای
+    آزمون). خروجی: (faults, sick). فایلی که ورک‌فلویش پیدا نشود، بی‌صدا رد
+    می‌شود — حدس نمی‌زنیم (قانون ۱).
+    """
+    faults, sick, seen = [], False, set()
+    for f in (stale or [])[:limit]:
+        name = f.get("file")
+        wf = workflow_for_file(name)
+        if not wf or wf in seen:
+            continue
+        seen.add(wf)
+        try:
+            runs = fetch_runs(wf)
+        except Exception:                            # noqa: BLE001
+            continue
+        code, detail, bad = run_diagnosis(runs, now=now)
+        if code in ("OK", "QUEUED"):
+            continue
+        faults.append(f"⛔ «{name}» {f.get('age_min', 0):.0f}د کهنه (سقف {f.get('max_age_min')}) — "
+                      f"علت در {wf}: {code} — {detail}")
+        sick = sick or bad
+    return faults, sick
 
 
 def github_health(runs):
@@ -295,6 +414,28 @@ def examine():
                 sick = True
         except Exception as e:                       # noqa: BLE001
             finds.append(f"صفِ گیت‌هاب خوانده نشد: {type(e).__name__}")
+        # علت پیش از حادثه (دستور ۶ سپتامبر): فایلِ کهنهٔ گذرگاه وضعیت
+        # فقط «کهنه» نمی‌ماند — اجراهای ورک‌فلوی تولیدکننده‌اش خوانده و
+        # علت طبقه‌بندی می‌شود (مرگ در timeout / شکست / کرونِ خاموش).
+        try:
+            ss = json.loads((ROOT / "signals" / "system-state.json").read_text(encoding="utf-8"))
+            stale = [f_ for f_ in ss.get("faults", []) if f_.get("kind") == "stale"]
+
+            def _fetch_wf(wf):
+                rq = urllib.request.Request(
+                    "https://api.github.com/repos/Auraliam/Liam-Trader-9/actions/workflows/"
+                    f"{wf}/runs?per_page=6", headers=hdr)
+                with urllib.request.urlopen(rq, timeout=25) as rr:
+                    return json.load(rr).get("workflow_runs", [])
+
+            ex_faults, ex_sick = explain_stale(stale, _fetch_wf)
+            for f_ in ex_faults:
+                finds.append(f_)
+                faults.append(f_)
+            if ex_sick:
+                sick = True
+        except Exception as e:                       # noqa: BLE001
+            finds.append(f"علتِ کهنگی خوانده نشد: {type(e).__name__}")
         for f_ in gh_faults:
             finds.append(f_)
             faults.append(f_)

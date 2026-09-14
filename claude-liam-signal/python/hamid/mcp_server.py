@@ -142,9 +142,17 @@ def t_signal_file(name: str):
     p = SIGNALS / name
     if not p.exists():
         return {"text": f"{name}: روی این چک‌اوت نیست", "ok": False, "absent": True}
-    age = (time.time() - p.stat().st_mtime) / 60
     d = _load(p)
-    return {"text": f"{name} — سن {age:.0f}د", "ok": True, "age_min": round(age, 1), "doc": d}
+    # سن از مهرِ خودِ داده (`generated`)، نه mtime چک‌اوت — چک‌اوت می‌تواند
+    # ساعت‌ها عقب یا تازه‌کلون باشد (درس ۱۴ سپتامبر: scalp.json با mtime
+    # ۱۴ دقیقه، ولی generated ۷۸۸ دقیقه).
+    gen = (d or {}).get("generated") if isinstance(d, dict) else None
+    if isinstance(gen, (int, float)) and gen > 1e11:
+        age, src = (time.time() * 1000 - gen) / 60000, "generated"
+    else:
+        age, src = (time.time() - p.stat().st_mtime) / 60, "mtime"
+    return {"text": f"{name} — سن {age:.0f}د ({src})", "ok": True, "age_min": round(age, 1),
+            "age_source": src, "doc": d}
 
 
 def t_run_intake(external: bool = True):
@@ -314,9 +322,12 @@ def main(argv=None):
     if a.call:
         args = json.loads(a.call[1]) if len(a.call) > 1 else {}
         r = call_tool(a.call[0], args)
-        print(r["content"][0]["text"])
-        if r.get("structuredContent"):
-            print(json.dumps(r["structuredContent"], ensure_ascii=False, indent=1)[:MAX_TEXT])
+        try:
+            print(r["content"][0]["text"])
+            if r.get("structuredContent"):
+                print(json.dumps(r["structuredContent"], ensure_ascii=False, indent=1)[:MAX_TEXT])
+        except BrokenPipeError:                      # `| head` — خروجی بریده شد، خطا نیست
+            pass
         return 1 if r["isError"] else 0
     serve()
     return 0

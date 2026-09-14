@@ -19,8 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
+      # چک‌اوتِ کم‌عمق (تصحیح ۱۴ سپتامبر): `fetch-depth: 0` روی مخزنِ ۴.۴
+      # گیگابایتی ۱۱–۱۲ دقیقه می‌گرفت و چهار اجرای پیاپی دقیقاً در سقفِ
+      # ۱۲ دقیقه کنسل شدند (اجراهای ۴۵۹–۴۶۲) — میز ۱۳ ساعت بی‌انتشار ماند
+      # و چون «cancelled» نه سبز بود نه قرمز، هیچ پاسبانی ندید. ناشر
+      # مشترک (قانون ۱۴) خودش نوکِ کم‌عمقِ origin را می‌گیرد.
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 1 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: Self-test
@@ -56,33 +61,11 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python3 -m hamid.scalp_verdict --alert || true
+      # ناشر مشترک (قانون ۱۴) — حلقهٔ دست‌نویسِ merge/allow-unrelated-histories
+      # برداشته شد؛ همان چیزی که hamid-cycle و میز مراقبان می‌زنند.
       - name: Publish
-        run: |
-          git config user.name "Hamid Signal Agent"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A brain/paper signals
-          git diff --cached --quiet && { echo "بدون تغییر"; exit 0; }
-          git commit -q -m "میز اسکلپ $(date -u '+%Y-%m-%d %H:%M') UTC"
-          for attempt in 1 2 3 4 5 6 7 8; do
-            git push origin HEAD:main && break
-            git fetch origin main || true
-            # `--allow-unrelated-histories`: این ریپو واقعاً **دو ریشه** دارد
-            # (`git rev-list --max-parents=0` دو کامیت می‌دهد)، پس گیت گاهی
-            # «refusing to merge unrelated histories» می‌دهد و آن‌وقت هیچ
-            # merge ای در جریان نیست.
-            if ! git merge --no-edit --allow-unrelated-histories origin/main; then
-              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" || true
-              # حل‌شده‌ها باید stage شوند، وگرنه commit «چیزی برای کامیت
-              # نیست» می‌دهد و دور بعد هم همان.
-              git add -A brain signals 2>/dev/null || true
-              # هر پاک‌سازی با `|| true`: زیر `bash -e` خطای کشندهٔ
-              # `git merge --abort` (وقتی merge ای در جریان نیست) کلِ گام
-              # را در **دور اول** می‌کشت و حلقهٔ ۸تایی هرگز دور دوم
-              # نمی‌دید. اثبات: اجرای ۳۲۰ چرخه، exit 128 در ۳ ثانیه.
-              git commit --no-edit || git merge --abort || true
-            fi
-            sleep $((attempt * 4 + RANDOM % 7))
-          done
+        if: github.ref == 'refs/heads/main'
+        run: scripts/publish.sh -m "میز اسکلپ $(date -u '+%Y-%m-%d %H:%M') UTC" brain/paper signals
       - name: Publish to panel (gh-pages)
         run: |
           git fetch origin gh-pages

@@ -245,6 +245,48 @@ check("examine پرسشِ جدای صف را می‌زند (بدون فیلتر�
 check("و نتیجه‌اش هم در finds هم در faults می‌نشیند (درس ۲۵ اوت)",
       _msrc.count("st_faults") >= 2)
 
+
+# ── تشخیصِ علتِ سکوت (۱۴ سپتامبر — میز اسکلپ چهار بار در سقفِ ۱۲د کشته شد) ──
+def _crun(concl, mins_ago, dur_min, status="completed", num=460):
+    t0 = _now - mins_ago * 60
+    f = "%Y-%m-%dT%H:%M:%SZ"
+    return {"status": status, "conclusion": concl, "run_number": num,
+            "created_at": _t.strftime(f, _t.gmtime(t0)),
+            "run_started_at": _t.strftime(f, _t.gmtime(t0)),
+            "updated_at": _t.strftime(f, _t.gmtime(t0 + dur_min * 60))}
+
+
+_scalp = [_crun("cancelled", 60 * (i + 1), 12, num=462 - i) for i in range(4)] + [_crun("success", 600, 10, num=458)]
+_c, _d, _sk = M.run_diagnosis(_scalp, now=_now)
+check("چهار کنسلِ ۱۲دقیقه‌ایِ پیاپی = DIED_AT_TIMEOUT و sick (نمونهٔ واقعی ۴۵۹–۴۶۲)",
+      _c == "DIED_AT_TIMEOUT" and _sk, f"{_c} {_d}")
+_c2, _, _sk2 = M.run_diagnosis([_crun("cancelled", 30, 0.5), _crun("cancelled", 45, 0.3), _crun("success", 90, 10)], now=_now)
+check("کنسلِ کوتاه (concurrency) خنثی می‌ماند — آلارم کاذبِ ۲۵ اوت برنمی‌گردد",
+      _c2 == "OK" and not _sk2, _c2)
+_c3, _, _sk3 = M.run_diagnosis([_crun("failure", 30, 3), _crun("timed_out", 60, 12), _crun("success", 90, 5)], now=_now)
+check("شکست + timed_out پیاپی = FAILING و sick", _c3 == "FAILING" and _sk3, _c3)
+_c4, _, _sk4 = M.run_diagnosis([_crun("cancelled", 30, 12), _crun("success", 60, 5)], now=_now)
+check("یک مرگِ تک = ONE_BAD، هنوز sick نیست", _c4 == "ONE_BAD" and not _sk4, _c4)
+_c5, _, _sk5 = M.run_diagnosis([], now=_now)
+check("بی‌اجرا = NO_RUNS و sick (کرونِ خاموش)", _c5 == "NO_RUNS" and _sk5)
+_c6, _, _sk6 = M.run_diagnosis([_crun(None, 5, 0, status="queued")], now=_now)
+check("در صف = QUEUED (سنجشِ سن با stuck_runs)", _c6 == "QUEUED" and not _sk6)
+check("مهرِ ناخوانا حدس زده نمی‌شود", M._run_minutes({"created_at": "x", "updated_at": "y"}) is None)
+
+check("scalp.json به scalp.yml نگاشت می‌شود (قرارداد → جدول سرویس محلی)",
+      M.workflow_for_file("scalp.json") == "scalp.yml", str(M.workflow_for_file("scalp.json")))
+check("فایلِ بی‌تولیدکنندهٔ شناخته → None، نه حدس", M.workflow_for_file("definitely-none.json") is None)
+_stale = [{"file": "scalp.json", "age_min": 783.2, "max_age_min": 660}]
+_ef, _es = M.explain_stale(_stale, lambda wf: _scalp, now=_now)
+check("فایلِ کهنه + اجراهای مرده → خرابی با علت و نام ورک‌فلو",
+      _es and _ef and "scalp.yml" in _ef[0] and "DIED_AT_TIMEOUT" in _ef[0], str(_ef))
+_ef2, _es2 = M.explain_stale(_stale, lambda wf: [_crun("success", 5, 4)], now=_now)
+check("فایلِ کهنه ولی ورک‌فلو سبز → این‌جا خرابی نمی‌سازد (گذرگاه خودش کهنگی را می‌گوید)", not _ef2 and not _es2)
+_ef3, _es3 = M.explain_stale(_stale, lambda wf: (_ for _ in ()).throw(RuntimeError("net")), now=_now)
+check("خطای شبکه در خواندن اجراها بی‌صدا رد می‌شود، نه استثنا", not _ef3 and not _es3)
+check("examine علتِ کهنگی را روی faults می‌نشاند (سیم وصل است)",
+      _msrc.count("explain_stale(") >= 1 and "ex_faults" in _msrc)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

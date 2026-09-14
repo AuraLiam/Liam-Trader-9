@@ -158,7 +158,7 @@ wf = (ROOT / ".github" / "workflows" / "pump-radar.yml").read_text(encoding="utf
 check("زنجیره بعد از dispatch صف بازبینی را می‌نویسد",
       "hamid.review_queue --write" in wf and wf.index("hamid.dispatch --write") < wf.index("hamid.review_queue --write"))
 check("و همین محافظ در دروازهٔ زنجیره است", "hamid.test_mcp_server" in wf)
-q = RQ.build(prev=None)
+q = RQ.build(prev=M._load(RQ.OUT))   # همان prev که ابزار می‌بیند
 check("صف بازبینی و ابزار review_queue یک جواب می‌دهند",
       set(results["review_queue"]["structuredContent"]["todo"]) == set(q["todo"]))
 
