@@ -1,5 +1,5 @@
 {
- "generated": 1789399941701,
+ "generated": 1789400141515,
  "usdt_dominance": 6.825,
  "btc_dominance": 58.61,
  "chg_1h": {
@@ -11,11 +11,11 @@
   "btc": -0.29
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: CPI y/y (38.5س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1546/3008 (51٪)؛ بنچمارکِ همیشه‌تخت 64٪؛ بسترِ استیبل: LONG_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: CPI y/y (38.4س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1546/3008 (51٪)؛ بنچمارکِ همیشه‌تخت 64٪؛ بسترِ استیبل: LONG_ALT_STRONG",
  "macro": [
   {
    "title": "CPI y/y",
-   "in_hours": 38.5,
+   "in_hours": 38.4,
    "country": "GBP"
   }
  ],
@@ -315,40 +315,40 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2551,
+    "bars": 2552,
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "down",
-    "px": 6.818,
+    "px": 6.825,
     "threshold": 0.004,
     "threshold_stats": {
-     "n": 2550,
+     "n": 2551,
      "pctl": 0.75,
      "median": 0.001,
      "p90": 0.009
     },
-    "delta": -0.001,
-    "meaningful": false,
+    "delta": 0.007,
+    "meaningful": true,
     "regime": "BULLISH",
-    "note": "USDT.D در 5m: روند down → رژیم BULLISH؛ تغییر آخرین کندل -0.0010 در برابر آستانهٔ 0.0040 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 5m: روند down → رژیم BULLISH؛ تغییر آخرین کندل +0.0070 در برابر آستانهٔ 0.0040 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2551,
+    "bars": 2552,
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "range",
-    "px": 58.64,
+    "px": 58.61,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 2550,
+     "n": 2551,
      "pctl": 0.75,
      "median": 0.0,
      "p90": 0.02
     },
-    "delta": 0.0,
-    "meaningful": false,
-    "note": "BTC.D در 5m: روند range؛ تغییر آخرین کندل +0.0000"
+    "delta": -0.03,
+    "meaningful": true,
+    "note": "BTC.D در 5m: روند range؛ تغییر آخرین کندل -0.0300"
    }
   },
   "15m": {
@@ -481,9 +481,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "REDEMPTION",
+    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": 0.001,
+    "d_stable_d": 0.002,
+    "supply_growth": {
+     "USDT": -0.001468,
+     "USDC": -0.001252
+    },
+    "supply_growth_total": -0.001406,
+    "mcap_growth": -0.001614,
+    "usdt_d": 6.825,
+    "stable_d": 9.585,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "REDEMPTION",
@@ -505,9 +517,19 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (+0.002، زیر میانهٔ 0.014) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.014,
+    "stable_d": 9.585,
+    "d_stable_d": 0.002,
+    "usdt_d": 6.825,
+    "d_usdt_d": 0.001,
+    "cause": "REDEMPTION",
+    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "LONG_BIAS",
