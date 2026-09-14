@@ -295,6 +295,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>تمرین تاریخی و حافظهٔ پایدار <span class="dim" style="font-size:11px;font-weight:400" id="hroomMeta">بازپخش بدون نگاه به آینده — فقط دادهٔ واقعی؛ کمبود صریح اعلام می‌شود</span></h3><div id="hroomBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>ناظر کل (E26) <span class="dim" style="font-size:11px;font-weight:400" id="ovsMeta">هد-تریدر سخت‌گیر — دستور تمرکز مستدل برای ایجنت‌های متخصص؛ بدون وتو</span></h3><div id="ovsBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🪙 اتاق دامیننس <span class="dim" style="font-size:11px;font-weight:400" id="ddMeta">قاعدهٔ پایه، رأی وزنی تایم‌ها، کانال ۴س/۱س، USDC.D و چرخهٔ پول</span></h3><div id="domDeskBox"></div></div>
@@ -3820,6 +3821,28 @@ function renderHroom(){
 }
 setInterval(hroomFetch,300000);setTimeout(hroomFetch,5600);
 (()=>{const h=DB.get("hroom_cache");if(h&&!HROOM.data){HROOM.data=h;setTimeout(renderHroom,750);}})();
+/* ناظر کل E26 (۱۴ سپتامبر — «نظارت بر ایجنت‌های متخصص هم روی پنل») —
+   منبع: signals/overseer.json (hamid/overseer.py)؛ فقط نمایش دستورهای تمرکز. */
+const OVS={data:null};
+async function ovsFetch(){
+  try{
+    const r=await fetch("./signals/overseer.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){OVS.data=j;DB.set("ovs_cache",j);renderOvs();}}
+  }catch(e){}
+}
+function renderOvs(){
+  const el=$("#ovsBox");if(!el)return;
+  const j=OVS.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">ناظر کل هنوز دستوری صادر نکرده (هر چرخه).</div>`;return;}
+  const meta=$("#ovsMeta");
+  if(meta)meta.textContent=(j.note||"")+" · "+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const sev={crit:"🔴",warn:"🟠",info:"⚪"};
+  const rows=(j.directives||[]).slice(0,8).map(d=>
+    `<div style="font-size:12px;margin:3px 0">${sev[d.sev]||"⚪"} <b>${d.engine==="*"?"همه":d.engine}</b> — ${d.order} <span class="dim" style="font-size:11px">(${d.reason||""})</span></div>`).join("");
+  el.innerHTML=rows||`<div class="dim" style="font-size:12px">دستوری فعال نیست.</div>`;
+}
+setInterval(ovsFetch,300000);setTimeout(ovsFetch,6000);
+(()=>{const o=DB.get("ovs_cache");if(o&&!OVS.data){OVS.data=o;setTimeout(renderOvs,800);}})();
 /* نظرسنجی خبر (۲ سپتامبر) — هر ایجنت دربارهٔ هر خبر چه گفت و چند بار درست
    بود. وزن فقط از کارنامه و با سقف ۵٪؛ این کارت هیچ امتیاز/دروازه‌ای نمی‌سازد. */
 const NPOLL={data:null};
