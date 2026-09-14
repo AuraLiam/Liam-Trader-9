@@ -71,7 +71,7 @@ OUT = ROOT / "signals" / "gate-verdict.json"
 #              می‌شود، ولی از دروازه‌های پایین‌دست رد نشده؛ پس حکمش
 #              دربارهٔ «انتشار» است نه «ارسال».
 # پول‌کردنشان حکمی می‌سازد که معلوم نیست دربارهٔ چیست — به‌عمد جدا ماندند.
-STAGES = {"delivery": "gate-vetoed", "stage": "stage-vetoed"}
+STAGES = {"delivery": "gate-vetoed", "stage": "stage-vetoed", "rule": "rule-vetoed"}
 STAGE = STAGES["delivery"]
 MIN_N = 150                    # قاعدهٔ توقف، از پیش ثبت‌شده
 HALF_WIDTH_TARGET = 0.10       # برای برآوردِ «چند نمونهٔ دیگر»
@@ -248,7 +248,8 @@ def render(v):
 
 
 LABELS = {"delivery": "گلوگاه ارسال (ضدواقعِ تمیز)",
-          "stage": "مرحلهٔ انتشار (پرحجم‌تر)"}
+          "stage": "مرحلهٔ انتشار (پرحجم‌تر)",
+          "rule": "وتوی قانونِ تأییدشدهٔ منفی (۱۴ سپتامبر)"}
 
 
 def judge_all(path=None, now_ms=None):

@@ -117,7 +117,7 @@ def assess(rows, now_ms=None):
     return esc
 
 
-def run(closed_path=None, out_path=None, now_ms=None, quiet=False):
+def run(closed_path=None, out_path=None, now_ms=None, quiet=False, telegram=False):
     rows = _sig_rows(closed_path, now_ms)
     esc = assess(rows, now_ms)
     report = {"generated": now_ms or int(time.time() * 1000),
@@ -130,8 +130,11 @@ def run(closed_path=None, out_path=None, now_ms=None, quiet=False):
     op.parent.mkdir(parents=True, exist_ok=True)
     op.write_text(json.dumps(report, ensure_ascii=False, indent=1),
                   encoding="utf-8")
-    if esc and not quiet:
-        # خبرِ کوتاه به حمید — از دروازهٔ آلارم (کلید درشت: قانون‌های فعال)
+    # ۱۴ سپتامبر (ممیزی تلگرام: ۸۱ پیام ارجاع در ۷ روز، همه بی‌مخاطب): ارجاع
+    # دستورِ کار برای اتاق‌های ایجنت است نه برای حمید — قانون ۱۱ بند ۳ تلگرام
+    # را به پنج چیز محدود می‌کند. پیش‌فرض: فقط escalation.json (پنل + صف
+    # بازبینی)؛ تلگرام فقط با --telegram صریح.
+    if esc and not quiet and telegram:
         try:
             from hamid import alert_gate
             key = "escalation|" + ",".join(sorted({e["rule"] for e in esc}))
@@ -149,4 +152,5 @@ def run(closed_path=None, out_path=None, now_ms=None, quiet=False):
 
 
 if __name__ == "__main__":
-    run()
+    import sys as _sys
+    run(telegram="--telegram" in _sys.argv[1:])

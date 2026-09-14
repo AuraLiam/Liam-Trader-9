@@ -1027,6 +1027,17 @@
    "kind": "snapshot",
    "cadence_note": "داور برش رژیم BULL/BEAR (دستور ۱۴ سپتامبر) — قاعدهٔ توقفِ از پیش ثبت‌شده؛ عکس‌فوری، تازگی بی‌معناست",
    "optional": true
+  },
+  "tg-audit.json": {
+   "layer": "L7_health",
+   "owner": "E25",
+   "producer": "hamid/tg_audit.py --write (هر چرخهٔ حمید)",
+   "max_age_min": 120,
+   "consumer": "E25/E23/E00 + MCP tg_audit + پنل",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "ممیزی ۷روزهٔ پیام‌های بات: سرشماری، بی‌مخاطب‌ها (قانون ۱۱)، نتیجهٔ سیگنال‌های ارسالی با تطبیق دقیق (دستور ۱۴ سپتامبر)",
+   "optional": true
   }
  }
 }

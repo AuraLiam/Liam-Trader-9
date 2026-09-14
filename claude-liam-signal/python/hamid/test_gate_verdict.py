@@ -182,8 +182,8 @@ import scan as SC                                     # noqa: E402
 
 check("مرحلهٔ برشِ دوم «سیگنال نیست» است",
       "stage-vetoed" in P._NOT_SIGNAL, str(P._NOT_SIGNAL))
-check("دو جمعیت جدا تعریف شده‌اند",
-      set(GV.STAGES.values()) == {"gate-vetoed", "stage-vetoed"},
+check("سه جمعیت جدا تعریف شده‌اند (گلوگاه، مرحله، وتوی قانون — ۱۴ سپتامبر)",
+      set(GV.STAGES.values()) == {"gate-vetoed", "stage-vetoed", "rule-vetoed"},
       str(GV.STAGES))
 check("حکمِ مرجع همان ضدواقعِ تمیزِ گلوگاه ارسال است",
       GV.STAGE == GV.STAGES["delivery"])
@@ -269,8 +269,9 @@ check("خواندنِ یک جمعیت، ردیفِ جمعیتِ دیگر را ب
       len(GV.rows(_led, stage="gate-vetoed")) == 40
       and len(GV.rows(_led, stage="stage-vetoed")) == 40)
 _all = GV.judge_all(path=_led)
-check("خروجی هر دو را جدا نگه می‌دارد",
-      set(_all["populations"]) == {"delivery", "stage"})
+check("خروجی هر سه را جدا نگه می‌دارد",
+      set(_all["populations"]) == {"delivery", "stage", "rule"})
+check("وتوی قانون هم «سیگنال نیست»", "rule-vetoed" in P._NOT_SIGNAL)
 check("و حکمِ بالادست از جمعیتِ تمیز می‌آید",
       _all["verdict"] == _all["populations"]["delivery"]["verdict"])
 check("و صریح می‌گوید جمعشان نکن", "جمعشان نکن" in _all["note"])

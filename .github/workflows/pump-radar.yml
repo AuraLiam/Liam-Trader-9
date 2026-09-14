@@ -126,6 +126,7 @@ jobs:
           python3 -m hamid.test_mcp_server
           python3 -m hamid.test_loop_audit
           python3 -m hamid.test_daily_24
+          python3 -m hamid.test_rule_veto
           python3 -m hamid.test_fomo
           python3 -m hamid.test_news_poll
           python3 -m hamid.test_candle_source
@@ -265,7 +266,8 @@ jobs:
               # شکاک (دستور حمید ۱ سپتامبر) — بازجویی زنجیره از E01 تا
               # E25 با سؤال چرخشی. آخرِ همهٔ تولیدکننده‌ها اجرا می‌شود تا
               # خروجیِ تازهٔ همان دور را ببیند، نه دورِ قبل را.
-              (cd claude-liam-signal/python && python3 -m hamid.skeptic --write --telegram) || true
+              # ۱۴ سپتامبر: بی --telegram — شکاک روی پنل/skeptic.json می‌ماند (قانون ۱۱ بند ۳؛ ۴۵ پیام بی‌مخاطب در ۷ روز)
+              (cd claude-liam-signal/python && python3 -m hamid.skeptic --write) || true
               # بازبینی کامل سیگنال‌های ارسالی (دستور حمید ۵ سپتامبر: «هر
               # ۱۵ دقیقه سیگنال‌های ارسالی به تلگرام را کامل بررسی می‌کنی»).
               # روی همین زنجیره می‌نشیند تا کادنسش از ۱۵ دقیقه بدتر نشود.

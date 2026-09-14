@@ -80,7 +80,8 @@ GUARDIAN_STAGES = tuple(f"gd-{g}" for g in (
 # `stage-vetoed` (۶ سپتامبر): برشِ دومِ ضدواقع — تنزلِ مرحلهٔ منتشرشونده.
 # جدا از `gate-vetoed` می‌ماند و هرگز با آن جمع نمی‌شود (دو سؤال جدا).
 _NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "gate-vetoed",
-               "stage-vetoed", "v2", "scalp", "shock") + EXPERIMENT_STAGES \
+               "stage-vetoed", "rule-vetoed",   # rule-vetoed: وتوی قانون تأییدشدهٔ منفی (۱۴ سپتامبر)
+               "v2", "scalp", "shock") + EXPERIMENT_STAGES \
               + GUARDIAN_STAGES
 
 START_BALANCE = 1000.0

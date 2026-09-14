@@ -144,6 +144,44 @@ check("و در مسیر ارسال سیگنال هیچ sleep/صف‌بندی ن�
       "sleep" not in sig_block and "batch" not in sig_block.lower(),
       "هر مکثی این‌جا یعنی سیگنالِ دیرشده")
 
+print("\n— حافظهٔ دروازه برای هر نام جداست (ممیزی ۱۴ سپتامبر: ۸۱ ارجاع در ۷ روز):")
+with tempfile.TemporaryDirectory() as td:
+    _sd, _st, _lg = AG.STATE_DIR, AG.STATE, AG._LEGACY
+    try:
+        AG.STATE_DIR = Path(td) / "alerts"; AG.STATE = Path(td) / "legacy.json"; AG._LEGACY = False
+        AG.STATE.write_text(json.dumps({"escalation": {"key": "escalation|E2", "at": 1000, "n": 2}}), encoding="utf-8")
+        ok1, why1 = AG.decide("escalation", "escalation|E2", now_ms=1000 + 3600_000)
+        check("کلیدِ قدیمی از فایل مشترک مهاجرت می‌کند: داخل ۶ ساعت = duplicate", not ok1 and why1 == "duplicate", why1)
+        ok2, why2 = AG.decide("skeptic", "k1", now_ms=2000)
+        files = sorted(x.name for x in AG.STATE_DIR.glob("*.json"))
+        check("نامِ تازه فایلِ خودش را می‌سازد و به فایل نامِ دیگر دست نمی‌زند",
+              ok2 and len(files) == 1 and files[0].startswith("skeptic-"), str(files))
+        AG.decide("escalation", "escalation|E2", now_ms=1000 + 7 * 3600_000)
+        files = sorted(x.name for x in AG.STATE_DIR.glob("*.json"))
+        check("یادآوریِ escalation در فایلِ خودش ثبت می‌شود (دو فایل، دو نویسنده)", len(files) == 2, str(files))
+        esc = json.loads((AG.STATE_DIR / [f for f in files if f.startswith("escalation-")][0]).read_text(encoding="utf-8"))
+        check("و مهرِ at جلو می‌رود — همان چیزی که از ۲ سپتامبر جا مانده بود", esc["at"] == 1000 + 7 * 3600_000 and esc["n"] == 3, str(esc))
+        ok3, why3 = AG.decide("escalation", "escalation|E2", now_ms=1000 + 8 * 3600_000)
+        check("نوبت بعد داخل ۶ ساعت → duplicate (حافظه واقعاً کار می‌کند)", not ok3 and why3 == "duplicate", why3)
+        ok4, why4 = AG.decide("شکاک", "k", now_ms=3000)
+        check("نام فارسی هم فایلِ امن می‌سازد", ok4 and any("alert-" in f or "-" in f for f in (x.name for x in AG.STATE_DIR.glob("*.json"))))
+        AG.decide("skeptic", "", now_ms=4000)
+        check("رفع‌شدن، فایلِ همان نام را پاک می‌کند", not any(f.startswith("skeptic-") for f in (x.name for x in AG.STATE_DIR.glob("*.json"))))
+    finally:
+        AG.STATE_DIR, AG.STATE, AG._LEGACY = _sd, _st, _lg
+
+print("\n— تلگرام فقط پنج چیز می‌برد (قانون ۱۱ بند ۳؛ ممیزی ۱۴ سپتامبر):")
+_wf = PY.parent.parent / ".github" / "workflows"
+_pr = (_wf / "pump-radar.yml").read_text(encoding="utf-8")
+_hc = (_wf / "hamid-cycle.yml").read_text(encoding="utf-8")
+check("زنجیره شکاک را بی --telegram می‌زند (پنل، نه پیام)", "hamid.skeptic --write --telegram" not in _pr and "hamid.skeptic --write" in _pr)
+check("چرخه ارجاع خودکار را بی --telegram می‌زند (دستورِ کار اتاق‌هاست، نه پیام حمید)",
+      "hamid.escalation --telegram" not in _hc and "hamid.escalation" in _hc)
+_es = (PY / "hamid" / "escalation.py").read_text(encoding="utf-8")
+check("escalation.run پیش‌فرض تلگرام خاموش دارد", "telegram=False" in _es)
+_ta = (PY / "hamid" / "trail_alert.py").read_text(encoding="utf-8")
+check("اعلام تریل نسخهٔ سه است، نه نردبان ⅓/⅔ بازنشسته", "PROD_TRAIL_FRAC" in _ta and "⅔ مسیر رد شد" not in _ta)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
