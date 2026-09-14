@@ -1,18 +1,18 @@
 {
- "generated": 1789410973178,
- "buckets_at": 1789410973143,
+ "generated": 1789411373562,
+ "buckets_at": 1789411373527,
  "n_agents": 9,
- "n_todo": 6,
+ "n_todo": 7,
  "todo": [
   "post-trade-learning",
   "data-quality",
   "execution",
+  "lead-lag",
   "liquidity",
   "macro-dominance",
   "research"
  ],
  "idle": [
-  "lead-lag",
   "market-structure",
   "order-block"
  ],
@@ -29,16 +29,26 @@
    "reasons": [
     {
      "kind": "stale",
+     "engine": "E20",
+     "items": [
+      "direction-lessons.json"
+     ]
+    },
+    {
+     "kind": "stale",
      "engine": "E21",
      "items": [
+      "learning-proof.json",
       "skills.json"
      ]
     }
    ],
    "read_next": [
+    "signals/direction-lessons.json",
+    "signals/learning-proof.json",
     "signals/skills.json"
    ],
-   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: skills.json باز کن: signals/skills.json"
+   "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json باز کن: signals/direction-lessons.json | E21: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json، skills.json باز کن: signals/learning-proof.json، signals/skills.json"
   },
   {
    "agent": "data-quality",
@@ -78,16 +88,33 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:position-watch.json",
       "state:trail-alert.json"
      ]
     }
    ],
    "read_next": [
-    "signals/position-watch.json",
     "signals/trail-alert.json"
    ],
-   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:position-watch.json، state:trail-alert.json باز کن: signals/position-watch.json، signals/t"
+   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json"
+  },
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:trending"
+     ]
+    }
+   ],
+   "read_next": [],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "liquidity",
@@ -157,17 +184,6 @@
     "signals/scorecard.json"
    ],
    "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
