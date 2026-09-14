@@ -1,13 +1,15 @@
-# نسخهٔ انتقال — لیام تریدر ۹ (بازساخت 2026-09-14 14:12 UTC)
+# نسخهٔ انتقال — لیام تریدر ۹ (بازساخت 2026-09-14 14:13 UTC)
 
 > این سند را در چتِ تازه پین کن و بگو: «از HANDOFF.md ادامه بده». قاعده‌ها
 > (CLAUDE.md، `.claude/rules/*`) خودکار بار می‌شوند و این‌جا تکرار نشده‌اند.
 
 ## ۱. وضعیت زندهٔ سامانه (خودکار، هر چرخه)
-- گذرگاه وضعیت (قانون ۱۳): **DEGRADED** — 101 فایل، 2 عیب (سن 17د)
-  - {"kind": "stale", "file": "classify.json", "owner": "E01", "age_min": 406.7, "max_age_min": 360, "critical": false}
-  - {"kind": "stale", "file": "guardian-lab.json", "owner": "E18", "age_min": 13939.3, "max_age_min": 10080, "critical": fal
-- سطل‌ها (قانون ۱۷): 74 آیتم، 22 تغییر از دورِ قبل، 24 سطل انجین (سن 17د) — `python3 -m hamid.dispatch --bucket E00`
+- گذرگاه وضعیت (قانون ۱۳): **DEGRADED** — 101 فایل، 4 عیب (سن 2د)
+  - {"kind": "stale", "file": "newsboard.json", "owner": "E14", "age_min": 60.6, "max_age_min": 60, "critical": false}
+  - {"kind": "stale", "file": "council.json", "owner": "E00", "age_min": 60.6, "max_age_min": 60, "critical": false}
+  - {"kind": "stale", "file": "skills.json", "owner": "E21", "age_min": 60.6, "max_age_min": 60, "critical": false}
+  - {"kind": "stale", "file": "guardian-lab.json", "owner": "E18", "age_min": 13955.4, "max_age_min": 10080, "critical": fal
+- سطل‌ها (قانون ۱۷): 74 آیتم، 21 تغییر از دورِ قبل، 24 سطل انجین (سن 2د) — `python3 -m hamid.dispatch --bucket E00`
 
 ## ۲. آخرین حکم‌های سنجش (خودکار)
 - داور هندسه/شورت (بک‌تست 2026-09-14 11:13 UTC, 60 نماد، 21 خانه، شیداک 0.00244):
@@ -24,7 +26,7 @@
   - `widebuf|overall` n=11810 strict=-0.262R CI=[-0.3532,-0.1593] → **REJECT**
   - `widebuf|short` n=5817 strict=-0.329R CI=[-0.4392,-0.2024] → **REJECT**
   - ترفیع = پیشنهاد؛ هیچ دروازه‌ای عوض نشده (قانون ۰۳/۱۲)
-- امتحان مهارت ۱۲ مراقب (سن 62د):
+- امتحان مهارت ۱۲ مراقب (سن 63د):
   - scorpio: فعال — هنوز از تصادف جدا نشده (n=443)
   - gemini: فعال — هنوز از تصادف جدا نشده (n=192)
   - taurus: فعال — هنوز از تصادف جدا نشده (n=504)
@@ -145,9 +147,12 @@
 - استاپ تنگ = دام کارمزد (سهم کارمزد = کارمزد٪ ÷ استاپ٪). انتخابِ ستاپِ
   طبیعتاً درشت (`ibs_floor`) **منفی** بود؛ بزرگ‌کردنِ جعبه فرق دارد.
 
-## ۴. سه چیزی که هر چتِ تازه اول باید بزند
-1. `python3 -m hamid.state_bus --packet` — قبل از هر ادعای وضعیت (قانون ۱۳).
-2. `python3 -m hamid.dispatch --bucket E00` — چه چیزی از دورِ قبل عوض شده (قانون ۱۷).
-3. `git ls-remote --heads origin 'refs/heads/backup/*'` — بک‌آپِ تأییدشده قبل از هر دستهٔ تغییر.
+## ۴. پروتکل شروعِ چتِ تازه — سه ابزار، بدون خواندن فایل (قانون ۱۷/۱۸)
+پیام اول در چت تازه: **«از claude-liam-signal/HANDOFF.md ادامه بده؛ اول review_queue را بزن و فقط روی needs_reasoning کار کن.»**
+1. `python3 -m hamid.mcp_server --call state_packet` — حکم سامانه با بستهٔ شواهد (قانون ۱۳)؛ نه «همه چیز خوب است».
+2. `python3 -m hamid.mcp_server --call review_queue` — چه کسی روی چه تغییری باید فکر کند؛ ایجنت idle صدا زده نمی‌شود.
+3. `python3 -m hamid.mcp_server --call bucket '{"key":"E00"}'` و فایل خام فقط از `read_next` با `signal_file`.
+4. `git ls-remote --heads origin 'refs/heads/backup/*'` — بک‌آپِ تأییدشده قبل از هر دستهٔ تغییر.
+قواعد (CLAUDE.md و `.claude/rules/*`) خودکار بار می‌شوند؛ این سند فقط **وضعیت و رشته‌ها** را می‌آورد. هر چیزی که این‌جا نیست، از ابزار پرسیده می‌شود نه از حافظهٔ چتِ قبلی.
 
 _مرز صادقانه: بخش‌های ۱ و ۲ از فایل‌های وضعیت خوانده می‌شوند و همان‌قدر تازه‌اند که سنِ کنارشان می‌گوید؛ بخش ۳ دست‌نویس است و فقط وقتی به‌روز است که آخرین چت آن را نوشته باشد._

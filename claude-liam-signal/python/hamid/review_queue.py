@@ -70,7 +70,7 @@ def _events(prev, geometry=None, killswitch=None):
                  "verdicts": {k: r.get("verdict") for k, r in (g.get("rows") or {}).items()}}
         if prev_g.get("generated") != g_sig["generated"]:
             ev.append({"kind": "backtest_new", "what": f"بک‌تست تازه: {g.get('backtest_at')}",
-                       "read": ["signals/geometry-verdict.json"]})
+                       "read": ["signals/geometry-verdict.json", "signals/regime-verdict.json"]})
         flips = [f"{k}: {prev_g.get('verdicts', {}).get(k)}→{v}"
                  for k, v in g_sig["verdicts"].items()
                  if prev_g.get("verdicts") and prev_g["verdicts"].get(k) not in (None, v)]
