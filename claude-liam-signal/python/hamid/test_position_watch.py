@@ -196,6 +196,23 @@ check("مهلت لیمیت همان قاعدهٔ خودِ دفتر است (paper
       all(PW._fill_cap_min(tf) == P.pending_valid_min(tf)
           for tf in ("1m", "5m", "15m", "1h", None)))
 
+# ── شبح: ردیفِ دفتر باز که از قبل در دفتر بسته است (۱۵ سپتامبر) ──────────
+# ۲۱۸ سیگنالِ «مانده» همه از قبل بسته بودند؛ پاسبان روی شبح آلارم نمی‌دهد.
+with tempfile.TemporaryDirectory() as td:
+    ghost = {"sym": "GHOSTUSDT", "dir": "LONG", "tf": "5m", "entry": 1.0, "sl": 0.9, "tp1": 1.2,
+             "opened": NOW - 3 * 86_400_000, "filled": NOW - 3 * 86_400_000,
+             "why": {"stage": "sig-ibs"}}
+    live = dict(ghost, sym="LIVEUSDT")
+    op = Path(td) / "open.jsonl"
+    op.write_text(json.dumps(ghost) + "\n" + json.dumps(live) + "\n")
+    cl = Path(td) / "closed.jsonl"
+    cl.write_text(json.dumps(dict(ghost, closed=NOW - 86_400_000, R=0.3, outcome="target")) + "\n")
+    res = PW.run(quiet=True, path=str(op), now_ms=NOW, closed_path=str(cl))
+    syms = {s["sym"] for s in res["stale"]}
+    check("شبحِ بسته‌شده در «مانده»ها نیست", "GHOSTUSDT" not in syms, str(syms))
+    check("پوزیشنِ واقعاً باز هنوز دیده می‌شود", "LIVEUSDT" in syms, str(syms))
+    check("شمار کل دفتر باز شبح را نمی‌شمارد", res["open_total"] == 1, str(res["open_total"]))
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

@@ -140,6 +140,59 @@ def merge_jsonl(path):
     return f"{len(rows)} معاملهٔ یکتا{extra}"
 
 
+CLOSED_LEDGER = "brain/paper/closed.jsonl"
+
+
+def _closed_keys():
+    """هویتِ همهٔ معامله‌های بسته — از هر دو طرفِ تعارض، وگرنه از درخت."""
+    texts = [t for t in (_stage(2, CLOSED_LEDGER), _stage(3, CLOSED_LEDGER)) if t]
+    if not texts:
+        try:
+            texts = [(ROOT / CLOSED_LEDGER).read_text(encoding="utf-8")]
+        except Exception:                            # noqa: BLE001
+            texts = []
+    keys = set()
+    for txt in texts:
+        for line in txt.splitlines():
+            try:
+                rec = json.loads(line)
+            except Exception:                        # noqa: BLE001
+                continue
+            if isinstance(rec, dict) and rec.get("opened") is not None:
+                keys.add(trade_key(rec))
+    return keys
+
+
+def merge_open_ledger(path):
+    """دفتر **باز**: اجتماع بر هویت، منهای هر چه از قبل در دفتر بسته است.
+
+    عیبِ اندازه‌گیری‌شدهٔ ۱۵ سپتامبر: دفتر باز ۸٬۹۲۱ ردیف داشت و ۸٬۰۵۷ از
+    ۸٬۰۶۵ ردیفِ کهنه‌ترش (و هر ۲۱۸ سیگنالِ ارسالیِ کهنه) **از قبل در
+    دفتر بسته بودند** — شبح. علت کلاس: اجتماعِ سادهٔ دفتر باز، ردیفی را
+    که این طرف تسویه و برداشته بود از طرف دیگر برمی‌گرداند؛ تسویهٔ بعدی
+    دوباره برش می‌داشت و انتشارِ بعدی دوباره برش می‌گرداند. پاسبان
+    پوزیشن هر بار همان اشباح را «مانده» می‌دید. بسته، بسته است: هویتی
+    که در دفتر بسته هست در دفتر باز نمی‌نشیند.
+    """
+    msg = merge_jsonl(path)
+    done = _closed_keys()
+    kept, ghosts = [], 0
+    for line in (ROOT / path).read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except Exception:                            # noqa: BLE001
+            kept.append(line)
+            continue
+        if isinstance(rec, dict) and trade_key(rec) in done:
+            ghosts += 1
+            continue
+        kept.append(line)
+    (ROOT / path).write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
+    return f"{msg} · {ghosts} شبحِ بسته‌شده حذف شد" if ghosts else msg
+
+
 def merge_archive_jsonl(path):
     """آرشیو شماره‌دارِ `signals/archive/*.jsonl` → اجتماع بر هویت ردیف.
 
@@ -425,6 +478,8 @@ def handler_for(path):
         return merge_key_list                         # دفتر ضدتکرار، نه عکس‌فوری
     if path in DERIVED_SNAPSHOTS:
         return take_ours                              # مشتق‌شده، تاریخ ندارد
+    if path == "brain/paper/open.jsonl":
+        return merge_open_ledger                      # اجتماع منهای بسته‌شده‌ها (۱۵ سپتامبر)
     if path.startswith("brain/") and path.endswith(".jsonl.gz"):
         return merge_gz_minutes                       # دفتر دقیقه‌ای فشرده
     if path.startswith("brain/") and path.endswith(".jsonl"):

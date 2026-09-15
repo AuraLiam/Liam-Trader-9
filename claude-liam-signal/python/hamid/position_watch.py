@@ -170,8 +170,28 @@ def load_open(path=None):
     return out
 
 
-def run(alert=False, quiet=False, path=None, now_ms=None):
+def drop_ghosts(rows, closed_path=None):
+    """ردیفِ دفتر باز که هویتش از قبل در دفتر بسته است، پوزیشن نیست — شبح است.
+
+    ۱۵ سپتامبر: ۲۱۸ سیگنالِ «مانده» همه از قبل بسته بودند و اجتماعِ انتشار
+    برشان می‌گرداند (رفعِ ریشه در resolve_brain_conflicts.merge_open_ledger).
+    این‌جا لایهٔ دوم است: پاسبان هرگز روی شبح آلارم نمی‌دهد."""
+    try:
+        from hamid import paper as P
+        done = ({P.trade_key(t) for t in P._read(Path(closed_path))}
+                if closed_path else P.closed_keys())
+        key = P.trade_key
+    except Exception:                                # noqa: BLE001
+        return rows, 0
+    live = [r for r in rows if key(r) not in done]
+    return live, len(rows) - len(live)
+
+
+def run(alert=False, quiet=False, path=None, now_ms=None, closed_path=None):
     rows = load_open(path)
+    rows, ghosts = drop_ghosts(rows, closed_path)
+    if ghosts and not quiet:
+        print(f"↺ {ghosts} شبحِ بسته‌شده از دفتر باز نادیده گرفته شد")
     stale, ok = scan(rows, now_ms=now_ms)
     dead, waiting = scan_pending(rows, now_ms=now_ms)
     verdicts = []

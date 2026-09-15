@@ -51,6 +51,12 @@ def main(argv):
     R = _load_resolver()
 
     def _stage(stage, p):
+        # فقط همین مسیر دو نسخه دارد؛ هر مسیر دیگری (مثلاً دفتر بسته که
+        # merge_open_ledger می‌پرسد) None می‌گیرد تا resolver از درخت بخواند.
+        # (۱۵ سپتامبر: بی‌این شرط، دفتر بسته = خودِ دفتر باز خوانده می‌شد و
+        # همهٔ ردیف‌ها «شبح» می‌شدند — آزمون ۴ب گرفتش.)
+        if p != path:
+            return None
         f = ours if stage == 2 else theirs
         try:
             return f.read_text(encoding="utf-8")
@@ -58,6 +64,8 @@ def main(argv):
             return None
 
     def _stage_bytes(stage, p):
+        if p != path:
+            return None
         f = ours if stage == 2 else theirs
         return f.read_bytes()
 

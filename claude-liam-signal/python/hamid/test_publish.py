@@ -199,6 +199,25 @@ check("هیچ ردیفی از هیچ طرف گم نشد", set(syms) == {"BASE", 
 check("مارکر تعارض منتشر نشد", not w.markers_on_origin())
 w.close()
 
+# ── ۴ب) دفتر باز: بسته، بسته است — اجتماع، شبح نمی‌سازد (۱۵ سپتامبر) ─────
+# ما پوزیشن A را تسویه کردیم (از باز برداشته، به بسته افزوده)؛ اجرای دیگر
+# هنوز A را باز دارد و B را تازه باز کرده. نتیجهٔ درست: باز = {B}، نه {A,B}.
+w = World()
+A = {"sym": "AUSDT", "opened": 1000, "entry": 1.0, "why": {"stage": "sig-ibs"}}
+B = {"sym": "BUSDT", "opened": 2000, "entry": 2.0, "why": {"stage": "sig-ibs"}}
+w.other_push({"brain/paper/open.jsonl": json.dumps(A) + "\n"})
+w.other_push({"brain/paper/open.jsonl": json.dumps(A) + "\n" + json.dumps(B) + "\n"})
+(w.work / "brain/paper/open.jsonl").write_text("")                      # A تسویه شد
+base = (w.work / "brain/paper/closed.jsonl").read_text()
+(w.work / "brain/paper/closed.jsonl").write_text(
+    base + json.dumps(dict(A, closed=5000, R=0.2, outcome="target")) + "\n")
+r = w.publish("brain")
+check("دفتر باز در تعارض: خروج ۰", r.returncode == 0, r.stdout + r.stderr)
+opn = [json.loads(l)["sym"] for l in (w.on_origin("brain/paper/open.jsonl") or "").splitlines() if l.strip()]
+check("پوزیشنِ تسویه‌شده به دفتر باز برنگشت (شبح نه)", "AUSDT" not in opn, str(opn))
+check("پوزیشنِ تازهٔ اجرای دیگر گم نشد", "BUSDT" in opn, str(opn))
+w.close()
+
 # ── ۵) نشانگر بی‌پسوند (قطعی ۸ساعتهٔ ۲ سپتامبر) ─────────────────────────
 w = World()
 w.other_push({"brain/memory/.revalidated": "2026-09-01\n",
