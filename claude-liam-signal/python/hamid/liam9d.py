@@ -136,7 +136,7 @@ JOBS = [
          cmd=["python3", "-m", "hamid.dominance_report", "--send"]),
     dict(key="skeptic", every=180, wf="pump-radar.yml", tg=True, timeout=240,
          desc="بازجوی شکاک از E01 تا E25",
-         cmd=["python3", "-m", "hamid.skeptic", "--write", "--telegram"]),
+         cmd=["python3", "-m", "hamid.skeptic", "--write"]),
     dict(key="trail_alert", every=900, wf="live-scan.yml", tg=True, timeout=180,
          desc="آلارم تریل روی پوزیشن‌های باز",
          cmd=["python3", "-m", "hamid.trail_alert", "--alert"]),
