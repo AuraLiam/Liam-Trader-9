@@ -35,7 +35,7 @@ requests:
       tf: 4h
       n: 220
       why: رژیم BTC ۴س (روند structure.trend) پیش از حکم کلان
-      max_age_min: 60
+      max_age_min: 300                   # ≥ یک کندل ۴س + حاشیه؛ سن از بسته‌شدنِ آخرین کندل
   E06:                                   # تحلیل BTC
     - id: btc_1h
       kind: kline
@@ -43,7 +43,7 @@ requests:
       tf: 1h
       n: 220
       why: ساختار عملیاتی ۱س
-      max_age_min: 30
+      max_age_min: 90                    # ≥ یک کندل ۱س + حاشیه
   E03:                                   # USDT.D
     - id: dominance
       kind: state

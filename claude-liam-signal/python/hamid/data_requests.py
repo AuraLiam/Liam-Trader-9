@@ -36,6 +36,7 @@ OUT = ROOT / "signals" / "data-requests.json"
 KINDS = {"kline", "feed", "state"}
 FEEDS = {"fear_greed", "funding", "calendar", "news", "trending", "unlocks"}
 TFS = {"5m", "15m", "1h", "4h", "1d"}
+TF_MS = {"5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000, "1d": 86_400_000}
 MAX_KLINE_N = 400
 MAX_REQ_PER_OWNER = 12          # سقف — بودجهٔ توکن/شبکه یک قید طراحی است (قانون ۱۸)
 
@@ -105,6 +106,9 @@ def validate(requests, registry_files=None):
                     errs.append(f"{tag}: tf باید یکی از {sorted(TFS)} باشد")
                 if not (20 <= int(r.get("n") or 0) <= MAX_KLINE_N):
                     errs.append(f"{tag}: n باید بین ۲۰ و {MAX_KLINE_N} باشد")
+                tfm = TF_MS.get(r.get("tf"), 0) / 60000
+                if isinstance(r.get("max_age_min"), (int, float)) and 0 < r["max_age_min"] < tfm:
+                    errs.append(f"{tag}: max_age_min ({r['max_age_min']:.0f}) کمتر از یک کندل {r.get('tf')} ({tfm:.0f}د) است — همیشه «کهنه» می‌شود")
             elif kind == "feed" and r.get("feed") not in FEEDS:
                 errs.append(f"{tag}: خوراک ناشناخته {r.get('feed')!r}")
             elif kind == "state" and r.get("file") not in reg:
@@ -148,7 +152,10 @@ def fulfill(requests, kget=_kget_default, intake=None, now_ms=None):
                     if len(cd) < 20:
                         raise ValueError("کندل کافی نیست")
                     from hamid.structure import trend
-                    age = (now_ms - cd[-1]["t"]) / 60000
+                    # سن = دقیقه از «بسته‌شدنِ» آخرین کندل، نه از بازشدنش —
+                    # اثبات ۱۵ سپتامبر روی Actions: کندل ۴س سالم «۳۴۶د کهنه»
+                    # خوانده شد چون از open سنجیده می‌شد. کندلِ هنوز باز = ۰.
+                    age = max(0.0, (now_ms - (cd[-1]["t"] + TF_MS[r["tf"]])) / 60000)
                     row["age_min"] = round(age, 1)
                     row["summary"] = {"close": cd[-1]["c"],
                                       "chg_pct_20": round((cd[-1]["c"] / cd[-21]["c"] - 1) * 100, 2)

@@ -91,6 +91,13 @@ o6 = {r["id"]: r for r in doc["owners"]["E06"]["items"]}
 check("کندل تازه → ok با روند و قیمت", o6["b1"]["ok"] and o6["b1"]["summary"]["trend"] == "up"
       and o6["b1"]["summary"]["close"] > 100 and o6["b1"]["summary"]["chg_pct_20"] > 0)
 check("کندل کهنه → برآورده نشد با دلیل", not o6["old"]["ok"] and "کهنه" in o6["old"]["why_not"])
+# ۱۵ سپتامبر، اثبات روی Actions: کندل ۴س سالم «۳۴۶د کهنه» خوانده شد چون سن از
+# open سنجیده می‌شد. حالا سن = دقیقه از بسته‌شدن آخرین کندل (کندل باز = ۰).
+check("سن کندل از بسته‌شدنش شمرده می‌شود، نه از بازشدنش", o6["b1"]["age_min"] == 0.0
+      and o6["old"]["age_min"] == 240.0, f"{o6['b1']['age_min']} / {o6['old']['age_min']}")
+check("max_age_min کمتر از یک کندل رد می‌شود (همیشه کهنه می‌شد)",
+      any("کمتر از یک کندل" in e for e in DQ.validate(
+          {"E06": [{"id": "x", "kind": "kline", "symbol": "BTCUSDT", "tf": "4h", "n": 60, "why": "?", "max_age_min": 60}]})))
 check("منبع مرده → why_not، نه عدد", not o6["dead"]["ok"] and "451" in o6["dead"]["why_not"]
       and o6["dead"]["summary"] is None)
 check("هر (نماد،تایم) یک بار کشیده شد", calls.count(("BTCUSDT", "1h")) == 1, str(calls))
@@ -108,7 +115,7 @@ tmp = Path(tempfile.mkdtemp()) / "c.yaml"
 tmp.write_text(DQ.CONTRACT.read_text(encoding="utf-8"), encoding="utf-8")
 before = tmp.read_text(encoding="utf-8")
 e1 = DQ.add_request("E07", "kline", {"symbol": "ETHUSDT", "tf": "4h", "n": "220",
-                                       "why": "ساختار", "max_age_min": "60"}, path=tmp)
+                                       "why": "ساختار", "max_age_min": "300"}, path=tmp)
 e2 = DQ.add_request("E07", "feed", {"feed": "tiktok", "why": "?", "max_age_min": "5"}, path=tmp)
 after = tmp.read_text(encoding="utf-8")
 check("--add معتبر ثبت شد", not e1 and "ETHUSDT" in after)
