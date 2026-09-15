@@ -180,7 +180,8 @@ def run(alert=False, quiet=False, open_path=None, state_path=None,
                 # قفل دوم: دروازهٔ آلارم. کلید شامل معامله+پله است، پس
                 # «تازه» فقط یک بار — state بالا قفل اول است.
                 from hamid import alert_gate
-                alert_gate.send("trail_alert", f"{tid}|r{i}", text)
+                alert_gate.send("trail_alert", f"{tid}|r{i}", text,
+                                kind="trade_mgmt")
             if not quiet:
                 print(f"🪜 {base} {p['dir']} پلهٔ {i}: {msg} → استاپ {new_sl:.10g}")
 

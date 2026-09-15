@@ -230,8 +230,8 @@ LEDGERLESS_MAX = 0
 check(f"فرستندهٔ بی‌دفتر ≤ {LEDGERLESS_MAX}",
       len(ledgerless) <= LEDGERLESS_MAX,
       f"{len(ledgerless)}: {ledgerless}")
-check("send_text حالا ردِ دفتر می‌گذارد",
-      'record_out("alert"' in _tg)
+check("send_text حالا ردِ دفتر می‌گذارد (نوع پارامتری، پیش‌فرض alert)",
+      'record_out(kind' in _tg and 'kind="alert"' in _tg)
 check("و ناکامیِ دفتر بی‌صدا رد نمی‌شود",
       "دفترِ آلارم نوشته نشد" in _tg)
 
@@ -242,6 +242,11 @@ check("بودجه‌سنج جز خروجی خودش چیزی نمی‌نویسد
 _cg = (HERE / "cadence_gate.py").read_text(encoding="utf-8")
 check("دروازهٔ کادنس فقط کنارگذاشتهٔ /tmp را می‌نویسد",
       _cg.count("write_text") == 1 and "SIDECAR.write_text" in _cg)
+
+
+# ── ۱۵ سپتامبر: پلهٔ تریل دستورِ عمل روی معاملهٔ ارسالی است، نه آلارم پاسبان
+check("trade_mgmt مثل outcome بی‌بودجه است (تعدادش را پوزیشن‌های باز می‌سازد)",
+      "trade_mgmt" in MB.NO_BUDGET if 'MB' in globals() else "trade_mgmt" in __import__('hamid.msg_budget', fromlist=['x']).NO_BUDGET)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

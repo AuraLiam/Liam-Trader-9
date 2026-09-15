@@ -363,7 +363,7 @@ jobs:
       # دروازه را نمی‌بندد.
       - name: بودجهٔ پیام (E25)
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.msg_budget --write --check
+        run: python3 -m hamid.msg_budget --write
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         run: python3 -m hamid.state_bus --write || true
@@ -574,3 +574,14 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python3 -m hamid.watchdog --alert
+
+      # حکم بودجهٔ پیام (E25) — عمداً **بعد از انتشار**. ۱۵ سپتامبر: حکمِ
+      # پیش از انتشار، با شکستِ بودجه، گامِ انتشار را می‌انداخت؛ حافظهٔ
+      # دروازهٔ آلارم (brain/alerts) هرگز ذخیره نمی‌شد؛ چرخهٔ بعد همه را
+      # «تازه» می‌فرستاد و بودجه دوباره می‌شکست — حلقهٔ خودتقویت‌شونده،
+      # ۱۸ ساعت قرمز. حالا حکم هنوز چرخه را سرخ می‌کند (دیده می‌شود)، ولی
+      # حافظه‌ای که خودِ درمان است دیگر گم نمی‌شود.
+      - name: حکم بودجهٔ پیام (E25)
+        if: always() && github.ref == 'refs/heads/main'
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.msg_budget --check

@@ -133,5 +133,15 @@ finally:
     DR.DOM, DR.STATE, DR.SERIES = old
     CG.SIDECAR, CG.FEED, CG.ARCHIVE = old_cg
 
+
+# ── ۱۵ سپتامبر: زنجیره در پنجرهٔ مالکِ ساعتی نمی‌فرستد (حذف مسابقهٔ دو رانر)
+from datetime import datetime as _dt, timezone as _tz
+check("دقیقهٔ ۲۰ = پنجرهٔ مالک → پشتیبان می‌گذرد",
+      DR.backup_should_skip(_dt(2026, 9, 15, 10, 20, tzinfo=_tz.utc)))
+check("دقیقهٔ ۴۵ = خارج از پنجره → پشتیبان می‌فرستد",
+      not DR.backup_should_skip(_dt(2026, 9, 15, 10, 45, tzinfo=_tz.utc)))
+check("زنجیره با --backup صدا می‌زند",
+      "--send --backup" in (DR.ROOT / ".github" / "workflows" / "pump-radar.yml").read_text(encoding="utf-8"))
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

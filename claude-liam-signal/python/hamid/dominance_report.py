@@ -254,9 +254,28 @@ def mark_sent():
     STATE.write_text(json.dumps({"last_sent": now}))
 
 
+BACKUP_SKIP_MIN = (15, 30)     # پنجرهٔ مالکِ ساعتی (کرون :19 + لرزش)
+
+
+def backup_should_skip(now=None):
+    """زنجیرهٔ پیوسته فقط پشتیبان است؛ داخل پنجرهٔ مالک نمی‌فرستد.
+
+    ۱۵ سپتامبر: دو فرستنده (ورک‌فلوی ساعتی + زنجیره) با دو رانر جدا، هر
+    کدام sidecar خودش و چک‌اوتِ کم‌عمقِ خودش — ضدتکرارِ سه‌منبعی داخل چند
+    دقیقه مسابقه می‌باخت (۲ دوبل در ۲۴س: فاصلهٔ ۳.۱ و ۰.۳ دقیقه). یک
+    نویسنده در هر پنجره (قانون ۰۵): دقیقهٔ ۱۵ تا ۳۰ مال ورک‌فلوی ساعتی است.
+    """
+    from datetime import datetime, timezone
+    m = (now or datetime.now(timezone.utc)).minute
+    return BACKUP_SKIP_MIN[0] <= m < BACKUP_SKIP_MIN[1]
+
+
 def main(argv):
     force = "--force" in argv
     send = "--send" in argv
+    if send and "--backup" in argv and backup_should_skip() and not force:
+        print("dominance_report: پنجرهٔ ورک‌فلوی ساعتی — پشتیبان نمی‌فرستد")
+        return 0
     cap = build()
     if cap is None:
         print("dominance_report: signals/dominance.json در دسترس نیست")

@@ -127,6 +127,12 @@ check("سقف تعداد پوزیشن دارد (اسکن را کند نکند)",
       "MAX_PRICE_FETCH" in src)
 check("بافر کارمزد همان ۰.۱۵٪ قانون تریل است", TA.FEE_BUF_PCT == 0.15)
 
+
+# ── ۱۵ سپتامبر: تریل با نوعِ خودش ثبت می‌شود، نه زیر بودجهٔ ۱۲تاییِ پاسبان‌ها
+from pathlib import Path as _P2
+_src_ta = (_P2(__file__).resolve().parent / "trail_alert.py").read_text(encoding="utf-8")
+check("پلهٔ تریل با kind=trade_mgmt فرستاده می‌شود", 'kind="trade_mgmt"' in _src_ta)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

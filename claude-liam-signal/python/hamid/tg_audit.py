@@ -31,7 +31,7 @@ OUT = ROOT / "signals" / "tg-audit.json"
 
 DAY_MS = 86_400_000
 # فهرست مجاز قانون ۱۱ بند ۳ + سقف روزانهٔ هر کدام (از کادنس مصوب)
-ALLOWED = {"signal": 24, "outcome": None, "pump_report": 5, "work_report": 3, "dom_report": 24}
+ALLOWED = {"signal": 24, "outcome": None, "pump_report": 5, "work_report": 3, "dom_report": 24, "trade_mgmt": None}
 MATCH_WINDOW_MS = 30 * 60_000
 
 

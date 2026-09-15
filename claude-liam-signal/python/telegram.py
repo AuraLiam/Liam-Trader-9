@@ -670,7 +670,7 @@ def caption(s):
     return "\n".join(L)
 
 
-def send_text(text, quiet=True):
+def send_text(text, quiet=True, kind="alert"):
     """یک پیام متنی با امضای پنل — برای پاسبان‌ها و آلارم‌های غیرسیگنالی.
 
     عیب ۲۳ اوت: پاسبان پوزیشنِ مانده `TG.send_text` را صدا می‌زد که اصلاً
@@ -707,7 +707,7 @@ def send_text(text, quiet=True):
                 head = ln
                 break
         try:
-            record_out("alert", head or "آلارم", {"chars": len(text)})
+            record_out(kind, head or "آلارم", {"chars": len(text)})
         except Exception as e:                       # noqa: BLE001
             print(f"telegram: دفترِ آلارم نوشته نشد ({type(e).__name__})")
     return bool(r)

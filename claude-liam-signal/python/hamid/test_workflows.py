@@ -544,6 +544,16 @@ _need = int(_ms.group(1)) if _ms else 10**9
 check(f"عمقِ چک‌اوت ({_depth}) از نیازِ شکاک ({_need}) بیشتر است",
       _depth > _need)
 
+
+# ── ۱۵ سپتامبر: حکم بودجهٔ پیام باید بعد از انتشار بنشیند — وگرنه حافظهٔ
+# دروازهٔ آلارم (brain/alerts) با هر شکستِ بودجه منتشر نمی‌شود و چرخهٔ بعد
+# همه را دوباره می‌فرستد (حلقهٔ ۱۸ ساعتهٔ ۱۴–۱۵ سپتامبر).
+_hc_txt = (WF / "hamid-cycle.yml").read_text(encoding="utf-8")
+check("حکم بودجهٔ پیام (--check) بعد از گام انتشار است",
+      _hc_txt.find("name: Publish to main") > 0
+      and _hc_txt.find("msg_budget --check") > _hc_txt.find("name: Publish to main"))
+check("هیچ --check بودجه‌ای پیش از انتشار نیست", "msg_budget --write --check" not in _hc_txt)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

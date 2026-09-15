@@ -142,7 +142,7 @@ def decide(name, key, now_ms=None, repeat_h=REPEAT_H, state_path=None):
 
 
 def send(name, key, text, now_ms=None, repeat_h=REPEAT_H, state_path=None,
-         recovered_text=None, quiet=False):
+         recovered_text=None, quiet=False, kind="alert"):
     """تصمیم + ارسال. → (sent: bool, reason: str).
 
     متنِ رفع‌شدن اختیاری است؛ اگر ندهی، خبرِ سلامتی فرستاده نمی‌شود ولی
@@ -158,7 +158,7 @@ def send(name, key, text, now_ms=None, repeat_h=REPEAT_H, state_path=None,
         return False, reason
     try:
         import telegram as TG
-        TG.send_text(body)
+        TG.send_text(body, kind=kind)
     except Exception as e:                           # noqa: BLE001
         if not quiet:
             print(f"[{name}] ارسال آلارم شکست: {type(e).__name__}")
