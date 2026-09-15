@@ -296,6 +296,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>تمرین تاریخی و حافظهٔ پایدار <span class="dim" style="font-size:11px;font-weight:400" id="hroomMeta">بازپخش بدون نگاه به آینده — فقط دادهٔ واقعی؛ کمبود صریح اعلام می‌شود</span></h3><div id="hroomBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>ناظر کل (E26) <span class="dim" style="font-size:11px;font-weight:400" id="ovsMeta">هد-تریدر سخت‌گیر — دستور تمرکز مستدل برای ایجنت‌های متخصص؛ بدون وتو</span></h3><div id="ovsBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>موضع بازار <span class="dim" style="font-size:11px;font-weight:400" id="stanceMeta">هم‌جهت با پول — هفتگی و در تغییر ساختار ۴س؛ دیدگاه است، نه دروازه</span></h3><div id="stanceBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>جایزهٔ انجین‌ها <span class="dim" style="font-size:11px;font-weight:400" id="rwdMeta">TARGET=+۳ · TRAIL=+۱ · STOP=−۱ · TP از تجربه ۲× — انگیزشی/عیب‌یابانه، بدون وتو و وزن</span></h3><div id="rwdBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>نظرسنجی خبر <span class="dim" style="font-size:11px;font-weight:400" id="npMeta">برداشت ایجنت‌ها از خبر، نمره با کندل واقعی — خبر دیدگاه است، نه تصمیم</span></h3><div id="npBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>🔥 شورای ققنوس <span class="dim" style="font-size:11px;font-weight:400" id="phxMeta">۱۲ مراقب زودیاک، حکم وزنی ققنوس روی هر سیگنال — مشاوره‌ای تا CI بگوید</span></h3><div id="phoenixBox"></div></div>
@@ -3869,6 +3870,35 @@ function renderRwd(){
   el.innerHTML=rows||`<div class="dim" style="font-size:12px">تابلو خالی است.</div>`;
 }
 setInterval(rwdFetch,300000);setTimeout(rwdFetch,6400);
+/* موضع بازار (۱۵ سپتامبر) — منبع: signals/market-stance.json (hamid/market_stance.py).
+   دیدگاه هفتگی/ساختاری؛ هیچ دروازه‌ای از این کارت عوض نمی‌شود. */
+const STANCE={data:null};
+async function stanceFetch(){
+  try{
+    const r=await fetch("./signals/market-stance.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){STANCE.data=j;DB.set("stance_cache",j);renderStance();}}
+  }catch(e){}
+}
+function renderStance(){
+  const el=$("#stanceBox");if(!el)return;
+  const j=STANCE.data;
+  if(!j){el.innerHTML=`<div class="dim" style="font-size:12px">موضع بازار هنوز ساخته نشده (چرخهٔ بعدی).</div>`;return;}
+  const meta=$("#stanceMeta");
+  if(meta)meta.textContent=`محرک: ${j.trigger}${j.held?" · نگه‌داشته":""} · `+Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const lab={LONG_BIAS:"🟢 لانگ‌گرا",SHORT_BIAS:"🔴 شورت‌گرا",NEUTRAL:"🟡 خنثی",NO_STANCE:"⚪ بدون موضع"}[j.stance]||j.stance;
+  const fa={btc_4h:"BTC ۴س",btc_1h:"BTC ۱س",usdt_4h:"USDT.D ۴س",usdt_1h:"USDT.D ۱س",polymarket:"پالی‌مارکت"};
+  const votes=Object.keys(j.votes||{}).map(k=>{const v=j.votes[k];const s=typeof v==="number"?(v>0?"+":"")+ (Math.abs(v)===1?v:v.toFixed(2)):"—";return `<span style="margin-inline-end:8px">${fa[k]||k} <b>${s}</b></span>`;}).join("");
+  const abst=Object.keys(j.abstain||{}).map(k=>`<span class="dim" style="margin-inline-end:8px">${fa[k]||k}: ${j.abstain[k]}</span>`).join("");
+  const tr=j.track_record||{};
+  const rec=tr.hit==null?`<span class="dim">کارنامهٔ ۷روزه: ${tr.why||"—"}</span>`:`کارنامهٔ ۷روزه: اصابت ${Math.round(tr.hit*100)}٪ CI [${tr.ci[0]},${tr.ci[1]}] n=${tr.n}`;
+  const frz=(j.event_freeze||[]).length?`<div style="font-size:11px">❄️ یخ‌زده — رویداد ≤۲س: ${j.event_freeze.join("، ")}</div>`:"";
+  el.innerHTML=`<div style="font-size:14px;margin-bottom:4px">${lab} <span class="dim" style="font-size:11px">امتیاز ${j.score??"—"} (آستانه ±${(j.rules||{}).band??0.25})</span></div>
+    <div style="font-size:12px;margin:3px 0">${votes||"—"}</div>${abst?`<div style="font-size:11px;margin:2px 0">${abst}</div>`:""}${frz}
+    <div style="font-size:11px;margin:3px 0"><span class="dim">باطل‌کننده:</span> ${j.invalidator||""}</div>
+    <div style="font-size:11px">${rec}</div>`;
+}
+setInterval(stanceFetch,300000);setTimeout(stanceFetch,6800);
+(()=>{const s=DB.get("stance_cache");if(s&&!STANCE.data){STANCE.data=s;setTimeout(renderStance,900);}})();
 (()=>{const w=DB.get("rwd_cache");if(w&&!RWD.data){RWD.data=w;setTimeout(renderRwd,850);}})();
 /* نظرسنجی خبر (۲ سپتامبر) — هر ایجنت دربارهٔ هر خبر چه گفت و چند بار درست
    بود. وزن فقط از کارنامه و با سقف ۵٪؛ این کارت هیچ امتیاز/دروازه‌ای نمی‌سازد. */

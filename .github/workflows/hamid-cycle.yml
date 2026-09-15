@@ -139,6 +139,7 @@ jobs:
           python3 -m hamid.test_newsboard
           python3 -m hamid.test_council
           python3 -m hamid.test_history_room
+          python3 -m hamid.test_market_stance
           python3 -m hamid.test_risk_desk
           python3 -m hamid.test_brand
           python3 -m hamid.test_skill_ledger
@@ -233,6 +234,12 @@ jobs:
       - name: اتاق تمرین تاریخی
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.history_room --write || true
+
+      # موضع بازار (دستور ۱۴ سپتامبر): هم‌جهت با پول — هفتگی و در تغییر
+      # ساختار ۴س؛ دیدگاه است نه دروازه (قانون ۱۵).
+      - name: موضع بازار
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.market_stance --write || true
 
       # کارنامهٔ تجربه برای مصرف بیرونی (داشبورد حمید). سنجیده روی ۴۴۴
       # معاملهٔ سیگنال‌گرید: با تجربه ۸۶.۹٪ برد / +۰.۳۱۹R، بدون تجربه
