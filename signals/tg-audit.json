@@ -1,16 +1,16 @@
 {
- "generated": 1789480135036,
+ "generated": 1789486164802,
  "window_days": 7,
- "since": 1788875335036,
+ "since": 1788881364802,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-08": {
-    "outcome": 10,
-    "dom_report": 11,
-    "signal": 8,
+    "outcome": 7,
+    "dom_report": 9,
     "pump_report": 3,
     "work_report": 2,
+    "signal": 7,
     "alert": 9
    },
    "2026-09-09": {
@@ -62,21 +62,23 @@
     "work_report": 3
    },
    "2026-09-15": {
-    "signal": 16,
+    "signal": 18,
     "dom_report": 14,
     "alert": 2,
-    "pump_report": 1,
+    "pump_report": 2,
     "work_report": 1,
-    "outcome": 11
+    "outcome": 31,
+    "trade_mgmt": 2
    }
   },
   "total": {
-   "outcome": 188,
-   "dom_report": 178,
-   "signal": 164,
-   "pump_report": 34,
+   "outcome": 205,
+   "dom_report": 176,
+   "pump_report": 35,
    "work_report": 21,
-   "alert": 219
+   "signal": 165,
+   "alert": 219,
+   "trade_mgmt": 2
   },
   "alert_classes": {
    "trail_rung": 98,
@@ -87,7 +89,7 @@
   "useless_kinds": {
    "alert": 219
   },
-  "useless_share_pct": 27.2,
+  "useless_share_pct": 26.6,
   "over_cap": {
    "pump_report": [
     "2026-09-09:6"
@@ -103,11 +105,11 @@
   }
  },
  "signals": {
-  "n": 164,
+  "n": 165,
   "per_day": {
    "2026-09-08": {
-    "n": 8,
-    "first": "14:49",
+    "n": 7,
+    "first": "16:53",
     "last": "23:46"
    },
    "2026-09-09": {
@@ -141,23 +143,23 @@
     "last": "23:38"
    },
    "2026-09-15": {
-    "n": 16,
+    "n": 18,
     "first": "00:08",
-    "last": "13:44"
+    "last": "14:30"
    }
   },
   "strategy": {
-   "smc": 83,
    "ibs": 80,
+   "smc": 84,
    "hamid": 1
   },
   "tf": {
-   "5m": 160,
+   "5m": 161,
    "15m": 4
   },
   "dir": {
-   "LONG": 79,
-   "SHORT": 85
+   "SHORT": 87,
+   "LONG": 78
   },
   "hour_utc": {
    "0": 16,
@@ -174,7 +176,7 @@
    "11": 7,
    "12": 14,
    "13": 15,
-   "14": 2,
+   "14": 3,
    "15": 1,
    "16": 6,
    "18": 7,
@@ -186,28 +188,40 @@
   }
  },
  "outcomes": {
-  "sent": 164,
-  "matched": 159,
-  "unmatched": 5,
-  "match_pct": 97.0,
+  "sent": 165,
+  "matched": 162,
+  "unmatched": 3,
+  "match_pct": 98.2,
   "overall": {
-   "n": 159,
-   "mean_net": -0.175,
-   "sum_net": -27.8,
-   "win_pct": 60.4,
+   "n": 162,
+   "mean_net": -0.165,
+   "sum_net": -26.8,
+   "win_pct": 60.5,
    "outcomes": {
-    "trail": 93,
+    "trail": 94,
     "stop": 32,
-    "expired": 31,
-    "target": 3
+    "expired": 32,
+    "target": 4
    }
   },
   "by": {
    "strategy": {
+    "ibs": {
+     "n": 79,
+     "mean_net": -0.272,
+     "sum_net": -21.5,
+     "win_pct": 50.6,
+     "outcomes": {
+      "trail": 36,
+      "stop": 19,
+      "expired": 20,
+      "target": 4
+     }
+    },
     "smc": {
      "n": 82,
-     "mean_net": -0.069,
-     "sum_net": -5.7,
+     "mean_net": -0.067,
+     "sum_net": -5.5,
      "win_pct": 69.5,
      "outcomes": {
       "trail": 57,
@@ -215,72 +229,69 @@
       "expired": 12
      }
     },
-    "ibs": {
-     "n": 77,
-     "mean_net": -0.287,
-     "sum_net": -22.1,
-     "win_pct": 50.6,
+    "hamid": {
+     "n": 1,
+     "mean_net": 0.186,
+     "sum_net": 0.2,
+     "win_pct": 100.0,
      "outcomes": {
-      "trail": 36,
-      "stop": 19,
-      "expired": 19,
-      "target": 3
+      "trail": 1
      }
     }
    },
    "tf": {
     "5m": {
-     "n": 156,
-     "mean_net": -0.172,
-     "sum_net": -26.8,
-     "win_pct": 60.3,
+     "n": 158,
+     "mean_net": -0.165,
+     "sum_net": -26.1,
+     "win_pct": 60.1,
      "outcomes": {
       "trail": 91,
       "stop": 31,
-      "expired": 31,
-      "target": 3
+      "expired": 32,
+      "target": 4
      }
     },
     "15m": {
-     "n": 3,
-     "mean_net": -0.312,
-     "sum_net": -0.9,
-     "win_pct": 66.7,
+     "n": 4,
+     "mean_net": -0.188,
+     "sum_net": -0.8,
+     "win_pct": 75.0,
      "outcomes": {
-      "trail": 2,
+      "trail": 3,
       "stop": 1
      }
     }
    },
    "dir": {
-    "LONG": {
-     "n": 76,
-     "mean_net": -0.131,
-     "sum_net": -10.0,
-     "win_pct": 60.5,
+    "SHORT": {
+     "n": 85,
+     "mean_net": -0.202,
+     "sum_net": -17.2,
+     "win_pct": 60.0,
      "outcomes": {
-      "trail": 45,
+      "trail": 48,
+      "stop": 18,
+      "expired": 16,
+      "target": 3
+     }
+    },
+    "LONG": {
+     "n": 77,
+     "mean_net": -0.125,
+     "sum_net": -9.6,
+     "win_pct": 61.0,
+     "outcomes": {
+      "trail": 46,
       "expired": 16,
       "stop": 14,
       "target": 1
      }
-    },
-    "SHORT": {
-     "n": 83,
-     "mean_net": -0.215,
-     "sum_net": -17.8,
-     "win_pct": 60.2,
-     "outcomes": {
-      "trail": 48,
-      "stop": 18,
-      "expired": 15,
-      "target": 2
-     }
     }
    }
   },
-  "trail_zero_share_pct": 10.8,
-  "open_or_unfound": 5,
+  "trail_zero_share_pct": 10.6,
+  "open_or_unfound": 3,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
