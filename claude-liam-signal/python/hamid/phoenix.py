@@ -703,9 +703,15 @@ def _social(s, now_ms):
     return out
 
 
-def judge(s, ctx=None, scores=None, write=False, now_ms=None):
-    """همهٔ ۱۲ مراقب سیگنال را می‌بینند؛ ققنوس حکم وزنی می‌دهد. هرگز استثنا نمی‌دهد."""
-    ctx = {**_context(s, now_ms), **(ctx or {})}
+def judge(s, ctx=None, scores=None, write=False, now_ms=None, disk=True):
+    """همهٔ ۱۲ مراقب سیگنال را می‌بینند؛ ققنوس حکم وزنی می‌دهد. هرگز استثنا نمی‌دهد.
+
+    disk=False: بافت فقط همان چیزی است که صدازننده داد — هیچ فایلی خوانده
+    نمی‌شود. (۱۵ سپتامبر: آزمونِ «سیگنال بی‌شاهد» روی رانرِ Actions با
+    فایل‌های تازهٔ signals/ ۸ رأی گرفت و افتاد، محلی ۴ رأی و گذشت — آزمونی
+    که به تازگیِ فایل‌های دیسک وابسته باشد، آزمونِ کد نیست.)"""
+    base = _context(s, now_ms) if disk else {"now_ms": now_ms or time.time() * 1000}
+    ctx = {**base, **(ctx or {})}
     w = weights(scores)
     votes, num, den = {}, 0.0, 0.0
     n_for = n_against = n_abs = 0

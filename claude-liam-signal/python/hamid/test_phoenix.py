@@ -76,10 +76,17 @@ check("سرطان: آهن‌ربای نقدینگی بالای قیمت برای
 
 # ممتنع وقتی داده نیست
 BARE = {"sym": "XUSDT", "tf": "5m", "dir": "LONG", "entry": 1.0, "sl": 0.98, "tp1": 1.04}
-vbare = P.judge(BARE, ctx={"dominance": {}, "btc_sens": {}, "fee_r": None}, scores=EMPTY_SCORES, now_ms=NOW)
+# disk=False: «بی‌شاهد» یعنی هیچ فایلی از signals/ هم به بافت نرسد — وگرنه
+# آزمون به تازگیِ چک‌اوت وابسته می‌شود (۱۵ سپتامبر: Actions ۸ رأی، محلی ۴).
+vbare = P.judge(BARE, ctx={"dominance": {}, "btc_sens": {}, "fee_r": None}, scores=EMPTY_SCORES, now_ms=NOW, disk=False)
 check("سیگنال بی‌شاهد: اکثر مراقب‌ها ممتنع، حکم «بی‌نظر — شواهد کم»",
       vbare["abstain"] >= 8 and vbare["label"] == "بی‌نظر" and vbare["note"] == "شواهد کم", str(vbare["abstain"]))
-check("مراقبِ خراب حکم را نمی‌کشد (ممتنع با دلیل)", P.judge({"sym": "Y", "dir": "LONG"}, ctx={"dominance": {}, "btc_sens": {}}, scores=EMPTY_SCORES)["label"] in ("بی‌نظر",))
+check("مراقبِ خراب حکم را نمی‌کشد (ممتنع با دلیل)", P.judge({"sym": "Y", "dir": "LONG"}, ctx={"dominance": {}, "btc_sens": {}}, scores=EMPTY_SCORES, disk=False)["label"] in ("بی‌نظر",))
+# فقط میزان از هندسهٔ خودِ ستاپ (ورود/استاپ) کارمزد می‌سازد و رأی می‌دهد؛ بقیه بی‌فایل ممتنع‌اند.
+check("بی‌شاهدِ واقعی: دست‌کم ۱۱ مراقب ممتنع (هیچ فایلی نخوانده شد)", vbare["abstain"] >= 11, str(vbare["abstain"]))
+import inspect as _insp
+check("پیش‌فرضِ تولید همچنان از دیسک بافت می‌سازد (disk=True)",
+      _insp.signature(P.judge).parameters["disk"].default is True)
 check("دامیننس کهنه‌تر از ۹۰ دقیقه = ممتنع عقرب",
       P._v_scorpio({"dir": "LONG"}, {"dominance": {"generated": NOW - 120 * 60_000, "chg_1h": {"usdt": -0.1}, "chg_4h": {"usdt": -0.1}}, "now_ms": NOW})[0] is None)
 check("جوزا: نماد مستقل از BTC وزن رأیش نصف می‌شود",
