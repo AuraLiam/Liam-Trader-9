@@ -311,6 +311,43 @@ finally:
 # اثباتِ **محصول** نه اثباتِ اسکریپت: خودِ `_context` باید فیلد را بسازد،
 # و سنبله با همان فیلد باید از امتناع/جریمه به تأیید برسد. بی این دو
 # بررسی، مسیرِ پشتیبان دوباره می‌تواند سال‌ها خالی بماند و کسی نفهمد.
+
+# ── ۱۵ سپتامبر (قانون ۱۹): قوس از اجماعِ بی‌وزن، سفارشِ داده و پنجرهٔ رویداد ──
+print("\n— قوس: اتصال به بافت رأی —")
+import tempfile as _tf19, json as _js19, time as _tm19
+_t19 = Path(_tf19.mkdtemp(prefix="ph19-"))
+_now19 = _tm19.time() * 1000
+_old = (P.NEWS_POLL, P.DATA_REQ, P.FOMO)
+try:
+    P.FOMO = _t19 / "nofomo.json"
+    _n19 = _t19 / "news.json"
+    _n19.write_text(_js19.dumps({"generated": _now19 - 60_000,
+                                 "consensus": {"BTC": {"bias": None, "weight": 0.0, "bias_unweighted": "DOWN"}}}), encoding="utf-8")
+    P.NEWS_POLL = _n19
+    P.DATA_REQ = _t19 / "dq.json"
+    _s = P._social({"sym": "BTCUSDT", "dir": "SHORT"}, _now19)
+    check("اجماعِ سادهٔ بی‌وزن به قوس می‌رسد (شورت هم‌جهت با DOWN)", _s.get("news_align") == "with" and _s.get("news_weighted") is False, str(_s))
+    _v, _why = P.VOTERS["sagittarius"]({"sym": "BTCUSDT", "dir": "SHORT"}, _s)
+    check("قوس با اجماعِ بی‌وزن، نصف‌قوت رأی می‌دهد", _v == 0.25 and "بی‌وزن" in _why, f"{_v} {_why}")
+    # بی‌اجماع + رویداد کلان ≤۲س → دیدگاه منفی ضعیف
+    _n19.write_text(_js19.dumps({"generated": _now19 - 60_000, "consensus": {"BTC": {"bias": None, "weight": 0.0, "bias_unweighted": None}}}), encoding="utf-8")
+    _ctx = {**P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now19),
+            "dominance": {"macro": [{"title": "FOMC", "country": "USD", "in_hours": 1.5}]}}
+    _v2, _why2 = P.VOTERS["sagittarius"]({"sym": "BTCUSDT", "dir": "LONG"}, _ctx)
+    check("بی‌اجماع + FOMC در ۱.۵س → −۰.۲۵ با نام رویداد", _v2 == -0.25 and "FOMC" in _why2, f"{_v2} {_why2}")
+    # بی‌اجماع + سفارشِ خبر نرسیده → امتناع با دلیلِ دقیق قانون ۱۹
+    (_t19 / "dq.json").write_text(_js19.dumps({"owners": {"E14": {"items": [{"id": "news", "ok": False, "why_not": "کهنه (330د > 180)"}]}}}), encoding="utf-8")
+    _ctx3 = {**P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now19), "dominance": {"macro": []}}
+    _v3, _why3 = P.VOTERS["sagittarius"]({"sym": "BTCUSDT", "dir": "LONG"}, _ctx3)
+    check("سفارشِ خبر نرسیده → ممتنع با دلیلِ «نرسیده»، نه «بی‌اجماع»", _v3 is None and "نرسیده" in _why3 and "330" in _why3, f"{_v3} {_why3}")
+    # ۱۸ بند ۴: امتناعِ واقعی (خبر رسیده ولی بی‌رأی) هنوز معتبر است
+    (_t19 / "dq.json").write_text(_js19.dumps({"owners": {"E14": {"items": [{"id": "news", "ok": True, "why_not": None}]}}}), encoding="utf-8")
+    _ctx4 = {**P._social({"sym": "BTCUSDT", "dir": "LONG"}, _now19), "dominance": {"macro": []}}
+    _v4, _why4 = P.VOTERS["sagittarius"]({"sym": "BTCUSDT", "dir": "LONG"}, _ctx4)
+    check("خبر رسیده ولی نظرسنجی بی‌رأی → امتناعِ صادقانه", _v4 is None and "بی‌رأی" in _why4, f"{_v4} {_why4}")
+finally:
+    P.NEWS_POLL, P.DATA_REQ, P.FOMO = _old
+
 print("\n— سنبله: سیمِ منبع کندل —")
 _old_src = P._candle_src
 try:

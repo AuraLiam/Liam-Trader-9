@@ -212,5 +212,16 @@ for _f in _gate_files:
 check("منبعِ خبری تازه وارد هیچ دروازهٔ تصمیم نشد (قانون ۱۵)",
       not _leak, str(_leak))
 
+
+# ── ۱۵ سپتامبر (قانون ۱۹): اجماعِ بی‌وزن کنارِ bias وزن‌دار شمرده می‌شود
+_now3 = int(time.time() * 1000)
+_items3 = [{"id": "i1"}, {"id": "i2"}]
+_polls3 = [{"item": "i1", "at": _now3, "agent": "E05", "method": "rule", "scope": "BTC", "stance": "DOWN", "confidence": 0.6},
+           {"item": "i2", "at": _now3, "agent": "E14", "method": "rule", "scope": "BTC", "stance": "DOWN", "confidence": 0.5},
+           {"item": "i2", "at": _now3, "agent": "E03", "method": "rule", "scope": "BTC", "stance": "UP", "confidence": 0.5}]
+_c3 = NP.consensus(_items3, polls=_polls3, board={}, now_ms=_now3)["BTC"]
+check("بی‌وزن: bias هنوز None ولی bias_unweighted = DOWN (۲ در برابر ۱)",
+      _c3["bias"] is None and _c3["bias_unweighted"] == "DOWN" and _c3["n_down"] == 2 and _c3["n_up"] == 1, str(_c3))
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

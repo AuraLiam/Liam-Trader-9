@@ -56,6 +56,7 @@ DOMINANCE = ROOT / "signals" / "dominance.json"
 BTC_SENS = ROOT / "signals" / "btc-sensitivity.json"
 FOMO = ROOT / "signals" / "fomo.json"
 NEWS_POLL = ROOT / "signals" / "news-poll.json"
+DATA_REQ = ROOT / "signals" / "data-requests.json"   # قانون ۱۹ — سفارش دادهٔ E14
 
 # سقفِ کهنگیِ شاهدِ اجتماعی. از قرارداد وضعیت می‌آید (هر دو ۴۲۰/۷۲۰
 # دقیقه) ولی برای رأی سخت‌گیرتر است: شاهدِ دیروز دربارهٔ امروز حرفی
@@ -382,7 +383,16 @@ def _v_sagittarius(s, ctx):
         return k, f"اجماع خبری هم‌جهت (دیدگاه{tag})"
     if na == "against":
         return -k, f"اجماع خبری خلاف (دیدگاه{tag})"
-    return None, "اجماع خبری ندارد"
+    # بی‌اجماع: پنجرهٔ رویداد کلان ≤۲س هنوز دیدگاهِ منفیِ ضعیف است (همان
+    # قراردادِ UNSAFE دامیننس و بازجویی) — ورود روی خبر، نه با خبر.
+    ev = [e for e in ((ctx.get("dominance") or {}).get("macro") or [])
+          if e.get("country") == "USD" and 0 <= float(e.get("in_hours") or 99) <= 2.0]
+    if ev:
+        return -0.25, f"رویداد کلان ≤۲س: {ev[0].get('title')} (دیدگاه)"
+    nr = ctx.get("news_request")
+    if nr and not nr.get("ok"):
+        return None, f"خبرِ سفارش‌داده‌شده نرسیده — {nr.get('why_not') or 'بی‌دلیل'} (قانون ۱۹)"
+    return None, "اجماع خبری ندارد (خبر رسیده، نظرسنجی بی‌رأی)"
 
 
 def _v_aquarius(s, ctx):
@@ -663,7 +673,11 @@ def _social(s, now_ms):
             cons = n.get("consensus") or {}
             base = sym[:-4] if sym.endswith("USDT") else sym
             row = cons.get(base) or cons.get("BTC") or {}
-            bias = row.get("bias")
+            # ۱۵ سپتامبر (قانون ۱۹): bias وزن‌دار null بود و قوس ۱۰۰٪ ممتنع؛
+            # اجماعِ سادهٔ بی‌وزن هم می‌آید — با news_weighted=False (نصف‌قوت).
+            bias = row.get("bias") or row.get("bias_unweighted")
+            if str(bias).upper() == "FLAT":
+                bias = None
             # وزنِ صفر یعنی هیچ ایجنتی هنوز اعتبار نگرفته (قانون ۱۵) —
             # آن وقت اجماعی در کار نیست و قوس **باید** ممتنع بماند.
             # ۱۳ سپتامبر (قانون ۱۸ بند ۴): اجماعِ بی‌وزن هم به قوس می‌رسد،
@@ -674,6 +688,16 @@ def _social(s, now_ms):
                 d = _sign((s or {}).get("dir"))
                 up = str(bias).lower() in ("up", "bull", "bullish", "صعودی")
                 out["news_align"] = "with" if (up == (d > 0)) else "against"
+    except Exception:                                # noqa: BLE001
+        pass
+    # وضعیت سفارش دادهٔ E14 (قانون ۱۹) — تا دلیلِ امتناع دقیق باشد:
+    # «سفارش‌داده‌شده ولی نرسیده» با «رسیده ولی بی‌اجماع» فرق دارد.
+    try:
+        dq = json.loads(DATA_REQ.read_text(encoding="utf-8"))
+        items = ((dq.get("owners") or {}).get("E14") or {}).get("items") or []
+        nr = next((i for i in items if i.get("id") == "news"), None)
+        if nr is not None:
+            out["news_request"] = {"ok": bool(nr.get("ok")), "why_not": nr.get("why_not")}
     except Exception:                                # noqa: BLE001
         pass
     return out

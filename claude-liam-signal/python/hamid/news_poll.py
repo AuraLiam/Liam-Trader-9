@@ -490,6 +490,12 @@ def consensus(items, polls=None, board=None, now_ms=None):
         w = (board.get(f"{r.get('agent')}|{r.get('method')}") or {}).get("weight") or 0.0
         s = by_scope.setdefault(r.get("scope") or "BTC", {"up": 0.0, "down": 0.0, "n": 0, "n_weighted": 0})
         s["n"] += 1
+        # شمارش سادهٔ بی‌وزن — قوس تا وزن‌گرفتنِ ایجنت‌ها کور نماند
+        # (۱۵ سپتامبر: n=۱۲ رأی، bias=null، قوس ۱۰۰٪ ممتنع). دیدگاهِ نصف‌قوت.
+        if r["stance"] == "UP":
+            s["n_up"] = s.get("n_up", 0) + 1
+        elif r["stance"] == "DOWN":
+            s["n_down"] = s.get("n_down", 0) + 1
         if w <= 0:
             continue
         s["n_weighted"] += 1
@@ -499,12 +505,16 @@ def consensus(items, polls=None, board=None, now_ms=None):
             s["down"] += w * float(r.get("confidence") or 0)
     out = {}
     for sc, s in by_scope.items():
+        nu, nd = s.get("n_up", 0), s.get("n_down", 0)
+        unw = "UP" if nu > nd else "DOWN" if nd > nu else ("FLAT" if (nu or nd) else None)
         if s["n_weighted"] == 0:
-            out[sc] = {"bias": None, "weight": 0.0, "n": s["n"], "why": "هیچ ایجنتِ نظرداده‌ای هنوز وزن ندارد"}
+            out[sc] = {"bias": None, "weight": 0.0, "n": s["n"], "why": "هیچ ایجنتِ نظرداده‌ای هنوز وزن ندارد",
+                       "bias_unweighted": unw, "n_up": nu, "n_down": nd}
             continue
         net = s["up"] - s["down"]
         out[sc] = {"bias": "UP" if net > 0 else "DOWN" if net < 0 else "FLAT",
-                   "weight": round(min(SOCIAL_CAP, abs(net)), 4), "n": s["n"], "why": ""}
+                   "weight": round(min(SOCIAL_CAP, abs(net)), 4), "n": s["n"], "why": "",
+                   "bias_unweighted": unw, "n_up": nu, "n_down": nd}
     return out
 
 
