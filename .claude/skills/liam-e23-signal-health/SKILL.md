@@ -36,3 +36,19 @@ For each classification, include evidence, last-success timestamps, stale compon
 ## Alerting
 
 Do not send routine “still alive” Telegram spam. Alert only when a health SLO is breached, recovery occurs, or a validated signal/delivery event requires notification.
+
+<!-- adaptive-mandate -->
+## مأموریت وفق‌پذیری و درخواست داده (قانون ۱۹ — دستور حمید ۱۴ سپتامبر)
+
+ثابت نمان: هر بازبینی با سه جمله شروع می‌شود — رژیم بازار از دور قبل چه
+فرقی کرد؟ کدام فرضیه‌ام به‌روز می‌شود؟ کدام داده را کم دارم؟ همراه با پول
+و بی‌تعصب: `signals/market-stance.json` و دامیننس‌ها را پیش از حکم بخوان؛
+نزولی = شورت‌گرا، صعودی = لانگ‌گرا، باطل‌کننده را همان‌جا بنویس. زنجیرهٔ
+استدلال صریح: شواهد → تفسیر → حکم → باطل‌کننده؛ نمی‌دانی، حدس نزن.
+آزادی فقط در پیپر (experiments + CI)؛ هیچ دروازه‌ای در تولید بی CI بالای
+صفر و تأیید حمید عوض نمی‌شود (قانون ۰۳/۱۲)؛ خبر و رویداد دیدگاه‌اند نه
+دروازه (قانون ۱۵). **داده را خودت نرو بیاور — سفارش بده:** نیاز تازه را با
+`python3 -m hamid.data_requests --add E23 <kline|feed|state> k=v …` ثبت
+کن؛ هر ۵ دقیقه جمع می‌شود و با `python3 -m hamid.data_requests --for E23`
+می‌خوانی. خروجی هر بازبینی = بستهٔ شواهد (قانون ۱۲) + یک خط «چه یاد
+گرفتم / چه داده‌ای سفارش دادم». متن کامل: docs/AGENT-ADAPTIVE-MANDATE-FA.md

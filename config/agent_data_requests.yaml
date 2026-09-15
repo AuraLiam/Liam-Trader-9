@@ -1,0 +1,58 @@
+# قرارداد «درخواست داده» ایجنت‌ها (قانون ۱۹ — دستور حمید ۱۴ سپتامبر)
+#
+# ایجنت خودش دنبال داده نمی‌رود (قانون ۱۷/۱۸). هر چه لازم دارد این‌جا
+# ثبت می‌کند؛ hamid/data_requests.py هر ۵ دقیقه برایش جمع می‌کند و در
+# signals/data-requests.json می‌گذارد. خواندن: python3 -m hamid.data_requests --for E14
+# افزودن: python3 -m hamid.data_requests --add E14 feed feed=news why="..." max_age_min=120
+#
+# سه نوع (بیشتر نه، تا ابزار قطعی بماند):
+#   kline  — symbol/tf/n → خلاصهٔ کندل (قیمت، تغییر، روندِ structure.trend)؛ منبع sources.klines
+#   feed   — یکی از خوراک‌های intake: fear_greed | funding | calendar | news | trending | unlocks
+#   state  — یک فایل قراردادِ signals/ (قانون ۱۳) — سن و تازگی‌اش
+# هر درخواست: id, kind, why (یک خط), max_age_min (کف اعتبار — کهنه‌تر = «برآورده نشد»)
+version: 1
+requests:
+  E14:                                   # قوس/خبر — تا ۱۴ سپتامبر «کورِ داده» بود
+    - id: news
+      kind: feed
+      feed: news
+      why: دیدگاه خبری برای رأی قوس (فقط دیدگاه، قانون ۱۵)
+      max_age_min: 180
+    - id: calendar
+      kind: feed
+      feed: calendar
+      why: رویداد کلان ≤۲ ساعت برای پنجرهٔ یخ‌زدن
+      max_age_min: 180
+  E05:                                   # رژیم کلان
+    - id: fear_greed
+      kind: feed
+      feed: fear_greed
+      why: جمعیت سرد/داغ کنار رژیم ساختاری
+      max_age_min: 720
+    - id: btc_4h
+      kind: kline
+      symbol: BTCUSDT
+      tf: 4h
+      n: 220
+      why: رژیم BTC ۴س (روند structure.trend) پیش از حکم کلان
+      max_age_min: 60
+  E06:                                   # تحلیل BTC
+    - id: btc_1h
+      kind: kline
+      symbol: BTCUSDT
+      tf: 1h
+      n: 220
+      why: ساختار عملیاتی ۱س
+      max_age_min: 30
+  E03:                                   # USDT.D
+    - id: dominance
+      kind: state
+      file: dominance.json
+      why: بستر دامیننس با سقف قراردادش
+      max_age_min: 45
+  macro-dominance:                       # ایجنت عملیاتی (نگاشت dispatch.AGENT_ENGINES)
+    - id: stance
+      kind: state
+      file: market-stance.json
+      why: موضع هفتگی بازار پیش از رأی دامیننس
+      max_age_min: 120

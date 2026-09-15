@@ -241,6 +241,8 @@ jobs:
               (cd claude-liam-signal/python && python3 -m hamid.intake --write) || true
               (cd claude-liam-signal/python && python3 -m hamid.dispatch --write) || true
               (cd claude-liam-signal/python && python3 -m hamid.review_queue --write) || true
+              # قانون ۱۹: سفارش دادهٔ ایجنت‌ها — بعد از دسته‌بند، از intake می‌خواند
+              (cd claude-liam-signal/python && python3 -m hamid.data_requests --write) || true
               # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
               # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را

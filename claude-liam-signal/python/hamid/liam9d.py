@@ -117,6 +117,11 @@ JOBS = [
     dict(key="review_queue", every=300, wf="pump-radar.yml", timeout=60,
          desc="صف بازبینی — تولز اول، بعد ایجنت (فقط needs_reasoning)",
          cmd=["python3", "-m", "hamid.review_queue", "--write"]),
+    # قانون ۱۹ (دستور حمید ۱۴ سپتامبر): سفارشِ دادهٔ هر ایجنت هر ۵ دقیقه
+    # برآورده می‌شود تا ایجنت خودش دنبال داده نرود.
+    dict(key="data_requests", every=300, wf="pump-radar.yml", timeout=120,
+         desc="درخواست داده — سفارش‌های ایجنت‌ها از قرارداد، بی‌جعل",
+         cmd=["python3", "-m", "hamid.data_requests", "--write"]),
     dict(key="loop_audit", every=180, wf="pump-radar.yml", timeout=180,
          desc="ممیز حلقهٔ بسته — هر سیگنال رد پنل/یادگیری دارد؟",
          cmd=["python3", "-m", "hamid.loop_audit", "--write"]),
