@@ -66,5 +66,33 @@ body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("#"))
 check("صندوق هولدینگ هیچ فرمانی از محتوای فایل اجرا نمی‌کند",
       not re.search(r"\b(exec|eval|subprocess|os\.system)\b", body))
 
+# ۱۶ سپتامبر — «نمی‌خوام هر بار allow بزنم»: اجازه‌های روتین از پیش در
+# settings.json ثبت‌اند؛ استثناهای بند ۳ (force-push/reset --hard/حذف
+# بازگشتی/ارسال از Gmail) در فهرست deny و در هوک محافظ می‌مانند.
+import json as _json
+stg = _json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+perm = stg.get("permissions") or {}
+allow, deny = set(perm.get("allow") or []), set(perm.get("deny") or [])
+check("اجازهٔ روتین از پیش داده شده (پایتون/گیت/ابزار لیام۹/گیت‌هاب)",
+      {"Bash(python3:*)", "Bash(git commit:*)", "Bash(git push:*)", "mcp__liam9", "mcp__github"} <= allow,
+      str(sorted(allow)[:6]))
+check("استثناهای قانون ۱۸ در فهرست deny مانده‌اند",
+      {"Bash(git push --force:*)", "Bash(git reset --hard:*)", "Bash(rm -rf:*)", "mcp__Gmail__send_message"} <= deny,
+      str(sorted(deny)[:6]))
+check("هوک محافظ Bash هنوز نصب است", any("claude_guard.py" in _json.dumps(h) for h in (stg.get("hooks") or {}).get("PreToolUse") or []))
+guard = (ROOT / "scripts" / "claude_guard.py").read_text(encoding="utf-8")
+check("هوک محافظ force-push و reset --hard و LIVE_EXECUTION را می‌بندد",
+      "--force" in guard and "reset\\s+--hard" in guard and "LIVE_EXECUTION" in guard)
+
+# ۱۶ سپتامبر — ممیزی تلگرام (۸۱۲ پیام/۷ روز، ۲۶٪ بی‌مخاطب): شکاک و ارجاع
+# خودکار فقط پنل/صف بازبینی‌اند؛ هیچ مسیری (Actions یا سرویس محلی) با
+# --telegram صدایشان نمی‌زند.
+from hamid import liam9d as _D
+_cmds = {j["key"]: " ".join(j["cmd"]) for j in _D.JOBS}
+check("سرویس محلی شکاک را بی‌تلگرام می‌زند (فقط پنل)", "--telegram" not in _cmds.get("skeptic", ""))
+_wfs = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / ".github" / "workflows").glob("*.yml"))
+check("هیچ ورک‌فلویی شکاک/ارجاع را با --telegram نمی‌زند",
+      not re.search(r"hamid\.(skeptic|escalation)[^\n]*--telegram", _wfs))
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)
