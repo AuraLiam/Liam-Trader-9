@@ -62,7 +62,7 @@ def _klines(sym, bars=BARS):
 def _universe(n):
     from backtest import top_symbols
     try:
-        syms = top_symbols(n * 2)
+        syms = top_symbols(max(n, 400))
     except Exception:                                # noqa: BLE001
         syms = []
     try:
@@ -151,16 +151,22 @@ def run_all(n_symbols=200, per_symbol=PER_SYMBOL, only=None, improve=True,
     improve_on = bool(improve)
     budget = budget or (n_symbols * per_symbol)
     t0 = time.time()
-    syms = _universe(n_symbols)
-    log(f"جهان: {len(syms)} ارز (بلاک‌شده‌ها حذف)", flush=True)
+    syms = _universe(n_symbols * 3)
+    log(f"نامزد: {len(syms)} ارز (بلاک‌شده‌ها حذف)", flush=True)
     series, skipped = [], []
     for s in syms:
+        if len(series) >= n_symbols:
+            break
         cd = _klines(s)
         if len(cd) < MIN_BARS:
             skipped.append(s)
             continue
         series.append((s, cd))
-    log(f"کندل گرفته شد: {len(series)} ارز · {len(skipped)} ناکافی", flush=True)
+    log(f"کندل گرفته شد: {len(series)} ارز · {len(skipped)} ارزِ بی‌تاریخچهٔ کافی رد شد",
+        flush=True)
+    if len(series) < n_symbols:
+        log(f"هشدار: فقط {len(series)} ارز تاریخچهٔ ≥{MIN_BARS} کندل داشت — "
+            f"هدف {n_symbols} بود. عدد همان‌طور که هست گزارش می‌شود.", flush=True)
     specs = [BY_ID[only]] if only else SPECIALISTS
     LEDGER.mkdir(parents=True, exist_ok=True)
     desks = {}
@@ -197,7 +203,9 @@ def run_all(n_symbols=200, per_symbol=PER_SYMBOL, only=None, improve=True,
     total = sum((d["result_out_of_sample"].get("n") or 0) for d in desks.values())
     return {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
             "owner": "E18", "tf": TF, "per_symbol": per_symbol,
-            "n_symbols": len(series), "trades_total": total,
+            "n_symbols": len(series), "n_symbols_target": n_symbols,
+            "n_skipped_no_history": len(skipped),
+            "trades_total": total,
             "seconds": round(time.time() - t0, 1),
             "desks": desks,
             "summary": {k: {"fa": v["fa"], "strategy": v["strategy_fa"],
