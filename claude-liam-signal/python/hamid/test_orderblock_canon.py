@@ -1,0 +1,151 @@
+"""پاسبان تعریفِ اردر بلاک و ارزِ بلاک‌شده — دستور حمید، ۱۶ سپتامبر.
+
+## چرا این فایل هست
+
+حمید: «بارها دیده‌ام از ۱۰ موردی که می‌گویم چند مورد از قلم می‌افتد، مثل
+همین شناسایی اردر بلاک در استراتژی خودم — من گفته بودم اولین کندل رنگ
+مخالف که بدنهٔ آن از مجموع کل شدوهایش بزرگ‌تر باشد اردر بلاک است، و برای
+اثبات آن باید گذشته را در همان تایم‌فریم بررسی کرد تا مشخص شود واکنشی
+داشته یا خیر. ولی در پنل این اصل رعایت نشده.»
+
+درست بود. `hamid/orderblock.py` از ۱۲ اوت تعریف را مو به مو داشت، ولی
+موتور پنل (`liam9_strategy.order_block_zone`) پیاده‌سازیِ **جدای خودش** را
+داشت که فقط رنگِ کندل را می‌سنجید. کلاسِ عیب: یک مفهوم، دو پیاده‌سازی،
+یکی بی‌صدا واگرا می‌شود. این آزمون همان کلاس را می‌بندد — نه فقط این
+نمونه را.
+
+    python3 -m hamid.test_orderblock_canon
+"""
+import random
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent))
+from hamid import orderblock as OB                   # noqa: E402
+from hamid import universe as U                      # noqa: E402
+import liam9_strategy as S                           # noqa: E402
+
+ROOT = HERE.parents[2]
+OK, FAIL = 0, []
+
+
+def check(name, cond, extra=""):
+    global OK
+    if cond:
+        OK += 1; print(f"  ✓ {name}")
+    else:
+        FAIL.append(name); print(f"  ✗ {name}" + (f"\n      ↳ {extra}" if extra else ""))
+
+
+# ── ۱) دو پیاده‌سازیِ «بدنه > مجموع شدوها» هرگز واگرا نمی‌شوند ────────────
+rnd = random.Random(17)
+diverged = []
+for _ in range(5000):
+    o = rnd.uniform(1, 100)
+    c = o * rnd.uniform(0.97, 1.03)
+    hi = max(o, c) * rnd.uniform(1.0, 1.02)
+    lo = min(o, c) * rnd.uniform(0.98, 1.0)
+    k = {"o": o, "h": hi, "l": lo, "c": c}
+    if OB.body_beats_shadows(k) != S.body_beats_shadows(k):
+        diverged.append(k)
+check("«بدنه > مجموع شدوها» در پنل و ماژول مرجع یکی است (۵۰۰۰ کندل)",
+      not diverged, str(diverged[:1]))
+
+# دستی: نمونه‌هایی که تعریف را نشان می‌دهند
+strong = {"o": 100.0, "c": 110.0, "h": 111.0, "l": 99.0}      # بدنه ۱۰، شدوها ۲
+weak = {"o": 100.0, "c": 102.0, "h": 108.0, "l": 96.0}        # بدنه ۲، شدوها ۱۰
+check("کندلِ بدنه‌دار قبول می‌شود", S.body_beats_shadows(strong))
+check("کندلِ دو-دُم (بلاتکلیف) رد می‌شود — «مجموع» یعنی هر دو با هم",
+      not S.body_beats_shadows(weak))
+one_sided = {"o": 100.0, "c": 104.0, "h": 104.5, "l": 96.5}   # بدنه ۴، شدوها ۴
+check("بدنه دقیقاً برابر مجموع شدوها = رد (باید «بزرگ‌تر» باشد)",
+      not S.body_beats_shadows(one_sided))
+
+
+# ── ۲) پنل بدون واکنشِ گذشته، اردر بلاک اعلام نمی‌کند ─────────────────────
+def series(n=200, start=100.0, step=0.0):
+    cd, px = [], start
+    for i in range(n):
+        o = px
+        c = o + step
+        cd.append({"t": 1_700_000_000_000 + i * 900_000, "o": o, "h": max(o, c) * 1.001,
+                   "l": min(o, c) * 0.999, "c": c, "v": 10.0})
+        px = c
+    return cd
+
+
+def put(cd, i, o, c, h=None, l=None):
+    cd[i].update({"o": o, "c": c, "h": h if h is not None else max(o, c) * 1.0005,
+                  "l": l if l is not None else min(o, c) * 0.9995})
+
+
+# سریِ آرام + یک کندل قرمزِ بدنه‌دار و بعدش جهشِ بزرگ صعودی (زونِ demand)
+cd = series(200)
+put(cd, 150, 100.6, 99.4)                      # کندل مخالفِ بدنه‌دار
+put(cd, 151, 99.4, 108.0)                      # displacement
+for k in cd[152:]:
+    k.update({"o": 108.0, "c": 108.2, "h": 108.4, "l": 107.9})
+zone_bare = S.order_block_zone(cd, "LONG", lookback=120)
+check("زونِ بکر (قیمت هرگز برنگشته) اردر بلاکِ معتبر نیست", zone_bare is None,
+      str(zone_bare))
+check("و با require_reaction=False دیده می‌شود ولی proven=False",
+      (S.order_block_zone(cd, "LONG", lookback=120, require_reaction=False) or {}).get("proven") is False)
+
+# حالا قیمت به زون برمی‌گردد (واکنشِ گذشته در همان تایم‌فریم)
+cd2 = [dict(k) for k in cd]
+for j in (160, 161):
+    put(cd2, j, 101.0, 100.2, h=101.2, l=99.8)     # لمسِ زون بدون بستنِ زیرش
+zone_proven = S.order_block_zone(cd2, "LONG", lookback=120)
+check("زونی که قیمت به آن واکنش داده، اردر بلاکِ اثبات‌شده است",
+      zone_proven is not None and zone_proven["proven"] and zone_proven["reactions"] >= 1,
+      str(zone_proven))
+check("مرزهای زون از بدنهٔ کندلِ مخالف می‌آید، نه از شدوهایش",
+      abs(zone_proven["lo"] - 99.4) < 1e-6 and abs(zone_proven["hi"] - 100.6) < 1e-6,
+      str(zone_proven))
+
+# کندلِ مخالفِ دو-دُم نباید زون بسازد
+cd3 = [dict(k) for k in cd2]
+put(cd3, 150, 100.1, 99.9, h=103.0, l=97.0)        # بدنهٔ ریز، شدوهای بلند
+check("کندلِ مخالفِ بی‌بدنه اردر بلاک نمی‌سازد (بند «مجموع شدوها»)",
+      S.order_block_zone(cd3, "LONG", lookback=120) is None)
+
+# زونی که قیمت از آن رد شده = مصرف‌شده، نه معتبر
+cd4 = [dict(k) for k in cd2]
+for j in (170, 171):
+    put(cd4, j, 99.0, 97.0)                        # کلوز زیر زون
+check("زونِ مصرف‌شده (کلوز از آن رد شده) معتبر نیست",
+      S.order_block_zone(cd4, "LONG", lookback=120) is None)
+
+# قرینهٔ شورت
+cdn = series(200)
+put(cdn, 150, 99.4, 100.6)                         # کندل سبزِ بدنه‌دار
+put(cdn, 151, 100.6, 92.0)                         # جهشِ نزولی
+for k in cdn[152:]:
+    k.update({"o": 92.0, "c": 91.8, "h": 92.1, "l": 91.6})
+for j in (160, 161):
+    put(cdn, j, 99.0, 99.8, h=100.2, l=98.8)
+zs = S.order_block_zone(cdn, "SHORT", lookback=120)
+check("قرینهٔ شورت هم همان دو بند را رعایت می‌کند",
+      zs is not None and zs["role"] == "supply" and zs["proven"], str(zs))
+
+# ── ۳) ارزِ بلاک‌شده (دستور حمید دربارهٔ TRX) ─────────────────────────────
+check("TRX در فهرست بلاک است", "TRX" in U.BLOCKED)
+for s in ("TRXUSDT", "TRX", "trxusdt", "TrxUsdt"):
+    check(f"«{s}» بلاک شناخته می‌شود", U.is_blocked(s))
+for s in ("BTCUSDT", "TRUMPUSDT", "TRUUSDT", "", None):
+    check(f"«{s}» بلاک نیست (ارزِ هم‌ریشه قربانی نمی‌شود)", not U.is_blocked(s))
+
+bt = (HERE.parent / "backtest.py").read_text(encoding="utf-8")
+check("جهانِ نمادها ارزِ بلاک‌شده را از تحلیل بیرون می‌گذارد", "is_blocked(r[\"symbol\"])" in bt)
+tg = (HERE.parent / "telegram.py").read_text(encoding="utf-8")
+check("گلوگاه ارسال لایهٔ دوم بلاک را دارد", "is_blocked as _blk" in tg)
+pp = (HERE / "paper.py").read_text(encoding="utf-8")
+check("هیچ دفتری (سیگنال یا آزمایش) ردیفِ ارزِ بلاک‌شده نمی‌سازد",
+      "if is_blocked(s[\"symbol\"]):" in pp)
+
+print()
+if FAIL:
+    print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}: {FAIL}")
+    sys.exit(1)
+print(f"پاسبان تعریف اردر بلاک و ارزِ بلاک‌شده: هر {OK} بررسی سبز")

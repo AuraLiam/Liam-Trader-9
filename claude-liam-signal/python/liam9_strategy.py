@@ -1015,12 +1015,49 @@ def candle_geometry(cd, n_atr=14):
 # منطق (آخرین کندل مخالف پیش از دیسپلیسمنت، با شمارش واکنش و تازگی) این‌جا
 # خودکفا پیاده شده — سبک‌تر از موتور کامل سرور، ولی همان اصل قانون ۰۰:
 # «آخرین کندل مخالف» به‌تنهایی کافی نیست؛ دیسپلیسمنت و تازگی لازم است.
-def order_block_zone(cd, direction, lookback=120, disp_atr_mult=1.8):
-    """نزدیک‌ترین اردر بلاکِ هم‌جهت/مخالف به قیمت فعلی، یا None.
+def body_beats_shadows(c):
+    """«بدنه‌اش از مجموع کل شدوهایش بزرگ‌تر باشد» — تعریف حمید از کندلِ OB.
 
-    خروجی: {"lo","hi","role","reactions","fresh","mitigated","dist_pct"}.
-    `fresh`=False یعنی قیمت قبلاً تمام‌عیار از زون رد شده (مصرف‌شده) —
-    دیگر معتبر نشان داده نمی‌شود (دستور صریح: OB مصرف‌شده Fresh نیست)."""
+    عمداً این‌جا کپی شده و از `hamid.orderblock` وارد نمی‌شود: این فایل
+    قرار است بی‌وابستگی به داشبورد تحویل شود (فقط json/time/urllib). ولی
+    «کپی» یعنی خطرِ واگرایی — همان چیزی که امشب لو رفت. محافظِ کلاس:
+    `hamid/test_orderblock_canon.py` هر دو پیاده‌سازی را روی هزاران کندلِ
+    ساختگی و واقعی مقایسه می‌کند و اولین اختلاف، چرخه را سرخ می‌کند.
+    """
+    body = abs(c["c"] - c["o"])
+    upper = c["h"] - max(c["o"], c["c"])
+    lower = min(c["o"], c["c"]) - c["l"]
+    return body > (upper + lower)
+
+
+def order_block_zone(cd, direction, lookback=120, disp_atr_mult=1.8,
+                     require_reaction=True):
+    """نزدیک‌ترین اردر بلاکِ هم‌جهت به قیمت، **به تعریف خودِ حمید**.
+
+    خروجی: {"lo","hi","role","reactions","fresh","proven","mitigated","dist_pct"}.
+
+    ## تصحیح ۱۶ سپتامبر — دو بندِ تعریف که پنل رعایت نمی‌کرد
+
+    حمید: «اولین کندل رنگ مخالف که بدنهٔ آن از مجموع کل شدوهایش بزرگ‌تر
+    باشد اردر بلاک است، و برای اثبات آن باید گذشته را در همان تایم‌فریم
+    بررسی کرد تا مشخص شود واکنشی داشته یا خیر.»
+
+    تا امشب این تابع فقط **رنگِ مخالف** را می‌سنجید. دو بند افتاده بود:
+
+    ۱. **بدنه > مجموع هر دو شدو.** کندلی با دو دُم بلند بلاتکلیفی است، نه
+       کنترل؛ و اصلِ قاعده همین است که آخرین کندلی را پیدا کند که یک طرف
+       آشکارا دست بالا را داشت. (تعریفِ درست از ۱۲ اوت در
+       `hamid/orderblock.body_beats_shadows` بود — پنل از آن استفاده
+       نمی‌کرد. کلاسِ عیب: یک مفهوم، دو پیاده‌سازی، یکی بی‌صدا واگرا شد.)
+    ۲. **اثباتِ واکنش در همان تایم‌فریم.** زونی که قیمت هرگز به آن
+       برنگشته «اثبات‌نشده» است. تا امشب `fresh` فقط یعنی «مصرف نشده» و
+       زونِ بکر را معتبر نشان می‌داد.
+
+    حالا: `proven = reactions ≥ 1 and not mitigated` و با
+    `require_reaction=True` (پیش‌فرض) فقط زونِ اثبات‌شده برمی‌گردد.
+    `fresh` معنای قبلی‌اش را نگه می‌دارد (مصرف‌نشده) تا مصرف‌کننده‌های
+    قدیمی نشکنند، ولی حالا کنارش `proven` هم هست.
+    """
     if len(cd) < lookback + 20:
         return None
     win = cd[-lookback:]
@@ -1043,6 +1080,8 @@ def order_block_zone(cd, direction, lookback=120, disp_atr_mult=1.8):
             continue
         if want_role == "supply" and win[j]["c"] <= win[j]["o"]:
             continue
+        if not body_beats_shadows(win[j]):      # بند ۱ — تعریف حمید
+            continue
         lo, hi = min(win[j]["o"], win[j]["c"]), max(win[j]["o"], win[j]["c"])
         if hi <= lo:
             continue
@@ -1055,10 +1094,13 @@ def order_block_zone(cd, direction, lookback=120, disp_atr_mult=1.8):
                 mitigated = True
             elif lo <= k["h"] and k["l"] <= hi:
                 reactions += 1
+        proven = reactions >= 1 and not mitigated     # بند ۲ — اثباتِ واکنش
+        if require_reaction and not proven:
+            continue
         dist_pct = abs(px - (lo if want_role == "demand" else hi)) / px * 100
         cand = {"lo": lo, "hi": hi, "role": want_role, "reactions": reactions,
-               "fresh": not mitigated, "mitigated": mitigated,
-               "dist_pct": round(dist_pct, 3)}
+                "fresh": not mitigated, "proven": proven, "mitigated": mitigated,
+                "dist_pct": round(dist_pct, 3)}
         if best is None or dist_pct < best["dist_pct"]:
             best = cand
     return best

@@ -62,6 +62,11 @@ EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
                      # دو بازوی ۱۶ سپتامبر (دستور حمید: «دو بازوی آزمایش رو
                      # بذار تا CI بده») — hamid/tf_geo_arms.py
                      "exp-tf15", "exp-geo-x2", "exp-tf15-x2")
+# میزِ مستقل دوازده متخصص (۱۶ سپتامبر) — هر کدام استراتژی نام‌دار خودش.
+# دفترشان هرگز «سیگنال ارسالی» شمرده نمی‌شود.
+SPECIALIST_STAGES = tuple(f"sp-{g}" for g in (
+    "scorpio", "gemini", "taurus", "aries", "leo", "cancer", "pisces",
+    "libra", "capricorn", "virgo", "sagittarius", "aquarius"))
 # میزِ جدای ۱۲ مراقب ققنوس — دفترِ هر متخصص، نه سیگنالِ ارسالی.
 #
 # عمداً **رشتهٔ ثابت** است نه ساخته‌شده از `phoenix.GUARDIANS`: این ماژول
@@ -85,7 +90,7 @@ GUARDIAN_STAGES = tuple(f"gd-{g}" for g in (
 _NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "gate-vetoed",
                "stage-vetoed", "rule-vetoed",   # rule-vetoed: وتوی قانون تأییدشدهٔ منفی (۱۴ سپتامبر)
                "v2", "scalp", "shock") + EXPERIMENT_STAGES \
-              + GUARDIAN_STAGES
+              + GUARDIAN_STAGES + SPECIALIST_STAGES
 
 START_BALANCE = 1000.0
 RISK_FRACTION = 0.01          # 1% of balance per trade
@@ -240,12 +245,17 @@ def open_from(setups, context):
     have = {(p["sym"], p["entry"], (p.get("why") or {}).get("stage"))
             for p in _read(OPEN)}
     added = 0
-    from hamid.universe import STABLES, WRAPPED
+    from hamid.universe import STABLES, WRAPPED, is_blocked
     for s in setups:
         # استیبل/رپد وارد هیچ دفتری نمی‌شود — کشف ۱۲ اوت: USD1/USDE با استاپ
         # ذره‌ای، R نجومی قلابی ساختند (+58R) و آمار دفتر را بی‌معنا کردند.
         base = s["symbol"][:-4] if s["symbol"].endswith("USDT") else s["symbol"]
         if base in STABLES or base in WRAPPED:
+            continue
+        # ارزِ بلاک‌شدهٔ مالک (TRX، ۱۶ سپتامبر) در هیچ دفتری ثبت نمی‌شود —
+        # نه سیگنال، نه آزمایش. وگرنه از دفتر به آمار و از آمار به تصمیم
+        # برمی‌گردد.
+        if is_blocked(s["symbol"]):
             continue
         key = (s["symbol"], float(s["entry"]),
                s.get("stage_tag") or ("second" if not s.get("waiting") else "first"))

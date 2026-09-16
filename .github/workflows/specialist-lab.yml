@@ -1,0 +1,79 @@
+# میز مستقل ۱۲ متخصص — ۱۲٬۰۰۰ ترید بازپخشی روی ۲۰۰ ارز (دستور حمید، ۱۶ سپتامبر شب)
+#
+# «هر متخصص با توجه به استراتژی خودش روی ۲۰۰ ارز ۱۰۰۰ ترید در پیپرمود انجام
+# می‌دهد… هر ارز ۵ ترید… فقط در تایم‌فریم ۱۵ دقیقه… و اجازهٔ تغییر و آپدیت
+# استراتژی با خلاقیت خودش را دارد.»
+#
+# چرا این‌جا و نه لپ‌تاپ: قانون «کارِ سنگین روی Actions». ۱۲ متخصص × (پایه +
+# ۴ ایده روی نیمهٔ اول + داوری روی نیمهٔ دوم) روی ۲۰۰ سری کندل.
+name: Specialist lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: "چند ارز"
+        default: "200"
+      per_symbol:
+        description: "چند ترید بر ارز"
+        default: "5"
+      improve:
+        description: "چرخهٔ بهبود (true/false)"
+        default: "true"
+  schedule:
+    # یک نوبت شبانه، ساعت ۰۳:۱۱ UTC — پیش از گزارش صبحِ تهران.
+    - cron: "11 3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: specialist-lab
+  cancel-in-progress: false
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: وابستگی‌های پایتون
+        run: pip -q install -r requirements-ci.txt
+
+      - name: پاسبان میز متخصصین
+        env: { LIAM9_SANDBOX: "1" }
+        working-directory: claude-liam-signal/python
+        run: |
+          python3 -m hamid.test_specialist_lab
+          python3 -m hamid.test_orderblock_canon
+
+      - name: اجرای ۱۲٬۰۰۰ ترید
+        env:
+          LIAM9_CANDLES: perp
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          python3 -m hamid.specialist_lab \
+            --symbols ${{ github.event.inputs.symbols || '200' }} \
+            --per-symbol ${{ github.event.inputs.per_symbol || '5' }} \
+            ${{ (github.event.inputs.improve == 'false') && '' || '--improve' }} \
+            --write | tail -40
+
+      - name: گزارش فارسی
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          python3 -m hamid.specialist_report --write | tail -60
+
+      - name: Git identity
+        run: |
+          git config user.name "Claude"
+          git config user.email "noreply@anthropic.com"
+
+      - name: انتشار
+        run: |
+          bash scripts/publish.sh -m "میز متخصصین $(date -u '+%Y-%m-%d %H:%M UTC')" \
+            signals/specialist-lab.json signals/specialist-report.md brain/specialists

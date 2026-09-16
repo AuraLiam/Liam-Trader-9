@@ -99,9 +99,21 @@ def get(path, tries=4, futures=False):
 
 
 def top_symbols(n):
-    """Most-traded USDT pairs, stablecoin pairs dropped — they have no structure."""
+    """Most-traded USDT pairs, stablecoin pairs dropped — they have no structure.
+
+    از ۱۶ سپتامبر ارزهای بلاک‌شدهٔ `universe.BLOCKED` هم این‌جا می‌افتند —
+    نقطهٔ واحدِ جهانِ نمادها. بلاک در گلوگاه ارسال کافی نیست: ارز باید از
+    **تحلیل** هم بیرون برود (دستور حمید دربارهٔ TRX)، وگرنه هر چرخه وقت و
+    شبکه خرج ارزی می‌شود که قرار نیست معامله شود.
+    """
     rows = get("/api/v3/ticker/24hr")
+    try:
+        from hamid.universe import is_blocked
+    except Exception:                                # noqa: BLE001
+        def is_blocked(_s):
+            return False
     usdt = [r for r in rows if r["symbol"].endswith("USDT") and r["symbol"] not in STABLE
+            and not is_blocked(r["symbol"])
             and not any(k in r["symbol"] for k in ("UPUSDT", "DOWNUSDT", "BULLUSDT", "BEARUSDT"))]
     usdt.sort(key=lambda r: float(r["quoteVolume"]), reverse=True)
     return [r["symbol"] for r in usdt[:n]]

@@ -993,6 +993,19 @@ def send_signals(signals, render_chart, limit=8):
         print(f"  دروازهٔ تایم‌فریم: {s.get('sym')} {s.get('tf')} رد شد — "
               f"ارسال فقط در ۵د/۱۵د (دستور ۲۶ اوت)", flush=True)
     signals = [s for s in signals if s.get("tf") in ALLOWED_TFS]
+    # ارزِ بلاک‌شدهٔ مالک — دستور صریح ۱۶ سپتامبر دربارهٔ TRX. لایهٔ دومِ
+    # همان بلاکِ `universe.BLOCKED`؛ جهانِ نماد از قبل حذفش می‌کند، ولی
+    # ستاپ ممکن است از مسیر دیگری (آلارم، آینه، دفتر قدیمی) برسد و
+    # گلوگاهِ ارسال آخرین جایی است که می‌شود جلویش را گرفت.
+    try:
+        from hamid.universe import is_blocked as _blk
+        _n0 = len(signals)
+        signals = [s for s in signals if not _blk(s.get("sym"))]
+        if len(signals) < _n0:
+            print(f"  {_n0 - len(signals)} ستاپِ ارزِ بلاک‌شده حذف شد "
+                  "(دستور حمید، ۱۶ سپتامبر)", flush=True)
+    except Exception:                                # noqa: BLE001
+        pass
     # ── رزروِ درون-دسته (عیب اندازه‌گیری‌شدهٔ ۱ سپتامبر) ──────────────────
     #
     # تا امشب این یک list-comprehension بود و **همهٔ** شرط‌ها را روی یک
