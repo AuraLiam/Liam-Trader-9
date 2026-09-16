@@ -141,6 +141,7 @@ EXPERIENCE_PATH = "/signals/experience.json"
 TOP_LIQ_PATH = "/signals/top-liquidity.json"
 EDGE_PATH = "/signals/edge.json"
 BTC_SENS_PATH = "/signals/btc-sensitivity.json"
+MACRO_PATH = "/signals/macro-guard.json"
 EXEC_OUTBOX_PATH = "/signals/exec-outbox.json"
 
 # ── پارامترها (پیش‌فرض = تولید فعلی؛ sync_params تازه‌شان می‌کند) ──────────
@@ -334,6 +335,21 @@ def _finalize(sig):
         sig["take_profit"] = sig["tp1"]
         # سشن معاملاتی روی هر خروجی (دستور ۳۰ اوت) — ردپا برای سنجش شبانه
         sig["session"] = session_info()
+        # محافظ رویداد کلان (۱۶ سپتامبر): در پنجرهٔ خبرِ بازارگردان سایز نصف
+        # می‌شود و ردپا می‌ماند. تنها میدانی که عوض می‌شود `margin_pct` است —
+        # ورود/استاپ/تارگت/اهرم دست‌نخورده، چون این محافظِ نوسان است نه
+        # تفسیر خبر، و اهرم از محافظ لیکویید می‌آید نه از احتیاط.
+        inside, note = macro_state()
+        sig["macro_window"] = bool(inside)
+        if inside:
+            mult = MACRO.get("size_mult", 0.5)
+            if isinstance(sig.get("margin_pct"), (int, float)):
+                sig["margin_pct_before_macro"] = sig["margin_pct"]
+                sig["margin_pct"] = round(sig["margin_pct"] * mult, 1)
+            sig["macro_event"] = MACRO.get("nearest")
+            sig["macro_note"] = note
+            if isinstance(sig.get("why"), list):
+                sig["why"].append(note)
     return sig
 
 
@@ -426,6 +442,20 @@ def sync_top_liquidity():
 # می‌نشینند — فقط به‌عنوان وزن امتیاز؛ هیچ دروازهٔ سختی با این‌ها باز یا
 # بسته نمی‌شود، و قفسهٔ کهنه (stale) اصلاً اثر ندارد.
 EDGE = {"rules": {}, "stale": True}
+
+# ── محافظ رویداد کلان (دستور حمید، ۱۶ سپتامبر شب) ─────────────────────────
+#
+# «ساعت ۹:۳۰ تایم خبری بود، نرخ بهره بود؛ باید در مسیر ارتباطی کدِ داشبورد
+# می‌گذاشتی که در آن ساعت‌ها مواظب باشد.» تا امشب هیچ‌کدام از سه فایل
+# داشبورد یک ارجاع هم به تقویم نداشتند (شمارش: صفر) — تقویم تولید می‌شد و
+# فقط اتاق دامیننس می‌خواندش. مسیر ارتباطی داشبورد کشیدنِ فایل‌های
+# `signals/` است، پس محافظ هم از همان راه می‌آید: `hamid/macro_guard.py`.
+#
+# اثر عمداً کوچک و برگشت‌پذیر است: در پنجرهٔ ±رویدادِ بازارگردان، سایز نصف
+# می‌شود و ردپا روی خروجی می‌نشیند. اهرم، استاپ، تارگت و جهت دست‌نخورده‌اند
+# (محافظ نوسان است نه تفسیر خبر — استثنای از-پیش-ثبت‌شدهٔ قانون ۱۵).
+MACRO = {"in_window": False, "nearest": None, "generated": None,
+         "size_mult": 1.0, "max_age_min": 180}
 # نگاشتِ دلتای R به امتیاز کیفیت (۰..۱۰۰): ۲۰ امتیاز بر ۱R، جمعِ اثر
 # سقف ±۱۵. این نگاشت یک انتخاب است نه اندازه‌گیری — روی خروجی ثبت
 # می‌شود (`edge`) تا ماشین بونفرونی شبانه سهمش را از نتیجه جدا بسنجد.
@@ -446,6 +476,50 @@ def sync_edge():
         except Exception:                            # noqa: BLE001
             continue
     return 0
+
+
+def sync_macro_guard():
+    """تقویم رویدادهای کلان → حالت احتیاط. برگشت: ۱ اگر داخل پنجره‌ایم."""
+    for base in (REPO_RAW, PAGES):
+        try:
+            d = _get(base + MACRO_PATH)
+            if isinstance(d, dict) and d.get("generated"):
+                MACRO.clear()
+                MACRO.update({"in_window": bool(d.get("in_window")),
+                              "nearest": d.get("nearest"),
+                              "generated": d.get("generated"),
+                              "events": (d.get("events") or [])[:4],
+                              "size_mult": float(d.get("size_mult") or 0.5),
+                              "max_age_min": float(d.get("max_age_min") or 180),
+                              "source_ok": d.get("source_ok")})
+                return 1 if MACRO["in_window"] else 0
+        except Exception:                            # noqa: BLE001
+            continue
+    return 0
+
+
+def macro_state(now_ms=None):
+    """(داخل پنجره؟، توضیح) — با دو شرطِ صداقت.
+
+    ۱. تقویمی که منبعش نداده (`source_ok=False`) پنجره نمی‌سازد؛ نبودِ خبر
+       «خبرِ نبودن» نیست.
+    ۲. فایلِ کهنه‌تر از سقفش بی‌اثر است — تقویمِ کهنه بدتر از نداشتنش است،
+       چون احتیاط را در ساعت اشتباه اعمال می‌کند (درس ۶ سپتامبر: تازگیِ
+       داده را باید جدا سنجید، نه فرض کرد).
+    """
+    if not MACRO.get("in_window") or MACRO.get("source_ok") is False:
+        return False, ""
+    gen = MACRO.get("generated")
+    if gen:
+        age = ((now_ms or time.time() * 1000) - gen) / 60000.0
+        if age > MACRO.get("max_age_min", 180):
+            return False, ""
+    n = MACRO.get("nearest") or {}
+    m = n.get("minutes_to_event")
+    when = (f"{abs(m):.0f} دقیقه {'تا' if (m or 0) >= 0 else 'پس از'}" if m is not None else "")
+    return True, (f"⚠️ پنجرهٔ رویداد کلان: {n.get('title', 'رویداد پراهمیت')} "
+                  f"({n.get('currency', '?')}) — {when} · تهران {n.get('tehran', '?')} "
+                  f"· سایز ×{MACRO.get('size_mult', 0.5)} (محافظ نوسان، جهت عوض نمی‌شود)")
 
 
 def edge_boost(strategy, flags):
@@ -614,7 +688,8 @@ def sync_all():
             "top_liquidity": sync_top_liquidity(),
             "edge_rules": sync_edge(),
             "room_weights": sync_room_weights(),
-            "btc_sensitivity": sync_btc_sensitivity()}
+            "btc_sensitivity": sync_btc_sensitivity(),
+            "macro_window": sync_macro_guard()}
 
 
 def ensure_sync(force=False):

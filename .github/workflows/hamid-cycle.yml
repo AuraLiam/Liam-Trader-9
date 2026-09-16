@@ -113,6 +113,7 @@ jobs:
           python3 -m hamid.test_exec_contract
           python3 -m hamid.test_trail_arms
           python3 -m hamid.test_tf_geo_arms
+          python3 -m hamid.test_macro_guard
           python3 -m hamid.test_gate_verdict
           python3 -m hamid.test_signal_audit
           python3 -m hamid.test_dash_backtest
@@ -295,6 +296,13 @@ jobs:
       - name: قفسهٔ لبه برای داشبورد
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.edge_export || true
+
+      # محافظ رویداد کلان (دستور حمید ۱۶ سپتامبر شب): تقویم اقتصادی تا امشب
+      # فقط به اتاق دامیننس می‌رسید و داشبورد از ساعت خبر بی‌خبر بود. حالا
+      # فایل قرارداد می‌شود و داشبورد با sync_all می‌کشدش.
+      - name: محافظ رویداد کلان برای داشبورد
+        working-directory: claude-liam-signal/python
+        run: python3 -m hamid.macro_guard --write || true
 
       # امتیاز و وزن اتاق‌های ایجنت از عملکرد پیپرمود (دستور حمید ۲۷ اوت).
       # به تفکیک بسترِ بازار (ریزش/صعود USDT.D) شمرده می‌شود و داشبورد با
