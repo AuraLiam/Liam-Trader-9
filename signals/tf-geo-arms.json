@@ -1,0 +1,45 @@
+{
+ "generated": 1789553680218,
+ "panel": "لیام تریدر ۹",
+ "fingerprint": {
+  "geo_mult": 2.0,
+  "tf15": "15m",
+  "base_tf": "5m",
+  "fee_round_trip_pct": 0.15,
+  "tf15_cap_per_scan": 12,
+  "z": 2.2414
+ },
+ "arms": {
+  "exp-tf15": {
+   "tag": "exp-tf15",
+   "design": "unpaired-welch",
+   "n_arm": 10,
+   "n_base": 0,
+   "mean_arm": 0.4475,
+   "mean_base": null,
+   "diff": null,
+   "ci": [
+    null,
+    null
+   ],
+   "verdict": "UNDECIDED",
+   "why": "n=0 — هنوز برای برآورد هم کم است",
+   "win_arm": 1.0
+  },
+  "exp-geo-x2": {
+   "tag": "exp-geo-x2",
+   "design": "paired",
+   "n_pairs": 3,
+   "mean_diff": 0.0425,
+   "ci": [
+    -0.1991,
+    0.2842
+   ],
+   "verdict": "UNDECIDED",
+   "why": "n=3 — هنوز برای برآورد هم کم است",
+   "open_mirrors": 4
+  }
+ },
+ "stopping_rule": "PROMOTE = CI خالص کاملاً بالای صفر روی n≥200 (فقط پیشنهاد) · REJECT = CI زیر صفر روی n≥400 · بقیه UNDECIDED. Šidák برای ۲ بازو (z=2.2414).",
+ "boundary": "هر دو بازو فقط پیپرند؛ هیچ دروازه، سایز یا پیامی عوض نمی‌شود. بازوی ۱۵د ناجفت است (جمعیت ستاپ فرق دارد) و شاهد ضعیف‌تری از بازوی جفتیِ هندسه است. پیپر سقف خوش‌بینانه است (فیل کامل، بی‌لغزش)."
+}
