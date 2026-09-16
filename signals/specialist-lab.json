@@ -1,0 +1,1541 @@
+{
+ "generated": 1789596409370,
+ "panel": "لیام تریدر ۹",
+ "owner": "E18",
+ "tf": "15m",
+ "per_symbol": 5,
+ "n_symbols": 146,
+ "trades_total": 8186,
+ "seconds": 439.2,
+ "desks": {
+  "scorpio": {
+   "sign": "♏",
+   "fa": "عقرب",
+   "en": "Scorpio",
+   "family": "بستر و رژیم (Regime)",
+   "strategy_fa": "جزر و مد تتر",
+   "strategy_en": "USDT Tide",
+   "idea": "وقتی کل بازار یک‌صدا حرکت می‌کند، ضعیف‌ترین ضدجریان می‌شکند: در کندل‌های پرفشار هم‌جهت پشت‌سرهم وارد ادامه شو.",
+   "params_base": {
+    "press_bars": 3,
+    "press_atr": 0.8,
+    "rr": 2.0,
+    "stop_atr": 1.2
+   },
+   "params_used": {
+    "press_bars": 3,
+    "press_atr": 0.8,
+    "rr": 2.0,
+    "stop_atr": 1.2
+   },
+   "improvement": {
+    "adopted": false,
+    "change": {
+     "stop_atr": 1.8
+    },
+    "tried": [
+     {
+      "change": {
+       "press_bars": 4
+      },
+      "n": 646,
+      "net_in": -0.3181
+     },
+     {
+      "change": {
+       "press_atr": 1.1
+      },
+      "n": 608,
+      "net_in": -0.2725
+     },
+     {
+      "change": {
+       "rr": 3.0
+      },
+      "n": 721,
+      "net_in": -0.425
+     },
+     {
+      "change": {
+       "stop_atr": 1.8
+      },
+      "n": 720,
+      "net_in": -0.2391
+     }
+    ],
+    "base_net_in": -0.303,
+    "cand_net_in": -0.2391,
+    "base_net_out": -0.2684,
+    "cand_net_out": -0.2965,
+    "diff_out": -0.0281,
+    "diff_ci": [
+     -0.1752,
+     0.119
+    ],
+    "why": "روی نیمهٔ اول بهتر بود ولی خارج-از-نمونه تأیید نشد — رد شد",
+    "params": {
+     "press_bars": 3,
+     "press_atr": 0.8,
+     "rr": 2.0,
+     "stop_atr": 1.2
+    }
+   },
+   "result_out_of_sample": {
+    "n": 722,
+    "net": -0.2684,
+    "gross": -0.0399,
+    "ci": [
+     -0.3498,
+     -0.1871
+    ],
+    "win_pct": 28.4,
+    "sd": 1.1157,
+    "sum_net": -193.82,
+    "median_stop_pct": 0.734,
+    "median_fee_r": 0.204,
+    "outcomes": {
+     "target": 136,
+     "stop": 338,
+     "trail": 248
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 722,
+    "net": -0.2684,
+    "gross": -0.0399,
+    "ci": [
+     -0.3498,
+     -0.1871
+    ],
+    "win_pct": 28.4,
+    "sd": 1.1157,
+    "sum_net": -193.82,
+    "median_stop_pct": 0.734,
+    "median_fee_r": 0.204,
+    "outcomes": {
+     "target": 136,
+     "stop": 338,
+     "trail": 248
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 3.3
+  },
+  "gemini": {
+   "sign": "♊",
+   "fa": "جوزا",
+   "en": "Gemini",
+   "family": "همبستگی و لید-لگ (Lead-Lag)",
+   "strategy_fa": "دنباله‌روِ پیشرو",
+   "strategy_en": "Lagging Follower",
+   "idea": "نماد بعد از یک شکافِ حرکتی نسبت به میانگین خودش، فاصله را جبران می‌کند: بازگشت به میانگین بعد از کشش بیش از حد.",
+   "params_base": {
+    "stretch_atr": 2.2,
+    "ema": 34,
+    "rr": 2.0,
+    "stop_atr": 1.3
+   },
+   "params_used": {
+    "stretch_atr": 2.2,
+    "ema": 34,
+    "rr": 2.0,
+    "stop_atr": 1.8
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "stop_atr": 1.8
+    },
+    "tried": [
+     {
+      "change": {
+       "stretch_atr": 3.0
+      },
+      "n": 721,
+      "net_in": -0.0917
+     },
+     {
+      "change": {
+       "ema": 55
+      },
+      "n": 722,
+      "net_in": -0.0759
+     },
+     {
+      "change": {
+       "rr": 1.5
+      },
+      "n": 721,
+      "net_in": -0.0329
+     },
+     {
+      "change": {
+       "stop_atr": 1.8
+      },
+      "n": 721,
+      "net_in": -0.0066
+     }
+    ],
+    "base_net_in": -0.0583,
+    "cand_net_in": -0.0066,
+    "base_net_out": 0.0678,
+    "cand_net_out": 0.1617,
+    "diff_out": 0.0938,
+    "diff_ci": [
+     -0.0717,
+     0.2594
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "stretch_atr": 2.2,
+     "ema": 34,
+     "rr": 2.0,
+     "stop_atr": 1.8
+    }
+   },
+   "result_out_of_sample": {
+    "n": 724,
+    "net": 0.1617,
+    "gross": 0.3277,
+    "ci": [
+     0.0741,
+     0.2492
+    ],
+    "win_pct": 50.6,
+    "sd": 1.2016,
+    "sum_net": 117.05,
+    "median_stop_pct": 1.063,
+    "median_fee_r": 0.141,
+    "outcomes": {
+     "trail": 263,
+     "stop": 241,
+     "target": 219,
+     "timeout": 1
+    },
+    "verdict": "مثبت با CI بالای صفر"
+   },
+   "result_base_out": {
+    "n": 724,
+    "net": 0.0678,
+    "gross": 0.3002,
+    "ci": [
+     -0.0225,
+     0.1582
+    ],
+    "win_pct": 43.4,
+    "sd": 1.2404,
+    "sum_net": 49.11,
+    "median_stop_pct": 0.752,
+    "median_fee_r": 0.2,
+    "outcomes": {
+     "target": 226,
+     "stop": 269,
+     "trail": 229
+    },
+    "verdict": "بی‌حکم — CI شامل صفر"
+   },
+   "seconds": 8.9
+  },
+  "taurus": {
+   "sign": "♉",
+   "fa": "ثور",
+   "en": "Taurus",
+   "family": "دنبال‌کنندهٔ روند (Trend Following)",
+   "strategy_fa": "گاوِ روند",
+   "strategy_en": "Trend Bull",
+   "idea": "دو میانگین هم‌جهت + کندلِ بسته بالای هر دو = ادامهٔ روند؛ استاپ زیر میانگین کند.",
+   "params_base": {
+    "fast": 21,
+    "slow": 55,
+    "rr": 2.5,
+    "stop_atr": 1.5
+   },
+   "params_used": {
+    "fast": 21,
+    "slow": 55,
+    "rr": 2.5,
+    "stop_atr": 1.5
+   },
+   "improvement": {
+    "adopted": false,
+    "change": {
+     "stop_atr": 2.2
+    },
+    "tried": [
+     {
+      "change": {
+       "fast": 13
+      },
+      "n": 725,
+      "net_in": -0.3567
+     },
+     {
+      "change": {
+       "slow": 89
+      },
+      "n": 725,
+      "net_in": -0.3409
+     },
+     {
+      "change": {
+       "rr": 3.5
+      },
+      "n": 725,
+      "net_in": -0.4644
+     },
+     {
+      "change": {
+       "stop_atr": 2.2
+      },
+      "n": 725,
+      "net_in": -0.2472
+     }
+    ],
+    "base_net_in": -0.3628,
+    "cand_net_in": -0.2472,
+    "base_net_out": -0.2325,
+    "cand_net_out": -0.2655,
+    "diff_out": -0.033,
+    "diff_ci": [
+     -0.1956,
+     0.1296
+    ],
+    "why": "روی نیمهٔ اول بهتر بود ولی خارج-از-نمونه تأیید نشد — رد شد",
+    "params": {
+     "fast": 21,
+     "slow": 55,
+     "rr": 2.5,
+     "stop_atr": 1.5
+    }
+   },
+   "result_out_of_sample": {
+    "n": 725,
+    "net": -0.2325,
+    "gross": -0.0304,
+    "ci": [
+     -0.3233,
+     -0.1417
+    ],
+    "win_pct": 29.8,
+    "sd": 1.2472,
+    "sum_net": -168.57,
+    "median_stop_pct": 0.845,
+    "median_fee_r": 0.178,
+    "outcomes": {
+     "stop": 361,
+     "target": 121,
+     "trail": 243
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 725,
+    "net": -0.2325,
+    "gross": -0.0304,
+    "ci": [
+     -0.3233,
+     -0.1417
+    ],
+    "win_pct": 29.8,
+    "sd": 1.2472,
+    "sum_net": -168.57,
+    "median_stop_pct": 0.845,
+    "median_fee_r": 0.178,
+    "outcomes": {
+     "stop": 361,
+     "target": 121,
+     "trail": 243
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 3.1
+  },
+  "aries": {
+   "sign": "♈",
+   "fa": "حمل",
+   "en": "Aries",
+   "family": "شکست و ایمپالس (Breakout)",
+   "strategy_fa": "قوچِ شکست",
+   "strategy_en": "Ram Breakout",
+   "idea": "شکستِ سقف/کف N کندل با بدنهٔ قاطع = ایمپالس؛ ورود روی همان شکست، نه روی پولبک.",
+   "params_base": {
+    "lookback": 20,
+    "body_frac": 0.6,
+    "rr": 2.0,
+    "stop_atr": 1.4
+   },
+   "params_used": {
+    "lookback": 20,
+    "body_frac": 0.6,
+    "rr": 2.0,
+    "stop_atr": 1.4
+   },
+   "improvement": {
+    "adopted": false,
+    "change": {
+     "stop_atr": 2.0
+    },
+    "tried": [
+     {
+      "change": {
+       "lookback": 40
+      },
+      "n": 724,
+      "net_in": -0.2953
+     },
+     {
+      "change": {
+       "body_frac": 0.75
+      },
+      "n": 721,
+      "net_in": -0.3173
+     },
+     {
+      "change": {
+       "rr": 3.0
+      },
+      "n": 725,
+      "net_in": -0.3808
+     },
+     {
+      "change": {
+       "stop_atr": 2.0
+      },
+      "n": 725,
+      "net_in": -0.2248
+     }
+    ],
+    "base_net_in": -0.343,
+    "cand_net_in": -0.2248,
+    "base_net_out": -0.1954,
+    "cand_net_out": -0.2922,
+    "diff_out": -0.0968,
+    "diff_ci": [
+     -0.2437,
+     0.0501
+    ],
+    "why": "روی نیمهٔ اول بهتر بود ولی خارج-از-نمونه تأیید نشد — رد شد",
+    "params": {
+     "lookback": 20,
+     "body_frac": 0.6,
+     "rr": 2.0,
+     "stop_atr": 1.4
+    }
+   },
+   "result_out_of_sample": {
+    "n": 725,
+    "net": -0.1954,
+    "gross": 0.0192,
+    "ci": [
+     -0.2783,
+     -0.1125
+    ],
+    "win_pct": 32.3,
+    "sd": 1.139,
+    "sum_net": -141.64,
+    "median_stop_pct": 0.801,
+    "median_fee_r": 0.187,
+    "outcomes": {
+     "target": 152,
+     "trail": 246,
+     "stop": 327
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 725,
+    "net": -0.1954,
+    "gross": 0.0192,
+    "ci": [
+     -0.2783,
+     -0.1125
+    ],
+    "win_pct": 32.3,
+    "sd": 1.139,
+    "sum_net": -141.64,
+    "median_stop_pct": 0.801,
+    "median_fee_r": 0.187,
+    "outcomes": {
+     "target": 152,
+     "trail": 246,
+     "stop": 327
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 1.4
+  },
+  "leo": {
+   "sign": "♌",
+   "fa": "اسد",
+   "en": "Leo",
+   "family": "اسمارت مانی (SMC / Order Block)",
+   "strategy_fa": "اردر بلاکِ حمید",
+   "strategy_en": "Hamid Order Block",
+   "idea": "تعریف خودِ حمید: اولین کندلِ رنگ مخالف که بدنه‌اش از مجموع کل شدوهایش بزرگ‌تر است، پس از جهش؛ معتبر وقتی گذشته واکنش نشان داده باشد. ورود روی بازگشت به زون.",
+   "params_base": {
+    "disp_atr": 1.8,
+    "min_reactions": 1,
+    "rr": 2.0,
+    "stop_atr": 1.0
+   },
+   "params_used": {
+    "disp_atr": 2.5,
+    "min_reactions": 1,
+    "rr": 2.0,
+    "stop_atr": 1.0
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "disp_atr": 2.5
+    },
+    "tried": [
+     {
+      "change": {
+       "min_reactions": 2
+      },
+      "n": 669,
+      "net_in": -0.1673
+     },
+     {
+      "change": {
+       "disp_atr": 2.5
+      },
+      "n": 383,
+      "net_in": -0.1449
+     },
+     {
+      "change": {
+       "rr": 3.0
+      },
+      "n": 668,
+      "net_in": -0.2212
+     },
+     {
+      "change": {
+       "stop_atr": 1.5
+      },
+      "n": 685,
+      "net_in": -0.1786
+     }
+    ],
+    "base_net_in": -0.1799,
+    "cand_net_in": -0.1449,
+    "base_net_out": -0.2164,
+    "cand_net_out": -0.2027,
+    "diff_out": 0.0137,
+    "diff_ci": [
+     -0.1698,
+     0.1972
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "disp_atr": 2.5,
+     "min_reactions": 1,
+     "rr": 2.0,
+     "stop_atr": 1.0
+    }
+   },
+   "result_out_of_sample": {
+    "n": 353,
+    "net": -0.2027,
+    "gross": 0.0209,
+    "ci": [
+     -0.3131,
+     -0.0922
+    ],
+    "win_pct": 34.3,
+    "sd": 1.0589,
+    "sum_net": -71.54,
+    "median_stop_pct": 0.841,
+    "median_fee_r": 0.178,
+    "outcomes": {
+     "timeout": 14,
+     "trail": 140,
+     "stop": 138,
+     "target": 61
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 690,
+    "net": -0.2164,
+    "gross": 0.0301,
+    "ci": [
+     -0.3014,
+     -0.1313
+    ],
+    "win_pct": 34.1,
+    "sd": 1.14,
+    "sum_net": -149.3,
+    "median_stop_pct": 0.79,
+    "median_fee_r": 0.19,
+    "outcomes": {
+     "stop": 301,
+     "trail": 233,
+     "timeout": 14,
+     "target": 142
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 26.9
+  },
+  "cancer": {
+   "sign": "♋",
+   "fa": "سرطان",
+   "en": "Cancer",
+   "family": "نقدینگی و سوییپ (Liquidity)",
+   "strategy_fa": "شکارِ استاپ",
+   "strategy_en": "Stop Hunt",
+   "idea": "ویکی که کفِ/سقفِ N کندل را می‌زند و همان کندل پس می‌گیرد = استاپ‌ها جمع شدند؛ ورود در جهت بازگشت.",
+   "params_base": {
+    "lookback": 20,
+    "wick_frac": 0.5,
+    "reclaim_bars": 1,
+    "rr": 2.0,
+    "stop_atr": 1.2
+   },
+   "params_used": {
+    "lookback": 20,
+    "wick_frac": 0.5,
+    "reclaim_bars": 1,
+    "rr": 3.0,
+    "stop_atr": 1.2
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "rr": 3.0
+    },
+    "tried": [
+     {
+      "change": {
+       "wick_frac": 0.65
+      },
+      "n": 725,
+      "net_in": -0.1439
+     },
+     {
+      "change": {
+       "lookback": 40
+      },
+      "n": 725,
+      "net_in": -0.0988
+     },
+     {
+      "change": {
+       "reclaim_bars": 3
+      },
+      "n": 725,
+      "net_in": -0.1278
+     },
+     {
+      "change": {
+       "rr": 3.0
+      },
+      "n": 725,
+      "net_in": -0.0719
+     }
+    ],
+    "base_net_in": -0.1211,
+    "cand_net_in": -0.0719,
+    "base_net_out": 0.0407,
+    "cand_net_out": 0.1128,
+    "diff_out": 0.0721,
+    "diff_ci": [
+     -0.1188,
+     0.263
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "lookback": 20,
+     "wick_frac": 0.5,
+     "reclaim_bars": 1,
+     "rr": 3.0,
+     "stop_atr": 1.2
+    }
+   },
+   "result_out_of_sample": {
+    "n": 725,
+    "net": 0.1128,
+    "gross": 0.3493,
+    "ci": [
+     -0.0032,
+     0.2288
+    ],
+    "win_pct": 34.2,
+    "sd": 1.5933,
+    "sum_net": 81.78,
+    "median_stop_pct": 0.746,
+    "median_fee_r": 0.201,
+    "outcomes": {
+     "stop": 313,
+     "target": 177,
+     "trail": 235
+    },
+    "verdict": "بی‌حکم — CI شامل صفر"
+   },
+   "result_base_out": {
+    "n": 725,
+    "net": 0.0407,
+    "gross": 0.2807,
+    "ci": [
+     -0.0464,
+     0.1277
+    ],
+    "win_pct": 38.6,
+    "sd": 1.1962,
+    "sum_net": 29.47,
+    "median_stop_pct": 0.725,
+    "median_fee_r": 0.207,
+    "outcomes": {
+     "stop": 249,
+     "target": 206,
+     "trail": 270
+    },
+    "verdict": "بی‌حکم — CI شامل صفر"
+   },
+   "seconds": 2.6
+  },
+  "pisces": {
+   "sign": "♓",
+   "fa": "حوت",
+   "en": "Pisces",
+   "family": "هندسهٔ کندل (Candlestick)",
+   "strategy_fa": "ماهیِ بلعنده",
+   "strategy_en": "Engulfing Fish",
+   "idea": "الگوی برگشتیِ داخلِ دامنه (بلعنده یا پین‌بار با ویکِ ردکننده) در سمتِ درستِ میانگین — نه شکست، که میدانِ حمل است.",
+   "params_base": {
+    "ibs_edge": 0.35,
+    "ema": 21,
+    "wick_mult": 1.5,
+    "rr": 2.0,
+    "stop_atr": 1.2
+   },
+   "params_used": {
+    "ibs_edge": 0.35,
+    "ema": 21,
+    "wick_mult": 1.5,
+    "rr": 2.0,
+    "stop_atr": 1.2
+   },
+   "improvement": {
+    "adopted": false,
+    "change": {
+     "wick_mult": 2.2
+    },
+    "tried": [
+     {
+      "change": {
+       "ibs_edge": 0.25
+      },
+      "n": 725,
+      "net_in": -0.2828
+     },
+     {
+      "change": {
+       "ema": 34
+      },
+      "n": 725,
+      "net_in": -0.3227
+     },
+     {
+      "change": {
+       "rr": 3.0
+      },
+      "n": 725,
+      "net_in": -0.4115
+     },
+     {
+      "change": {
+       "wick_mult": 2.2
+      },
+      "n": 725,
+      "net_in": -0.2776
+     }
+    ],
+    "base_net_in": -0.3518,
+    "cand_net_in": -0.2776,
+    "base_net_out": -0.2416,
+    "cand_net_out": -0.2785,
+    "diff_out": -0.0369,
+    "diff_ci": [
+     -0.1897,
+     0.1159
+    ],
+    "why": "روی نیمهٔ اول بهتر بود ولی خارج-از-نمونه تأیید نشد — رد شد",
+    "params": {
+     "ibs_edge": 0.35,
+     "ema": 21,
+     "wick_mult": 1.5,
+     "rr": 2.0,
+     "stop_atr": 1.2
+    }
+   },
+   "result_out_of_sample": {
+    "n": 725,
+    "net": -0.2416,
+    "gross": -0.0079,
+    "ci": [
+     -0.3239,
+     -0.1593
+    ],
+    "win_pct": 29.7,
+    "sd": 1.1307,
+    "sum_net": -175.17,
+    "median_stop_pct": 0.722,
+    "median_fee_r": 0.208,
+    "outcomes": {
+     "stop": 336,
+     "target": 147,
+     "trail": 242
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 725,
+    "net": -0.2416,
+    "gross": -0.0079,
+    "ci": [
+     -0.3239,
+     -0.1593
+    ],
+    "win_pct": 29.7,
+    "sd": 1.1307,
+    "sum_net": -175.17,
+    "median_stop_pct": 0.722,
+    "median_fee_r": 0.208,
+    "outcomes": {
+     "stop": 336,
+     "target": 147,
+     "trail": 242
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 8.4
+  },
+  "libra": {
+   "sign": "♎",
+   "fa": "میزان",
+   "en": "Libra",
+   "family": "هندسهٔ ریسک (Risk Geometry)",
+   "strategy_fa": "ترازوی کارمزد",
+   "strategy_en": "Fee Scale",
+   "idea": "فقط ستاپی که استاپش به‌قدر کافی گشاد است تا سهم کارمزد از R کوچک بماند؛ لبه از هندسه می‌آید نه از پیش‌بینی.",
+   "params_base": {
+    "min_stop_pct": 1.0,
+    "ema": 34,
+    "touch_atr": 0.6,
+    "rr": 2.5,
+    "stop_atr": 2.0
+   },
+   "params_used": {
+    "min_stop_pct": 1.0,
+    "ema": 34,
+    "touch_atr": 0.6,
+    "rr": 2.5,
+    "stop_atr": 2.8
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "stop_atr": 2.8
+    },
+    "tried": [
+     {
+      "change": {
+       "min_stop_pct": 1.5
+      },
+      "n": 577,
+      "net_in": -0.1212
+     },
+     {
+      "change": {
+       "rr": 3.5
+      },
+      "n": 699,
+      "net_in": -0.0971
+     },
+     {
+      "change": {
+       "stop_atr": 2.8
+      },
+      "n": 714,
+      "net_in": -0.0815
+     },
+     {
+      "change": {
+       "touch_atr": 1.0
+      },
+      "n": 705,
+      "net_in": -0.16
+     }
+    ],
+    "base_net_in": -0.1059,
+    "cand_net_in": -0.0815,
+    "base_net_out": -0.2239,
+    "cand_net_out": -0.1783,
+    "diff_out": 0.0457,
+    "diff_ci": [
+     -0.1046,
+     0.196
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "min_stop_pct": 1.0,
+     "ema": 34,
+     "touch_atr": 0.6,
+     "rr": 2.5,
+     "stop_atr": 2.8
+    }
+   },
+   "result_out_of_sample": {
+    "n": 716,
+    "net": -0.1783,
+    "gross": -0.0931,
+    "ci": [
+     -0.2566,
+     -0.0999
+    ],
+    "win_pct": 53.2,
+    "sd": 1.0702,
+    "sum_net": -127.63,
+    "median_stop_pct": 1.845,
+    "median_fee_r": 0.081,
+    "outcomes": {
+     "trail": 276,
+     "timeout": 49,
+     "stop": 319,
+     "target": 72
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 709,
+    "net": -0.2239,
+    "gross": -0.1195,
+    "ci": [
+     -0.3069,
+     -0.141
+    ],
+    "win_pct": 49.9,
+    "sd": 1.1273,
+    "sum_net": -158.78,
+    "median_stop_pct": 1.375,
+    "median_fee_r": 0.109,
+    "outcomes": {
+     "stop": 347,
+     "timeout": 17,
+     "trail": 260,
+     "target": 85
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 14.0
+  },
+  "capricorn": {
+   "sign": "♑",
+   "fa": "جدی",
+   "en": "Capricorn",
+   "family": "بازگشت به میانگین (Mean Reversion)",
+   "strategy_fa": "بزِ صبور",
+   "strategy_en": "Patient Goat",
+   "idea": "کشش بیش از حد از میانگین بلند + کندلِ برگشتی = بازگشت؛ صبر تا لبهٔ آماری، نه تا احساس.",
+   "params_base": {
+    "ema": 89,
+    "stretch_atr": 2.5,
+    "rr": 1.8,
+    "stop_atr": 1.5
+   },
+   "params_used": {
+    "ema": 89,
+    "stretch_atr": 2.5,
+    "rr": 1.8,
+    "stop_atr": 1.5
+   },
+   "improvement": {
+    "adopted": false,
+    "change": {
+     "stop_atr": 2.2
+    },
+    "tried": [
+     {
+      "change": {
+       "stretch_atr": 3.2
+      },
+      "n": 721,
+      "net_in": -0.0892
+     },
+     {
+      "change": {
+       "ema": 144
+      },
+      "n": 721,
+      "net_in": -0.0947
+     },
+     {
+      "change": {
+       "rr": 2.5
+      },
+      "n": 721,
+      "net_in": -0.0652
+     },
+     {
+      "change": {
+       "stop_atr": 2.2
+      },
+      "n": 721,
+      "net_in": 0.0703
+     }
+    ],
+    "base_net_in": -0.1111,
+    "cand_net_in": 0.0703,
+    "base_net_out": 0.1231,
+    "cand_net_out": 0.0769,
+    "diff_out": -0.0462,
+    "diff_ci": [
+     -0.1877,
+     0.0953
+    ],
+    "why": "روی نیمهٔ اول بهتر بود ولی خارج-از-نمونه تأیید نشد — رد شد",
+    "params": {
+     "ema": 89,
+     "stretch_atr": 2.5,
+     "rr": 1.8,
+     "stop_atr": 1.5
+    }
+   },
+   "result_out_of_sample": {
+    "n": 722,
+    "net": 0.1231,
+    "gross": 0.3122,
+    "ci": [
+     0.0445,
+     0.2017
+    ],
+    "win_pct": 50.7,
+    "sd": 1.0778,
+    "sum_net": 88.87,
+    "median_stop_pct": 0.925,
+    "median_fee_r": 0.162,
+    "outcomes": {
+     "trail": 296,
+     "stop": 209,
+     "target": 216,
+     "timeout": 1
+    },
+    "verdict": "مثبت با CI بالای صفر"
+   },
+   "result_base_out": {
+    "n": 722,
+    "net": 0.1231,
+    "gross": 0.3122,
+    "ci": [
+     0.0445,
+     0.2017
+    ],
+    "win_pct": 50.7,
+    "sd": 1.0778,
+    "sum_net": 88.87,
+    "median_stop_pct": 0.925,
+    "median_fee_r": 0.162,
+    "outcomes": {
+     "trail": 296,
+     "stop": 209,
+     "target": 216,
+     "timeout": 1
+    },
+    "verdict": "مثبت با CI بالای صفر"
+   },
+   "seconds": 9.3
+  },
+  "virgo": {
+   "sign": "♍",
+   "fa": "سنبله",
+   "en": "Virgo",
+   "family": "نوسان و فشردگی (Volatility)",
+   "strategy_fa": "فشردگیِ سنبله",
+   "strategy_en": "Virgo Squeeze",
+   "idea": "دامنهٔ فشرده‌شده نسبت به ATR بلند = انبساط در راه؛ ورود روی اولین شکستِ همان فشردگی.",
+   "params_base": {
+    "squeeze_bars": 12,
+    "squeeze_ratio": 0.6,
+    "rr": 2.5,
+    "stop_atr": 1.3
+   },
+   "params_used": {
+    "squeeze_bars": 12,
+    "squeeze_ratio": 0.6,
+    "rr": 2.5,
+    "stop_atr": 1.8
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "stop_atr": 1.8
+    },
+    "tried": [
+     {
+      "change": {
+       "squeeze_ratio": 0.45
+      },
+      "n": 51,
+      "net_in": -0.2024
+     },
+     {
+      "change": {
+       "squeeze_bars": 20
+      },
+      "n": 519,
+      "net_in": -0.2392
+     },
+     {
+      "change": {
+       "rr": 3.5
+      },
+      "n": 600,
+      "net_in": -0.3393
+     },
+     {
+      "change": {
+       "stop_atr": 1.8
+      },
+      "n": 591,
+      "net_in": -0.1863
+     }
+    ],
+    "base_net_in": -0.2976,
+    "cand_net_in": -0.1863,
+    "base_net_out": -0.3122,
+    "cand_net_out": -0.2854,
+    "diff_out": 0.0268,
+    "diff_ci": [
+     -0.1428,
+     0.1963
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "squeeze_bars": 12,
+     "squeeze_ratio": 0.6,
+     "rr": 2.5,
+     "stop_atr": 1.8
+    }
+   },
+   "result_out_of_sample": {
+    "n": 627,
+    "net": -0.2854,
+    "gross": -0.131,
+    "ci": [
+     -0.376,
+     -0.1949
+    ],
+    "win_pct": 30.8,
+    "sd": 1.1567,
+    "sum_net": -178.96,
+    "median_stop_pct": 1.079,
+    "median_fee_r": 0.139,
+    "outcomes": {
+     "stop": 324,
+     "trail": 214,
+     "target": 82,
+     "timeout": 7
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 635,
+    "net": -0.3122,
+    "gross": -0.0974,
+    "ci": [
+     -0.4038,
+     -0.2206
+    ],
+    "win_pct": 25.0,
+    "sd": 1.1779,
+    "sum_net": -198.26,
+    "median_stop_pct": 0.776,
+    "median_fee_r": 0.193,
+    "outcomes": {
+     "stop": 321,
+     "trail": 223,
+     "target": 90,
+     "timeout": 1
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 9.2
+  },
+  "sagittarius": {
+   "sign": "♐",
+   "fa": "قوس",
+   "en": "Sagittarius",
+   "family": "شتاب و مومنتوم (Momentum)",
+   "strategy_fa": "کمانِ شتاب",
+   "strategy_en": "Momentum Bow",
+   "idea": "نرخِ تغییرِ N کندل در صدکِ بالا + حجمِ بالاتر از میانه = شتابِ واقعی، نه نوسانِ تصادفی.",
+   "params_base": {
+    "roc_bars": 10,
+    "roc_min_pct": 1.5,
+    "vol_mult": 1.3,
+    "rr": 2.5,
+    "stop_atr": 1.5
+   },
+   "params_used": {
+    "roc_bars": 10,
+    "roc_min_pct": 2.5,
+    "vol_mult": 1.3,
+    "rr": 2.5,
+    "stop_atr": 1.5
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "roc_min_pct": 2.5
+    },
+    "tried": [
+     {
+      "change": {
+       "roc_min_pct": 2.5
+      },
+      "n": 667,
+      "net_in": -0.134
+     },
+     {
+      "change": {
+       "vol_mult": 1.8
+      },
+      "n": 712,
+      "net_in": -0.2284
+     },
+     {
+      "change": {
+       "roc_bars": 20
+      },
+      "n": 722,
+      "net_in": -0.205
+     },
+     {
+      "change": {
+       "rr": 3.5
+      },
+      "n": 717,
+      "net_in": -0.2404
+     }
+    ],
+    "base_net_in": -0.2104,
+    "cand_net_in": -0.134,
+    "base_net_out": -0.2389,
+    "cand_net_out": -0.1828,
+    "diff_out": 0.0561,
+    "diff_ci": [
+     -0.1105,
+     0.2227
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "roc_bars": 10,
+     "roc_min_pct": 2.5,
+     "vol_mult": 1.3,
+     "rr": 2.5,
+     "stop_atr": 1.5
+    }
+   },
+   "result_out_of_sample": {
+    "n": 697,
+    "net": -0.1828,
+    "gross": -0.0682,
+    "ci": [
+     -0.2729,
+     -0.0927
+    ],
+    "win_pct": 43.0,
+    "sd": 1.2131,
+    "sum_net": -127.41,
+    "median_stop_pct": 1.326,
+    "median_fee_r": 0.113,
+    "outcomes": {
+     "trail": 230,
+     "target": 106,
+     "stop": 352,
+     "timeout": 9
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "result_base_out": {
+    "n": 715,
+    "net": -0.2389,
+    "gross": -0.0931,
+    "ci": [
+     -0.3279,
+     -0.1499
+    ],
+    "win_pct": 35.0,
+    "sd": 1.2137,
+    "sum_net": -170.82,
+    "median_stop_pct": 1.058,
+    "median_fee_r": 0.142,
+    "outcomes": {
+     "stop": 372,
+     "trail": 233,
+     "timeout": 2,
+     "target": 108
+    },
+    "verdict": "منفی با CI زیر صفر"
+   },
+   "seconds": 3.9
+  },
+  "aquarius": {
+   "sign": "♒",
+   "fa": "دلو",
+   "en": "Aquarius",
+   "family": "ضدجمعیت (Contrarian)",
+   "strategy_fa": "دلوِ خلافِ جمع",
+   "strategy_en": "Contrarian Jar",
+   "idea": "سه کندلِ پشت‌سرهمِ هم‌جهت با حجمِ رو به کاهش = خستگیِ جمعیت؛ ورود خلافِ همان حرکت.",
+   "params_base": {
+    "run_bars": 3,
+    "vol_fade": 0.9,
+    "rr": 1.8,
+    "stop_atr": 1.3
+   },
+   "params_used": {
+    "run_bars": 3,
+    "vol_fade": 0.9,
+    "rr": 1.8,
+    "stop_atr": 1.9
+   },
+   "improvement": {
+    "adopted": true,
+    "change": {
+     "stop_atr": 1.9
+    },
+    "tried": [
+     {
+      "change": {
+       "run_bars": 4
+      },
+      "n": 721,
+      "net_in": -0.1213
+     },
+     {
+      "change": {
+       "vol_fade": 0.75
+      },
+      "n": 722,
+      "net_in": -0.1762
+     },
+     {
+      "change": {
+       "rr": 2.5
+      },
+      "n": 725,
+      "net_in": -0.1857
+     },
+     {
+      "change": {
+       "stop_atr": 1.9
+      },
+      "n": 725,
+      "net_in": -0.0737
+     }
+    ],
+    "base_net_in": -0.1713,
+    "cand_net_in": -0.0737,
+    "base_net_out": -0.0765,
+    "cand_net_out": -0.0719,
+    "diff_out": 0.0046,
+    "diff_ci": [
+     -0.1395,
+     0.1487
+    ],
+    "why": "ایده روی دادهٔ دیده‌نشده هم بهتر بود",
+    "params": {
+     "run_bars": 3,
+     "vol_fade": 0.9,
+     "rr": 1.8,
+     "stop_atr": 1.9
+    }
+   },
+   "result_out_of_sample": {
+    "n": 725,
+    "net": -0.0719,
+    "gross": 0.0707,
+    "ci": [
+     -0.1468,
+     0.0031
+    ],
+    "win_pct": 49.2,
+    "sd": 1.0294,
+    "sum_net": -52.11,
+    "median_stop_pct": 1.22,
+    "median_fee_r": 0.123,
+    "outcomes": {
+     "stop": 268,
+     "trail": 301,
+     "target": 152,
+     "timeout": 4
+    },
+    "verdict": "بی‌حکم — CI شامل صفر"
+   },
+   "result_base_out": {
+    "n": 725,
+    "net": -0.0765,
+    "gross": 0.1378,
+    "ci": [
+     -0.1563,
+     0.0034
+    ],
+    "win_pct": 39.3,
+    "sd": 1.0966,
+    "sum_net": -55.44,
+    "median_stop_pct": 0.805,
+    "median_fee_r": 0.186,
+    "outcomes": {
+     "stop": 270,
+     "target": 183,
+     "trail": 271,
+     "timeout": 1
+    },
+    "verdict": "بی‌حکم — CI شامل صفر"
+   },
+   "seconds": 1.5
+  }
+ },
+ "summary": {
+  "scorpio": {
+   "fa": "عقرب",
+   "strategy": "جزر و مد تتر",
+   "n": 722,
+   "net": -0.2684,
+   "ci": [
+    -0.3498,
+    -0.1871
+   ],
+   "adopted": false
+  },
+  "gemini": {
+   "fa": "جوزا",
+   "strategy": "دنباله‌روِ پیشرو",
+   "n": 724,
+   "net": 0.1617,
+   "ci": [
+    0.0741,
+    0.2492
+   ],
+   "adopted": true
+  },
+  "taurus": {
+   "fa": "ثور",
+   "strategy": "گاوِ روند",
+   "n": 725,
+   "net": -0.2325,
+   "ci": [
+    -0.3233,
+    -0.1417
+   ],
+   "adopted": false
+  },
+  "aries": {
+   "fa": "حمل",
+   "strategy": "قوچِ شکست",
+   "n": 725,
+   "net": -0.1954,
+   "ci": [
+    -0.2783,
+    -0.1125
+   ],
+   "adopted": false
+  },
+  "leo": {
+   "fa": "اسد",
+   "strategy": "اردر بلاکِ حمید",
+   "n": 353,
+   "net": -0.2027,
+   "ci": [
+    -0.3131,
+    -0.0922
+   ],
+   "adopted": true
+  },
+  "cancer": {
+   "fa": "سرطان",
+   "strategy": "شکارِ استاپ",
+   "n": 725,
+   "net": 0.1128,
+   "ci": [
+    -0.0032,
+    0.2288
+   ],
+   "adopted": true
+  },
+  "pisces": {
+   "fa": "حوت",
+   "strategy": "ماهیِ بلعنده",
+   "n": 725,
+   "net": -0.2416,
+   "ci": [
+    -0.3239,
+    -0.1593
+   ],
+   "adopted": false
+  },
+  "libra": {
+   "fa": "میزان",
+   "strategy": "ترازوی کارمزد",
+   "n": 716,
+   "net": -0.1783,
+   "ci": [
+    -0.2566,
+    -0.0999
+   ],
+   "adopted": true
+  },
+  "capricorn": {
+   "fa": "جدی",
+   "strategy": "بزِ صبور",
+   "n": 722,
+   "net": 0.1231,
+   "ci": [
+    0.0445,
+    0.2017
+   ],
+   "adopted": false
+  },
+  "virgo": {
+   "fa": "سنبله",
+   "strategy": "فشردگیِ سنبله",
+   "n": 627,
+   "net": -0.2854,
+   "ci": [
+    -0.376,
+    -0.1949
+   ],
+   "adopted": true
+  },
+  "sagittarius": {
+   "fa": "قوس",
+   "strategy": "کمانِ شتاب",
+   "n": 697,
+   "net": -0.1828,
+   "ci": [
+    -0.2729,
+    -0.0927
+   ],
+   "adopted": true
+  },
+  "aquarius": {
+   "fa": "دلو",
+   "strategy": "دلوِ خلافِ جمع",
+   "n": 725,
+   "net": -0.0719,
+   "ci": [
+    -0.1468,
+    0.0031
+   ],
+   "adopted": true
+  }
+ },
+ "method": "هر متخصص ستاپ خودش را کشف می‌کند (نه فیلترِ ستاپِ مشترک). بازپخش بدون نگاه به آینده روی کندل واقعی ۱۵ دقیقه؛ تاریخ دو نیمه: نیمهٔ اول برای انتخاب ایده، نیمهٔ دوم فقط برای داوری. عددِ گزارش‌شده از نیمهٔ دوم است.",
+ "boundary": "دفتر پیپر است: فیل کامل و بی‌لغزش فرض می‌شود، پس سقفِ خوش‌بینانه است نه انتظارِ لایو. هیچ‌کدام از این استراتژی‌ها وارد تولید نمی‌شود مگر از مسیر قانون ۰۳ (CI بالای صفر + تأیید حمید). برچسب دفترها sp-<id> و بیرون از کارنامهٔ سیگنالِ ارسالی."
+}
