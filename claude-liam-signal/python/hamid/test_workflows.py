@@ -553,6 +553,11 @@ check("حکم بودجهٔ پیام (--check) بعد از گام انتشار ا
       _hc_txt.find("name: Publish to main") > 0
       and _hc_txt.find("msg_budget --check") > _hc_txt.find("name: Publish to main"))
 check("هیچ --check بودجه‌ای پیش از انتشار نیست", "msg_budget --write --check" not in _hc_txt)
+# ۱۶ سپتامبر: اجرای کامل ۲۴.۶ دقیقه؛ سقف ۲۵ نیمی از چرخه‌ها را پیش از انتشار
+# می‌کشت. سقف باید بالای زمانِ اندازه‌گیری‌شده + حاشیه بماند.
+import re as _re
+_tm = _re.search(r"timeout-minutes:\s*(\d+)", _hc_txt)
+check("سقف زمان چرخهٔ حمید ≥ ۳۵ دقیقه (اجرای کامل ~۲۵ دقیقه است)", bool(_tm) and int(_tm.group(1)) >= 35)
 
 print()
 if fail:
