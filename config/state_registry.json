@@ -670,6 +670,17 @@
    "optional": true,
    "cadence_note": "زنجیرهٔ سیگنال هر ۱۵ دقیقه؛ کادنس اسمی بازجویی ۱۰ دقیقه (شمارهٔ نوبت) → سقف ۴۵"
   },
+  "macro-guard.json": {
+   "layer": "L2_context",
+   "owner": "E05",
+   "producer": "hamid/macro_guard.py --write (hamid-cycle.yml + pump-radar.yml)",
+   "max_age_min": 180,
+   "consumer": "liam9_strategy.sync_macro_guard (داشبورد)",
+   "critical": false,
+   "kind": "live",
+   "cadence_note": "هر دو زنجیره هر ~۱۵ دقیقه تازه‌اش می‌کنند؛ سقف ۱۸۰ = همان سقفی که خودِ محافظ برای بی‌اثر شدن دارد — تقویمِ کهنه احتیاط را در ساعت اشتباه اعمال می‌کند",
+   "optional": true
+  },
   "tf-geo-arms.json": {
    "layer": "L6_learning",
    "owner": "E18",

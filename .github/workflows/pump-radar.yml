@@ -243,6 +243,9 @@ jobs:
               (cd claude-liam-signal/python && python3 -m hamid.review_queue --write) || true
               # قانون ۱۹: سفارش دادهٔ ایجنت‌ها — بعد از دسته‌بند، از intake می‌خواند
               (cd claude-liam-signal/python && python3 -m hamid.data_requests --write) || true
+              # محافظ رویداد کلان برای داشبورد (۱۶ سپتامبر). این‌جا هم هست چون
+              # زنجیره مطمئن‌تر از چرخه اجرا می‌شود و سقف کهنگی ۱۸۰ دقیقه است.
+              (cd claude-liam-signal/python && python3 -m hamid.macro_guard --write) || true
               # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
               # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
