@@ -530,6 +530,11 @@ def settle_books(report):
         paper.mirror_trail_arms()
     except Exception:                                # noqa: BLE001
         pass
+    # بازوی «هندسهٔ ×۲ روی ۵د» (۱۶ سپتامبر) — آینهٔ جفتیِ هر سیگنال ارسالی.
+    try:
+        paper.mirror_geo_arm()
+    except Exception:                                # noqa: BLE001
+        pass
     t_mark = int(time.time() * 1000)
     still, closed = paper.mark()
     try:

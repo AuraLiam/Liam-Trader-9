@@ -65,6 +65,8 @@ jobs:
         run: |
           python3 -m hamid.trail_lab --bars --write || true
           python3 -m hamid.trail_arms --write || true
+          # دو بازوی ۱۶ سپتامبر: «فقط ۱۵د» و «هندسهٔ ×۲ روی ۵د» — داوری با CI
+          python3 -m hamid.tf_geo_arms --write || true
       # ۲ سپتامبر: این گام فقط دو فایل (work-report، engine-focus) را از
       # reset نجات می‌داد؛ curriculum.json و trail-arms.json و trail-lab.json
       # که گام‌های بالا می‌نوشتند هر بار دور ریخته می‌شدند — سه اجرای سبزِ

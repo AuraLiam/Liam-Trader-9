@@ -58,7 +58,10 @@ EQUITY = BOOK / "equity.json"
 # کرد، فقط از درِ دیگر. حالا هر جا از همین ثابت می‌خواند؛ بازوی تازه
 # خودبه‌خود همه‌جا جدا می‌ماند. محافظ: `test_trail_arms`.
 EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
-                     "exp-trail-g65", "exp-trail-g80")
+                     "exp-trail-g65", "exp-trail-g80",
+                     # دو بازوی ۱۶ سپتامبر (دستور حمید: «دو بازوی آزمایش رو
+                     # بذار تا CI بده») — hamid/tf_geo_arms.py
+                     "exp-tf15", "exp-geo-x2")
 # میزِ جدای ۱۲ مراقب ققنوس — دفترِ هر متخصص، نه سیگنالِ ارسالی.
 #
 # عمداً **رشتهٔ ثابت** است نه ساخته‌شده از `phoenix.GUARDIANS`: این ماژول
@@ -425,6 +428,56 @@ def _trail_dist(p, gain, tp_dist, fee_px):
         return None
     lvl = gain * frac
     return lvl if lvl >= fee_px else None
+
+
+GEO_ARMS = {"exp-geo-x2": 2.0}      # ضریب فاصلهٔ استاپ و تارگت روی همان ستاپ
+
+
+def mirror_geo_arm(limit=40):
+    """هر سیگنالِ ارسالیِ ۵ دقیقهٔ باز را با هندسهٔ ×۲ هم باز کن (۱۶ سپتامبر).
+
+    A/B **جفتی**: همان نماد، همان ورود، همان لحظه؛ فقط فاصلهٔ استاپ و تارگت
+    دو برابر (RR ثابت). چون سهم کارمزد از R برابر `کارمزد٪ ÷ استاپ٪` است،
+    این بازو مکانیکاً نصفِ کارمزدِ پایه را می‌دهد؛ سؤال این است که آیا
+    استاپِ گشادتر همان‌قدر لبه را نگه می‌دارد. فقط دفتر پیپر؛ هیچ دروازه،
+    سیگنال یا پیامی را لمس نمی‌کند (قانون ۰۵/۰۷). داور: hamid/tf_geo_arms.
+    """
+    rows = _read(OPEN)
+    have = {(r.get("sym"), r.get("entry"), (r.get("why") or {}).get("stage"))
+            for r in rows}
+    added = 0
+    for r in rows:
+        st = (r.get("why") or {}).get("stage") or ""
+        if not st.startswith("sig-") or r.get("tf") != "5m":
+            continue
+        try:
+            e, sl, tp1 = float(r["entry"]), float(r["sl"]), float(r["tp1"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if e <= 0 or e == sl:
+            continue
+        for tag, k in GEO_ARMS.items():
+            if added >= limit:
+                return added
+            key = (r.get("sym"), r.get("entry"), tag)
+            if key in have:
+                continue
+            m = json.loads(json.dumps(r))
+            m["sl"] = round(e + (sl - e) * k, 10)
+            m["tp1"] = round(e + (tp1 - e) * k, 10)
+            if r.get("tp2"):
+                m["tp2"] = round(e + (float(r["tp2"]) - e) * k, 10)
+            fr = _fee_pct(m) / (abs(e - m["sl"]) / e * 100)
+            m["fee_r"] = round(fr, 4)
+            m["fee_trap"] = bool(fr >= 0.25)
+            m.setdefault("why", {})["stage"] = tag
+            m["why"]["mirror_of"] = st
+            m["why"]["geo_mult"] = k
+            m["stage_tag"] = tag
+            _append(OPEN, m)
+            have.add(key)
+            added += 1
+    return added
 
 
 def mirror_trail_arms(limit=40):

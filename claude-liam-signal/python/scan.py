@@ -728,6 +728,15 @@ def main():
     except Exception as _e:                          # noqa: BLE001
         print(f"short sampler failed: {type(_e).__name__} — "
               "نمونه‌گیری اختیاری است، اسکن ادامه دارد", flush=True)
+    # بازوی «فقط ۱۵ دقیقه» (۱۶ سپتامبر): هر SIGNALِ ۱۵د که از دروازه‌ها
+    # گذشته در دفتر جدا باز می‌شود تا در برابر سیگنال‌های ۵د داوری شود.
+    # فقط پیپر، سقف در هر اسکن؛ جزئیات: hamid/tf_geo_arms.py.
+    try:
+        from hamid import tf_geo_arms as _tga
+        _t15 = _tga.sample_tf15(setups)
+        print(f"tf15 arm: opened={_t15.get('opened', 0)} seen={_t15.get('seen', 0)}", flush=True)
+    except Exception as _e:                          # noqa: BLE001
+        print(f"tf15 arm failed: {type(_e).__name__} — اختیاری است، اسکن ادامه دارد", flush=True)
 
     # میزِ زندهٔ ۱۲ مراقب (دستور حمید ۱۲ سپتامبر: «پیپرمود بی‌وقفه بر
     # اساس استراتژی خودشان»). هر مراقب که رأیِ خودش از +۰.۱۵ رد شود، در
