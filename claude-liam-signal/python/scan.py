@@ -734,7 +734,8 @@ def main():
     try:
         from hamid import tf_geo_arms as _tga
         _t15 = _tga.sample_tf15(setups)
-        print(f"tf15 arm: opened={_t15.get('opened', 0)} seen={_t15.get('seen', 0)}", flush=True)
+        print(f"tf15 arm: opened={_t15.get('opened', 0)} seen={_t15.get('seen', 0)} "
+              f"mirrored={_t15.get('mirrored', 0)}", flush=True)
     except Exception as _e:                          # noqa: BLE001
         print(f"tf15 arm failed: {type(_e).__name__} — اختیاری است، اسکن ادامه دارد", flush=True)
 

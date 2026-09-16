@@ -61,7 +61,7 @@ EXPERIMENT_STAGES = ("exp-short-b1", "exp-short-b2",
                      "exp-trail-g65", "exp-trail-g80",
                      # دو بازوی ۱۶ سپتامبر (دستور حمید: «دو بازوی آزمایش رو
                      # بذار تا CI بده») — hamid/tf_geo_arms.py
-                     "exp-tf15", "exp-geo-x2")
+                     "exp-tf15", "exp-geo-x2", "exp-tf15-x2")
 # میزِ جدای ۱۲ مراقب ققنوس — دفترِ هر متخصص، نه سیگنالِ ارسالی.
 #
 # عمداً **رشتهٔ ثابت** است نه ساخته‌شده از `phoenix.GUARDIANS`: این ماژول
@@ -430,33 +430,57 @@ def _trail_dist(p, gain, tp_dist, fee_px):
     return lvl if lvl >= fee_px else None
 
 
-GEO_ARMS = {"exp-geo-x2": 2.0}      # ضریب فاصلهٔ استاپ و تارگت روی همان ستاپ
+# بازوهای هندسه: برچسب → (جمعیتِ پایه، ضریب فاصلهٔ استاپ و تارگت).
+# «هندسه روی ۱۵ دقیقه هم» — دستور حمید ۱۶ سپتامبر شب، بعد از این‌که بازوی
+# ۱۵د با n=۱۵۰ خالصِ −۰.۲۰۵R (CI زیر صفر) داد و معلوم شد تایم‌فریم اهرم
+# نیست: میانهٔ استاپِ ستاپ‌های ۱۵د هم ۰.۴۴٪ بود و ۷۳٪ کارمزدِ ≥۰.۲۵R داشتند.
+GEO_ARMS = {"exp-geo-x2": ("sig5m", 2.0),
+            "exp-tf15-x2": ("exp-tf15", 2.0)}
 
 
-def mirror_geo_arm(limit=40):
-    """هر سیگنالِ ارسالیِ ۵ دقیقهٔ باز را با هندسهٔ ×۲ هم باز کن (۱۶ سپتامبر).
+def _geo_base_kind(row):
+    """این ردیف پایهٔ کدام بازوی هندسه است؟ (یا None)"""
+    st = (row.get("why") or {}).get("stage") or ""
+    if st.startswith("sig-") and row.get("tf") == "5m":
+        return "sig5m"
+    if st == "exp-tf15":
+        return "exp-tf15"
+    return None
+
+
+def mirror_geo_arm(limit=60, rows=None):
+    """هر ستاپِ پایه را با هندسهٔ ×۲ هم باز کن (۱۶ سپتامبر).
 
     A/B **جفتی**: همان نماد، همان ورود، همان لحظه؛ فقط فاصلهٔ استاپ و تارگت
     دو برابر (RR ثابت). چون سهم کارمزد از R برابر `کارمزد٪ ÷ استاپ٪` است،
     این بازو مکانیکاً نصفِ کارمزدِ پایه را می‌دهد؛ سؤال این است که آیا
     استاپِ گشادتر همان‌قدر لبه را نگه می‌دارد. فقط دفتر پیپر؛ هیچ دروازه،
     سیگنال یا پیامی را لمس نمی‌کند (قانون ۰۵/۰۷). داور: hamid/tf_geo_arms.
+
+    `rows`: اگر داده شود، دفتر باز دوباره خوانده نمی‌شود — تا صدازننده بتواند
+    **همان لحظه** آینه بسازد. این مهم است: آینه‌سازیِ تأخیری فقط ستاپ‌هایی را
+    می‌گیرد که تا اجرای بعد هنوز باز مانده‌اند، یعنی نمونه به‌سمت معامله‌های
+    کُند سوگیری می‌کند و اختلاف را به هندسه نسبت می‌دهیم در حالی که بخشی‌اش
+    از همان سوگیری است.
     """
-    rows = _read(OPEN)
+    rows = _read(OPEN) if rows is None else rows
     have = {(r.get("sym"), r.get("entry"), (r.get("why") or {}).get("stage"))
             for r in rows}
     added = 0
     for r in rows:
-        st = (r.get("why") or {}).get("stage") or ""
-        if not st.startswith("sig-") or r.get("tf") != "5m":
+        kind = _geo_base_kind(r)
+        if kind is None:
             continue
+        st = (r.get("why") or {}).get("stage") or ""
         try:
             e, sl, tp1 = float(r["entry"]), float(r["sl"]), float(r["tp1"])
         except (KeyError, TypeError, ValueError):
             continue
         if e <= 0 or e == sl:
             continue
-        for tag, k in GEO_ARMS.items():
+        for tag, (src, k) in GEO_ARMS.items():
+            if src != kind:
+                continue
             if added >= limit:
                 return added
             key = (r.get("sym"), r.get("entry"), tag)

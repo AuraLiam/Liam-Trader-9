@@ -1400,6 +1400,14 @@ def send_signals(signals, render_chart, limit=8):
                     print(f"  ثبت نشد: {s['sym']} ارسال شد ولی ردیف دفتر "
                           "نگرفت (کلید تکراری در دفتر باز؟)", flush=True)
                     _log_delivery_fail(s, "ارسال شد ولی ردیف دفتر ساخته نشد")
+                else:
+                    # آینهٔ هندسهٔ ×۲ همین لحظه (۱۶ سپتامبر). اگر منتظر چرخه
+                    # بمانیم، سیگنالی که زود بسته شود هرگز جفت نمی‌گیرد و
+                    # نمونهٔ آزمایش به‌سمت معامله‌های کُند سوگیری می‌کند.
+                    try:
+                        _paper.mirror_geo_arm()
+                    except Exception:                 # noqa: BLE001 - آزمایش، ارسال را نمی‌کشد
+                        pass
             except Exception as e:                    # noqa: BLE001 - ثبت نشدن، ارسال را نمی‌کشد
                 print(f"  paper log failed for {s['sym']}: {type(e).__name__}", flush=True)
                 _log_delivery_fail(s, f"paper.open_from: {type(e).__name__}")

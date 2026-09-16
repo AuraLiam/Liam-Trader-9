@@ -29,10 +29,11 @@ def check(name, cond, extra=""):
 
 
 # ۱) جداسازی از آمار سیگنال — منبع واحد
-check("هر دو برچسب در EXPERIMENT_STAGES هستند", {G.TF15_TAG, G.GEO_TAG} <= set(P.EXPERIMENT_STAGES))
-check("و در _NOT_SIGNAL (وارد کارنامهٔ ارسالی نمی‌شوند)", {G.TF15_TAG, G.GEO_TAG} <= set(P._NOT_SIGNAL))
+ARMS = {G.TF15_TAG, G.GEO_TAG, G.TF15X2_TAG}
+check("هر سه برچسب در EXPERIMENT_STAGES هستند", ARMS <= set(P.EXPERIMENT_STAGES))
+check("و در _NOT_SIGNAL (وارد کارنامهٔ ارسالی نمی‌شوند)", ARMS <= set(P._NOT_SIGNAL))
 from hamid import work_report as WR                  # noqa: E402
-check("گزارش کار آن‌ها را عملکرد نمی‌شمارد", {G.TF15_TAG, G.GEO_TAG} <= WR.NOT_PERFORMANCE)
+check("گزارش کار آن‌ها را عملکرد نمی‌شمارد", ARMS <= WR.NOT_PERFORMANCE)
 
 # ۲) آینهٔ هندسه روی دفتر موقت
 NOW = 1_789_600_000_000
@@ -47,6 +48,8 @@ with tempfile.TemporaryDirectory() as td:
          "opened": NOW, "filled": None, "why": {"stage": "sig-ibs"}},
         {"sym": "DUSDT", "dir": "LONG", "tf": "5m", "entry": 10.0, "sl": 9.9, "tp1": 10.2,
          "opened": NOW, "filled": None, "why": {"stage": "practice"}},
+        {"sym": "EUSDT", "dir": "LONG", "tf": "15m", "entry": 20.0, "sl": 19.8, "tp1": 20.6,
+         "opened": NOW, "filled": None, "why": {"stage": "exp-tf15"}},
     ]
     op.write_text("".join(json.dumps(r) + "\n" for r in rows))
     old = P.OPEN
@@ -58,8 +61,16 @@ with tempfile.TemporaryDirectory() as td:
         P.OPEN = old
     out = [json.loads(l) for l in op.read_text().splitlines() if l.strip()]
     mirrors = {r["sym"]: r for r in out if (r.get("why") or {}).get("stage") == G.GEO_TAG}
-    check("فقط سیگنال‌های ارسالیِ ۵د آینه می‌شوند (نه ۱۵د، نه تمرین)", set(mirrors) == {"AUSDT", "BUSDT"}, str(set(mirrors)))
-    check("آینه‌سازیِ دوباره چیزی اضافه نمی‌کند (idempotent)", n1 == 2 and n2 == 0, f"{n1}/{n2}")
+    t15m = {r["sym"]: r for r in out if (r.get("why") or {}).get("stage") == G.TF15X2_TAG}
+    check("فقط سیگنال‌های ارسالیِ ۵د آینهٔ exp-geo-x2 می‌گیرند (نه ۱۵د، نه تمرین)",
+          set(mirrors) == {"AUSDT", "BUSDT"}, str(set(mirrors)))
+    check("ستاپ ۱۵د بازو، آینهٔ exp-tf15-x2 می‌گیرد", set(t15m) == {"EUSDT"}, str(set(t15m)))
+    check("آینه‌سازیِ دوباره چیزی اضافه نمی‌کند (idempotent)", n1 == 3 and n2 == 0, f"{n1}/{n2}")
+    e15 = t15m["EUSDT"]
+    check("هندسهٔ ×۲ روی ۱۵د هم درست است",
+          e15["entry"] == 20.0 and e15["sl"] == 19.6 and e15["tp1"] == 21.2, f"{e15['sl']}/{e15['tp1']}")
+    check("آینهٔ ۱۵د از ستاپ ۱۵د می‌آید نه از سیگنال ارسالی",
+          e15["why"]["mirror_of"] == "exp-tf15" and e15["tf"] == "15m")
     a, b = mirrors["AUSDT"], mirrors["BUSDT"]
     check("LONG: استاپ و تارگت ×۲ با همان ورود", a["entry"] == 100.0 and a["sl"] == 98.0 and a["tp1"] == 104.0 and a["tp2"] == 108.0,
           f"{a['sl']}/{a['tp1']}/{a['tp2']}")
@@ -89,10 +100,14 @@ with tempfile.TemporaryDirectory() as td:
     out = [json.loads(l) for l in op.read_text().splitlines() if l.strip()]
     tags = {(r.get("why") or {}).get("stage") for r in out}
     syms = {r["sym"] for r in out}
-    check("فقط SIGNALِ ۱۵د نمونه می‌شود (نه ۵د، نه ARMED)", "X5USDT" not in syms and "ARMUSDT" not in syms and tags == {G.TF15_TAG}, str(tags))
+    check("فقط SIGNALِ ۱۵د نمونه می‌شود (نه ۵د، نه ARMED)",
+          "X5USDT" not in syms and "ARMUSDT" not in syms
+          and tags == {G.TF15_TAG, G.TF15X2_TAG}, str(tags))
     check(f"سقف {G.TF15_CAP} در هر اسکن رعایت می‌شود", r1["opened"] == G.TF15_CAP, str(r1))
+    check("هر نمونهٔ ۱۵د همان لحظه آینهٔ هندسه می‌گیرد (نه در اجرای بعد)",
+          r1["mirrored"] == G.TF15_CAP, str(r1))
     check("اسکن دوم فقط باقی‌مانده‌ها را باز می‌کند، نه تکراری‌ها",
-          r2["opened"] == 3 and len(out) == 15 and len(syms) == 15, f"{r2} / {len(out)}")
+          r2["opened"] == 3 and len(out) == 30, f"{r2} / {len(out)}")
     check("ردیف نمونه tf و برچسب دارد", all(r.get("tf") == "15m" for r in out))
 
 # ۴) داور روی ردیف‌های ساختگی
@@ -103,8 +118,14 @@ def _row(stage, tf, R, fee, sym, opened, k=None):
 base = [_row("sig-ibs", "5m", (0.4 if i % 2 else -1.0), 0.15, f"P{i}", G.ARM_START_MS + i) for i in range(300)]
 geo = [_row(G.GEO_TAG, "5m", (0.9 if i % 2 else -1.0), 0.075, f"P{i}", G.ARM_START_MS + i) for i in range(300)]
 tf15 = [_row(G.TF15_TAG, "15m", (0.6 if i % 2 else -1.0), 0.05, f"T{i}", G.ARM_START_MS + i) for i in range(300)]
-s = G.study(base + geo + tf15)
+t15x2 = [_row(G.TF15X2_TAG, "15m", (1.3 if i % 2 else -1.0), 0.025, f"T{i}", G.ARM_START_MS + i) for i in range(300)]
+s = G.study(base + geo + tf15 + t15x2)
 a1, a2 = s["arms"][G.TF15_TAG], s["arms"][G.GEO_TAG]
+a3 = s["arms"][G.TF15X2_TAG]
+check("بازوی سوم جفت‌هایش را روی ستاپ ۱۵د می‌بندد", a3["n_pairs"] == 300, str(a3["n_pairs"]))
+check("و پایه‌اش ۱۵د اعلام می‌شود، نه ۵د", a3["base_tf"] == "۱۵د" and a2["base_tf"] == "۵د")
+check("هر دو بازوی هندسه حکم جدا می‌گیرند", a3["verdict"] == "PROMOTE" and a2["verdict"] == "PROMOTE")
+check("اختلاف جفتیِ ۱۵د خالص از کارمزد است", abs(a3["mean_diff"] - 0.375) < 1e-6, str(a3["mean_diff"]))
 check("جفت‌ها بر نماد+ورود+لحظه ساخته می‌شوند", a2["n_pairs"] == 300, str(a2["n_pairs"]))
 check("بازوی جفتیِ بهتر با n≥۲۰۰ → PROMOTE (فقط پیشنهاد)", a2["verdict"] == "PROMOTE" and "پیشنهاد" in a2["why"], a2["why"])
 # فرد: (۰.۹−۰.۰۷۵)−(۰.۴−۰.۱۵)=۰.۵۷۵ · زوج: (−۱−۰.۰۷۵)−(−۱−۰.۱۵)=+۰.۰۷۵ → میانگین ۰.۳۲۵
@@ -119,9 +140,13 @@ base2 = [_row("sig-ibs", "5m", (0.4 if i % 2 else -1.0), 0.15, f"P{i}", G.ARM_ST
 check("بازوی جفتیِ بدتر با n≥۴۰۰ → REJECT", G.study(base2 + worse)["arms"][G.GEO_TAG]["verdict"] == "REJECT")
 check("منقضی‌ها وارد سنجش نمی‌شوند",
       G.study([dict(base[0], outcome="expired", R=None), dict(geo[0], outcome="expired", R=None)])["arms"][G.GEO_TAG]["n_pairs"] == 0)
-check("اثرانگشت ضریب هندسه و کارمزد را ثبت می‌کند", s["fingerprint"]["geo_mult"] == 2.0 and "fee_round_trip_pct" in s["fingerprint"])
+check("اثرانگشت ضریب هندسهٔ هر دو بازو و کارمزد را ثبت می‌کند",
+      s["fingerprint"]["geo_mult"] == 2.0 and s["fingerprint"]["geo_mult_tf15"] == 2.0
+      and "fee_round_trip_pct" in s["fingerprint"])
 check("قاعدهٔ توقف و مرز روی خروجی است", "PROMOTE" in s["stopping_rule"] and "پیپر" in s["boundary"])
-check("Šidák برای دو بازو (z=۲.۲۴)", abs(G.Z - 2.2414) < 1e-6)
+check("Šidák برای سه بازو (z=۲.۳۹)", abs(G.Z - 2.3877) < 1e-6)
+check("مرز، وابستگی احتمالیِ اثر به تایم‌فریم را اعلام می‌کند",
+      "ناهم‌جهتی" in s["boundary"] and "تایم‌فریم" in s["boundary"])
 
 # ۵) سیم‌کشی
 scan_src = (HERE.parent / "scan.py").read_text(encoding="utf-8")
@@ -136,7 +161,14 @@ check("tf-geo-arms.json ردیف قرارداد دارد (قانون ۱۳)", "tf
 check("دروازهٔ چرخه این محافظ را می‌زند",
       "hamid.test_tf_geo_arms" in (ROOT / ".github" / "workflows" / "hamid-cycle.yml").read_text(encoding="utf-8"))
 from hamid import classify as C                      # noqa: E402
-check("طبقه‌بند نام فارسی هر دو بازو را دارد", G.TF15_TAG in C.FA_STAGE and G.GEO_TAG in C.FA_STAGE)
+check("طبقه‌بند نام فارسی هر سه بازو را دارد",
+      all(t in C.FA_STAGE for t in (G.TF15_TAG, G.GEO_TAG, G.TF15X2_TAG)))
+# آینه باید **همان لحظه** ساخته شود، نه در اجرای بعد — وگرنه فقط معامله‌های
+# کُند جفت می‌گیرند و اختلاف، سوگیریِ انتخاب را به هندسه نسبت می‌دهد.
+tg_src = (HERE.parent / "telegram.py").read_text(encoding="utf-8")
+check("گلوگاه ارسال بلافاصله بعد از ثبت دفتر آینه می‌سازد", "_paper.mirror_geo_arm()" in tg_src)
+check("نمونه‌گیر ۱۵د هم در همان اجرا آینه می‌سازد",
+      "paper.mirror_geo_arm()" in (HERE / "tf_geo_arms.py").read_text(encoding="utf-8"))
 
 print()
 if FAIL:

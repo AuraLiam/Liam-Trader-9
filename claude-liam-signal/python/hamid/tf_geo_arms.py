@@ -45,8 +45,9 @@ OUT = ROOT / "signals" / "tf-geo-arms.json"
 
 TF15_TAG = "exp-tf15"
 GEO_TAG = "exp-geo-x2"
+TF15X2_TAG = "exp-tf15-x2"      # هندسهٔ ×۲ روی همان ستاپ ۱۵د (۱۶ سپتامبر شب)
 TF15_CAP = 12                # سقف ردیف تازه در هر اسکن — مهار سیل (درس stage-vetoed)
-Z = 2.2414                   # Šidák برای ۲ آزمون، دوطرفه، آلفا ۰.۰۵
+Z = 2.3877                   # Šidák برای ۳ آزمون، دوطرفه، آلفا ۰.۰۵
 N_PROMOTE = 200
 N_REJECT = 400
 HALF_WIDTH_TARGET = 0.05
@@ -60,8 +61,9 @@ def fingerprint():
         fee = S.PARAMS.get("fee_round_trip_pct")
     except Exception:                                # noqa: BLE001
         fee = None
-    return {"geo_mult": paper.GEO_ARMS.get(GEO_TAG), "tf15": "15m",
-            "base_tf": "5m", "fee_round_trip_pct": fee,
+    return {"geo_mult": paper.GEO_ARMS.get(GEO_TAG, (None, None))[1],
+            "geo_mult_tf15": paper.GEO_ARMS.get(TF15X2_TAG, (None, None))[1],
+            "tf15": "15m", "base_tf": "5m", "fee_round_trip_pct": fee,
             "tf15_cap_per_scan": TF15_CAP, "z": Z}
 
 
@@ -106,7 +108,17 @@ def sample_tf15(setups, cap=TF15_CAP):
         if n:
             opened += n
             have.add(key)
-    return {"opened": opened, "seen": seen, "cap": cap}
+    # آینهٔ هندسهٔ ×۲ **همین لحظه** ساخته می‌شود، نه در اجرای بعد. اگر منتظر
+    # چرخه بمانیم، ستاپی که زود بسته شود هرگز جفت نمی‌گیرد و نمونه به‌سمت
+    # معامله‌های کُند سوگیری می‌کند — همان اشتباهی که اختلاف را به هندسه
+    # نسبت می‌دهد در حالی که از سوگیریِ انتخاب آمده.
+    mirrored = 0
+    if opened:
+        try:
+            mirrored = paper.mirror_geo_arm()
+        except Exception:                            # noqa: BLE001
+            mirrored = 0
+    return {"opened": opened, "seen": seen, "cap": cap, "mirrored": mirrored}
 
 
 # ── داور ────────────────────────────────────────────────────────────────
@@ -157,10 +169,25 @@ def _verdict(lo, hi, n, need):
     return "UNDECIDED", f"n={n} — هنوز برای برآورد هم کم است"
 
 
+def _paired(base, arm_rows):
+    """اختلاف جفتیِ خالص روی کلید (نماد، ورود، لحظهٔ باز شدن)."""
+    diffs = []
+    for k, arm in arm_rows.items():
+        b = base.get(k)
+        if not b or b.get("outcome") == "expired" or arm.get("outcome") == "expired":
+            continue
+        nb, na = _net(b), _net(arm)
+        if nb is None or na is None:
+            continue
+        diffs.append(na - nb)
+    return diffs
+
+
 def study(rows=None):
     from hamid import paper
     rows = paper._read(paper.CLOSED) if rows is None else rows
-    base5, tf15, geo = {}, [], {}
+    base5, tf15, geo, tf15x2 = {}, [], {}, {}
+    tf15_by_key = {}
     for r in rows:
         st = (r.get("why") or {}).get("stage") or ""
         k = (r.get("sym"), r.get("entry"), r.get("opened"))
@@ -168,8 +195,11 @@ def study(rows=None):
             base5[k] = r
         elif st == TF15_TAG and r.get("outcome") != "expired":
             tf15.append(r)
+            tf15_by_key[k] = r
         elif st == GEO_TAG:
             geo[k] = r
+        elif st == TF15X2_TAG:
+            tf15x2[k] = r
     # بازوی ۱ — ناجفت: بازوی ۱۵د در برابر پایهٔ ۵د از همان بازهٔ زمانی
     a = [x for x in (_net(r) for r in tf15) if x is not None]
     b = [x for x in (_net(r) for r in base5.values()
@@ -182,32 +212,30 @@ def study(rows=None):
             "mean_base": round(statistics.fmean(b), 4) if b else None,
             "diff": d, "ci": [lo, hi], "verdict": v1, "why": why1,
             "win_arm": round(sum(x > 0 for x in a) / len(a), 3) if a else None}
-    # بازوی ۲ — جفتی: هندسهٔ ×۲ در برابر همان سیگنال
-    diffs, pairs = [], 0
-    for k, arm in geo.items():
-        b_ = base5.get(k)
-        if not b_ or b_.get("outcome") == "expired" or arm.get("outcome") == "expired":
-            continue
-        nb, na = _net(b_), _net(arm)
-        if nb is None or na is None:
-            continue
-        diffs.append(na - nb)
-        pairs += 1
-    lo2, hi2 = _ci(diffs)
-    v2, why2 = _verdict(lo2, hi2, pairs, _need(diffs) if diffs else None)
-    arm2 = {"tag": GEO_TAG, "design": "paired", "n_pairs": pairs,
-            "mean_diff": round(statistics.fmean(diffs), 4) if diffs else None,
-            "ci": [lo2, hi2], "verdict": v2, "why": why2,
-            "open_mirrors": sum(1 for r in paper._read(paper.OPEN)
-                                if (r.get("why") or {}).get("stage") == GEO_TAG)}
+    # بازوی ۲ و ۳ — جفتی: هندسهٔ ×۲ در برابر همان ستاپ، روی دو تایم‌فریم
+    out = {TF15_TAG: arm1}
+    for tag, base, label in ((GEO_TAG, base5, "۵د"), (TF15X2_TAG, tf15_by_key, "۱۵د")):
+        arm_rows = geo if tag == GEO_TAG else tf15x2
+        diffs = _paired(base, arm_rows)
+        n = len(diffs)
+        lo2, hi2 = _ci(diffs)
+        v2, why2 = _verdict(lo2, hi2, n, _need(diffs) if diffs else None)
+        out[tag] = {"tag": tag, "design": "paired", "base_tf": label, "n_pairs": n,
+                    "mean_diff": round(statistics.fmean(diffs), 4) if diffs else None,
+                    "ci": [lo2, hi2], "verdict": v2, "why": why2,
+                    "open_mirrors": sum(1 for r in paper._read(paper.OPEN)
+                                        if (r.get("why") or {}).get("stage") == tag)}
     return {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
-            "fingerprint": fingerprint(), "arms": {TF15_TAG: arm1, GEO_TAG: arm2},
+            "fingerprint": fingerprint(), "arms": out,
             "stopping_rule": (f"PROMOTE = CI خالص کاملاً بالای صفر روی n≥{N_PROMOTE} (فقط پیشنهاد) · "
                               f"REJECT = CI زیر صفر روی n≥{N_REJECT} · بقیه UNDECIDED. "
-                              f"Šidák برای ۲ بازو (z={Z})."),
-            "boundary": ("هر دو بازو فقط پیپرند؛ هیچ دروازه، سایز یا پیامی عوض نمی‌شود. "
+                              f"Šidák برای ۳ بازو (z={Z})."),
+            "boundary": ("هر سه بازو فقط پیپرند؛ هیچ دروازه، سایز یا پیامی عوض نمی‌شود. "
                          "بازوی ۱۵د ناجفت است (جمعیت ستاپ فرق دارد) و شاهد ضعیف‌تری از "
-                         "بازوی جفتیِ هندسه است. پیپر سقف خوش‌بینانه است (فیل کامل، بی‌لغزش).")}
+                         "دو بازوی جفتیِ هندسه است. دو بازوی هندسه یک فرضیه را روی دو "
+                         "تایم‌فریم می‌سنجند: هم‌جهت بودنشان شاهد قوی‌تر است، ناهم‌جهتی "
+                         "یعنی اثر به تایم‌فریم وابسته است. "
+                         "پیپر سقف خوش‌بینانه است (فیل کامل، بی‌لغزش).")}
 
 
 def render(s):
