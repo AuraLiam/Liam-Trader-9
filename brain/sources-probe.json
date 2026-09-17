@@ -1,11 +1,11 @@
 {
- "probed": "2026-09-16 09:30 UTC",
+ "probed": "2026-09-17 09:39 UTC",
  "results": [
   {
    "name": "bitunix-futures",
    "url": "https://fapi.bitunix.com/api/v1/futures/market/kline?symbol=BTCUSDT&interval=15m&limit=10",
    "status": 200,
-   "ms": 366,
+   "ms": 398,
    "count": 10,
    "row_type": "dict",
    "keys": [
@@ -18,12 +18,12 @@
     "time"
    ],
    "sample": {
-    "open": "75755.2",
-    "high": "75842.8",
-    "low": "75721.4",
-    "close": "75797.9",
-    "quoteVol": "178.808",
-    "baseVol": "13551348.62171"
+    "open": "76656.7",
+    "high": "76720.9",
+    "low": "76619.2",
+    "close": "76648.7",
+    "quoteVol": "162.7323",
+    "baseVol": "12477672.69981"
    },
    "time_key": "time",
    "oldest_first": false,
@@ -33,24 +33,24 @@
    "name": "bitunix-openapi",
    "url": "https://openapi.bitunix.com/api/v1/futures/market/kline?symbol=BTCUSDT&interval=15m&limit=10",
    "status": 404,
-   "error": "{\"timestamp\":\"2026-09-16T09:30:31.390+00:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/api/v1/futures/market/kline\"}"
+   "error": "{\"timestamp\":\"2026-09-17T09:38:54.829+00:00\",\"status\":404,\"error\":\"Not Found\",\"path\":\"/api/v1/futures/market/kline\"}"
   },
   {
    "name": "bingx",
    "url": "https://open-api.bingx.com/openApi/spot/v2/market/kline?symbol=BTC-USDT&interval=15m&limit=10",
    "status": 200,
-   "ms": 290,
+   "ms": 360,
    "count": 10,
    "row_type": "list",
    "fields": 8,
    "sample": [
-    1789551000000,
-    75834.59,
-    75834.59,
-    75830.03,
-    75834.59,
-    0.17271,
-    1789551899999
+    1789637400000,
+    76694.04,
+    76769.99,
+    76646.02,
+    76710.43,
+    11.232036,
+    1789638299999
    ],
    "time_key": "index 0",
    "oldest_first": false,
@@ -60,18 +60,18 @@
    "name": "bitmart",
    "url": "https://api-cloud.bitmart.com/spot/quotation/v3/klines?symbol=BTC_USDT&step=15&limit=10",
    "status": 200,
-   "ms": 318,
+   "ms": 365,
    "count": 10,
    "row_type": "list",
    "fields": 7,
    "sample": [
-    "1789542900",
-    "75880.01",
-    "75928.00",
-    "75807.19",
-    "75817.87",
-    "14.30369",
-    "1085001.32"
+    "1789629300",
+    "76536.00",
+    "76638.10",
+    "76518.00",
+    "76522.93",
+    "14.68458",
+    "1124260.58"
    ],
    "time_key": "index 0",
    "oldest_first": true,
@@ -81,7 +81,7 @@
    "name": "htx",
    "url": "https://api.huobi.pro/market/history/kline?symbol=btcusdt&period=15min&size=10",
    "status": 200,
-   "ms": 281,
+   "ms": 293,
    "count": 10,
    "row_type": "dict",
    "keys": [
@@ -95,12 +95,12 @@
     "vol"
    ],
    "sample": {
-    "id": 1789551000,
-    "open": 75844.12,
-    "close": 75844.12,
-    "low": 75844.12,
-    "high": 75844.12,
-    "amount": 0.000197774066071305
+    "id": 1789637400,
+    "open": 76680.77,
+    "close": 76724.45,
+    "low": 76636.01,
+    "high": 76763.09,
+    "amount": 3.1887673398883787
    },
    "time_key": "id",
    "oldest_first": false,
@@ -110,7 +110,7 @@
    "name": "phemex",
    "url": "https://api.phemex.com/exchange/public/md/v2/kline?symbol=sBTCUSDT&resolution=900&limit=10",
    "status": 200,
-   "ms": 368,
+   "ms": 348,
    "error": "no candle array found",
    "envelope": [
     "code",
@@ -122,7 +122,7 @@
    "name": "weex",
    "url": "https://api-spot.weex.com/api/v2/market/candles?symbol=BTCUSDT&granularity=900&limit=10",
    "status": 400,
-   "error": "{\"code\":\"-1\",\"msg\":\"参数为空\",\"requestTime\":1789551033034,\"data\":null}"
+   "error": "{\"code\":\"-1\",\"msg\":\"参数为空\",\"requestTime\":1789637936496,\"data\":null}"
   },
   {
    "name": "cryptocompare",
@@ -134,17 +134,17 @@
    "name": "coinbase",
    "url": "https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=900",
    "status": 200,
-   "ms": 47,
+   "ms": 56,
    "count": 350,
    "row_type": "list",
    "fields": 6,
    "sample": [
-    1789550100,
-    75683.62,
-    75811.64,
-    75725,
-    75787.73,
-    28.85009194
+    1789637400,
+    76567.12,
+    76633.08,
+    76604.32,
+    76612.15,
+    9.04748632
    ],
    "time_key": "index 0",
    "oldest_first": false,
@@ -154,7 +154,7 @@
    "name": "kraken",
    "url": "https://api.kraken.com/0/public/OHLC?pair=XBTUSDT&interval=15",
    "status": 200,
-   "ms": 244,
+   "ms": 90,
    "error": "no candle array found",
    "envelope": [
     "error",
@@ -165,18 +165,18 @@
    "name": "kucoin",
    "url": "https://api.kucoin.com/api/v1/market/candles?type=15min&symbol=BTC-USDT",
    "status": 200,
-   "ms": 282,
+   "ms": 350,
    "count": 100,
    "row_type": "list",
    "fields": 7,
    "sample": [
-    "1789551000",
-    "75822",
-    "75830.5",
-    "75830.5",
-    "75821.9",
-    "0.05856829",
-    "4441.004481351"
+    "1789637400",
+    "76683.9",
+    "76703.1",
+    "76754.7",
+    "76643.2",
+    "8.83053099",
+    "677387.565062977"
    ],
    "time_key": "index 0",
    "oldest_first": false,
@@ -186,18 +186,18 @@
    "name": "okx",
    "url": "https://www.okx.com/api/v5/market/candles?instId=BTC-USDT&bar=15m&limit=10",
    "status": 200,
-   "ms": 212,
+   "ms": 250,
    "count": 10,
    "row_type": "list",
    "fields": 9,
    "sample": [
-    "1789551000000",
-    "75829.5",
-    "75850.9",
-    "75829.5",
-    "75850.9",
-    "0.30606878",
-    "23210.436371652"
+    "1789637400000",
+    "76681.3",
+    "76770",
+    "76641.6",
+    "76700.3",
+    "23.69976587",
+    "1818124.531580545"
    ],
    "time_key": "index 0",
    "oldest_first": false,
@@ -213,18 +213,18 @@
    "name": "mexc",
    "url": "https://api.mexc.com/api/v3/klines?symbol=BTCUSDT&interval=15m&limit=10",
    "status": 200,
-   "ms": 457,
+   "ms": 302,
    "count": 10,
    "row_type": "list",
    "fields": 8,
    "sample": [
-    1789542900000,
-    "75882.39",
-    "75933.86",
-    "75810.99",
-    "75825.05",
-    "72.92379292",
-    1789543800000
+    1789629300000,
+    "76542.31",
+    "76641.61",
+    "76518.96",
+    "76525.24",
+    "65.32800548",
+    1789630200000
    ],
    "time_key": "index 0",
    "oldest_first": true,
@@ -234,18 +234,18 @@
    "name": "gate",
    "url": "https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=BTC_USDT&interval=15m&limit=10",
    "status": 200,
-   "ms": 765,
+   "ms": 778,
    "count": 10,
    "row_type": "list",
    "fields": 8,
    "sample": [
-    "1789542900",
-    "5998494.58560250",
-    "75817.5",
-    "75925.4",
-    "75806.1",
-    "75880.8",
-    "79.07849200"
+    "1789629300",
+    "5538572.20238600",
+    "76520.8",
+    "76639",
+    "76514.4",
+    "76538.4",
+    "72.33846800"
    ],
    "time_key": "index 0",
    "oldest_first": true,
@@ -255,18 +255,18 @@
    "name": "bitget",
    "url": "https://api.bitget.com/api/v2/spot/market/candles?symbol=BTCUSDT&granularity=15min&limit=10",
    "status": 200,
-   "ms": 245,
+   "ms": 276,
    "count": 10,
    "row_type": "list",
    "fields": 8,
    "sample": [
-    "1789542900000",
-    "75880",
-    "75925",
-    "75810",
-    "75824.99",
-    "34.22717",
-    "2596627.01919063"
+    "1789629300000",
+    "76534.99",
+    "76635",
+    "76510",
+    "76523.59",
+    "39.913637",
+    "3054861.04932686"
    ],
    "time_key": "index 0",
    "oldest_first": true,
@@ -276,7 +276,7 @@
    "name": "coinex",
    "url": "https://api.coinex.com/v2/spot/kline?market=BTCUSDT&period=15min&limit=10",
    "status": 200,
-   "ms": 304,
+   "ms": 412,
    "count": 10,
    "row_type": "dict",
    "keys": [
@@ -290,19 +290,19 @@
     "volume"
    ],
    "sample": {
-    "close": "75804",
-    "created_at": 1789542900000,
-    "high": "75932",
-    "low": "75801",
+    "close": "76499",
+    "created_at": 1789629300000,
+    "high": "76551",
+    "low": "76487",
     "market": "BTCUSDT",
-    "open": "75822"
+    "open": "76498"
    }
   },
   {
    "name": "lbank",
    "url": "https://api.lbkex.com/v2/kline.do?symbol=btc_usdt&size=10&type=minute15&time=1",
    "status": 200,
-   "ms": 1013,
+   "ms": 1073,
    "count": 10,
    "row_type": "list",
    "fields": 6,
