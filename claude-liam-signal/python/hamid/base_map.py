@@ -141,9 +141,26 @@ def order_block_hamid(cd, side, lookback=120):
     side="above": بعد از ریزش، از انتها برمی‌گردیم عقب/بالا تا اولین
     کندل **سبزِ** قوی (بدنه > شدوها) — زون عرضهٔ بالای قیمت.
     side="below": قرینه — اولین کندل **قرمزِ** قوی زیر قیمت.
-    زون = بدنهٔ همان کندل. برمی‌گرداند {lo, hi, i, touched} یا None."""
+    زون = بدنهٔ همان کندل.
+
+    ## بندِ دومِ تعریف حمید (اضافه‌شدهٔ ۱۷ سپتامبر)
+
+    «برای اثبات آن باید گذشته را در همان تایم‌فریم بررسی کرد تا مشخص شود
+    واکنشی داشته یا خیر.» این تابع `touched` را از قبل می‌شمرد ولی
+    **استفاده‌اش نمی‌کرد** — زونِ بکر دقیقاً مثل زونِ واکنش‌دیده
+    برمی‌گشت. همان عیبی که حمید در پنل دید، این‌جا هم بود؛ و چون نقشهٔ
+    پایه همان چیزی است که **دامیننس تتر** با آن تحلیل می‌شود، اثرش روی
+    مهم‌ترین بسترِ تصمیم می‌نشست.
+
+    حالا نزدیک‌ترین زونِ **اثبات‌شده** برمی‌گردد؛ اگر هیچ زونِ اثبات‌شده‌ای
+    نبود، نزدیک‌ترین زونِ بکر با `proven=False` برمی‌گردد — حذف نمی‌شود
+    (قانون ۱ بند ۶: خط و زون حذف نمی‌شوند، وضعیتشان ثبت می‌شود) ولی
+    وزنش در `reaction_points` نصف است و روی برچسبش «اثبات‌نشده» می‌آید.
+
+    خروجی: {lo, hi, i, touched, proven, dist_pct} یا None."""
     win = cd[-lookback:]
     px = win[-1]["c"]
+    first_unproven = None
     for j in range(len(win) - 2, 1, -1):
         k = win[j]
         green = k["c"] > k["o"]
@@ -157,11 +174,16 @@ def order_block_hamid(cd, side, lookback=120):
         lo, hi = min(k["o"], k["c"]), max(k["o"], k["c"])
         touched = sum(1 for x in win[j + 1:]
                       if x["l"] <= hi and x["h"] >= lo)
-        return {"lo": round(lo, 10), "hi": round(hi, 10),
+        zone = {"lo": round(lo, 10), "hi": round(hi, 10),
                 "i": len(cd) - lookback + j, "touched": touched,
+                "proven": touched >= 1,
                 "dist_pct": round((abs((lo if side == "above" else hi) - px)
                                    / px * 100), 3)}
-    return None
+        if zone["proven"]:
+            return zone
+        if first_unproven is None:
+            first_unproven = zone
+    return first_unproven
 
 
 def base_map(frames):
@@ -232,7 +254,12 @@ def reaction_points(m, tf_order=("4h", "1h", "15m", "5m")):
             ob = d.get(side)
             if ob:
                 edge = ob["lo"] if side == "ob_above" else ob["hi"]
-                pts.append({"price": edge, "kind": f"{fa}@{tf}", "weight": 2})
+                # زونِ اثبات‌نشده حذف نمی‌شود، ولی هم‌وزنِ زونِ واکنش‌دیده
+                # هم نیست — وگرنه «شاید» و «ثابت‌شده» یک‌جور علامت می‌خورند.
+                ok = ob.get("proven", True)
+                pts.append({"price": edge,
+                            "kind": f"{fa}@{tf}" + ("" if ok else " (اثبات‌نشده)"),
+                            "weight": 2 if ok else 1})
     for c in m.get("confluence") or []:
         pts.append({"price": c["price"],
                     "kind": "هم‌رسی " + "+".join(c["lines"][:2]), "weight": 4})
