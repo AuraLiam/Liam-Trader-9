@@ -1,5 +1,5 @@
 {
- "generated": 1789660240096,
+ "generated": 1789660489864,
  "usdt_dominance": 6.927,
  "btc_dominance": 58.21,
  "chg_1h": {
@@ -11,11 +11,11 @@
   "btc": -0.62
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: BOJ Policy Rate (10.7س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1709/3304 (52٪)؛ بنچمارکِ همیشه‌تخت 56٪؛ بسترِ استیبل: LONG_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: BOJ Policy Rate (10.6س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1709/3304 (52٪)؛ بنچمارکِ همیشه‌تخت 56٪؛ بسترِ استیبل: LONG_ALT_STRONG",
  "macro": [
   {
    "title": "BOJ Policy Rate",
-   "in_hours": 10.7,
+   "in_hours": 10.6,
    "country": "JPY"
   }
  ],
@@ -310,7 +310,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2593,
+    "bars": 2592,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -318,7 +318,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2593,
+    "bars": 2592,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -455,22 +455,34 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "REDEMPTION",
+    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.002,
+    "d_stable_d": -0.002,
+    "supply_growth": {
+     "USDT": -0.002504,
+     "USDC": -0.002216
+    },
+    "supply_growth_total": -0.002422,
+    "mcap_growth": -0.002216,
+    "usdt_d": 6.927,
+    "stable_d": 9.707,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "REDEMPTION",
     "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "window_min": 240,
-    "d_usdt_d": -0.055,
-    "d_stable_d": -0.078,
+    "d_usdt_d": -0.123,
+    "d_stable_d": -0.173,
     "supply_growth": {
-     "USDT": -0.001282,
-     "USDC": -0.001612
+     "USDT": -0.001661,
+     "USDC": -0.001886
     },
-    "supply_growth_total": -0.001376,
-    "mcap_growth": 0.006627,
+    "supply_growth_total": -0.001725,
+    "mcap_growth": 0.01594,
     "usdt_d": 6.927,
     "stable_d": 9.707,
     "misleading": false,
@@ -479,19 +491,29 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (-0.002، زیر میانهٔ 0.016) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.016,
+    "stable_d": 9.707,
+    "d_stable_d": -0.002,
+    "usdt_d": 6.927,
+    "d_usdt_d": -0.002,
+    "cause": "REDEMPTION",
+    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "LONG_BIAS",
-    "why": "STABLE.D از 9.785 به 9.707 آمد (-0.078، بزرگ‌تر از میانهٔ 0.039) — پول از حاشیه به دارایی رفته، ریسک‌آن",
+    "why": "STABLE.D از 9.880 به 9.707 آمد (-0.173، بزرگ‌تر از میانهٔ 0.042) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 240,
-    "threshold": 0.039,
+    "threshold": 0.042,
     "stable_d": 9.707,
-    "d_stable_d": -0.078,
+    "d_stable_d": -0.173,
     "usdt_d": 6.927,
-    "d_usdt_d": -0.055,
+    "d_usdt_d": -0.123,
     "cause": "REDEMPTION",
     "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "naive_usdt_only": "LONG_BIAS",
@@ -503,13 +525,13 @@
    "stance": "LONG_ALT_STRONG",
    "why": "پول از استیبل بیرون آمده و BTC.D هم پایین — چرخش به آلت",
    "bias": "LONG_BIAS",
-   "d_btc_d": -0.11,
+   "d_btc_d": -0.62,
    "cause": "REDEMPTION",
    "disagrees_with_naive": false,
    "stable_d": 9.707,
-   "d_stable_d": -0.078,
+   "d_stable_d": -0.173,
    "usdt_d": 6.927,
-   "d_usdt_d": -0.055,
+   "d_usdt_d": -0.123,
    "window_min": 240,
    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
