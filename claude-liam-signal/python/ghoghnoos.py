@@ -8,7 +8,7 @@
 بدون کامنت و داک‌استرینگ، تا از سقف اندازهٔ جعبه رد نشود.
 نسخهٔ خوانا و مستند در ریپو است — این‌جا فقط اجرا.
 
-ساخت: 2026-09-13 21:05 UTC · کامیت d7a3d6027f
+ساخت: 2026-09-17 04:33 UTC · کامیت 789c917e
 منبع: claude-liam-signal/python/liam9_strategy.py
 ساخته‌شده با: python3 -m hamid.build_dashboard
 
@@ -35,6 +35,7 @@ EXPERIENCE_PATH ="/signals/experience.json"
 TOP_LIQ_PATH ="/signals/top-liquidity.json"
 EDGE_PATH ="/signals/edge.json"
 BTC_SENS_PATH ="/signals/btc-sensitivity.json"
+MACRO_PATH ="/signals/macro-guard.json"
 EXEC_OUTBOX_PATH ="/signals/exec-outbox.json"
 
 PARAMS ={
@@ -160,6 +161,18 @@ def _finalize (sig ):
         sig ["take_profit"]=sig ["tp1"]
 
         sig ["session"]=session_info ()
+
+        inside ,note =macro_state ()
+        sig ["macro_window"]=bool (inside )
+        if inside :
+            mult =MACRO .get ("size_mult",0.5 )
+            if isinstance (sig .get ("margin_pct"),(int ,float )):
+                sig ["margin_pct_before_macro"]=sig ["margin_pct"]
+                sig ["margin_pct"]=round (sig ["margin_pct"]*mult ,1 )
+            sig ["macro_event"]=MACRO .get ("nearest")
+            sig ["macro_note"]=note 
+            if isinstance (sig .get ("why"),list ):
+                sig ["why"].append (note )
     return sig 
 
 def market_gate (direction ,btc4h ,btc1h ):
@@ -230,6 +243,9 @@ def sync_top_liquidity ():
 
 EDGE ={"rules":{},"stale":True }
 
+MACRO ={"in_window":False ,"nearest":None ,"generated":None ,
+"size_mult":1.0 ,"max_age_min":180 }
+
 EDGE_POINTS_PER_R =20 
 EDGE_CAP =15 
 
@@ -246,6 +262,41 @@ def sync_edge ():
         except Exception :
             continue 
     return 0 
+
+def sync_macro_guard ():
+    ""
+    for base in (REPO_RAW ,PAGES ):
+        try :
+            d =_get (base +MACRO_PATH )
+            if isinstance (d ,dict )and d .get ("generated"):
+                MACRO .clear ()
+                MACRO .update ({"in_window":bool (d .get ("in_window")),
+                "nearest":d .get ("nearest"),
+                "generated":d .get ("generated"),
+                "events":(d .get ("events")or [])[:4 ],
+                "size_mult":float (d .get ("size_mult")or 0.5 ),
+                "max_age_min":float (d .get ("max_age_min")or 180 ),
+                "source_ok":d .get ("source_ok")})
+                return 1 if MACRO ["in_window"]else 0 
+        except Exception :
+            continue 
+    return 0 
+
+def macro_state (now_ms =None ):
+    ""
+    if not MACRO .get ("in_window")or MACRO .get ("source_ok")is False :
+        return False ,""
+    gen =MACRO .get ("generated")
+    if gen :
+        age =((now_ms or time .time ()*1000 )-gen )/60000.0 
+        if age >MACRO .get ("max_age_min",180 ):
+            return False ,""
+    n =MACRO .get ("nearest")or {}
+    m =n .get ("minutes_to_event")
+    when =(f"{abs(m):.0f} دقیقه {'تا' if (m or 0) >= 0 else 'پس از'}"if m is not None else "")
+    return True ,(f"⚠️ پنجرهٔ رویداد کلان: {n.get('title', 'رویداد پراهمیت')} "
+    f"({n.get('currency', '?')}) — {when} · تهران {n.get('tehran', '?')} "
+    f"· سایز ×{MACRO.get('size_mult', 0.5)} (محافظ نوسان، جهت عوض نمی‌شود)")
 
 def edge_boost (strategy ,flags ):
     ""
@@ -366,7 +417,8 @@ def sync_all ():
     "top_liquidity":sync_top_liquidity (),
     "edge_rules":sync_edge (),
     "room_weights":sync_room_weights (),
-    "btc_sensitivity":sync_btc_sensitivity ()}
+    "btc_sensitivity":sync_btc_sensitivity (),
+    "macro_window":sync_macro_guard ()}
 
 def ensure_sync (force =False ):
     ""
@@ -629,7 +681,15 @@ def candle_geometry (cd ,n_atr =14 ):
     "displacement":bool (a >0 and rng >=1.8 *a ),
     }
 
-def order_block_zone (cd ,direction ,lookback =120 ,disp_atr_mult =1.8 ):
+def body_beats_shadows (c ):
+    ""
+    body =abs (c ["c"]-c ["o"])
+    upper =c ["h"]-max (c ["o"],c ["c"])
+    lower =min (c ["o"],c ["c"])-c ["l"]
+    return body >(upper +lower )
+
+def order_block_zone (cd ,direction ,lookback =120 ,disp_atr_mult =1.8 ,
+require_reaction =True ):
     ""
     if len (cd )<lookback +20 :
         return None 
@@ -653,6 +713,8 @@ def order_block_zone (cd ,direction ,lookback =120 ,disp_atr_mult =1.8 ):
             continue 
         if want_role =="supply"and win [j ]["c"]<=win [j ]["o"]:
             continue 
+        if not body_beats_shadows (win [j ]):
+            continue 
         lo ,hi =min (win [j ]["o"],win [j ]["c"]),max (win [j ]["o"],win [j ]["c"])
         if hi <=lo :
             continue 
@@ -665,9 +727,12 @@ def order_block_zone (cd ,direction ,lookback =120 ,disp_atr_mult =1.8 ):
                 mitigated =True 
             elif lo <=k ["h"]and k ["l"]<=hi :
                 reactions +=1 
+        proven =reactions >=1 and not mitigated 
+        if require_reaction and not proven :
+            continue 
         dist_pct =abs (px -(lo if want_role =="demand"else hi ))/px *100 
         cand ={"lo":lo ,"hi":hi ,"role":want_role ,"reactions":reactions ,
-        "fresh":not mitigated ,"mitigated":mitigated ,
+        "fresh":not mitigated ,"proven":proven ,"mitigated":mitigated ,
         "dist_pct":round (dist_pct ,3 )}
         if best is None or dist_pct <best ["dist_pct"]:
             best =cand 
@@ -1346,15 +1411,30 @@ def _selftest ():
         px *=1.001 
         ob_cd .append ({"t":k *60000 ,"o":px *0.999 ,"h":px *1.002 ,
         "l":px *0.998 ,"c":px })
-    ob =order_block_zone (ob_cd ,"LONG",lookback =30 )
-    assert ob and ob ["role"]=="demand"and ob ["fresh"],ob 
     lo ,hi =min (ob_o ,ob_c ),max (ob_o ,ob_c )
+
+    assert order_block_zone (ob_cd ,"LONG",lookback =30 )is None 
+    bare =order_block_zone (ob_cd ,"LONG",lookback =30 ,require_reaction =False )
+    assert bare and bare ["proven"]is False and bare ["reactions"]==0 ,bare 
+
+    ob_cd =ob_cd +[{"t":50 *60000 ,"o":hi *1.002 ,"h":hi *1.003 ,
+    "l":lo *1.0005 ,"c":hi *1.001 }]
+    px =hi *1.001 
+    for k in range (51 ,58 ):
+        px *=1.003 
+        ob_cd .append ({"t":k *60000 ,"o":px *0.999 ,"h":px *1.002 ,
+        "l":px *0.998 ,"c":px })
+    ob =order_block_zone (ob_cd ,"LONG",lookback =30 )
+    assert ob and ob ["role"]=="demand"and ob ["fresh"]and ob ["proven"],ob 
+    assert ob ["reactions"]>=1 ,ob 
     assert abs (ob ["lo"]-lo )<1e-9 and abs (ob ["hi"]-hi )<1e-9 ,ob 
 
-    mitigated_cd =ob_cd +[{"t":51 *60000 ,"o":lo *0.9995 ,"h":lo *0.9996 ,
+    mitigated_cd =ob_cd +[{"t":58 *60000 ,"o":lo *0.9995 ,"h":lo *0.9996 ,
     "l":lo *0.997 ,"c":lo *0.997 }]
-    ob2 =order_block_zone (mitigated_cd ,"LONG",lookback =30 )
-    assert ob2 and not ob2 ["fresh"]and ob2 ["mitigated"],ob2 
+    ob2 =order_block_zone (mitigated_cd ,"LONG",lookback =30 ,require_reaction =False )
+    assert ob2 and not ob2 ["fresh"]and ob2 ["mitigated"]and not ob2 ["proven"],ob2 
+
+    assert order_block_zone (mitigated_cd ,"LONG",lookback =30 )is None 
 
     geo_cd =_flat (15 )+[{"t":15 *60000 ,"o":100 ,"h":106 ,"l":99 ,"c":104 }]
     geo =candle_geometry (geo_cd )

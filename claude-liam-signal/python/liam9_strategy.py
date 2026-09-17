@@ -1879,17 +1879,34 @@ def _selftest():
         px *= 1.001
         ob_cd.append({"t": k * 60000, "o": px * 0.999, "h": px * 1.002,
                       "l": px * 0.998, "c": px})
-    ob = order_block_zone(ob_cd, "LONG", lookback=30)
-    assert ob and ob["role"] == "demand" and ob["fresh"], ob
     lo, hi = min(ob_o, ob_c), max(ob_o, ob_c)
+    # بند ۲ تعریف حمید: زونی که قیمت هرگز به آن برنگشته اثبات‌نشده است.
+    # تا ۱۶ سپتامبر همین فیکسچر «معتبر» می‌گرفت و همان چیزی بود که حمید
+    # دید: زونِ بکر روی پنل مثل اردر بلاکِ واقعی رنگ می‌شد.
+    assert order_block_zone(ob_cd, "LONG", lookback=30) is None
+    bare = order_block_zone(ob_cd, "LONG", lookback=30, require_reaction=False)
+    assert bare and bare["proven"] is False and bare["reactions"] == 0, bare
+    # حالا قیمت به زون برمی‌گردد و از آن می‌جهد — واکنشِ اثبات‌کننده
+    ob_cd = ob_cd + [{"t": 50 * 60000, "o": hi * 1.002, "h": hi * 1.003,
+                      "l": lo * 1.0005, "c": hi * 1.001}]
+    px = hi * 1.001
+    for k in range(51, 58):
+        px *= 1.003
+        ob_cd.append({"t": k * 60000, "o": px * 0.999, "h": px * 1.002,
+                      "l": px * 0.998, "c": px})
+    ob = order_block_zone(ob_cd, "LONG", lookback=30)
+    assert ob and ob["role"] == "demand" and ob["fresh"] and ob["proven"], ob
+    assert ob["reactions"] >= 1, ob
     assert abs(ob["lo"] - lo) < 1e-9 and abs(ob["hi"] - hi) < 1e-9, ob
     # قیمت بعداً تمام‌عیار از زیر زون رد می‌شود → دیگر «تازه» نیست
     # (دامنهٔ کندل کوچک عمداً — کندل پرت، ATR پنجره را منحرف و آزمون را
     # کور می‌کند؛ همان دامنهٔ کندل‌های آرام کافی است تا لغزش زیر lo برسد)
-    mitigated_cd = ob_cd + [{"t": 51 * 60000, "o": lo * 0.9995, "h": lo * 0.9996,
+    mitigated_cd = ob_cd + [{"t": 58 * 60000, "o": lo * 0.9995, "h": lo * 0.9996,
                              "l": lo * 0.997, "c": lo * 0.997}]
-    ob2 = order_block_zone(mitigated_cd, "LONG", lookback=30)
-    assert ob2 and not ob2["fresh"] and ob2["mitigated"], ob2
+    ob2 = order_block_zone(mitigated_cd, "LONG", lookback=30, require_reaction=False)
+    assert ob2 and not ob2["fresh"] and ob2["mitigated"] and not ob2["proven"], ob2
+    # و با پیش‌فرضِ سخت، زونِ مصرف‌شده اصلاً برنمی‌گردد
+    assert order_block_zone(mitigated_cd, "LONG", lookback=30) is None
 
     # E09 هندسهٔ کندل: نسبت‌ها در بازهٔ درست و بازتولیدپذیرند
     geo_cd = _flat(15) + [{"t": 15 * 60000, "o": 100, "h": 106, "l": 99, "c": 104}]
