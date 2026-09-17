@@ -1,12 +1,12 @@
 {
- "generated": 1789630233918,
- "buckets_at": 1789630233893,
+ "generated": 1789630606261,
+ "buckets_at": 1789630606237,
  "n_agents": 9,
  "n_todo": 6,
  "todo": [
-  "lead-lag",
   "post-trade-learning",
   "data-quality",
+  "lead-lag",
   "liquidity",
   "macro-dominance",
   "research"
@@ -18,36 +18,6 @@
  ],
  "events": [],
  "rows": [
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "stale",
-     "engine": "E12",
-     "items": [
-      "pump-desk.json",
-      "pump-radar.json"
-     ]
-    },
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:trending"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/pump-desk.json",
-    "signals/pump-radar.json"
-   ],
-   "digest": "E12: 5 آیتم · 2 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending کهنه: pump-desk.json، pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): ext:trending ب"
-  },
   {
    "agent": "post-trade-learning",
    "engines": [
@@ -93,6 +63,31 @@
     "signals/skeptic.json"
    ],
    "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
+  },
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
+   ],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): e"
   },
   {
    "agent": "liquidity",
