@@ -101,7 +101,47 @@ def validate(root: Path) -> list[str]:
             for pat in secret_patterns:
                 if pat.search(text):
                     errors.append(f"possible hard-coded secret in {path.relative_to(root)}")
+    errors += _generated_drift(root)
     return errors
+
+
+def _generated_drift(root: Path) -> list:
+    """فایلِ تولیدشده از منبعش عقب نمانده باشد — همان‌جایی که ساخته می‌شود.
+
+    ریشه (۱۷ سپتامبر): `liam9_strategy.py` عوض شد و `ghoghnoos.py`
+    بازساخته نشد. دروازهٔ چرخه این را می‌گیرد — ولی **۴۰ دقیقه بعد، روی
+    رانر، و با خواباندنِ کلِ زنجیرهٔ سیگنال**. اندازه‌گیری‌شده: ~۸ ساعت
+    بی‌سیگنال. خودِ بررسی درست بود؛ جایش غلط بود.
+
+    کلاسِ عیب: هر فایلِ تولیدشده یک «قدمِ دستی» دارد که آدم باید یادش
+    بماند — همان کلاسی که قانون «علت پیش از حادثه» می‌گوید با مشتق‌کردن
+    از منبع بسته می‌شود، نه با یادآوری. این بررسی نشستِ سازنده را قبل از
+    پایان متوقف می‌کند، پس رانر هرگز نوبتش نمی‌رسد.
+
+    عمداً فقط **گزارش** می‌دهد و خودش بازنمی‌سازد: بازسازیِ خودکار،
+    واگرایی را پنهان می‌کند و سازنده هرگز نمی‌فهمد چیزی جا مانده بود.
+    """
+    py = root / "claude-liam-signal" / "python"
+    src_p, out_p = py / "liam9_strategy.py", py / "ghoghnoos.py"
+    if not (src_p.exists() and out_p.exists()):
+        return []
+    sys.path.insert(0, str(py))
+    try:
+        from hamid import build_dashboard as B          # noqa: PLC0415
+        src = src_p.read_text(encoding="utf-8")
+        body_now = "\n".join(B.banner(src, B.strip(src)).splitlines()[13:])
+        body_out = "\n".join(out_p.read_text(encoding="utf-8").splitlines()[13:])
+        if body_now != body_out:
+            return ["ghoghnoos.py از liam9_strategy.py عقب مانده — "
+                    "بدوان: python3 -m hamid.build_dashboard"]
+    except Exception:                                    # noqa: BLE001
+        # نبودنِ ابزارِ ساخت نباید هوک را بشکند؛ دروازهٔ چرخه پشتیبانِ
+        # همین بررسی است و آن‌جا وابستگی‌ها حتماً نصب‌اند.
+        return []
+    finally:
+        if sys.path and sys.path[0] == str(py):
+            sys.path.pop(0)
+    return []
 
 
 def main() -> int:
