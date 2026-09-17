@@ -24,6 +24,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 from hamid import orderblock as OB                   # noqa: E402
 from hamid import universe as U                      # noqa: E402
+from hamid import base_map as BM                     # noqa: E402
 import liam9_strategy as S                           # noqa: E402
 
 ROOT = HERE.parents[2]
@@ -47,9 +48,15 @@ for _ in range(5000):
     hi = max(o, c) * rnd.uniform(1.0, 1.02)
     lo = min(o, c) * rnd.uniform(0.98, 1.0)
     k = {"o": o, "h": hi, "l": lo, "c": c}
-    if OB.body_beats_shadows(k) != S.body_beats_shadows(k):
+    # **سه** پیاده‌سازی، نه دو. تصحیح ۱۷ سپتامبر: وقتی این پاسبان نوشته شد
+    # گفتم «یک مفهوم، دو پیاده‌سازی» و همان را بستم — ولی نقشهٔ پایه
+    # (`base_map._strong_body`) پیاده‌سازیِ سومی داشت که کسی نشمرده بود، و
+    # دقیقاً همان چیزی است که **دامیننس تتر** با آن تحلیل می‌شود. محافظی
+    # که کلاس را ناقص بشمارد، همان کلاس را باز می‌گذارد.
+    if len({OB.body_beats_shadows(k), S.body_beats_shadows(k),
+            BM._strong_body(k)}) != 1:
         diverged.append(k)
-check("«بدنه > مجموع شدوها» در پنل و ماژول مرجع یکی است (۵۰۰۰ کندل)",
+check("«بدنه > مجموع شدوها» در هر سه پیاده‌سازی یکی است (۵۰۰۰ کندل)",
       not diverged, str(diverged[:1]))
 
 # دستی: نمونه‌هایی که تعریف را نشان می‌دهند
@@ -128,6 +135,37 @@ for j in (160, 161):
 zs = S.order_block_zone(cdn, "SHORT", lookback=120)
 check("قرینهٔ شورت هم همان دو بند را رعایت می‌کند",
       zs is not None and zs["role"] == "supply" and zs["proven"], str(zs))
+
+# ── ۲ب) نقشهٔ پایه (و پس دامیننس تتر) هم بندِ اثباتِ واکنش را دارد ────────
+#
+# حمید، ۱۷ سپتامبر: «بررسی کانال تلگرام خودم برای این بود که بتونی از
+# همین روش دامیننس تتر رو تحلیل کنی.» نقشهٔ پایه همان چیزی است که USDT.D
+# با آن خوانده می‌شود، پس تعریفِ ناقصِ OB این‌جا مستقیم روی بسترِ تصمیم
+# می‌نشیند. `touched` از قبل شمرده می‌شد ولی استفاده نمی‌شد.
+_bm = series(200)
+put(_bm, 150, 99.4, 100.6)                         # کندلِ سبزِ بدنه‌دار
+for k in _bm[151:]:
+    k.update({"o": 92.0, "c": 91.8, "h": 92.1, "l": 91.6})   # قیمت پایین، برنمی‌گردد
+_bare = BM.order_block_hamid(_bm, "above")
+check("نقشهٔ پایه: زونِ بکر برمی‌گردد ولی proven=False",
+      _bare is not None and _bare["proven"] is False and _bare["touched"] == 0,
+      str(_bare))
+_bm2 = [dict(k) for k in _bm]
+for j in (160, 161):
+    put(_bm2, j, 99.0, 99.6, h=100.0, l=98.9)      # لمسِ زون = واکنش
+_pv = BM.order_block_hamid(_bm2, "above")
+check("نقشهٔ پایه: زونِ واکنش‌دیده proven=True می‌شود",
+      _pv is not None and _pv["proven"] and _pv["touched"] >= 1, str(_pv))
+_pts_bare = [p for p in BM.reaction_points({"4h": {"ob_above": _bare}})
+             if "OB" in p["kind"]]
+_pts_pv = [p for p in BM.reaction_points({"4h": {"ob_above": _pv}})
+           if "OB" in p["kind"]]
+check("زونِ اثبات‌نشده روی نقشه برچسب می‌خورد و وزنش کمتر است",
+      _pts_bare and "اثبات‌نشده" in _pts_bare[0]["kind"]
+      and _pts_bare[0]["weight"] < _pts_pv[0]["weight"],
+      f"{_pts_bare[:1]} · {_pts_pv[:1]}")
+check("زونِ بکر حذف نمی‌شود (قانون ۱ بند ۶ — چرخهٔ عمر، نه پاک‌کردن)",
+      len(_pts_bare) == 1)
 
 # ── ۳) ارزِ بلاک‌شده (دستور حمید دربارهٔ TRX) ─────────────────────────────
 check("TRX در فهرست بلاک است", "TRX" in U.BLOCKED)
