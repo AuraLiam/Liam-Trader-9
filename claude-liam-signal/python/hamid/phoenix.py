@@ -240,10 +240,21 @@ def _v_leo(s, ctx):
     if al == "against":
         return -0.8, f"اردر بلاک {ob.get('tf') or ''} مخالف جلوی راه"
     ret = (s.get("block") or {}).get("returns")
-    if ret is not None and ret >= 3:
-        return -0.5, f"بلاک {ret} بار برگشت خورده — فرسوده"
-    if s.get("inOB") or s.get("ob"):
-        return 0.4, "ورود داخل/کنار اردر بلاک"
+    if ret is None:
+        ret = s.get("visits")                        # شمارندهٔ برگشت در موتور SMC
+    if isinstance(ret, (int, float)) and ret >= 3:
+        return -0.5, f"بلاک {ret:.0f} بار برگشت خورده — فرسوده"
+    # «ورود در تماس با زون» تنها چیزی است که اسد را از حدس جدا می‌کند.
+    # وجودِ ob روی ردیف یعنی زونی ثبت شده، نه اینکه ورود کنارش باشد —
+    # اشتباهِ همین یک بند، رأی اسد را ۳٬۴۹۵ بار پشت سر هم +۰.۴ کرد.
+    if s.get("inOB") or s.get("inside") is True:
+        v = 0.6 if not (isinstance(ret, (int, float)) and ret >= 2) else 0.35
+        return v, ("ورود داخل اردر بلاک"
+                   + (f" ({ret:.0f} برگشت قبلی)" if isinstance(ret, (int, float)) and ret else ""))
+    if s.get("nearOB"):
+        return 0.3, "ورود نزدیک اردر بلاک، نه داخل آن"
+    if s.get("ob"):
+        return None, "زون ثبت شده ولی ورود در تماس با آن نیست"
     return None, "اردر بلاکی ثبت نشده"
 
 

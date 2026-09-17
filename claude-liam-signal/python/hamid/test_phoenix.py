@@ -92,6 +92,43 @@ check("دامیننس کهنه‌تر از ۹۰ دقیقه = ممتنع عقرب
 check("جوزا: نماد مستقل از BTC وزن رأیش نصف می‌شود",
       P._v_gemini(GOOD, {"btc_sens": {"ETHUSDT": {"class": "INDEPENDENT"}}})[0] == 0.35)
 
+# ── ۲ب. رأی‌دهندهٔ تک‌مقدار = عیبِ کد، نه سلیقه (۱۷ سپتامبر) ─────────────
+#
+# اندازه‌گیری: اسد در **۳٬۴۹۵ رأیِ میزِ زنده در ۲۴ ساعت دقیقاً +۰.۴** داد —
+# صد در صد، بی‌یک استثنا. علتش یک بند بود: شرطِ `s.get("inOB") or s.get("ob")`.
+# روی هر ردیفِ اسکن کلیدِ `ob` هست (زونی ثبت شده)، پس شاخهٔ دوم همیشه
+# می‌گرفت و «ورود داخل زون» با «زونی وجود دارد» یکی شمرده می‌شد. رأیی که
+# هرگز عوض نشود رأی نیست؛ فقط سقفِ اعتماد را می‌خورد.
+#
+# محافظِ ۶ سپتامبر همین کلاس را **فقط هشدار** می‌داد و ۱۱ روز کسی ندید.
+# پس این‌جا رفتاری و سخت سنجیده می‌شود: مراقبی که روی جمعیتِ متنوع هرگز
+# ممتنع نشود و همیشه یک عدد بدهد، چرخه را سرخ می‌کند.
+FLEET = [GOOD, BAD, BARE,
+         {**GOOD, "inOB": 0, "inside": False, "nearOB": 1, "premortem": {}},
+         {**GOOD, "inOB": 0, "inside": False, "nearOB": 0, "premortem": {}},
+         {**GOOD, "inOB": 0, "inside": True, "visits": 4, "premortem": {}},
+         {**GOOD, "quality": 52, "elite": False, "swept": None, "liq_map": {}},
+         {**BAD, "trend4": "down", "trend1": "down", "dir": "SHORT", "quality": 66}]
+flat = []
+for _g in [g["id"] for g in P.GUARDIANS]:
+    vals = []
+    for _s in FLEET:
+        try:
+            vals.append(P.VOTERS[_g](_s, {**CTX, "now_ms": NOW})[0])
+        except Exception:                             # noqa: BLE001
+            vals.append("ERR")
+    if None not in vals and len(set(vals)) == 1:
+        flat.append((_g, vals[0]))
+check("هیچ مراقبی روی جمعیتِ متنوع تک‌مقدار نیست (نه ممتنع، نه متغیر)",
+      not flat, str(flat))
+check("اسد: زونِ ثبت‌شده بدون تماسِ ورود = ممتنع، نه تأییدِ خودکار",
+      P._v_leo({"ob": {"low": 1, "high": 2}, "dir": "LONG"}, CTX)[0] is None)
+check("اسد: ورود داخل زون = تأیید", P._v_leo({"inOB": 1, "dir": "LONG"}, CTX)[0] > 0.5)
+check("اسد: نزدیکِ زون ضعیف‌تر از داخلِ زون است",
+      P._v_leo({"nearOB": 1, "dir": "LONG"}, CTX)[0] < P._v_leo({"inOB": 1, "dir": "LONG"}, CTX)[0])
+check("اسد: زونِ ۳ بار برگشت‌خورده = فرسوده (قانون ۱۶)",
+      P._v_leo({"inOB": 1, "visits": 3, "dir": "LONG"}, CTX)[0] < 0)
+
 # ── ۳. حکم مشاوره‌ای است: هیچ عددی عوض نمی‌شود ────────────────────────
 before = json.dumps({k: GOOD[k] for k in ("entry", "sl", "tp1", "rr", "dir")})
 P.judge(GOOD, ctx=CTX, scores=EMPTY_SCORES, now_ms=NOW)
