@@ -205,7 +205,7 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     git rev-parse -q --verify "$NEW^{commit}" >/dev/null 2>&1 || { _say "sha نامعتبر: '$NEW'"; sleep $((attempt * 4 + RANDOM % 7)); continue; }
   fi
   _say "push $(git rev-parse --short "$NEW") روی $(git rev-parse --short "$TIP")"
-  if _net git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>/dev/null; then
+  if _net git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>"$TMP/pusherr"; then
     # HEAD و فایل‌های مسیرهای منتشرشده به همان چیزی می‌رسند که منتشر شد —
     # گام‌های بعدی (مثلاً انتشار روی پنل) نسخهٔ تازهٔ origin را می‌بینند،
     # نه چک‌اوتِ کهنهٔ رانر را (درس ۲۵ اوت: pump-radar.json کهنه روی تازه).
@@ -223,7 +223,13 @@ for attempt in $(seq 1 "$ATTEMPTS"); do
     _say "منتشر شد (تلاش $attempt)"
     exit 0
   fi
-  _say "push رد شد"
+  # چرا دلیل چاپ می‌شود: «push رد شد» بی‌دلیل، شواهدِ خودش را نابود می‌کند.
+  # guardian-lab دو هفتهٔ پیاپی (۶ و ۱۳ سپتامبر) روی همین خط افتاد — هشت
+  # تلاش، هشت بار همین یک جمله، و هیچ‌کس نتوانست بفهمد رد شدن از مسابقهٔ
+  # نوک بود یا چیز دیگر. خطِ آخرِ خطای گیت همان چیزی است که این تفاوت را
+  # نشان می‌دهد (non-fast-forward در برابر مجوز/هوک/شبکه).
+  _why="$(grep -aiE 'remote:|rejected|denied|declined|error:|fatal:' "$TMP/pusherr" 2>/dev/null | tail -n 3 | tr '\n' ' ' | cut -c1-240)"
+  _say "push رد شد${_why:+ — $_why}"
   sleep $((attempt * 4 + RANDOM % 7))
 done
 _say "بعد از $ATTEMPTS تلاش منتشر نشد"

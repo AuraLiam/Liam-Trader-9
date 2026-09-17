@@ -447,6 +447,35 @@ check("کارِ هم‌زمانِ دیگران پاک نشد",
 check("مبدأ روی دیسک هم نماند", not (w.work / "signals/a.json").exists())
 w.close()
 
+# ── ۹) پوشِ ردشده دلیلش را می‌گوید (درس ۱۷ سپتامبر) ──────────────────────
+#
+# guardian-lab دو هفتهٔ پیاپی (۶ و ۱۳ سپتامبر) روی همین خط افتاد: هشت
+# تلاش و هشت بار فقط «push رد شد». خطای گیت به /dev/null می‌رفت، پس
+# نه من و نه هیچ‌کس نتوانست بفهمد رد شدن از مسابقهٔ نوک بود یا از مجوز یا
+# از هوکِ سمت سرور — و فایل ۱۲ روز کهنه ماند. مسیرِ شکستی که شواهدِ خودش
+# را نابود کند، خرابیِ بعدی را هم نامرئی می‌کند.
+w = World()
+(w.work / "signals/latest.json").write_text('{"generated": 9}')
+# هوکِ سمت سرور هر پوشی را رد می‌کند — رد شدنِ قطعی که به مجوزِ فایل
+# وابسته نیست (رانر روت است و chmod را دور می‌زند)، ولی fetch سالم می‌ماند.
+_hook = w.origin / "hooks" / "pre-receive"
+_hook.parent.mkdir(parents=True, exist_ok=True)
+_hook.write_text("#!/bin/sh\necho 'blocked by test hook' >&2\nexit 1\n")
+_hook.chmod(0o755)
+r = w.publish("signals", env={"PUBLISH_ATTEMPTS": "2"})
+log = r.stdout + r.stderr
+check("پوشِ ردشده در لاگ دیده می‌شود", "push رد شد" in log, log[-300:])
+check("و دلیلِ گیت کنارش چاپ می‌شود، نه فقط خودِ جمله",
+      any("push رد شد —" in ln for ln in log.splitlines()),
+      [ln for ln in log.splitlines() if "push رد شد" in ln][:2])
+check("دلیلِ واقعیِ رد شدن (نه فقط خبرِ رد شدن) به لاگ می‌رسد",
+      any(w in log for w in ("rejected", "declined", "denied")),
+      [ln for ln in log.splitlines() if "push رد شد" in ln][:1])
+_src_pub = PUBLISH.read_text(encoding="utf-8")
+check("خطای پوش دیگر به /dev/null نمی‌رود",
+      'git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>/dev/null' not in _src_pub)
+w.close()
+
 print()
 if FAIL:
     print(f"✗ {len(FAIL)} بررسی افتاد: {FAIL}")
