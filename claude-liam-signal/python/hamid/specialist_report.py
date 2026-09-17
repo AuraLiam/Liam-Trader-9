@@ -17,6 +17,7 @@ sys.path.insert(0, str(HERE.parent))
 ROOT = HERE.parent.parent.parent
 SRC = ROOT / "signals" / "specialist-lab.json"
 OUT = ROOT / "signals" / "specialist-report.md"
+FWD = ROOT / "signals" / "specialist-forward.json"
 
 FA_DIGIT = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
 
@@ -86,10 +87,49 @@ def render(d):
                  f"خروج‌ها: " + "، ".join(f"{k}={fa(n)}" for k, n in outs.items()))
         L.append(f"**حکم:** {r.get('verdict', '—')}\n")
 
+    L += _forward_section()
+
     L.append("\n## مرز صادقانه\n")
     L.append(d.get("boundary", ""))
     L.append("\n" + d.get("method", ""))
     return "\n".join(L)
+
+
+def _forward_section():
+    """«چقدر روی خودشان اثر گذاشتند؟» — از میز رو-به-جلو، نه از میز اصلی.
+
+    عمداً جداست: عددِ میز اصلی روی نیمهٔ دومِ تاریخ است و دو اجرای نزدیک
+    تقریباً همان داده را می‌بینند؛ تنها جایی که «بهبود» معنا دارد، پنجرهٔ
+    بعد از قفل است. نبودِ فایل «هنوز قفلی نیست» گزارش می‌شود، نه حذف
+    بی‌صدا — وگرنه خواننده فکر می‌کند این سنجه اصلاً وجود ندارد.
+    """
+    try:
+        f = json.loads(FWD.read_text(encoding="utf-8"))
+    except Exception:                                # noqa: BLE001
+        return ["\n## اثرِ خودبهبودی (میز رو-به-جلو)\n",
+                "هنوز اجرا نشده — `python3 -m hamid.specialist_forward --freeze --score`"]
+    if not f.get("ok"):
+        return ["\n## اثرِ خودبهبودی (میز رو-به-جلو)\n", f.get("why", "—")]
+    L = ["\n## اثرِ خودبهبودی — فقط روی کندلِ بعد از قفل\n",
+         f"پنجره **{fa(round((f.get('window_min') or 0) / 60, 1))} ساعت** پس از قفل "
+         f"· {fa(f.get('n_symbols'))} ارز · هر متخصص در برابر **پایهٔ خودش**\n",
+         "| متخصص | n (قفل/پایه) | قفل‌شده | پایه | اختلاف | CI۹۵ | حکم |",
+         "|---|---|---|---|---|---|---|"]
+    rows = sorted((f.get("desks") or {}).items(),
+                  key=lambda kv: (kv[1].get("diff_net") is None,
+                                  -(kv[1].get("diff_net") or 0)))
+    for _id, v in rows:
+        a, b = v.get("arm") or {}, v.get("base") or {}
+        ci = v.get("diff_ci") or [None, None]
+        L.append(f"| {v.get('fa')} | {fa(a.get('n') or 0)}/{fa(b.get('n') or 0)} | "
+                 f"{_num(a.get('net'))} | {_num(b.get('net'))} | {_num(v.get('diff_net'))} | "
+                 f"[{_num(ci[0])}, {_num(ci[1])}] | {v.get('verdict')} |")
+    sr = f.get("stop_rule") or {}
+    L.append(f"\nقاعدهٔ توقف (ثبت‌شده پیش از دیدن داده): IMPROVED = "
+             f"{sr.get('IMPROVED', '—')} · NOT_IMPROVED = {sr.get('NOT_IMPROVED', '—')}"
+             f" · z={sr.get('z')} برای {fa(sr.get('tests'))} آزمون هم‌زمان.")
+    L.append(f"\n{f.get('boundary', '')}")
+    return L
 
 
 def main(argv=()):
