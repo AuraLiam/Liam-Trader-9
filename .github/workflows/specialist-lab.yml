@@ -49,6 +49,8 @@ jobs:
         run: |
           python3 -m hamid.test_specialist_lab
           python3 -m hamid.test_orderblock_canon
+          python3 -m hamid.specialist_forward --selftest
+          python3 -m hamid.test_specialist_forward
 
       - name: اجرای ۱۲٬۰۰۰ ترید
         env:
@@ -61,6 +63,21 @@ jobs:
             --per-symbol ${{ github.event.inputs.per_symbol || '5' }} \
             ${{ (github.event.inputs.improve == 'false') && '' || '--improve' }} \
             --write | tail -40
+
+      # قفل **بعد از** اجرای آزمایشگاه: پارامترِ همین اجرا قفل می‌شود، و از
+      # آن به بعد تکان نمی‌خورد. قفلِ موجود دست‌نخورده می‌ماند — اجرای فردا
+      # اگر ایدهٔ دیگری بپسندد، پنجرهٔ رو-به-جلو را صفر نمی‌کند. بی این قید،
+      # هر اجرا قفل را از نو می‌ساخت و «چقدر روی خودش اثر گذاشت» هیچ‌وقت
+      # نمونه جمع نمی‌کرد.
+      - name: قفل پارامترها و نمرهٔ رو-به-جلو
+        env:
+          LIAM9_CANDLES: perp
+        working-directory: claude-liam-signal/python
+        run: |
+          set -o pipefail
+          python3 -m hamid.specialist_forward --freeze
+          python3 -m hamid.specialist_forward --score --write \
+            --symbols ${{ github.event.inputs.symbols || '200' }} | tail -30
 
       - name: گزارش فارسی
         working-directory: claude-liam-signal/python
@@ -76,4 +93,5 @@ jobs:
       - name: انتشار
         run: |
           bash scripts/publish.sh -m "میز متخصصین $(date -u '+%Y-%m-%d %H:%M UTC')" \
-            signals/specialist-lab.json signals/specialist-report.md brain/specialists
+            signals/specialist-lab.json signals/specialist-forward.json \
+            signals/specialist-report.md brain/specialists
