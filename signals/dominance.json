@@ -1,5 +1,5 @@
 {
- "generated": 1789717992438,
+ "generated": 1789718179549,
  "usdt_dominance": 6.819,
  "btc_dominance": 58.08,
  "chg_1h": {
@@ -11,10 +11,10 @@
   "btc": 0.02
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1759/3388 (52٪)؛ بنچمارکِ همیشه‌تخت 58٪؛ بسترِ استیبل: LONG_ALT",
+ "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 1759/3388 (52٪)؛ بنچمارکِ همیشه‌تخت 58٪؛ بسترِ استیبل: LONG_ALT",
  "macro": [],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 258,
   "bars_4h": 67,
@@ -99,41 +99,8 @@
   }
  },
  "forecast": {
-  "made_now": [
-   {
-    "metric": "USDT.D",
-    "horizon_min": 120,
-    "path": "FLAT",
-    "reasons": [
-     "هیچ شاهد جهت‌داری نیست"
-    ],
-    "p": {
-     "UP": 0.167,
-     "DOWN": 0.25,
-     "FLAT": 0.583
-    },
-    "p_claim": 0.583,
-    "p_n": 36,
-    "ev_n": 0
-   },
-   {
-    "metric": "BTC.D",
-    "horizon_min": 120,
-    "path": "FLAT",
-    "reasons": [
-     "شواهد ناهم‌جهت یا ناکافی (0↑/1↓)"
-    ],
-    "p": {
-     "UP": 0.25,
-     "DOWN": 0.438,
-     "FLAT": 0.312
-    },
-    "p_claim": 0.312,
-    "p_n": 32,
-    "ev_n": 1
-   }
-  ],
-  "graded_now": 2,
+  "made_now": [],
+  "graded_now": 0,
   "scoreboard": {
    "BTC.D|120m": {
     "n": 332,
@@ -340,7 +307,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2603,
+    "bars": 2604,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -348,7 +315,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2603,
+    "bars": 2604,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -485,9 +452,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "MARKET_RISE",
+    "why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.019,
+    "d_stable_d": -0.028,
+    "supply_growth": {
+     "USDT": -9.1e-05,
+     "USDC": -0.000581
+    },
+    "supply_growth_total": -0.000232,
+    "mcap_growth": 0.002691,
+    "usdt_d": 6.819,
+    "stable_d": 9.565,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "REDEMPTION",
@@ -509,15 +488,25 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "LONG_BIAS",
+    "why": "STABLE.D از 9.593 به 9.565 آمد (-0.028، بزرگ‌تر از میانهٔ 0.015) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.015,
+    "stable_d": 9.565,
+    "d_stable_d": -0.028,
+    "usdt_d": 6.819,
+    "d_usdt_d": -0.019,
+    "cause": "MARKET_RISE",
+    "cause_why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
+    "naive_usdt_only": "LONG_BIAS",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "LONG_BIAS",
-    "why": "STABLE.D از 9.611 به 9.565 آمد (-0.046، بزرگ‌تر از میانهٔ 0.035) — پول از حاشیه به دارایی رفته، ریسک‌آن",
+    "why": "STABLE.D از 9.611 به 9.565 آمد (-0.046، بزرگ‌تر از میانهٔ 0.036) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 240,
-    "threshold": 0.035,
+    "threshold": 0.036,
     "stable_d": 9.565,
     "d_stable_d": -0.046,
     "usdt_d": 6.819,
