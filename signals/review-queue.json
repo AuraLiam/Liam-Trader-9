@@ -1,9 +1,10 @@
 {
- "generated": 1789702406577,
- "buckets_at": 1789702406555,
+ "generated": 1789702592307,
+ "buckets_at": 1789702592284,
  "n_agents": 9,
- "n_todo": 4,
+ "n_todo": 5,
  "todo": [
+  "post-trade-learning",
   "data-quality",
   "liquidity",
   "macro-dominance",
@@ -13,11 +14,32 @@
   "execution",
   "lead-lag",
   "market-structure",
-  "order-block",
-  "post-trade-learning"
+  "order-block"
  ],
  "events": [],
  "rows": [
+  {
+   "agent": "post-trade-learning",
+   "engines": [
+    "E20",
+    "E21"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E21",
+     "items": [
+      "skills.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/skills.json"
+   ],
+   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: skills.json باز کن: signals/skills.json"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -77,19 +99,15 @@
      "items": [
       "ext:calendar",
       "state:dominance-desk.json",
-      "state:dominance-report.json",
-      "state:dominance.json",
       "state:macro-guard.json"
      ]
     }
    ],
    "read_next": [
     "signals/dominance-desk.json",
-    "signals/dominance-report.json",
-    "signals/dominance.json",
     "signals/macro-guard.json"
    ],
-   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json، ext:calendar دیدگا | E05: 4 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، ext:calendar"
+   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext:calendar باز کن: sign | E05: 4 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، ext:calendar"
   },
   {
    "agent": "research",
@@ -158,18 +176,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "post-trade-learning",
-   "engines": [
-    "E20",
-    "E21"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
