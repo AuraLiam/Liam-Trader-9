@@ -1,14 +1,14 @@
 {
- "generated": 1789798812833,
+ "generated": 1789801363762,
  "window_days": 7,
- "since": 1789194012833,
+ "since": 1789196563762,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-12": {
-    "dom_report": 19,
-    "signal": 17,
     "pump_report": 4,
+    "dom_report": 18,
+    "signal": 15,
     "outcome": 21,
     "alert": 21,
     "work_report": 3
@@ -62,15 +62,16 @@
     "work_report": 3
    },
    "2026-09-19": {
-    "signal": 7,
-    "dom_report": 6,
-    "outcome": 5
+    "signal": 8,
+    "dom_report": 7,
+    "outcome": 5,
+    "pump_report": 1
    }
   },
   "total": {
+   "pump_report": 32,
    "dom_report": 163,
-   "signal": 163,
-   "pump_report": 31,
+   "signal": 162,
    "outcome": 207,
    "alert": 131,
    "work_report": 21,
@@ -98,11 +99,11 @@
   }
  },
  "signals": {
-  "n": 163,
+  "n": 162,
   "per_day": {
    "2026-09-12": {
-    "n": 17,
-    "first": "06:44",
+    "n": 15,
+    "first": "07:25",
     "last": "23:48"
    },
    "2026-09-13": {
@@ -136,23 +137,23 @@
     "last": "22:25"
    },
    "2026-09-19": {
-    "n": 7,
+    "n": 8,
     "first": "00:17",
-    "last": "05:46"
+    "last": "06:24"
    }
   },
   "strategy": {
-   "ibs": 75,
    "smc": 87,
+   "ibs": 74,
    "hamid": 1
   },
   "tf": {
-   "5m": 155,
+   "5m": 154,
    "15m": 8
   },
   "dir": {
-   "SHORT": 66,
-   "LONG": 97
+   "LONG": 98,
+   "SHORT": 64
   },
   "hour_utc": {
    "0": 17,
@@ -160,7 +161,7 @@
    "3": 5,
    "4": 5,
    "5": 11,
-   "6": 12,
+   "6": 11,
    "7": 16,
    "8": 7,
    "9": 4,
@@ -179,18 +180,18 @@
   }
  },
  "outcomes": {
-  "sent": 163,
-  "matched": 156,
-  "unmatched": 7,
-  "match_pct": 95.7,
+  "sent": 162,
+  "matched": 154,
+  "unmatched": 8,
+  "match_pct": 95.1,
   "overall": {
-   "n": 156,
-   "mean_net": -0.1,
-   "sum_net": -15.7,
-   "win_pct": 63.5,
+   "n": 154,
+   "mean_net": -0.094,
+   "sum_net": -14.5,
+   "win_pct": 63.6,
    "outcomes": {
-    "trail": 96,
-    "stop": 27,
+    "trail": 95,
+    "stop": 26,
     "expired": 28,
     "timeout": 2,
     "target": 3
@@ -198,19 +199,6 @@
   },
   "by": {
    "strategy": {
-    "ibs": {
-     "n": 69,
-     "mean_net": -0.256,
-     "sum_net": -17.7,
-     "win_pct": 53.6,
-     "outcomes": {
-      "trail": 35,
-      "stop": 16,
-      "expired": 14,
-      "timeout": 2,
-      "target": 2
-     }
-    },
     "smc": {
      "n": 86,
      "mean_net": 0.021,
@@ -221,6 +209,19 @@
       "expired": 14,
       "stop": 11,
       "target": 1
+     }
+    },
+    "ibs": {
+     "n": 67,
+     "mean_net": -0.247,
+     "sum_net": -16.5,
+     "win_pct": 53.7,
+     "outcomes": {
+      "trail": 34,
+      "stop": 15,
+      "expired": 14,
+      "timeout": 2,
+      "target": 2
      }
     },
     "hamid": {
@@ -235,13 +236,13 @@
    },
    "tf": {
     "5m": {
-     "n": 149,
-     "mean_net": -0.092,
-     "sum_net": -13.7,
-     "win_pct": 63.8,
+     "n": 147,
+     "mean_net": -0.085,
+     "sum_net": -12.5,
+     "win_pct": 63.9,
      "outcomes": {
-      "trail": 92,
-      "stop": 25,
+      "trail": 91,
+      "stop": 24,
       "expired": 27,
       "timeout": 2,
       "target": 3
@@ -260,18 +261,6 @@
     }
    },
    "dir": {
-    "SHORT": {
-     "n": 65,
-     "mean_net": -0.179,
-     "sum_net": -11.7,
-     "win_pct": 63.1,
-     "outcomes": {
-      "trail": 40,
-      "stop": 15,
-      "expired": 9,
-      "target": 1
-     }
-    },
     "LONG": {
      "n": 91,
      "mean_net": -0.044,
@@ -284,11 +273,23 @@
       "timeout": 2,
       "target": 2
      }
+    },
+    "SHORT": {
+     "n": 63,
+     "mean_net": -0.167,
+     "sum_net": -10.5,
+     "win_pct": 63.5,
+     "outcomes": {
+      "trail": 39,
+      "expired": 9,
+      "stop": 14,
+      "target": 1
+     }
     }
    }
   },
-  "trail_zero_share_pct": 10.4,
-  "open_or_unfound": 7,
+  "trail_zero_share_pct": 10.5,
+  "open_or_unfound": 8,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
