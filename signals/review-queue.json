@@ -1,9 +1,10 @@
 {
- "generated": 1789881347112,
- "buckets_at": 1789881347084,
+ "generated": 1789882294748,
+ "buckets_at": 1789882294711,
  "n_agents": 9,
- "n_todo": 4,
+ "n_todo": 5,
  "todo": [
+  "lead-lag",
   "data-quality",
   "liquidity",
   "macro-dominance",
@@ -11,13 +12,42 @@
  ],
  "idle": [
   "execution",
-  "lead-lag",
   "market-structure",
   "order-block",
   "post-trade-learning"
  ],
  "events": [],
  "rows": [
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E12",
+     "items": [
+      "pump-desk.json",
+      "pump-radar.json"
+     ]
+    },
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:trending"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
+   ],
+   "digest": "E12: 5 آیتم · 2 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending کهنه: pump-desk.json، pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): ext:trending ب"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -31,16 +61,14 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:funnel.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
-    "signals/funnel.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:skeptic.json باز کن: signals/skeptic.json"
   },
   {
    "agent": "liquidity",
@@ -123,17 +151,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
