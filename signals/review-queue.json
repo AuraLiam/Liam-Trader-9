@@ -1,18 +1,18 @@
 {
- "generated": 1790014107404,
- "buckets_at": 1790014107377,
+ "generated": 1790014523296,
+ "buckets_at": 1790014523268,
  "n_agents": 9,
- "n_todo": 5,
+ "n_todo": 6,
  "todo": [
   "data-quality",
   "post-trade-learning",
+  "lead-lag",
   "liquidity",
   "macro-dominance",
   "research"
  ],
  "idle": [
   "execution",
-  "lead-lag",
   "market-structure",
   "order-block"
  ],
@@ -71,6 +71,34 @@
     "signals/skills.json"
    ],
    "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: skills.json باز کن: signals/skills.json"
+  },
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:trending",
+      "state:btc-sensitivity.json",
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/btc-sensitivity.json",
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
+   ],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 5 تغییر از دورِ قبل. تغییر: state:btc-sensitivity.json، state:bubbles.json، state:pump-desk.json، state:pump-radar.json، ext"
   },
   {
    "agent": "liquidity",
@@ -153,17 +181,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
