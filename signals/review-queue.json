@@ -1,53 +1,23 @@
 {
- "generated": 1790060142122,
- "buckets_at": 1790060142086,
+ "generated": 1790060382031,
+ "buckets_at": 1790060381996,
  "n_agents": 9,
- "n_todo": 7,
+ "n_todo": 6,
  "todo": [
-  "lead-lag",
   "post-trade-learning",
   "data-quality",
-  "execution",
+  "lead-lag",
   "liquidity",
   "macro-dominance",
   "research"
  ],
  "idle": [
+  "execution",
   "market-structure",
   "order-block"
  ],
  "events": [],
  "rows": [
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "stale",
-     "engine": "E12",
-     "items": [
-      "pump-desk.json",
-      "pump-radar.json"
-     ]
-    },
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:trending"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/pump-desk.json",
-    "signals/pump-radar.json"
-   ],
-   "digest": "E12: 5 آیتم · 2 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending کهنه: pump-desk.json، pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): ext:trending ب"
-  },
   {
    "agent": "post-trade-learning",
    "engines": [
@@ -83,23 +53,19 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:funnel.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
-    "signals/funnel.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:skeptic.json باز کن: signals/skeptic.json"
   },
   {
-   "agent": "execution",
+   "agent": "lead-lag",
    "engines": [
-    "E09",
-    "E11",
-    "E19"
+    "E12"
    ],
    "needs_reasoning": true,
    "priority": 2,
@@ -108,16 +74,18 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:position-watch.json",
-      "state:trail-alert.json"
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
      ]
     }
    ],
    "read_next": [
-    "signals/position-watch.json",
-    "signals/trail-alert.json"
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
    ],
-   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:position-watch.json، state:trail-alert.json باز کن: signals/position-watch.json، signals/t"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): e"
   },
   {
    "agent": "liquidity",
@@ -189,6 +157,19 @@
     "signals/scorecard.json"
    ],
    "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
+   "agent": "execution",
+   "engines": [
+    "E09",
+    "E11",
+    "E19"
+   ],
+   "needs_reasoning": false,
+   "priority": 9,
+   "reasons": [],
+   "read_next": [],
+   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
