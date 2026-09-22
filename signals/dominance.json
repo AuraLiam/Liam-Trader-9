@@ -1,5 +1,5 @@
 {
- "generated": 1790058118967,
+ "generated": 1790058308497,
  "usdt_dominance": 6.289,
  "btc_dominance": 58.78,
  "chg_1h": {
@@ -11,7 +11,7 @@
   "btc": -0.02
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رویدادهای کلان پیش رو: Unemployment Rate (43.1س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1976/3882 (51٪)؛ بنچمارکِ همیشه‌تخت 51٪؛ بسترِ استیبل: SHORT_ALT",
+ "verdict": "USDT.D خنثی است؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: Unemployment Rate (43.1س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 1976/3884 (51٪)؛ بنچمارکِ همیشه‌تخت 51٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "Unemployment Rate",
@@ -19,8 +19,8 @@
    "country": "AUD"
   }
  ],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 272,
   "bars_4h": 71,
@@ -110,36 +110,43 @@
   "made_now": [
    {
     "metric": "USDT.D",
-    "horizon_min": 120,
+    "horizon_min": 30,
     "path": "DOWN",
     "reasons": [
-     "ساختار ۱س USDT.D: down",
-     "ساختار ۴س USDT.D: down"
+     "ادعای DOWN با اعتماد کم صادر شد — کارنامهٔ همین ادعا در 50 نوبت اخیر فقط 16.0٪ اصابت داشت؛ حکم پس گرفته نشد تا نمونه‌گیری زنده بماند (بند ۱، ۲۹ اوت)",
+     "شاهد: ساختار ۱س USDT.D: down",
+     "شاهد: ساختار ۴س USDT.D: down"
     ],
     "hist": {
-     "n": 12,
-     "hit_pct": 33.3
+     "n": 50,
+     "hit_pct": 16.0
     },
-    "p": null,
-    "p_n": 12,
-    "p_why": "نمونه 12 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "low_confidence": true,
+    "confidence": 0.25,
+    "p": {
+     "UP": 0.045,
+     "DOWN": 0.159,
+     "FLAT": 0.795
+    },
+    "p_claim": 0.159,
+    "p_n": 44,
     "ev_n": 2
    },
    {
     "metric": "BTC.D",
-    "horizon_min": 120,
+    "horizon_min": 30,
     "path": "DOWN",
     "reasons": [
      "دلتای ۱س BTC.D = -0.060",
      "ساختار ۱س BTC.D: down"
     ],
     "hist": {
-     "n": 4,
-     "hit_pct": 50.0
+     "n": 13,
+     "hit_pct": 23.1
     },
     "p": null,
-    "p_n": 4,
-    "p_why": "نمونه 4 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "p_n": 13,
+    "p_why": "نمونه 13 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
     "ev_n": 2
    }
   ],
@@ -151,12 +158,12 @@
     "hit_pct": 28.6,
     "dir_n": 7,
     "dir_hit_pct": 42.9,
-    "baseline_flat_pct": 18.4,
-    "skill": 10.2,
+    "baseline_flat_pct": 18.9,
+    "skill": 9.7,
     "brier": 0.6798,
     "brier_n": 219,
-    "brier_climate": 0.6333,
-    "brier_skill": -0.0465
+    "brier_climate": 0.6355,
+    "brier_skill": -0.0443
    },
    "BTC.D|1440m": {
     "n": 20,
@@ -177,17 +184,17 @@
     "skill": 19.6
    },
    "BTC.D|30m": {
-    "n": 1416,
+    "n": 1417,
     "hit": 618,
     "hit_pct": 43.6,
     "dir_n": 27,
     "dir_hit_pct": 33.3,
-    "baseline_flat_pct": 33.3,
-    "skill": 10.3,
-    "brier": 0.6389,
-    "brier_n": 823,
-    "brier_climate": 0.6667,
-    "brier_skill": 0.0278
+    "baseline_flat_pct": 33.1,
+    "skill": 10.5,
+    "brier": 0.639,
+    "brier_n": 824,
+    "brier_climate": 0.6666,
+    "brier_skill": 0.0276
    },
    "USDT.D|120m": {
     "n": 378,
@@ -195,12 +202,12 @@
     "hit_pct": 49.7,
     "dir_n": 12,
     "dir_hit_pct": 33.3,
-    "baseline_flat_pct": 50.0,
-    "skill": -0.3,
+    "baseline_flat_pct": 51.4,
+    "skill": -1.7,
     "brier": 0.5989,
     "brier_n": 166,
-    "brier_climate": 0.625,
-    "brier_skill": 0.0261
+    "brier_climate": 0.6179,
+    "brier_skill": 0.019
    },
    "USDT.D|1440m": {
     "n": 20,
@@ -221,17 +228,17 @@
     "skill": 15.5
    },
    "USDT.D|30m": {
-    "n": 1416,
+    "n": 1417,
     "hit": 959,
     "hit_pct": 67.7,
-    "dir_n": 49,
-    "dir_hit_pct": 16.3,
-    "baseline_flat_pct": 83.7,
-    "skill": -16.0,
-    "brier": 0.3083,
-    "brier_n": 816,
-    "brier_climate": 0.2863,
-    "brier_skill": -0.022
+    "dir_n": 50,
+    "dir_hit_pct": 16.0,
+    "baseline_flat_pct": 83.8,
+    "skill": -16.1,
+    "brier": 0.308,
+    "brier_n": 817,
+    "brier_climate": 0.2846,
+    "brier_skill": -0.0234
    }
   },
   "open": 8
@@ -532,9 +539,9 @@
   "regime": {
    "1h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.005، زیر میانهٔ 0.015) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.005، زیر میانهٔ 0.016) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "threshold": 0.015,
+    "threshold": 0.016,
     "stable_d": 8.851,
     "d_stable_d": -0.005,
     "usdt_d": 6.289,
@@ -546,10 +553,10 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 8.822 به 8.851 رفت (+0.029، بالاتر از میانهٔ 0.026) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (+0.029، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.026,
+    "threshold": 0.034,
     "stable_d": 8.851,
     "d_stable_d": 0.029,
     "usdt_d": 6.289,
@@ -557,17 +564,17 @@
     "cause": "REDEMPTION",
     "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "naive_usdt_only": "NEUTRAL",
-    "disagrees_with_naive": true,
+    "disagrees_with_naive": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "alt_stance": {
-   "stance": "SHORT_ALT",
-   "why": "پول به استیبل رفته — ریسک‌آف",
-   "bias": "SHORT_BIAS",
+   "stance": "NEUTRAL",
+   "why": "STABLE.D تقریباً ثابت (+0.029، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
+   "bias": "NEUTRAL",
    "d_btc_d": -0.02,
    "cause": "REDEMPTION",
-   "disagrees_with_naive": true,
+   "disagrees_with_naive": false,
    "stable_d": 8.851,
    "d_stable_d": 0.029,
    "usdt_d": 6.289,
