@@ -1,23 +1,187 @@
 {
- "generated": 1790073589964,
- "buckets_at": 1790073589926,
- "n_agents": 9,
- "n_todo": 5,
+ "generated": 1790076578688,
+ "buckets_at": 1790076578653,
+ "n_agents": 14,
+ "n_todo": 9,
  "todo": [
-  "post-trade-learning",
-  "data-quality",
-  "liquidity",
+  "E11",
+  "E16",
+  "E18",
+  "E18",
+  "E22",
   "macro-dominance",
-  "research"
+  "post-trade-learning",
+  "research",
+  "data-quality"
  ],
  "idle": [
   "execution",
   "lead-lag",
+  "liquidity",
   "market-structure",
   "order-block"
  ],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-09-22 10:33 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  },
+  {
+   "kind": "verdict_flip",
+   "what": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED",
+   "read": [
+    "signals/geometry-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E11",
+   "engines": [
+    "E11"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E16",
+   "engines": [
+    "E16"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-22 10:33 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-09-22 10:33 UTC"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-22 10:33 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-09-22 10:33 UTC"
+  },
+  {
+   "agent": "macro-dominance",
+   "engines": [
+    "E03",
+    "E04",
+    "E05"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E05",
+     "items": [
+      "market-stance.json"
+     ]
+    },
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:calendar",
+      "state:dominance-desk.json",
+      "state:dominance.json",
+      "state:macro-guard.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/dominance-desk.json",
+    "signals/dominance.json",
+    "signals/macro-guard.json",
+    "signals/market-stance.json"
+   ],
+   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext"
+  },
   {
    "agent": "post-trade-learning",
    "engines": [
@@ -51,6 +215,44 @@
    "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json باز کن: signals/direction-lessons.json | E21: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json، skills.json باز کن: signals/learning-proof.json، signals/skills.json"
   },
   {
+   "agent": "research",
+   "engines": [
+    "E22",
+    "E13"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:scorecard.json"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-22 10:33 UTC"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json",
+    "signals/scorecard.json"
+   ],
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
    "agent": "data-quality",
    "engines": [
     "E02",
@@ -75,75 +277,6 @@
    "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
   },
   {
-   "agent": "liquidity",
-   "engines": [
-    "E10"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:funding"
-     ]
-    }
-   ],
-   "read_next": [],
-   "digest": "E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:funding باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "macro-dominance",
-   "engines": [
-    "E03",
-    "E04",
-    "E05"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:calendar",
-      "state:dominance-desk.json",
-      "state:dominance.json",
-      "state:macro-guard.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/dominance-desk.json",
-    "signals/dominance.json",
-    "signals/macro-guard.json"
-   ],
-   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext | E05: 4 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، ext:calendar"
-  },
-  {
-   "agent": "research",
-   "engines": [
-    "E22",
-    "E13"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:scorecard.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/scorecard.json"
-   ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
    "agent": "execution",
    "engines": [
     "E09",
@@ -166,6 +299,17 @@
    "reasons": [],
    "read_next": [],
    "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
+   "agent": "liquidity",
+   "engines": [
+    "E10"
+   ],
+   "needs_reasoning": false,
+   "priority": 9,
+   "reasons": [],
+   "read_next": [],
+   "digest": "E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
@@ -193,7 +337,7 @@
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1789992553840,
+  "generated": 1790076356113,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "UNDECIDED",
@@ -205,7 +349,7 @@
    "widebuf|long": "UNDECIDED",
    "widebuf|short": "REJECT",
    "ibs|overall": "PROMOTE",
-   "ibs|long": "PROMOTE",
+   "ibs|long": "UNDECIDED",
    "ibs|short": "PROMOTE",
    "ibs_g2|overall": "PROMOTE",
    "ibs_g2|long": "UNDECIDED",
