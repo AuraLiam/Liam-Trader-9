@@ -1,5 +1,5 @@
 {
- "generated": 1790094796042,
+ "generated": 1790095000092,
  "usdt_dominance": 6.247,
  "btc_dominance": 58.93,
  "chg_1h": {
@@ -11,7 +11,7 @@
   "btc": 0.05
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ BTC.D بالا: پول از آلت به بیت‌کوین؛ رویدادهای کلان پیش رو: Unemployment Rate (32.9س) + SNB Policy Rate (38.9س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down)؛ کارنامهٔ پیش‌بینی: 1992/3936 (51٪)؛ بنچمارکِ همیشه‌تخت 49٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ BTC.D بالا: پول از آلت به بیت‌کوین؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: Unemployment Rate (32.9س) + SNB Policy Rate (38.9س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down)؛ کارنامهٔ پیش‌بینی: 1992/3938 (51٪)؛ بنچمارکِ همیشه‌تخت 49٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "Unemployment Rate",
@@ -24,8 +24,8 @@
    "country": "CHF"
   }
  ],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 274,
   "bars_4h": 72,
@@ -113,21 +113,55 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 120,
+    "path": "DOWN",
+    "reasons": [
+     "ساختار ۱س USDT.D: down",
+     "ساختار ۴س USDT.D: down"
+    ],
+    "hist": {
+     "n": 17,
+     "hit_pct": 29.4
+    },
+    "p": null,
+    "p_n": 17,
+    "p_why": "نمونه 17 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.414,
+     "DOWN": 0.414,
+     "FLAT": 0.172
+    },
+    "p_claim": 0.172,
+    "p_n": 29,
+    "ev_n": 2
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
-    "n": 382,
+    "n": 383,
     "hit": 108,
-    "hit_pct": 28.3,
+    "hit_pct": 28.2,
     "dir_n": 8,
     "dir_hit_pct": 37.5,
-    "baseline_flat_pct": 16.7,
-    "skill": 11.6,
-    "brier": 0.6784,
-    "brier_n": 222,
-    "brier_climate": 0.625,
-    "brier_skill": -0.0534
+    "baseline_flat_pct": 16.2,
+    "skill": 12.0,
+    "brier": 0.6783,
+    "brier_n": 223,
+    "brier_climate": 0.6227,
+    "brier_skill": -0.0556
    },
    "BTC.D|1440m": {
     "n": 20,
@@ -153,25 +187,25 @@
     "hit_pct": 43.7,
     "dir_n": 32,
     "dir_hit_pct": 37.5,
-    "baseline_flat_pct": 33.8,
-    "skill": 9.9,
+    "baseline_flat_pct": 33.3,
+    "skill": 10.4,
     "brier": 0.6396,
     "brier_n": 838,
-    "brier_climate": 0.6666,
-    "brier_skill": 0.027
+    "brier_climate": 0.6667,
+    "brier_skill": 0.0271
    },
    "USDT.D|120m": {
-    "n": 382,
+    "n": 383,
     "hit": 189,
-    "hit_pct": 49.5,
-    "dir_n": 16,
-    "dir_hit_pct": 31.2,
-    "baseline_flat_pct": 50.0,
-    "skill": -0.5,
+    "hit_pct": 49.3,
+    "dir_n": 17,
+    "dir_hit_pct": 29.4,
+    "baseline_flat_pct": 51.4,
+    "skill": -2.1,
     "brier": 0.5989,
     "brier_n": 166,
-    "brier_climate": 0.625,
-    "brier_skill": 0.0261
+    "brier_climate": 0.6179,
+    "brier_skill": 0.019
    },
    "USDT.D|1440m": {
     "n": 20,
@@ -197,12 +231,12 @@
     "hit_pct": 67.1,
     "dir_n": 69,
     "dir_hit_pct": 17.4,
-    "baseline_flat_pct": 78.9,
-    "skill": -11.8,
+    "baseline_flat_pct": 78.7,
+    "skill": -11.6,
     "brier": 0.3157,
     "brier_n": 836,
-    "brier_climate": 0.3556,
-    "brier_skill": 0.0399
+    "brier_climate": 0.3576,
+    "brier_skill": 0.0419
    }
   },
   "open": 8
@@ -321,7 +355,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2662,
+    "bars": 2663,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -329,7 +363,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2662,
+    "bars": 2663,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -503,9 +537,9 @@
   "regime": {
    "1h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 8.759 به 8.788 رفت (+0.029، بالاتر از میانهٔ 0.014) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 8.759 به 8.788 رفت (+0.029، بالاتر از میانهٔ 0.013) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 60,
-    "threshold": 0.014,
+    "threshold": 0.013,
     "stable_d": 8.788,
     "d_stable_d": 0.029,
     "usdt_d": 6.247,
@@ -518,9 +552,9 @@
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.039) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.043) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.039,
+    "threshold": 0.043,
     "stable_d": 8.788,
     "d_stable_d": -0.003,
     "usdt_d": 6.247,
@@ -534,7 +568,7 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.039) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.043) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
    "d_btc_d": 0.05,
    "cause": "REDEMPTION",
