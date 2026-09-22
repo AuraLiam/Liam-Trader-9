@@ -1,19 +1,19 @@
 {
- "generated": 1790086965354,
- "buckets_at": 1790086965322,
+ "generated": 1790087243633,
+ "buckets_at": 1790087243601,
  "n_agents": 9,
- "n_todo": 7,
+ "n_todo": 6,
  "todo": [
   "macro-dominance",
   "order-block",
   "post-trade-learning",
+  "research",
   "data-quality",
-  "lead-lag",
-  "liquidity",
-  "research"
+  "liquidity"
  ],
  "idle": [
   "execution",
+  "lead-lag",
   "market-structure"
  ],
  "events": [],
@@ -88,7 +88,8 @@
      "kind": "stale",
      "engine": "E20",
      "items": [
-      "direction-lessons.json"
+      "direction-lessons.json",
+      "loss-analysis.json"
      ]
     },
     {
@@ -103,9 +104,40 @@
    "read_next": [
     "signals/direction-lessons.json",
     "signals/learning-proof.json",
+    "signals/loss-analysis.json",
     "signals/skills.json"
    ],
-   "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json باز کن: signals/direction-lessons.json | E21: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json، skills.json باز کن: signals/learning-proof.json، signals/skills.json"
+   "digest": "E20: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json باز کن: signals/direction-lessons.json، signals/loss-a | E21: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json، skills.json باز کن: signals/learning-proof.json، signals/skills.json"
+  },
+  {
+   "agent": "research",
+   "engines": [
+    "E22",
+    "E13"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E22",
+     "items": [
+      "rewards.json"
+     ]
+    },
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:scorecard.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/rewards.json",
+    "signals/scorecard.json"
+   ],
+   "digest": "E22: 9 آیتم · 8 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: rewards.json باز کن: signals/rewards.json، signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "data-quality",
@@ -120,36 +152,16 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:funnel.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
+    "signals/funnel.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:skeptic.json باز کن: signals/skeptic.json"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:trending",
-      "state:btc-sensitivity.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/btc-sensitivity.json"
-   ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:btc-sensitivity.json، ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: sig"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
   },
   {
    "agent": "liquidity",
@@ -171,28 +183,6 @@
    "digest": "E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:funding باز کن: هیچ — چیزی عوض نشده"
   },
   {
-   "agent": "research",
-   "engines": [
-    "E22",
-    "E13"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:scorecard.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/scorecard.json"
-   ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
    "agent": "execution",
    "engines": [
     "E09",
@@ -204,6 +194,17 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": false,
+   "priority": 9,
+   "reasons": [],
+   "read_next": [],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
