@@ -1,38 +1,38 @@
 {
- "generated": 1790142557804,
- "usdt_dominance": 6.182,
- "btc_dominance": 58.71,
+ "generated": 1790147038462,
+ "usdt_dominance": 6.193,
+ "btc_dominance": 58.65,
  "chg_1h": {
-  "usdt": 0.028,
-  "btc": -0.02
+  "usdt": -0.004,
+  "btc": -0.05
  },
  "chg_4h": {
-  "usdt": -0.022,
-  "btc": -0.03
+  "usdt": -0.002,
+  "btc": -0.05
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: Unemployment Rate (19.7س) + SNB Policy Rate (25.7س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 2021/4006 (50٪)؛ بنچمارکِ همیشه‌تخت 50٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رویدادهای کلان پیش رو: Unemployment Rate (18.4س) + SNB Policy Rate (24.4س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down)؛ کارنامهٔ پیش‌بینی: 2025/4014 (50٪)؛ بنچمارکِ همیشه‌تخت 51٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "Unemployment Rate",
-   "in_hours": 19.7,
+   "in_hours": 18.4,
    "country": "AUD"
   },
   {
    "title": "SNB Policy Rate",
-   "in_hours": 25.7,
+   "in_hours": 24.4,
    "country": "CHF"
   }
  ],
- "calendar_ok": "CACHED",
- "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
+ "calendar_ok": true,
+ "calendar_why": null,
  "structure": {
-  "bars_1h": 277,
+  "bars_1h": 278,
   "bars_4h": 72,
-  "regime": "RANGE",
+  "regime": "BULLISH",
   "usdt": {
-   "trend_1h": "range",
-   "px": 6.15,
+   "trend_1h": "down",
+   "px": 6.193,
    "level_above": 6.232,
    "level_below": null,
    "trend_4h": "down"
@@ -40,7 +40,8 @@
   "btc_d": {
    "trend_1h": "down"
   },
-  "why": "USDT.D ساختار ۱س range · ۴س down · BTC.D ۱س down"
+  "why": "USDT.D ساختار ۱س down · ۴س down · BTC.D ۱س down",
+  "invalidation": "ابطال رژیم: بازگشت USDT.D بالای 6.232"
  },
  "multi_tf": {
   "usdt": {
@@ -60,18 +61,18 @@
     }
    },
    "1h": {
-    "trend": "range",
-    "px": 6.15,
+    "trend": "down",
+    "px": 6.193,
     "levels_above": [
      6.232,
-     6.951
+     6.885
     ],
     "levels_below": [],
     "trendline": {
      "kind": "resistance",
-     "touches": 7,
+     "touches": 3,
      "broken": false,
-     "value_now": 6.186
+     "value_now": 6.167
     }
    }
   },
@@ -92,7 +93,7 @@
    },
    "1h": {
     "trend": "down",
-    "px": 58.73,
+    "px": 58.65,
     "levels_above": [
      58.8,
      59.0
@@ -103,29 +104,98 @@
     ],
     "trendline": {
      "kind": "support",
-     "touches": 3,
-     "broken": false,
-     "value_now": 58.744
+     "touches": 10,
+     "broken": true,
+     "value_now": 59.05
     }
    }
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 120,
+    "path": "DOWN",
+    "reasons": [
+     "ساختار ۱س USDT.D: down",
+     "ساختار ۴س USDT.D: down"
+    ],
+    "hist": {
+     "n": 20,
+     "hit_pct": 30.0
+    },
+    "p": null,
+    "p_n": 20,
+    "p_why": "نمونه 20 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   },
+   {
+    "metric": "USDT.D",
+    "horizon_min": 240,
+    "path": "DOWN",
+    "reasons": [
+     "ساختار ۱س USDT.D: down",
+     "ساختار ۴س USDT.D: down"
+    ],
+    "hist": {
+     "n": 10,
+     "hit_pct": 70.0
+    },
+    "p": null,
+    "p_n": 10,
+    "p_why": "نمونه 10 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 120,
+    "path": "DOWN",
+    "reasons": [
+     "دلتای ۱س BTC.D = -0.050",
+     "ساختار ۱س BTC.D: down"
+    ],
+    "hist": {
+     "n": 5,
+     "hit_pct": 40.0
+    },
+    "p": null,
+    "p_n": 5,
+    "p_why": "نمونه 5 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 240,
+    "path": "DOWN",
+    "reasons": [
+     "دلتای ۱س BTC.D = -0.050",
+     "ساختار ۱س BTC.D: down"
+    ],
+    "hist": {
+     "n": 1,
+     "hit_pct": 0.0
+    },
+    "p": null,
+    "p_n": 1,
+    "p_why": "نمونه 1 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   }
+  ],
+  "graded_now": 4,
   "scoreboard": {
    "BTC.D|120m": {
-    "n": 389,
+    "n": 390,
     "hit": 110,
-    "hit_pct": 28.3,
-    "dir_n": 7,
-    "dir_hit_pct": 42.9,
+    "hit_pct": 28.2,
+    "dir_n": 6,
+    "dir_hit_pct": 33.3,
     "baseline_flat_pct": 18.9,
-    "skill": 9.4,
-    "brier": 0.6783,
-    "brier_n": 229,
+    "skill": 9.3,
+    "brier": 0.6773,
+    "brier_n": 230,
     "brier_climate": 0.6355,
-    "brier_skill": -0.0428
+    "brier_skill": -0.0418
    },
    "BTC.D|1440m": {
     "n": 21,
@@ -137,35 +207,35 @@
     "skill": -4.7
    },
    "BTC.D|240m": {
-    "n": 133,
+    "n": 134,
     "hit": 32,
-    "hit_pct": 24.1,
+    "hit_pct": 23.9,
     "dir_n": 3,
     "dir_hit_pct": 33.3,
-    "baseline_flat_pct": 11.1,
-    "skill": 13.0
+    "baseline_flat_pct": 10.5,
+    "skill": 13.4
    },
    "BTC.D|30m": {
-    "n": 1460,
-    "hit": 637,
+    "n": 1462,
+    "hit": 638,
     "hit_pct": 43.6,
-    "dir_n": 27,
-    "dir_hit_pct": 37.0,
-    "baseline_flat_pct": 35.9,
-    "skill": 7.7,
+    "dir_n": 25,
+    "dir_hit_pct": 40.0,
+    "baseline_flat_pct": 35.5,
+    "skill": 8.1,
     "brier": 0.6412,
-    "brier_n": 860,
-    "brier_climate": 0.6657,
-    "brier_skill": 0.0245
+    "brier_n": 861,
+    "brier_climate": 0.666,
+    "brier_skill": 0.0248
    },
    "USDT.D|120m": {
-    "n": 389,
+    "n": 390,
     "hit": 191,
-    "hit_pct": 49.1,
+    "hit_pct": 49.0,
     "dir_n": 20,
     "dir_hit_pct": 30.0,
     "baseline_flat_pct": 51.4,
-    "skill": -2.3,
+    "skill": -2.4,
     "brier": 0.5989,
     "brier_n": 166,
     "brier_climate": 0.6179,
@@ -181,26 +251,26 @@
     "skill": -14.3
    },
    "USDT.D|240m": {
-    "n": 133,
-    "hit": 65,
-    "hit_pct": 48.9,
+    "n": 134,
+    "hit": 66,
+    "hit_pct": 49.3,
     "dir_n": 10,
     "dir_hit_pct": 70.0,
-    "baseline_flat_pct": 22.2,
-    "skill": 26.7
+    "baseline_flat_pct": 26.3,
+    "skill": 23.0
    },
    "USDT.D|30m": {
-    "n": 1460,
-    "hit": 976,
-    "hit_pct": 66.8,
+    "n": 1462,
+    "hit": 978,
+    "hit_pct": 66.9,
     "dir_n": 79,
     "dir_hit_pct": 15.2,
-    "baseline_flat_pct": 79.6,
-    "skill": -12.8,
-    "brier": 0.3103,
-    "brier_n": 860,
-    "brier_climate": 0.3459,
-    "brier_skill": 0.0356
+    "baseline_flat_pct": 80.1,
+    "skill": -13.2,
+    "brier": 0.3096,
+    "brier_n": 862,
+    "brier_climate": 0.338,
+    "brier_skill": 0.0284
    }
   },
   "open": 8
@@ -209,17 +279,17 @@
   "60m": {
    "status": "OK",
    "minutes": 60,
-   "usdt_d_from": 6.154,
-   "usdt_d_to": 6.182,
-   "d_dom_pct": 0.454,
-   "supply_effect_pct": 0.182,
-   "mcap_effect_pct": 0.272,
-   "supply_share": 0.4,
-   "mcap_share": 0.6,
-   "supply_usd_from": 182498727208,
-   "supply_usd_to": 182830329426,
-   "mcap_usd_from": 2965530178870,
-   "mcap_usd_to": 2957462462405,
+   "usdt_d_from": 6.197,
+   "usdt_d_to": 6.193,
+   "d_dom_pct": -0.065,
+   "supply_effect_pct": 0.076,
+   "mcap_effect_pct": -0.141,
+   "supply_share": 0.351,
+   "mcap_share": 0.649,
+   "supply_usd_from": 182627948678,
+   "supply_usd_to": 182767282835,
+   "mcap_usd_from": 2947038061608,
+   "mcap_usd_to": 2951191390848,
    "label": "MIXED",
    "story": "هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
@@ -227,35 +297,35 @@
   "240m": {
    "status": "OK",
    "minutes": 240,
-   "usdt_d_from": 6.204,
-   "usdt_d_to": 6.182,
-   "d_dom_pct": -0.355,
-   "supply_effect_pct": 0.177,
-   "mcap_effect_pct": -0.533,
-   "supply_share": 0.25,
-   "mcap_share": 0.75,
-   "supply_usd_from": 182506278200,
-   "supply_usd_to": 182830329426,
-   "mcap_usd_from": 2941751744030,
-   "mcap_usd_to": 2957462462405,
-   "label": "MARKET_DRIVEN",
-   "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده",
+   "usdt_d_from": 6.195,
+   "usdt_d_to": 6.193,
+   "d_dom_pct": -0.032,
+   "supply_effect_pct": -0.111,
+   "mcap_effect_pct": 0.079,
+   "supply_share": 0.585,
+   "mcap_share": 0.415,
+   "supply_usd_from": 182971175758,
+   "supply_usd_to": 182767282835,
+   "mcap_usd_from": 2953529875027,
+   "mcap_usd_to": 2951191390848,
+   "label": "FLAT",
+   "story": "دامیننس تتر در این بازه تکان معناداری نخورد",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
   },
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.276,
-   "usdt_d_to": 6.182,
-   "d_dom_pct": -1.509,
-   "supply_effect_pct": -0.076,
-   "mcap_effect_pct": -1.433,
-   "supply_share": 0.05,
-   "mcap_share": 0.95,
-   "supply_usd_from": 182969548964,
-   "supply_usd_to": 182830329426,
-   "mcap_usd_from": 2915384782733,
-   "mcap_usd_to": 2957462462405,
+   "usdt_d_from": 6.282,
+   "usdt_d_to": 6.193,
+   "d_dom_pct": -1.427,
+   "supply_effect_pct": 0.151,
+   "mcap_effect_pct": -1.577,
+   "supply_share": 0.087,
+   "mcap_share": 0.913,
+   "supply_usd_from": 182492372506,
+   "supply_usd_to": 182767282835,
+   "mcap_usd_from": 2905004337886,
+   "mcap_usd_to": 2951191390848,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
@@ -264,23 +334,23 @@
    "240m": {
     "status": "OK",
     "minutes": 240,
-    "usdt_d_delta": -0.022,
-    "usdc_d_delta": -0.01,
-    "usdt_d": 6.182,
-    "usdc_d": 2.537,
-    "label": "PARTIAL",
-    "story": "فقط یکی از دو استیبل حرکت کرده — شاهدِ ضعیف، نه حکم",
+    "usdt_d_delta": -0.002,
+    "usdc_d_delta": -0.001,
+    "usdt_d": 6.193,
+    "usdc_d": 2.541,
+    "label": "FLAT",
+    "story": "هیچ‌کدام از دو استیبل تکان معناداری نخوردند",
     "limit": "شاهد است نه دروازه؛ منبع: CoinGecko global."
    },
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": -0.094,
-    "usdc_d_delta": -0.021,
-    "usdt_d": 6.182,
-    "usdc_d": 2.537,
-    "label": "RISK_ON",
-    "story": "هر دو استیبل پایین — پول از حاشیه به بازار برگشته",
+    "usdt_d_delta": -0.089,
+    "usdc_d_delta": -0.019,
+    "usdt_d": 6.193,
+    "usdc_d": 2.541,
+    "label": "PARTIAL",
+    "story": "فقط یکی از دو استیبل حرکت کرده — شاهدِ ضعیف، نه حکم",
     "limit": "شاهد است نه دروازه؛ منبع: CoinGecko global."
    }
   },
@@ -288,13 +358,13 @@
    "240m": {
     "status": "OK",
     "minutes": 240,
-    "total_pct": 0.534,
-    "total2_pct": 0.607,
-    "total3_pct": 0.669,
-    "gap_t3_total": 0.135,
-    "total_usd": 2957462462405,
-    "total2_usd": 1221136250727,
-    "total3_usd": 884577022505,
+    "total_pct": -0.079,
+    "total2_pct": 0.042,
+    "total3_pct": 0.221,
+    "gap_t3_total": 0.301,
+    "total_usd": 2951191390848,
+    "total2_usd": 1220317640116,
+    "total3_usd": 885357417254,
     "label": "BROAD",
     "story": "کل بازار و آلت‌ها تقریباً هم‌قدم‌اند",
     "limit": "توصیفی است، نه دروازه؛ از همان فراخوان جهانی ساخته شده و منبع تازه‌ای ادعا نمی‌کند."
@@ -302,15 +372,15 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": 1.443,
-    "total2_pct": 1.665,
-    "total3_pct": 1.92,
-    "gap_t3_total": 0.477,
-    "total_usd": 2957462462405,
-    "total2_usd": 1221136250727,
-    "total3_usd": 884577022505,
-    "label": "BROAD",
-    "story": "کل بازار و آلت‌ها تقریباً هم‌قدم‌اند",
+    "total_pct": 1.59,
+    "total2_pct": 1.91,
+    "total3_pct": 2.306,
+    "gap_t3_total": 0.716,
+    "total_usd": 2951191390848,
+    "total2_usd": 1220317640116,
+    "total3_usd": 885357417254,
+    "label": "ALT_BREADTH",
+    "story": "آلت‌ها از کل بازار جلوترند — رشد عرضی است، نه فقط سرهای بزرگ",
     "limit": "توصیفی است، نه دروازه؛ از همان فراخوان جهانی ساخته شده و منبع تازه‌ای ادعا نمی‌کند."
    }
   }
@@ -319,7 +389,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2672,
+    "bars": 2671,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -327,7 +397,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2672,
+    "bars": 2671,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -337,79 +407,79 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1082,
+    "bars": 1083,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "down",
-    "px": 6.182,
+    "px": 6.193,
     "threshold": 0.011,
     "threshold_stats": {
-     "n": 1081,
+     "n": 1082,
      "pctl": 0.75,
      "median": 0.005,
      "p90": 0.018
     },
-    "delta": 0.009,
+    "delta": -0.004,
     "meaningful": false,
     "regime": "BULLISH",
-    "note": "USDT.D در 15m: روند down → رژیم BULLISH؛ تغییر آخرین کندل +0.0090 در برابر آستانهٔ 0.0110 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 15m: روند down → رژیم BULLISH؛ تغییر آخرین کندل -0.0040 در برابر آستانهٔ 0.0110 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1082,
+    "bars": 1083,
     "pts_per_bar": 4.0,
     "resolution_ok": true,
     "trend": "down",
-    "px": 58.71,
+    "px": 58.65,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1081,
+     "n": 1082,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.04
     },
-    "delta": -0.02,
-    "meaningful": true,
-    "note": "BTC.D در 15m: روند down؛ تغییر آخرین کندل -0.0200"
+    "delta": -0.01,
+    "meaningful": false,
+    "note": "BTC.D در 15m: روند down؛ تغییر آخرین کندل -0.0100"
    }
   },
   "1h": {
    "usdt": {
     "tf": "1h",
-    "bars": 277,
-    "pts_per_bar": 15.0,
-    "resolution_ok": true,
-    "trend": "range",
-    "px": 6.15,
-    "threshold": 0.022,
-    "threshold_stats": {
-     "n": 276,
-     "pctl": 0.75,
-     "median": 0.0105,
-     "p90": 0.042
-    },
-    "delta": -0.024,
-    "meaningful": true,
-    "regime": "RANGE",
-    "note": "USDT.D در 1h: روند range → رژیم RANGE؛ تغییر آخرین کندل -0.0240 در برابر آستانهٔ 0.0220 (صدک 0.75 همین تایم‌فریم)"
-   },
-   "btc_d": {
-    "tf": "1h",
-    "bars": 277,
+    "bars": 278,
     "pts_per_bar": 15.0,
     "resolution_ok": true,
     "trend": "down",
-    "px": 58.73,
+    "px": 6.193,
+    "threshold": 0.022,
+    "threshold_stats": {
+     "n": 277,
+     "pctl": 0.75,
+     "median": 0.011,
+     "p90": 0.042
+    },
+    "delta": 0.011,
+    "meaningful": false,
+    "regime": "BULLISH",
+    "note": "USDT.D در 1h: روند down → رژیم BULLISH؛ تغییر آخرین کندل +0.0110 در برابر آستانهٔ 0.0220 (صدک 0.75 همین تایم‌فریم)"
+   },
+   "btc_d": {
+    "tf": "1h",
+    "bars": 278,
+    "pts_per_bar": 15.0,
+    "resolution_ok": true,
+    "trend": "down",
+    "px": 58.65,
     "threshold": 0.05,
     "threshold_stats": {
-     "n": 276,
+     "n": 277,
      "pctl": 0.75,
      "median": 0.03,
-     "p90": 0.11
+     "p90": 0.1
     },
-    "delta": 0.06,
+    "delta": -0.06,
     "meaningful": true,
-    "note": "BTC.D در 1h: روند down؛ تغییر آخرین کندل +0.0600"
+    "note": "BTC.D در 1h: روند down؛ تغییر آخرین کندل -0.0600"
    }
   },
   "4h": {
@@ -457,74 +527,74 @@
   "boundary": "شاهد است نه دروازه در مسیر سیگنالِ زندهٔ پنل (قانون ۰۳)؛ در موتور شورتِ داشبورد با دستور صریح حمید (۸ سپتامبر) دروازه است.",
   "method": "چرخش فقط روی **عرضه** دیده می‌شود نه روی نسبت — دو نسبت مخرجِ مشترک دارند و ریزشِ بازار هر دو را با هم بالا می‌برد (همبستگیِ نسبت‌ها +۰.۹۸۹).",
   "measured": "۸ سپتامبر روی ۲٬۸۶۶ نقطه (۲۹ اوت–۸ سپتامبر): از ۵۶ موردِ رشدِ USDT.D در افق ۱س، صفر مورد چرخش بود و ۳۲ مورد (۵۷٪) ریزشِ مخرج. یعنی چرخش در این پنجره رخ نداده — نه این‌که ناممکن باشد.",
-  "stable_d": 8.719,
+  "stable_d": 8.734,
   "parts": {
-   "USDT": 6.182,
-   "USDC": 2.537
+   "USDT": 6.193,
+   "USDC": 2.541
   },
   "cause": {
    "1h": {
     "cause": "NEW_MONEY",
     "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "window_min": 60,
-    "d_usdt_d": 0.028,
-    "d_stable_d": 0.039,
+    "d_usdt_d": 0.01,
+    "d_stable_d": 0.013,
     "supply_growth": {
-     "USDT": 0.001815,
-     "USDC": 0.001621
+     "USDT": 0.002205,
+     "USDC": 0.00177
     },
-    "supply_growth_total": 0.001759,
-    "mcap_growth": -0.002724,
-    "usdt_d": 6.182,
-    "stable_d": 8.719,
+    "supply_growth_total": 0.002079,
+    "mcap_growth": 0.000589,
+    "usdt_d": 6.193,
+    "stable_d": 8.734,
     "misleading": true,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "cause": "NEW_MONEY",
-    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "cause": "REDEMPTION",
+    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "window_min": 240,
-    "d_usdt_d": -0.022,
-    "d_stable_d": -0.032,
+    "d_usdt_d": -0.002,
+    "d_stable_d": -0.003,
     "supply_growth": {
-     "USDT": 0.001774,
-     "USDC": 0.001392
+     "USDT": -0.001115,
+     "USDC": -0.001186
     },
-    "supply_growth_total": 0.001663,
-    "mcap_growth": 0.005326,
-    "usdt_d": 6.182,
-    "stable_d": 8.719,
-    "misleading": true,
+    "supply_growth_total": -0.001135,
+    "mcap_growth": -0.000792,
+    "usdt_d": 6.193,
+    "stable_d": 8.734,
+    "misleading": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "regime": {
    "1h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 8.680 به 8.719 رفت (+0.039، بالاتر از میانهٔ 0.014) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (+0.013، زیر میانهٔ 0.015) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "threshold": 0.014,
-    "stable_d": 8.719,
-    "d_stable_d": 0.039,
-    "usdt_d": 6.182,
-    "d_usdt_d": 0.028,
+    "threshold": 0.015,
+    "stable_d": 8.734,
+    "d_stable_d": 0.013,
+    "usdt_d": 6.193,
+    "d_usdt_d": 0.01,
     "cause": "NEW_MONEY",
     "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
-    "naive_usdt_only": "SHORT_BIAS",
+    "naive_usdt_only": "NEUTRAL",
     "disagrees_with_naive": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.032، زیر میانهٔ 0.039) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.039,
-    "stable_d": 8.719,
-    "d_stable_d": -0.032,
-    "usdt_d": 6.182,
-    "d_usdt_d": -0.022,
-    "cause": "NEW_MONEY",
-    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "threshold": 0.034,
+    "stable_d": 8.734,
+    "d_stable_d": -0.003,
+    "usdt_d": 6.193,
+    "d_usdt_d": -0.002,
+    "cause": "REDEMPTION",
+    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "naive_usdt_only": "NEUTRAL",
     "disagrees_with_naive": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
@@ -532,15 +602,15 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (-0.032، زیر میانهٔ 0.039) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (-0.003، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
-   "d_btc_d": -0.03,
-   "cause": "NEW_MONEY",
+   "d_btc_d": -0.05,
+   "cause": "REDEMPTION",
    "disagrees_with_naive": false,
-   "stable_d": 8.719,
-   "d_stable_d": -0.032,
-   "usdt_d": 6.182,
-   "d_usdt_d": -0.022,
+   "stable_d": 8.734,
+   "d_stable_d": -0.003,
+   "usdt_d": 6.193,
+   "d_usdt_d": -0.002,
    "window_min": 240,
    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
