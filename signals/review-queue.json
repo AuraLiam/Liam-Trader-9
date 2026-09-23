@@ -1,20 +1,20 @@
 {
- "generated": 1790178819266,
- "buckets_at": 1790178819236,
+ "generated": 1790178999743,
+ "buckets_at": 1790178999714,
  "n_agents": 9,
  "n_todo": 6,
  "todo": [
   "macro-dominance",
+  "order-block",
   "post-trade-learning",
   "data-quality",
-  "lead-lag",
   "liquidity",
   "research"
  ],
  "idle": [
   "execution",
-  "market-structure",
-  "order-block"
+  "lead-lag",
+  "market-structure"
  ],
  "events": [],
  "rows": [
@@ -53,6 +53,27 @@
     "signals/market-stance.json"
    ],
    "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance.json، ext:calendar دیدگاه (نه دروازه — قانون ۱۵): ext | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext"
+  },
+  {
+   "agent": "order-block",
+   "engines": [
+    "E08"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E08",
+     "items": [
+      "ob-radar.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/ob-radar.json"
+   ],
+   "digest": "E08: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: ob-radar.json باز کن: signals/ob-radar.json"
   },
   {
    "agent": "post-trade-learning",
@@ -111,25 +132,6 @@
    "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 5 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json باز کن: signals/funnel.json، signals/skeptic.json"
   },
   {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:trending"
-     ]
-    }
-   ],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
    "agent": "liquidity",
    "engines": [
     "E10"
@@ -184,6 +186,17 @@
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": false,
+   "priority": 9,
+   "reasons": [],
+   "read_next": [],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
    "agent": "market-structure",
    "engines": [
     "E07"
@@ -193,17 +206,6 @@
    "reasons": [],
    "read_next": [],
    "digest": ""
-  },
-  {
-   "agent": "order-block",
-   "engines": [
-    "E08"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
