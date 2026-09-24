@@ -1,16 +1,13 @@
 {
- "generated": 1790205994388,
+ "generated": 1790213142810,
  "window_days": 7,
- "since": 1789601194388,
+ "since": 1789608342810,
  "census": {
   "days": 8,
   "per_day": {
-   "2026-09-16": {
-    "pump_report": 1
-   },
    "2026-09-17": {
-    "signal": 24,
     "dom_report": 21,
+    "signal": 21,
     "outcome": 28,
     "pump_report": 2,
     "work_report": 3
@@ -53,21 +50,26 @@
     "work_report": 3
    },
    "2026-09-23": {
-    "dom_report": 22,
+    "dom_report": 23,
     "outcome": 20,
-    "signal": 20,
-    "pump_report": 5,
+    "signal": 21,
+    "pump_report": 6,
     "work_report": 3,
-    "trade_mgmt": 2
+    "trade_mgmt": 3
+   },
+   "2026-09-24": {
+    "signal": 1,
+    "dom_report": 1,
+    "outcome": 2
    }
   },
   "total": {
+   "dom_report": 166,
+   "signal": 163,
+   "outcome": 205,
    "pump_report": 34,
-   "signal": 164,
-   "dom_report": 164,
-   "outcome": 203,
    "work_report": 21,
-   "trade_mgmt": 9
+   "trade_mgmt": 10
   },
   "alert_classes": {},
   "useless_kinds": {},
@@ -76,7 +78,8 @@
    "pump_report": [
     "2026-09-18:6",
     "2026-09-19:6",
-    "2026-09-22:6"
+    "2026-09-22:6",
+    "2026-09-23:6"
    ],
    "dom_report": [
     "2026-09-18:25"
@@ -84,11 +87,11 @@
   }
  },
  "signals": {
-  "n": 164,
+  "n": 163,
   "per_day": {
    "2026-09-17": {
-    "n": 24,
-    "first": "00:07",
+    "n": 21,
+    "first": "04:54",
     "last": "22:25"
    },
    "2026-09-18": {
@@ -117,25 +120,30 @@
     "last": "23:09"
    },
    "2026-09-23": {
-    "n": 20,
+    "n": 21,
     "first": "00:51",
-    "last": "21:23"
+    "last": "22:43"
+   },
+   "2026-09-24": {
+    "n": 1,
+    "first": "00:27",
+    "last": "00:27"
    }
   },
   "strategy": {
-   "smc": 106,
-   "ibs": 58
+   "ibs": 59,
+   "smc": 104
   },
   "tf": {
-   "5m": 142,
+   "5m": 141,
    "15m": 22
   },
   "dir": {
-   "LONG": 134,
-   "SHORT": 30
+   "LONG": 132,
+   "SHORT": 31
   },
   "hour_utc": {
-   "0": 20,
+   "0": 18,
    "1": 1,
    "4": 4,
    "5": 11,
@@ -153,67 +161,67 @@
    "19": 3,
    "20": 7,
    "21": 6,
-   "22": 8,
+   "22": 9,
    "23": 1
   }
  },
  "outcomes": {
-  "sent": 164,
-  "matched": 157,
+  "sent": 163,
+  "matched": 156,
   "unmatched": 7,
   "match_pct": 95.7,
   "overall": {
-   "n": 157,
-   "mean_net": -0.04,
-   "sum_net": -6.2,
-   "win_pct": 65.6,
+   "n": 156,
+   "mean_net": -0.057,
+   "sum_net": -8.9,
+   "win_pct": 64.7,
    "outcomes": {
-    "trail": 97,
-    "expired": 34,
-    "stop": 17,
+    "trail": 95,
+    "expired": 33,
+    "stop": 19,
     "target": 6,
     "timeout": 3
    }
   },
   "by": {
    "strategy": {
-    "smc": {
-     "n": 106,
-     "mean_net": 0.059,
-     "sum_net": 6.3,
-     "win_pct": 70.8,
-     "outcomes": {
-      "trail": 73,
-      "expired": 23,
-      "target": 2,
-      "stop": 7,
-      "timeout": 1
-     }
-    },
     "ibs": {
-     "n": 51,
-     "mean_net": -0.245,
-     "sum_net": -12.5,
-     "win_pct": 54.9,
+     "n": 52,
+     "mean_net": -0.267,
+     "sum_net": -13.9,
+     "win_pct": 53.8,
      "outcomes": {
       "trail": 24,
       "expired": 11,
-      "stop": 10,
+      "stop": 11,
       "target": 4,
       "timeout": 2
+     }
+    },
+    "smc": {
+     "n": 104,
+     "mean_net": 0.048,
+     "sum_net": 5.0,
+     "win_pct": 70.2,
+     "outcomes": {
+      "trail": 71,
+      "target": 2,
+      "expired": 22,
+      "stop": 8,
+      "timeout": 1
      }
     }
    },
    "tf": {
     "5m": {
-     "n": 138,
-     "mean_net": -0.019,
-     "sum_net": -2.7,
-     "win_pct": 66.7,
+     "n": 137,
+     "mean_net": -0.039,
+     "sum_net": -5.4,
+     "win_pct": 65.7,
      "outcomes": {
-      "trail": 86,
-      "expired": 29,
-      "stop": 14,
+      "trail": 84,
+      "expired": 28,
+      "stop": 16,
       "target": 6,
       "timeout": 3
      }
@@ -232,15 +240,15 @@
    },
    "dir": {
     "LONG": {
-     "n": 132,
-     "mean_net": -0.011,
-     "sum_net": -1.4,
-     "win_pct": 68.9,
+     "n": 131,
+     "mean_net": -0.031,
+     "sum_net": -4.1,
+     "win_pct": 67.9,
      "outcomes": {
-      "trail": 85,
-      "expired": 25,
+      "trail": 83,
+      "expired": 24,
       "target": 6,
-      "stop": 13,
+      "stop": 15,
       "timeout": 3
      }
     },
@@ -257,7 +265,7 @@
     }
    }
   },
-  "trail_zero_share_pct": 5.2,
+  "trail_zero_share_pct": 5.3,
   "open_or_unfound": 7,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
