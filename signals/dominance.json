@@ -1,5 +1,5 @@
 {
- "generated": 1790248714568,
+ "generated": 1790248921130,
  "usdt_dominance": 6.476,
  "btc_dominance": 59.22,
  "chg_1h": {
@@ -11,10 +11,10 @@
   "btc": 0.55
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2079/4154 (50٪)؛ بنچمارکِ همیشه‌تخت 50٪",
+ "verdict": "USDT.D خنثی است؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2079/4154 (50٪)؛ بنچمارکِ همیشه‌تخت 50٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
  "macro": [],
- "calendar_ok": "CACHED",
- "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
+ "calendar_ok": true,
+ "calendar_why": null,
  "structure": {
   "bars_1h": 283,
   "bars_4h": 73,
@@ -307,7 +307,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2694,
+    "bars": 2695,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -315,7 +315,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2694,
+    "bars": 2695,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -365,7 +365,7 @@
    "usdt": {
     "tf": "1h",
     "bars": 283,
-    "pts_per_bar": 15.0,
+    "pts_per_bar": 14.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 6.481,
@@ -384,7 +384,7 @@
    "btc_d": {
     "tf": "1h",
     "bars": 283,
-    "pts_per_bar": 15.0,
+    "pts_per_bar": 14.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 59.24,
@@ -469,9 +469,21 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "cause": "INSUFFICIENT",
+    "cause": "MARKET_FALL",
+    "why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
     "window_min": 240,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 240د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": 0.099,
+    "d_stable_d": 0.135,
+    "supply_growth": {
+     "USDT": -0.000272,
+     "USDC": -0.002031
+    },
+    "supply_growth_total": -0.000784,
+    "mcap_growth": -0.015678,
+    "usdt_d": 6.476,
+    "stable_d": 9.132,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "regime": {
@@ -491,14 +503,34 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "bias": "INSUFFICIENT",
+    "bias": "SHORT_BIAS",
+    "why": "STABLE.D از 8.997 به 9.132 رفت (+0.135، بالاتر از میانهٔ 0.04) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+    "threshold": 0.04,
+    "stable_d": 9.132,
+    "d_stable_d": 0.135,
+    "usdt_d": 6.476,
+    "d_usdt_d": 0.099,
+    "cause": "MARKET_FALL",
+    "cause_why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
+    "naive_usdt_only": "SHORT_BIAS",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "alt_stance": {
-   "stance": "INSUFFICIENT",
-   "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+   "stance": "SHORT_ALT_STRONG",
+   "why": "هم پول به استیبل رفته هم BTC.D بالا — بدترین بسترِ آلت",
+   "bias": "SHORT_BIAS",
+   "d_btc_d": 0.55,
+   "cause": "MARKET_FALL",
+   "disagrees_with_naive": false,
+   "stable_d": 9.132,
+   "d_stable_d": 0.135,
+   "usdt_d": 6.476,
+   "d_usdt_d": 0.099,
+   "window_min": 240,
+   "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
  }
 }
