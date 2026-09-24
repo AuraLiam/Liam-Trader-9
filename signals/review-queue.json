@@ -1,9 +1,10 @@
 {
- "generated": 1790229463357,
- "buckets_at": 1790229463330,
+ "generated": 1790229656293,
+ "buckets_at": 1790229656263,
  "n_agents": 9,
- "n_todo": 5,
+ "n_todo": 6,
  "todo": [
+  "lead-lag",
   "post-trade-learning",
   "data-quality",
   "liquidity",
@@ -12,12 +13,34 @@
  ],
  "idle": [
   "execution",
-  "lead-lag",
   "market-structure",
   "order-block"
  ],
  "events": [],
  "rows": [
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E12",
+     "items": [
+      "pump-desk.json",
+      "pump-radar.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
+   ],
+   "digest": "E12: 5 آیتم · 2 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: pump-desk.json، pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: signals/pump-"
+  },
   {
    "agent": "post-trade-learning",
    "engines": [
@@ -145,17 +168,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
