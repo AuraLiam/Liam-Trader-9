@@ -1,23 +1,78 @@
 {
- "generated": 1790337171024,
- "buckets_at": 1790337170987,
- "n_agents": 9,
- "n_todo": 6,
+ "generated": 1790337528641,
+ "buckets_at": 1790337528605,
+ "n_agents": 11,
+ "n_todo": 9,
  "todo": [
+  "E18",
+  "E22",
   "data-quality",
   "liquidity",
   "macro-dominance",
   "order-block",
   "post-trade-learning",
-  "research"
+  "research",
+  "lead-lag"
  ],
  "idle": [
   "execution",
-  "lead-lag",
   "market-structure"
  ],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-09-25 10:47 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-25 10:47 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-09-25 10:47 UTC"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-25 10:47 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-09-25 10:47 UTC"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -196,14 +251,42 @@
      "items": [
       "state:scorecard.json"
      ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-09-25 10:47 UTC"
+     ]
     }
    ],
    "read_next": [
     "signals/experience-effect.json",
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json",
     "signals/rewards.json",
     "signals/scorecard.json"
    ],
    "digest": "E22: 9 آیتم · 7 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: experience-effect.json، rewards.json باز کن: signals/experience-effec | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:trending"
+     ]
+    }
+   ],
+   "read_next": [],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "execution",
@@ -217,17 +300,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
@@ -244,7 +316,7 @@
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1790250764080,
+  "generated": 1790337372164,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "UNDECIDED",
