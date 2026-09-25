@@ -1,19 +1,19 @@
 {
- "generated": 1790319052187,
- "buckets_at": 1790319052157,
+ "generated": 1790322406503,
+ "buckets_at": 1790322406470,
  "n_agents": 9,
- "n_todo": 6,
+ "n_todo": 7,
  "todo": [
   "data-quality",
   "liquidity",
   "macro-dominance",
   "order-block",
   "post-trade-learning",
-  "research"
+  "research",
+  "lead-lag"
  ],
  "idle": [
   "execution",
-  "lead-lag",
   "market-structure"
  ],
  "events": [],
@@ -39,16 +39,18 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:funnel.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
     "signals/escalation.json",
+    "signals/funnel.json",
     "signals/sentinel.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:skeptic.json کهنه: escalation.json، sentinel.json باز کن: signals/escalation.json، signals"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 3 تازه · 2 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json کهنه: escalation.json، sentinel.json باز کن: signals/escal"
   },
   {
    "agent": "liquidity",
@@ -149,7 +151,8 @@
      "engine": "E20",
      "items": [
       "direction-lessons.json",
-      "loss-analysis.json"
+      "loss-analysis.json",
+      "work-report.json"
      ]
     },
     {
@@ -167,9 +170,10 @@
     "signals/experience.json",
     "signals/learning-proof.json",
     "signals/loss-analysis.json",
-    "signals/skills.json"
+    "signals/skills.json",
+    "signals/work-report.json"
    ],
-   "digest": "E20: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json باز کن: signals/direction-lessons.json، signals/loss-a | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
+   "digest": "E20: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json، work-report.json باز کن: signals/direction-lessons.js | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
   },
   {
    "agent": "research",
@@ -204,6 +208,32 @@
    "digest": "E22: 9 آیتم · 7 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: experience-effect.json، rewards.json باز کن: signals/experience-effec | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
+   "agent": "lead-lag",
+   "engines": [
+    "E12"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "ext:trending",
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
+   ],
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json، ext:trending دیدگاه (نه دروازه "
+  },
+  {
    "agent": "execution",
    "engines": [
     "E09",
@@ -215,17 +245,6 @@
    "reasons": [],
    "read_next": [],
    "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
