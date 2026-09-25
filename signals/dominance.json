@@ -1,5 +1,5 @@
 {
- "generated": 1790307010689,
+ "generated": 1790307206201,
  "usdt_dominance": 6.363,
  "btc_dominance": 58.59,
  "chg_1h": {
@@ -11,10 +11,10 @@
   "btc": 0.01
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س range · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2119/4240 (50٪)؛ بنچمارکِ همیشه‌تخت 52٪",
+ "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رژیم ساختاری: BULLISH (USDT.D ساختار ۱س down · ۴س range · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2119/4240 (50٪)؛ بنچمارکِ همیشه‌تخت 52٪؛ بسترِ استیبل: SHORT_ALT",
  "macro": [],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 3د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 287,
   "bars_4h": 74,
@@ -472,17 +472,29 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "cause": "INSUFFICIENT",
+    "cause": "NEW_MONEY",
+    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "window_min": 240,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 240د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": 0.021,
+    "d_stable_d": 0.039,
+    "supply_growth": {
+     "USDT": 0.000278,
+     "USDC": 0.003885
+    },
+    "supply_growth_total": 0.001326,
+    "mcap_growth": -0.003028,
+    "usdt_d": 6.363,
+    "stable_d": 8.976,
+    "misleading": true,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "regime": {
    "1h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 8.915 به 8.976 رفت (+0.061، بالاتر از میانهٔ 0.016) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 8.915 به 8.976 رفت (+0.061، بالاتر از میانهٔ 0.015) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 60,
-    "threshold": 0.016,
+    "threshold": 0.015,
     "stable_d": 8.976,
     "d_stable_d": 0.061,
     "usdt_d": 6.363,
@@ -494,14 +506,34 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "bias": "INSUFFICIENT",
+    "bias": "SHORT_BIAS",
+    "why": "STABLE.D از 8.937 به 8.976 رفت (+0.039، بالاتر از میانهٔ 0.039) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+    "threshold": 0.039,
+    "stable_d": 8.976,
+    "d_stable_d": 0.039,
+    "usdt_d": 6.363,
+    "d_usdt_d": 0.021,
+    "cause": "NEW_MONEY",
+    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": true,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "alt_stance": {
-   "stance": "INSUFFICIENT",
-   "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+   "stance": "SHORT_ALT",
+   "why": "پول به استیبل رفته — ریسک‌آف",
+   "bias": "SHORT_BIAS",
+   "d_btc_d": 0.01,
+   "cause": "NEW_MONEY",
+   "disagrees_with_naive": true,
+   "stable_d": 8.976,
+   "d_stable_d": 0.039,
+   "usdt_d": 6.363,
+   "d_usdt_d": 0.021,
+   "window_min": 240,
+   "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
  }
 }
