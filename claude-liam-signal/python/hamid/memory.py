@@ -178,10 +178,12 @@ def digest_closed(trades):
 
 
 DIGEST_STATE = ROOT / "brain" / "learning" / "digest-state.json"
-DIGEST_LIMIT = 6000
+# ۲۶ سپتامبر: هضم ~۰.۱۲ث بر معامله است؛ ۸٬۸۷۰ هضمِ پس از قطعی ۱۷ دقیقه
+# از سقف ۴۰ دقیقه‌ای job را خورد. ۳۰۰۰ ≈ ۶ دقیقه؛ بقیه با نشانگر دور بعد.
+DIGEST_LIMIT = 3000
 
 
-def digest_backlog(limit=DIGEST_LIMIT, now_ms=None):
+def digest_backlog(limit=DIGEST_LIMIT, now_ms=None, skip=None):
     """هر معاملهٔ بسته را هضم کن — فارغ از این‌که **کدام** ورک‌فلو بستش.
 
     عیبِ اندازه‌گیری‌شدهٔ ۵ سپتامبر: تنها فراخوانِ `digest_closed` در
@@ -215,7 +217,13 @@ def digest_backlog(limit=DIGEST_LIMIT, now_ms=None):
         rows = rows[:limit]
     if not rows:
         return 0
-    fed = digest_closed(rows)
+    # `skip`: هویتِ معامله‌هایی که همین چرخه با digest_closed هضم کرد.
+    # ۲۶ سپتامبر: بی این، هر معاملهٔ بسته‌شده در چرخه دو بار در دفتر تجربه
+    # می‌نشست (۳٬۷۸۲ + ۵٬۰۸۸ که اولی زیرمجموعهٔ دومی بود). نشانگر همچنان تا
+    # بیشینهٔ همهٔ ردیف‌ها جلو می‌رود.
+    skip = skip or set()
+    todo = [t for t in rows if paper.trade_key(t) not in skip]
+    fed = digest_closed(todo) if todo else 0
     # پروندهٔ معامله برای بسته‌های ورک‌فلوهای دیگر (ممیزی E20): پرونده فقط
     # از مسیر `cycle.settle_books` برای «تسویهٔ همین اجرا» ساخته می‌شد؛
     # هر چیزی که رانر دیگری می‌بست پرونده نداشت. `write_case` روی نام

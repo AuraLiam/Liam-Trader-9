@@ -178,6 +178,30 @@ check("هضم، درسِ جهت را هم می‌نویسد (فقط روی مس�
 check("و عقب‌ماندهٔ ورک‌فلوهای دیگر پرونده می‌گیرد",
       "write_cases(" in _srcm and "_real_paper" in _srcm)
 
+# ── دو بار هضم نمی‌شود (۲۶ سپتامبر: هضمِ همین چرخه + عقب‌مانده هم‌پوشان بودند) ──
+import tempfile as _tf                                            # noqa: E402
+from hamid import paper as _P                                     # noqa: E402
+_d = Path(_tf.mkdtemp())
+_oc, _ods, _odc = _P.CLOSED, memory.DIGEST_STATE, memory.digest_closed
+try:
+    _P.CLOSED, memory.DIGEST_STATE = _d / "closed.jsonl", _d / "digest-state.json"
+    _rows = [{"sym": f"Z{i}USDT", "dir": "LONG", "opened": i, "entry": 1.0, "R": 1.0,
+              "outcome": "target", "closed": 1_790_000_000_000 + i, "why": {"stage": "sig"}}
+             for i in range(5)]
+    _P.CLOSED.write_text("\n".join(_json.dumps(r) for r in _rows) + "\n")
+    _seen = []
+    memory.digest_closed = lambda ts: (_seen.extend(t["sym"] for t in ts), len(ts))[1]
+    memory.digest_backlog(skip={_P.trade_key(r) for r in _rows[:3]})
+    check("عقب‌مانده، معاملهٔ هضم‌شدهٔ همین چرخه را دوباره هضم نمی‌کند",
+          sorted(_seen) == ["Z3USDT", "Z4USDT"], str(_seen))
+    check("و نشانگر تا آخرین ردیف جلو می‌رود",
+          _json.loads(memory.DIGEST_STATE.read_text())["last_closed_ms"] == _rows[-1]["closed"])
+finally:
+    _P.CLOSED, memory.DIGEST_STATE, memory.digest_closed = _oc, _ods, _odc
+_srcc = (Path(__file__).resolve().parent / "cycle.py").read_text(encoding="utf-8")
+check("چرخه هویتِ هضم‌شده‌های خودش را به عقب‌مانده می‌دهد",
+      "digest_backlog(skip=" in _srcc)
+
 print()
 if FAIL:
     print(f"✗ {FAIL} آزمون شکست")
