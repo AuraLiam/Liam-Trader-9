@@ -1,8 +1,8 @@
 {
- "generated": 1790408357570,
- "buckets_at": 1790408357543,
+ "generated": 1790409131279,
+ "buckets_at": 1790409131241,
  "n_agents": 9,
- "n_todo": 7,
+ "n_todo": 8,
  "todo": [
   "data-quality",
   "liquidity",
@@ -10,10 +10,10 @@
   "order-block",
   "post-trade-learning",
   "research",
+  "execution",
   "lead-lag"
  ],
  "idle": [
-  "execution",
   "market-structure"
  ],
  "events": [],
@@ -39,18 +39,16 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:funnel.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
     "signals/escalation.json",
-    "signals/funnel.json",
     "signals/sentinel.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 3 تازه · 2 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:funnel.json، state:skeptic.json کهنه: escalation.json، sentinel.json باز کن: signals/escal"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 7 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:skeptic.json کهنه: escalation.json، sentinel.json باز کن: signals/escalation.json، signals"
   },
   {
    "agent": "liquidity",
@@ -101,6 +99,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance-report.json",
       "state:dominance.json",
@@ -115,7 +114,7 @@
     "signals/macro-guard.json",
     "signals/market-stance.json"
    ],
-   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json دیدگاه (نه دروازه — | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:macro-guard.json کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، e"
+   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json، ext:calendar دیدگا | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext"
   },
   {
    "agent": "order-block",
@@ -152,7 +151,8 @@
      "engine": "E20",
      "items": [
       "direction-lessons.json",
-      "loss-analysis.json"
+      "loss-analysis.json",
+      "work-report.json"
      ]
     },
     {
@@ -170,9 +170,10 @@
     "signals/experience.json",
     "signals/learning-proof.json",
     "signals/loss-analysis.json",
-    "signals/skills.json"
+    "signals/skills.json",
+    "signals/work-report.json"
    ],
-   "digest": "E20: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json باز کن: signals/direction-lessons.json، signals/loss-a | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
+   "digest": "E20: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json، work-report.json باز کن: signals/direction-lessons.js | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
   },
   {
    "agent": "research",
@@ -207,6 +208,31 @@
    "digest": "E22: 9 آیتم · 7 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: experience-effect.json، rewards.json باز کن: signals/experience-effec | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
+   "agent": "execution",
+   "engines": [
+    "E09",
+    "E11",
+    "E19"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:position-watch.json",
+      "state:trail-alert.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/position-watch.json",
+    "signals/trail-alert.json"
+   ],
+   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:position-watch.json، state:trail-alert.json باز کن: signals/position-watch.json، signals/t"
+  },
+  {
    "agent": "lead-lag",
    "engines": [
     "E12"
@@ -218,32 +244,12 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
-      "state:bubbles.json",
-      "state:pump-desk.json",
-      "state:pump-radar.json"
+      "ext:trending"
      ]
     }
    ],
-   "read_next": [
-    "signals/bubbles.json",
-    "signals/pump-desk.json",
-    "signals/pump-radar.json"
-   ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json، ext:trending دیدگاه (نه دروازه "
-  },
-  {
-   "agent": "execution",
-   "engines": [
-    "E09",
-    "E11",
-    "E19"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
    "read_next": [],
-   "digest": "E11: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "market-structure",
