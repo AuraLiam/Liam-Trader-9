@@ -1063,28 +1063,53 @@ def _boot_diff(a, b, n=3000, alpha=0.05, days_a=None, days_b=None):
     داور بیرونی: معامله‌های یک روز هم‌حرکت‌اند (بتای BTC، ستاپ تکراری) و
     بوت‌استرپ i.i.d نمونهٔ متورم می‌سازد. وقتی روزها داده شوند، بلوکی
     (به‌روز) نمونه‌گیری می‌شود؛ بدون روز، همان رفتار قبلی می‌ماند."""
+    r = _boot_diffs(a, b, (alpha,), n=n, days_a=days_a, days_b=days_b)
+    return r[0] if r else None
+
+
+def _boot_diffs(a, b, alphas, n=3000, days_a=None, days_b=None):
+    """همان بوت‌استرپ، یک بار برای چند آلفا — و بی‌ساختنِ خودِ نمونه.
+
+    ۲۶ سپتامبر: `reasons()` هر نمونهٔ بلوکی را عنصربه‌عنصر در پایتون
+    می‌ساخت (۳۰۰۰ × ۲ آلفا × ~۲۷ شرط × ده‌ها هزار معامله) و ۱۷ دقیقه از
+    سقف ۴۰ دقیقه‌ای چرخه را می‌خورد — و با بزرگ‌شدنِ دفتر هر روز کندتر.
+    حالا هر روز با جمعِ پیشوندی‌اش کشیده می‌شود: توزیعِ نمونه‌گیری دقیقاً
+    همان است (بلوک‌های کامل تا پرشدن، آخری بریده)، هزینه O(روزها) نه O(n).
+    """
     if len(a) < 8 or len(b) < 8:
         return None
 
-    def draw(vals, days):
+    def prep(vals, days):
         if not days or len(set(days)) < 3:
-            return [random.choice(vals) for _ in range(len(vals))]
+            return ("iid", vals, len(vals))
         byday = {}
         for v, d in zip(vals, days):
             byday.setdefault(d, []).append(v)
-        keys = list(byday)
-        out = []
-        while len(out) < len(vals):
-            out += byday[random.choice(keys)]
-        return out[:len(vals)]
+        blocks = []
+        for vs in byday.values():
+            pre, s_ = [0.0], 0.0
+            for v in vs:
+                s_ += v
+                pre.append(s_)
+            blocks.append(pre)
+        return ("block", blocks, len(vals))
 
-    diffs = []
-    for _ in range(n):
-        sa = draw(a, days_a)
-        sb = draw(b, days_b)
-        diffs.append(sum(sa) / len(sa) - sum(sb) / len(sb))
-    diffs.sort()
-    return diffs[int(n * alpha / 2)], diffs[int(n * (1 - alpha / 2))]
+    def draw_mean(pp):
+        kind, data, N = pp
+        if kind == "iid":
+            return sum(random.choices(data, k=N)) / N
+        cnt, tot = 0, 0.0
+        while cnt < N:
+            pre = random.choice(data)
+            m = len(pre) - 1
+            take = m if cnt + m <= N else N - cnt
+            tot += pre[take]
+            cnt += take
+        return tot / N
+
+    pa, pb = prep(a, days_a), prep(b, days_b)
+    diffs = sorted(draw_mean(pa) - draw_mean(pb) for _ in range(n))
+    return [(diffs[int(n * al / 2)], diffs[int(n * (1 - al / 2))]) for al in alphas]
 
 
 CONDITIONS = [
@@ -1256,8 +1281,7 @@ def reasons(verbose=True):
                 print(f"{name:<26}{len(a):>10}{len(b):>10}       نمونهٔ کم")
             continue
         ea, eb = statistics.fmean(a), statistics.fmean(b)
-        raw = _boot_diff(a, b, alpha=0.05, days_a=da, days_b=db)
-        adj = _boot_diff(a, b, alpha=alpha_adj, days_a=da, days_b=db)
+        raw, adj = _boot_diffs(a, b, (0.05, alpha_adj), days_a=da, days_b=db) or (None, None)
         survives = adj and (adj[0] > 0 or adj[1] < 0)
         raw_only = raw and (raw[0] > 0 or raw[1] < 0) and not survives
         mark_s = "✓ دلیل واقعی" if survives else \

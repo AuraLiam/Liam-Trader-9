@@ -353,6 +353,52 @@ def t_guardian_stages_never_count_as_signal():
         paper.CLOSED, paper.EQUITY = old
 
 
+def t_boot_fast_and_same():
+    """بوت‌استرپِ بلوکی سریع است و توزیعش همان است (۲۶ سپتامبر).
+
+    `reasons()` در چرخه بیش از ۱۷ دقیقه (روی لپ‌تاپ >۲۵ دقیقه) طول می‌کشید
+    چون هر نمونه عنصربه‌عنصر ساخته می‌شد؛ با جمعِ پیشوندی ۱۴ ثانیه شد.
+    """
+    import random as _r, time as _t
+    # ۱) بلوکِ تک‌عنصری با مقادیرِ ثابتِ هر روز: میانگینِ هر نمونه دقیقاً
+    #    قابل‌محاسبه است — بریدنِ بلوکِ آخر باید درست باشد.
+    a = [1.0] * 10 + [3.0] * 10 + [5.0] * 10
+    da = [0] * 10 + [1] * 10 + [2] * 10
+    b = [0.0] * 30
+    db = [0] * 10 + [1] * 10 + [2] * 10
+    ci = paper._boot_diff(a, b, n=2000, days_a=da, days_b=db)
+    check("بوت‌استرپِ بلوکی در بازهٔ ممکن می‌ماند (۱ تا ۵)",
+          ci and 1.0 <= ci[0] <= ci[1] <= 5.0, str(ci))
+    # ۲) هم‌ارزی آماری با پیاده‌سازیِ قبلی (عنصربه‌عنصر)
+    def old(a, b, days_a, days_b, n=2000):
+        def draw(vals, days):
+            byday = {}
+            for v, d in zip(vals, days):
+                byday.setdefault(d, []).append(v)
+            keys, out = list(byday), []
+            while len(out) < len(vals):
+                out += byday[_r.choice(keys)]
+            return out[:len(vals)]
+        ds = sorted(sum(draw(a, days_a)) / len(a) - sum(draw(b, days_b)) / len(b)
+                    for _ in range(n))
+        return ds[int(n * .025)], ds[int(n * .975)]
+    _r.seed(7)
+    a = [_r.gauss(0.1, 1) for _ in range(400)]
+    b = [_r.gauss(0.0, 1) for _ in range(500)]
+    da = [_r.randint(0, 15) for _ in a]
+    db = [_r.randint(0, 15) for _ in b]
+    o, nw = old(a, b, da, db), paper._boot_diff(a, b, n=2000, days_a=da, days_b=db)
+    check("بازهٔ تازه با پیاده‌سازیِ قبلی هم‌ارز است (اختلاف کران‌ها < ۰.۰۳)",
+          abs(o[0] - nw[0]) < 0.03 and abs(o[1] - nw[1]) < 0.03, f"{o} vs {nw}")
+    # ۳) هزینه به اندازهٔ دفتر بسته نیست: ۶۰هزار معامله در چند ثانیه
+    big = [_r.gauss(0, 1) for _ in range(60000)]
+    days = [i % 40 for i in range(60000)]
+    t0 = _t.time()
+    paper._boot_diffs(big, big, (0.05, 0.002), days_a=days, days_b=days)
+    el = _t.time() - t0
+    check(f"بوت‌استرپِ ۶۰هزار معامله زیر ۱۰ ثانیه ({el:.1f}ث)", el < 10)
+
+
 def main():
     print("\nیادگیری از دلیل درست — تست خصمانه\n")
     t_small_sample_refuses()
@@ -365,6 +411,7 @@ def main():
     t_no_candle_expiry()
     t_poison_row_isolated()
     t_trailing_stop()
+    t_boot_fast_and_same()
     bad = [(n, d) for ok, n, d in R if not ok]
     print(f"\n{'=' * 74}")
     print(f"{len(R)-len(bad)} از {len(R)} تست قبول")
