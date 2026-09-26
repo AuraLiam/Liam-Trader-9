@@ -559,6 +559,23 @@ import re as _re
 _tm = _re.search(r"timeout-minutes:\s*(\d+)", _hc_txt)
 check("سقف زمان چرخهٔ حمید ≥ ۳۵ دقیقه (اجرای کامل ~۲۵ دقیقه است)", bool(_tm) and int(_tm.group(1)) >= 35)
 
+# هر گامی که `python3 -m hamid.` می‌زند باید در پوشهٔ پایتون اجرا شود —
+# ۲۶ سپتامبر: گامِ state_bus چرخه بی working-directory بود، «No module named
+# hamid» می‌داد و `|| true` سکوتش را تضمین می‌کرد.
+import yaml as _y                                              # noqa: E402
+_nowd = []
+for _f in sorted((Path(__file__).resolve().parents[3] / ".github" / "workflows").glob("*.yml")):
+    _doc = _y.safe_load(_f.read_text(encoding="utf-8")) or {}
+    for _jn, _j in (_doc.get("jobs") or {}).items():
+        _dwd = ((_j.get("defaults") or {}).get("run") or {}).get("working-directory")
+        for _s in _j.get("steps") or []:
+            _r = _s.get("run") or ""
+            _m = re.search(r"python3? -m (hamid|research)\.", _r)
+            if _m and not (_s.get("working-directory") or _dwd) \
+                    and "cd claude-liam-signal" not in _r[:_m.start()]:
+                _nowd.append(f"{_f.name}: {_s.get('name')}")
+check(f"هر گامِ `python3 -m hamid.` پوشهٔ پایتون را دارد {_nowd or ''}", not _nowd)
+
 print()
 if fail:
     print(f"✗ {len(fail)} آزمون شکست: {fail}")

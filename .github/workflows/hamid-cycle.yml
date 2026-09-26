@@ -386,6 +386,9 @@ jobs:
         run: python3 -m hamid.msg_budget --write
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
+        # ۲۶ سپتامبر: بی working-directory «No module named hamid» می‌داد و
+        # `|| true` پنهانش می‌کرد — این گام هرگز چیزی ننوشته بود.
+        working-directory: claude-liam-signal/python
         run: python3 -m hamid.state_bus --write || true
 
       # گزارش کار (دستور حمید ۲۴ اوت: «تا گفتم گزارش کار را بده، نتایج را
