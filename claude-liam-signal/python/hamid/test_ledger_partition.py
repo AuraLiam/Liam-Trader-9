@@ -141,6 +141,32 @@ try:
 finally:
     ledger.PUBLISHED, _RG.ROOT, _DC.CLOSED, _RG.ARCHIVE = _old
 
+# ۶ج — ناشر پاک‌سازی را پس نمی‌زند: اجتماعِ سادهٔ نسخهٔ origin (با تکرار) و
+# نسخهٔ ما (پاک‌شده) همان ۴٬۷۳۵ ردیف را برگرداند (۲۶ سپتامبر، روی محصول).
+import importlib.util as _ilu                                    # noqa: E402
+_spec = _ilu.spec_from_file_location("rbc_l", ledger.REPO / "scripts" / "resolve_brain_conflicts.py")
+_rbc = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_rbc)
+_r = Path(tempfile.mkdtemp())
+(_r / "brain" / "paper").mkdir(parents=True)
+_a = {"sym": "OLD", "opened": 1, "entry": 1.0, "why": {"stage": "sig"}, "closed": W38}
+_b = {"sym": "NEW", "opened": 2, "entry": 2.0, "why": {"stage": "sig"}, "closed": W39}
+(_r / "brain/paper/closed-2025-W39.jsonl").write_text(json.dumps(_b) + "\n")
+_ours = json.dumps(_a) + "\n"
+_theirs = json.dumps(_a) + "\n" + json.dumps(_b) + "\n"
+_old_root, _old_stage = _rbc.ROOT, _rbc._stage
+try:
+    _rbc.ROOT = _r
+    _rbc._stage = lambda st, p: ({2: _ours, 3: _theirs}.get(st)
+                                 if p == "brain/paper/closed.jsonl" else None)
+    check("ادغامِ ناشر برای دفتر یخ‌زده همان handlerِ منهای‌پاره است",
+          _rbc.handler_for("brain/paper/closed.jsonl") is _rbc.merge_frozen_closed)
+    _rbc.merge_frozen_closed("brain/paper/closed.jsonl")
+    _got = [json.loads(x)["sym"] for x in (_r / "brain/paper/closed.jsonl").read_text().splitlines() if x]
+    check("اجتماع با origin تکرارِ پاره را به یخ‌زده برنمی‌گرداند", _got == ["OLD"], str(_got))
+finally:
+    _rbc.ROOT, _rbc._stage = _old_root, _old_stage
+
 # ۷ — روی مخزنِ واقعی (فقط با --runway): به داده بسته است نه به کد، پس در
 # دروازهٔ سخت نیست — درسِ ۶ سپتامبر: آزمونِ وابسته به داده در دروازهٔ سخت
 # چرخه را می‌خواباند. در گامِ «آزمون ابزارها» دیده می‌شود، و watchdog هم.

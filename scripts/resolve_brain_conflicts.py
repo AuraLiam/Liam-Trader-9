@@ -213,6 +213,57 @@ def merge_open_ledger(path):
     return f"{msg} · {ghosts} شبحِ بسته‌شده حذف شد" if ghosts else msg
 
 
+def merge_frozen_closed(path):
+    """دفتر بستهٔ **یخ‌زده**: اجتماع بر هویت، منهای ردیفی که در پارهٔ هفتهٔ خودش هست.
+
+    ۲۶ سپتامبر: یک بازنویسیِ خطا ۴٬۷۳۵ ردیفِ پارهٔ W39 را دوباره در
+    closed.jsonl نشاند. `dedupe_closed --apply` آن‌ها را برداشت، ولی اجتماعِ
+    سادهٔ این ناشر با نسخهٔ origin همه را برگرداند — پاک‌سازی هرگز به محصول
+    نمی‌رسید (همان کلاسِ اشباحِ دفتر باز، ۱۵ سپتامبر). خانهٔ ردیفِ هفتهٔ
+    پاره‌دار خودِ پاره است؛ نسخهٔ یخ‌زده‌اش تکرار است، نه داده.
+    """
+    from datetime import datetime, timezone
+    msg = merge_jsonl(path)
+    wk = {}
+    for led in _closed_ledgers()[1:]:
+        tag = Path(led).stem[len("closed-"):]
+        texts = [t for t in (_stage(2, led), _stage(3, led)) if t]
+        if not texts:
+            try:
+                texts = [(ROOT / led).read_text(encoding="utf-8")]
+            except Exception:                        # noqa: BLE001
+                texts = []
+        keys = wk.setdefault(tag, set())
+        for txt in texts:
+            for line in txt.splitlines():
+                try:
+                    rec = json.loads(line)
+                except Exception:                    # noqa: BLE001
+                    continue
+                if isinstance(rec, dict):
+                    keys.add(trade_key(rec))
+    if not wk:
+        return msg
+    kept, dup = [], 0
+    for line in (ROOT / path).read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+            ms = rec.get("closed") if isinstance(rec, dict) else None
+            if isinstance(ms, (int, float)) and ms > 1e12:
+                d = datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isocalendar()
+                tag = f"{d[0]}-W{d[1]:02d}"
+                if tag in wk and trade_key(rec) in wk[tag]:
+                    dup += 1
+                    continue
+        except Exception:                            # noqa: BLE001
+            pass
+        kept.append(line)
+    (ROOT / path).write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
+    return f"{msg} · {dup} تکرارِ پاره از یخ‌زده حذف شد" if dup else msg
+
+
 def merge_archive_jsonl(path):
     """آرشیو شماره‌دارِ `signals/archive/*.jsonl` → اجتماع بر هویت ردیف.
 
@@ -527,7 +578,9 @@ def handler_for(path):
     if path in DERIVED_SNAPSHOTS:
         return take_ours                              # مشتق‌شده، تاریخ ندارد
     if path == "brain/paper/open.jsonl":
-        return merge_open_ledger                      # اجتماع منهای بسته‌شده‌ها (۱۵ سپتامبر)
+        return merge_open_ledger
+    if path == CLOSED_LEDGER:
+        return merge_frozen_closed                    # یخ‌زده منهای پاره‌ها (۲۶ سپتامبر)                      # اجتماع منهای بسته‌شده‌ها (۱۵ سپتامبر)
     if path.startswith("brain/guardian-lab/") and path.endswith(".jsonl.gz"):
         return merge_gz_lines                         # معامله‌ها، بی‌مهرِ دقیقه
     if path.startswith("brain/") and path.endswith(".jsonl.gz"):

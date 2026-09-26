@@ -262,7 +262,7 @@ check("وقتی مهرِ ما تازه‌تر است، ما می‌مانیم",
 # درس: آزمونی که جلوی تولید را می‌گیرد باید قطعی باشد. حالا **قاعده‌ها**
 # سنجیده می‌شوند، نه محتویات دیسک — با فهرست ثابتِ نمونه‌های بحرانی.
 CRITICAL = {
-    "brain/paper/closed.jsonl": rbc.merge_jsonl,
+    "brain/paper/closed.jsonl": rbc.merge_frozen_closed,  # یخ‌زده منهای پاره‌ها
     "brain/paper/open.jsonl": rbc.merge_open_ledger,   # ۱۵ سپتامبر: منهای بسته‌ها
     "brain/paper/closed-2026-W39.jsonl": rbc.merge_jsonl,
     "brain/guardians/live-votes-2026-W39.jsonl": rbc.merge_jsonl,
