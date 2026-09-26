@@ -66,6 +66,7 @@ ROOT = HERE.parents[2]
 
 import liam9_strategy as ST                          # noqa: E402
 from hamid import trend_gate as TG                   # noqa: E402
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 DOM_FILE = ROOT / "signals" / "dominance.json"
 ANALYSIS_FILE = ROOT / "signals" / "analysis-updates.json"
@@ -195,8 +196,8 @@ def probability(score, direction, ledger=None, min_n=PROB_MIN_N):
     if rows is None:
         rows = []
         p = CLOSED
-        if p.exists():
-            with p.open(encoding="utf-8", errors="replace") as fh:
+        if _ledger.exists(p):
+            with _ledger.opened(p) as fh:
                 for line in fh:
                     if not line.strip():
                         continue

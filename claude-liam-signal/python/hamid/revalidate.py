@@ -104,10 +104,9 @@ def run(force=False):
         else:
             kept.append({**l, "status": st})
     if retired:
-        RETIRED.parent.mkdir(parents=True, exist_ok=True)
-        with RETIRED.open("a") as f:
-            for r in retired:
-                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        from hamid import ledger                     # هفتگی‌پاره — سقف ۱۰۰MB گیت‌هاب
+        for r in retired:
+            ledger.append(RETIRED, r, "retired_at")
     j["lessons"] = kept
     j["revalidated"] = {"date": today, **counts}
     memory.LESSONS.parent.mkdir(parents=True, exist_ok=True)

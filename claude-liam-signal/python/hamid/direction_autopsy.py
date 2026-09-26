@@ -90,6 +90,7 @@ import math
 import statistics
 import sys
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
@@ -136,7 +137,7 @@ def load(stage_prefix="sig-"):
     درس ۲۴ اوت: CI فرض می‌کند هر ردیف یک مشاهدهٔ مستقل است؛ ردیف تکراری
     بازه را به‌دروغ تنگ می‌کند. پس یکتاسازی **قبل** از هر آماری."""
     out, seen = [], set()
-    for line in CLOSED.read_text(encoding="utf-8").splitlines():
+    for line in _ledger.text_lines(CLOSED):
         line = line.strip()
         if not line.startswith("{"):
             continue

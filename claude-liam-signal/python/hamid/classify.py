@@ -32,6 +32,7 @@ import time
 import random
 import sys
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -70,9 +71,9 @@ def load(path=None):
     """ردیف‌های بسته‌شدهٔ دارای R — تنها چیزی که قابل شمارش است."""
     p = Path(path or CLOSED)
     rows = []
-    if not p.exists():
+    if not _ledger.exists(p):
         return rows
-    for line in p.read_text(encoding="utf-8").splitlines():
+    for line in _ledger.text_lines(p):
         line = line.strip()
         if not line:
             continue

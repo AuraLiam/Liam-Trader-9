@@ -1126,17 +1126,18 @@ def reapply(backup_dir):
                     (r.get("why") or {}).get("stage"))
         op_bk, op = bk / "open.jsonl", ROOT / "brain" / "paper" / "open.jsonl"
         cl_bk, cl = bk / "closed.jsonl", ROOT / "brain" / "paper" / "closed.jsonl"
-        tree_cl = ([json.loads(x) for x in cl.read_text().splitlines() if x.strip()]
-                   if cl.exists() else [])
+        # دفتر بسته هفتگی‌پاره است (hamid/ledger.py): هم درخت و هم بکاپ با
+        # همهٔ پاره‌هایشان خوانده می‌شوند، و ردیفِ برگشتی به پارهٔ هفتهٔ خودش
+        # می‌رود — هرگز به فایلِ یخ‌زده.
+        from hamid import ledger as _ledger
+        tree_cl = _ledger.read(cl)
         closed_ids = {_paper.trade_key(r) for r in tree_cl}
-        if cl_bk.exists():
-            ours_cl = [json.loads(x) for x in cl_bk.read_text().splitlines() if x.strip()]
+        if _ledger.exists(cl_bk):
+            ours_cl = _ledger.read(cl_bk)
             new_cl = [r for r in ours_cl if _paper.trade_key(r) not in closed_ids]
             if new_cl:
-                cl.parent.mkdir(parents=True, exist_ok=True)
-                with cl.open("a") as fh:
-                    for r in new_cl:
-                        fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+                for r in new_cl:
+                    _ledger.append(cl, r, "closed")
                 closed_ids |= {_paper.trade_key(r) for r in new_cl}
                 print(f"reapply: {len(new_cl)} تسویهٔ گم‌شده به دفتر بسته برگشت")
         if op_bk.exists():

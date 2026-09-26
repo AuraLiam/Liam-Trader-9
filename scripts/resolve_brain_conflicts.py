@@ -143,14 +143,30 @@ def merge_jsonl(path):
 CLOSED_LEDGER = "brain/paper/closed.jsonl"
 
 
+def _closed_ledgers():
+    """فایلِ یخ‌زده و همهٔ پاره‌های هفتگیِ دفتر بسته (hamid/ledger.py).
+
+    دفتر بسته از ۲۶ سپتامبر هفتگی‌پاره است (سقف ۱۰۰MB گیت‌هاب). اگر این‌جا
+    فقط `closed.jsonl` خوانده شود، تسویه‌های تازه‌ای که در پاره نشسته‌اند
+    دیده نمی‌شوند و اشباح دوباره به دفتر باز برمی‌گردند.
+    """
+    base = ROOT / CLOSED_LEDGER
+    parts = sorted(base.parent.glob("closed-[0-9][0-9][0-9][0-9]-W[0-9][0-9].jsonl"))
+    return [CLOSED_LEDGER] + [str(p.relative_to(ROOT)) for p in parts]
+
+
 def _closed_keys():
     """هویتِ همهٔ معامله‌های بسته — از هر دو طرفِ تعارض، وگرنه از درخت."""
-    texts = [t for t in (_stage(2, CLOSED_LEDGER), _stage(3, CLOSED_LEDGER)) if t]
-    if not texts:
+    texts = []
+    for led in _closed_ledgers():
+        staged = [t for t in (_stage(2, led), _stage(3, led)) if t]
+        if staged:
+            texts += staged
+            continue
         try:
-            texts = [(ROOT / CLOSED_LEDGER).read_text(encoding="utf-8")]
+            texts.append((ROOT / led).read_text(encoding="utf-8"))
         except Exception:                            # noqa: BLE001
-            texts = []
+            pass
     keys = set()
     for txt in texts:
         for line in txt.splitlines():
@@ -294,6 +310,34 @@ def merge_gz_minutes(path):
         for row in out:
             fh.write(json.dumps(row, ensure_ascii=False) + "\n")
     return f"{len(out)} سطل دقیقه (اجتماع)"
+
+
+def merge_gz_lines(path):
+    """دفترِ gzipِ بی‌مهرِ دقیقه (پاره‌های هفتگیِ معامله‌های آزمایشگاه مراقبان).
+
+    `merge_gz_minutes` سطرِ بی‌`t` را دور می‌ریزد — روی این دفتر یعنی گم‌شدنِ
+    همهٔ معامله‌ها در اولین تصادم. این‌جا اجتماعِ متنِ خط است، به ترتیبِ دیدن.
+    """
+    seen, out = set(), []
+    for st in (2, 3):
+        blob = _stage_bytes(st, path)
+        if not blob:
+            continue
+        try:
+            text = gzip.decompress(blob).decode("utf-8", "replace")
+        except Exception:                            # noqa: BLE001 - طرفِ خراب رد
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if line and line not in seen:
+                seen.add(line)
+                out.append(line)
+    p = ROOT / path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with gzip.open(p, "wt", encoding="utf-8") as fh:
+        for line in out:
+            fh.write(line + "\n")
+    return f"{len(out)} سطر (اجتماع متنی)"
 
 
 def merge_lessons(path):
@@ -480,6 +524,8 @@ def handler_for(path):
         return take_ours                              # مشتق‌شده، تاریخ ندارد
     if path == "brain/paper/open.jsonl":
         return merge_open_ledger                      # اجتماع منهای بسته‌شده‌ها (۱۵ سپتامبر)
+    if path.startswith("brain/guardian-lab/") and path.endswith(".jsonl.gz"):
+        return merge_gz_lines                         # معامله‌ها، بی‌مهرِ دقیقه
     if path.startswith("brain/") and path.endswith(".jsonl.gz"):
         return merge_gz_minutes                       # دفتر دقیقه‌ای فشرده
     if path.startswith("brain/") and path.endswith(".jsonl"):

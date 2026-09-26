@@ -69,6 +69,7 @@ CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
 REGISTRY = ROOT / "config" / "state_registry.json"
 
 from hamid import phoenix as PH                              # noqa: E402
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 # قاعده‌های امتحان — **قبل از دیدن نتیجه** ثبت شده‌اند.
 MIN_SEEN = 30          # زیر این، دربارهٔ مشارکت/تمایز حکم نمی‌دهیم
@@ -84,10 +85,10 @@ ENGINE = {g["id"]: g.get("engine") for g in PH.GUARDIANS}
 
 def _rows(path, limit=None):
     """خواندنِ بردبارِ دفترِ append-only — خطِ خراب کلِ امتحان را نمی‌خواباند."""
-    if not Path(path).exists():
+    if not _ledger.exists(path):
         return []
     out = []
-    for line in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+    for line in _ledger.text_lines(path):
         line = line.strip()
         if not line:
             continue

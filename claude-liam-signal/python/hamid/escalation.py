@@ -28,6 +28,7 @@
 import json
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 CLOSED = ROOT / "brain" / "paper" / "closed.jsonl"
@@ -45,7 +46,7 @@ def _sig_rows(path=None, now_ms=None, window_h=WINDOW_H):
     rows = []
     p = Path(path) if path else CLOSED
     try:
-        with open(p, encoding="utf-8") as fh:
+        with _ledger.opened(p) as fh:
             for ln in fh:
                 try:
                     r = json.loads(ln)

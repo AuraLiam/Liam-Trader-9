@@ -43,6 +43,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
@@ -61,10 +62,10 @@ USE_MARKS = ("exp_used", "memory", "edge_used", "phoenix_score", "skill_w")
 
 def _rows(p, limit=None):
     p = Path(p)
-    if not p.exists():
+    if not _ledger.exists(p):
         return []
     out = []
-    with p.open(encoding="utf-8") as f:
+    with _ledger.opened(p) as f:
         for ln in f:
             ln = ln.strip()
             if not ln:

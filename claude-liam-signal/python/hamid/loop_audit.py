@@ -29,6 +29,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
@@ -43,7 +44,7 @@ WINDOW_H = 72          # پنجرهٔ ممیزی: ۳ روز
 
 def _rows(p):
     try:
-        return [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
+        return [json.loads(x) for x in _ledger.text_lines(p) if x.strip()]
     except Exception:                                # noqa: BLE001
         return []
 

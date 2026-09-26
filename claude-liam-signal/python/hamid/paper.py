@@ -103,6 +103,10 @@ RISK_FRACTION = 0.01          # 1% of balance per trade
 # اگر EVشان منفی بود، برمی‌گردیم.
 FILL_HOURS = 24               # a limit untouched this long is cancelled
 HOLD_HOURS = 24               # then closed at market
+# سقفِ زمانِ یک دور تسویه (ثانیه). job چرخه ۴۰ دقیقه سقف دارد و ~۷ دقیقه‌اش
+# نصب و خودآزمایی است؛ تسویه‌ای که از این بگذرد انتشار را می‌کُشد (قطعی
+# ۲۴–۲۶ سپتامبر). مانده‌ها دست‌نخورده برای دور بعد می‌مانند.
+MARK_BUDGET_S = int(__import__("os").environ.get("LIAM9_MARK_BUDGET_S", "720"))
 
 # شناسنامهٔ مدل کارمزد روی هر ردیف تسویه‌شده — تا معلوم باشد این عدد با
 # کدام تعریف ساخته شده. ردیف‌های پیش از ۳۰ اوت شب این کلید را ندارند و
@@ -142,7 +146,18 @@ def pending_valid_min(tf):
                FILL_HOURS * 60)
 
 
+def _is_closed(p):
+    # دفترِ بسته هفتگی‌پاره است (hamid/ledger.py) — سقفِ ۱۰۰MB گیت‌هاب.
+    try:
+        return Path(p).resolve() == Path(CLOSED).resolve()
+    except Exception:                                # noqa: BLE001
+        return False
+
+
 def _read(p):
+    if _is_closed(p):
+        from hamid import ledger
+        return ledger.read(p)
     if not p.exists():
         return []
     out = []
@@ -167,6 +182,10 @@ def _write(p, rows):
 def _append(p, row):
     import brain as _b
     if _b.blocked(p):
+        return
+    if _is_closed(p):
+        from hamid import ledger
+        ledger.append(p, row, "closed")
         return
     p.parent.mkdir(parents=True, exist_ok=True)
     with p.open("a") as f:
@@ -341,15 +360,33 @@ def open_from(setups, context):
     return added
 
 
+# کش کندلِ یک دورِ `mark` — {نماد: (عمق, ردیف‌ها)}. فقط داخل یک mark زنده است.
+#
+# ریشهٔ قطعیِ ۵۶ساعتهٔ چرخهٔ حمید (۲۴–۲۶ سپتامبر): `mark` برای **هر ردیف**
+# یک بار کندل می‌گرفت. دفتر باز به ۴٬۸۵۴ ردیف روی فقط ۲۹۸ نماد رسید، یعنی
+# ~۱۶ برابر فچِ تکراری، و هر فچ می‌تواند زنجیرهٔ ۱۳ صرافی × ۱۲ ثانیه را برود.
+# چرخه بی‌صدا تا سقف ۴۰ دقیقهٔ job می‌ماند و کشته می‌شد — پیش از نوشتنِ دفتر
+# باز. پس ردیف‌ها تسویه نمی‌شدند، دفتر بزرگ‌تر می‌شد و اجرای بعد کندتر: یک
+# مارپیچِ خودتقویت. هیچ خروجیِ چرخه منتشر نشد و ۲۷ فایل وضعیت کهنه شدند.
+_KCACHE = None
+
+
 def _candles_since(sym, since_ms):
     # پنجرهٔ ثابت ۲۰۰تایی (~۵۰ ساعت) بعد از قطعی رانر تاریخچه را گم می‌کرد و
     # معاملهٔ پرشدهٔ برنده «منقضی» ثبت می‌شد — بازبینی کد. حالا عمق فچ از سنِ
     # خود سفارش می‌آید، با سقف ۱۰۰۰ کندل.
     n = min(1000, max(200, int((time.time() * 1000 - since_ms) / 900000) + 20))
-    try:
-        rows = sources.klines(sym, "15m", n)
-    except Exception:                                # noqa: BLE001 - skip this one
-        return []
+    hit = _KCACHE.get(sym) if _KCACHE is not None else None
+    if hit is not None and hit[0] >= n:
+        rows = hit[1]
+    else:
+        try:
+            rows = sources.klines(sym, "15m", n)
+        except Exception:                            # noqa: BLE001 - skip this one
+            rows = []
+        # شکست هم کش می‌شود: نمادِ خراب در یک دور سی بار دوباره فچ نشود.
+        if _KCACHE is not None:
+            _KCACHE[sym] = (1000 if not rows else n, rows)
     return [{"t": k[0], "o": k[1], "h": k[2], "l": k[3], "c": k[4]}
             for k in rows if k[0] >= since_ms]
 
@@ -823,21 +860,48 @@ def mark():
         if k not in uniq or (p.get("filled") and not uniq[k].get("filled")):
             uniq[k] = p
     open_dups = len(positions) - len(uniq)
-    positions = list(uniq.values())
-    for p in positions:
-        k = trade_key(p)
-        if k in done:
-            dedup += 1
-            continue
-        try:
-            _settle_one(p, now, still, box)
-            done.add(k)          # همین اجرا هم دوباره تسویه‌اش نکند
-        except Exception as e:                   # noqa: BLE001
-            # ردیفِ خراب باز می‌ماند و برچسب می‌خورد؛ بقیهٔ دفتر تسویه می‌شود.
-            p["mark_error"] = type(e).__name__
-            still.append(p)
-            errors += 1
+    # قدیمی‌ترین اول: قدیمی‌ترین ردیفِ هر نماد عمیق‌ترین تاریخچه را می‌خواهد،
+    # پس بقیهٔ ردیف‌های همان نماد از همان یک فچ سرویس می‌گیرند. و اگر سقفِ
+    # زمان خورد، آن‌که مانده جدیدترین است نه قدیمی‌ترین — هیچ ردیفی گرسنه نمی‌ماند.
+    positions = sorted(uniq.values(), key=lambda p: p.get("opened") or 0)
+    global _KCACHE
+    _KCACHE = {}
+    t0 = time.time()
+    deferred = 0
+    try:
+        for i, p in enumerate(positions):
+            if time.time() - t0 > MARK_BUDGET_S:
+                # سقف زمان: بقیه دست‌نخورده باز می‌مانند تا دور بعد — گم نمی‌شوند،
+                # و چرخه به انتشار می‌رسد. تسویه هرگز نباید کلِ چرخه را بخواباند.
+                rest = positions[i:]
+                still.extend(rest)
+                deferred = len(rest)
+                break
+            k = trade_key(p)
+            if k in done:
+                dedup += 1
+                continue
+            try:
+                _settle_one(p, now, still, box)
+                done.add(k)          # همین اجرا هم دوباره تسویه‌اش نکند
+            except Exception as e:                   # noqa: BLE001
+                # ردیفِ خراب باز می‌ماند و برچسب می‌خورد؛ بقیهٔ دفتر تسویه می‌شود.
+                p["mark_error"] = type(e).__name__
+                still.append(p)
+                errors += 1
+            if i and i % 500 == 0:
+                # بی‌صدایی موفقیت نیست: قطعی ۵۶ساعته ۳۳ دقیقه هیچ خطی چاپ نکرد.
+                print(f"  تسویه {i}/{len(positions)} · {len(_KCACHE)} نماد فچ شد "
+                      f"· {time.time() - t0:.0f}ث", flush=True)
+    finally:
+        n_fetched = len(_KCACHE)
+        _KCACHE = None
     closed = box[0]
+    print(f"تسویه: {len(positions)} ردیف · {n_fetched} فچِ نماد · "
+          f"{time.time() - t0:.0f}ث", flush=True)
+    if deferred:
+        print(f"⏱ سقف {MARK_BUDGET_S}ث تسویه خورد — {deferred} ردیفِ جدیدتر "
+              f"دست‌نخورده برای دور بعد ماند")
     if open_dups:
         print(f"↺ {open_dups} ردیف تکراری از دفتر باز جمع شد")
     if dedup:

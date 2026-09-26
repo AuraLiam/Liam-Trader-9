@@ -21,6 +21,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -34,10 +35,10 @@ GIDS = ("scorpio", "gemini", "taurus", "aries", "leo", "cancer",
 
 
 def _rows(p):
-    if not Path(p).exists():
+    if not _ledger.exists(p):
         return []
     out = []
-    for ln in Path(p).read_text(encoding="utf-8").splitlines():
+    for ln in _ledger.text_lines(p):
         ln = ln.strip()
         if not ln:
             continue

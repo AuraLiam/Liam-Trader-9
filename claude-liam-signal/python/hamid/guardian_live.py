@@ -113,8 +113,10 @@ def _log_vote(v, sym, tf, direction, now_ms):
                "votes": {g: d.get("v") for g, d in (v.get("votes") or {}).items()},
                "why": {g: d.get("why") for g, d in (v.get("votes") or {}).items()},
                "source": "live-scan"}
-        with VOTES.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        # دفتر رأی هفتگی‌پاره است (hamid/ledger.py) — ۷۳MB با رشد ۵MB/روز
+        # پنج روز تا سقفِ ۱۰۰MB گیت‌هاب فاصله داشت.
+        from hamid import ledger as _ledger
+        _ledger.append(VOTES, row, "at")
     except Exception:                                        # noqa: BLE001
         pass
 
@@ -303,9 +305,16 @@ def _selftest():
     # زدند. اگر `_log_vote` حالت شنی را نمی‌دید، تا این خط ده‌ها ردیفِ
     # ساختگی در دفترِ تولید نشسته بود — و دقیقاً همین اتفاق در نسخهٔ اول
     # افتاد (۹۶ ردیف).
-    _before = VOTES.exists() and VOTES.stat().st_size or 0
+    # اندازه روی **همهٔ** فایل‌های دفتر (یخ‌زده + پاره‌ها) — اگر فقط فایلِ
+    # یخ‌زده سنجیده شود، رأیِ نشته در پاره دیده نمی‌شود و این بررسی بی‌صدا
+    # همیشه سبز می‌ماند.
+    from hamid import ledger as _ledger
+
+    def _size():
+        return sum(f.stat().st_size for f in _ledger.files(VOTES))
+    _before = _size()
     desk([sig], judge=judge_all, opener=fake_open)
-    _after = VOTES.exists() and VOTES.stat().st_size or 0
+    _after = _size()
     chk(_after == _before, f"دفترِ رأیِ تولید در آزمون رشد کرد: {_before}→{_after}")
     import brain as _b
     chk(getattr(_b, "SANDBOX", False),

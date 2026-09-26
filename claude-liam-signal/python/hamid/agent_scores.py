@@ -52,6 +52,7 @@ import math
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
@@ -202,8 +203,8 @@ def build(now_ms=None, closed_path=None, dom_points=None):
     pts = _dom_points() if dom_points is None else dom_points
     path = Path(closed_path) if closed_path else CLOSED
     rows = []
-    if path.exists():
-        for line in path.read_text().splitlines():
+    if _ledger.exists(path):
+        for line in _ledger.text_lines(path):
             if not line.strip():
                 continue
             try:

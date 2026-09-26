@@ -111,12 +111,10 @@ def _evict(lessons, now):
         blocked = False
     if not blocked:
         try:
-            RETIRED.parent.mkdir(parents=True, exist_ok=True)
-            with RETIRED.open("a", encoding="utf-8") as f:
-                for l in gone:
-                    f.write(json.dumps({**l, "retired_at": now,
-                                        "retired_reason": "cap"},
-                                       ensure_ascii=False) + "\n")
+            from hamid import ledger                 # هفتگی‌پاره — سقف ۱۰۰MB گیت‌هاب
+            for l in gone:
+                ledger.append(RETIRED, {**l, "retired_at": now,
+                                        "retired_reason": "cap"}, "retired_at")
         except Exception:                            # noqa: BLE001
             pass
     return [l for i, l in enumerate(lessons) if i not in drop]

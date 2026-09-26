@@ -156,7 +156,10 @@ spec = importlib.util.spec_from_file_location("rbc", SCRIPT)
 rbc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rbc)
 check("دفتر jsonl تازه خودکار پوشش داده می‌شود",
-      rbc.handler_for("brain/paper/open.jsonl") is rbc.merge_jsonl)
+      rbc.handler_for("brain/paper/some-new-ledger.jsonl") is rbc.merge_jsonl)
+# پاره‌های هفتگیِ دفتر بسته/رأی‌ها (hamid/ledger.py، ۲۶ سپتامبر) همان اجتماع را می‌گیرند
+check("پارهٔ هفتگیِ دفتر بسته اجتماع بر هویت می‌گیرد",
+      rbc.handler_for("brain/paper/closed-2026-W39.jsonl") is rbc.merge_jsonl)
 check("هر jsonl زیر brain (مثلاً learning) هم پوشش دارد",
       rbc.handler_for("brain/learning/experiences.jsonl") is rbc.merge_jsonl)
 check("signals عکس‌فوری می‌گیرد نه اجتماع — با قاعدهٔ «مهرِ تازه‌تر برنده»",
@@ -260,7 +263,10 @@ check("وقتی مهرِ ما تازه‌تر است، ما می‌مانیم",
 # سنجیده می‌شوند، نه محتویات دیسک — با فهرست ثابتِ نمونه‌های بحرانی.
 CRITICAL = {
     "brain/paper/closed.jsonl": rbc.merge_jsonl,
-    "brain/paper/open.jsonl": rbc.merge_jsonl,
+    "brain/paper/open.jsonl": rbc.merge_open_ledger,   # ۱۵ سپتامبر: منهای بسته‌ها
+    "brain/paper/closed-2026-W39.jsonl": rbc.merge_jsonl,
+    "brain/guardians/live-votes-2026-W39.jsonl": rbc.merge_jsonl,
+    "brain/guardian-lab/trades-2026-W39.jsonl.gz": rbc.merge_gz_lines,
     "brain/learning/experiences.jsonl": rbc.merge_jsonl,
     "brain/memory/lessons.json": rbc.merge_lessons,
     "brain/learning/index.json": rbc.rebuild_index,

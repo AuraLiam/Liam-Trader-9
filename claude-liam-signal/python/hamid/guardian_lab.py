@@ -572,12 +572,32 @@ def snapshot(res, syms=None, span=None, now_ms=None):
                         "دادهٔ خارج-از-نمونه و تأیید صریح حمید (قانون ۰۳)."}
 
 
+def trades_part(now_ms=None):
+    """پارهٔ هفتگیِ فشردهٔ دفتر معامله‌های بازپخش.
+
+    ریشهٔ ۲۲ روز کهنگیِ تابلوی آزمایشگاه (۶، ۱۳ و ۲۰ سپتامبر، هر سه
+    GH001): هر اجرای هفتگی ~۱۳۵هزار ردیف (۴۵–۶۰MB) به **یک** فایل
+    می‌افزود و دومین اجرا از سقفِ ۱۰۰MB گیت‌هاب می‌گذشت؛ push رد می‌شد و
+    تابلو هم با آن منتشر نمی‌شد. این دفتر فقط برای ممیزی است (هیچ ماژولی
+    نمی‌خواندش)، پس هر هفته یک فایلِ فشرده (~۱۰ برابر کوچک‌تر) می‌گیرد.
+    """
+    from hamid import ledger as _ledger
+    ms = time.time() * 1000 if now_ms is None else now_ms
+    return BRAIN / f"trades-{_ledger.week_tag(ms)}.jsonl.gz"
+
+
 def append_trades(trades, path=None):
-    p = Path(path or TRADES)
+    import gzip
+    p = Path(path) if path else trades_part()
     p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a", encoding="utf-8") as f:
-        for t in trades:
-            f.write(json.dumps(t, ensure_ascii=False) + "\n")
+    if p.suffix == ".gz":
+        with gzip.open(p, "at", encoding="utf-8") as f:
+            for t in trades:
+                f.write(json.dumps(t, ensure_ascii=False) + "\n")
+    else:
+        with p.open("a", encoding="utf-8") as f:
+            for t in trades:
+                f.write(json.dumps(t, ensure_ascii=False) + "\n")
     return len(trades)
 
 

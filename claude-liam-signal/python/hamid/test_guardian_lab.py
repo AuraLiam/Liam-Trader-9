@@ -315,10 +315,14 @@ with tempfile.TemporaryDirectory() as td:
           len(dup) == len(a))
 
     # تکه، دفتر و تابلوی تولید را دست نمی‌زند.
-    before = (GL.OUT.exists(), GL.TRADES.exists())
+    # دفتر معامله از ۲۶ سپتامبر پارهٔ هفتگیِ فشرده دارد؛ بررسی روی همهٔ
+    # فایل‌هایش است، وگرنه نوشتن در پاره دیده نمی‌شد و این بررسی همیشه سبز بود.
+    def _book():
+        return sorted((p.name, p.stat().st_size) for p in GL.BRAIN.glob("trades*"))
+    before = (GL.OUT.exists(), _book())
     GL.write_shard(d / "c.json", a, sp_a)
     check("نوشتنِ تکه به تابلو/دفتر تولید دست نمی‌زند",
-          (GL.OUT.exists(), GL.TRADES.exists()) == before)
+          (GL.OUT.exists(), _book()) == before)
 
 src_wf = (HERE.parents[2] / ".github" / "workflows" / "guardian-lab.yml").read_text(
     encoding="utf-8")

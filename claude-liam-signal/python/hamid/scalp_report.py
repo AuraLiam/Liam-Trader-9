@@ -35,6 +35,7 @@ import random
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -49,7 +50,7 @@ def load(tf="1m", stage="scalp", ledger=None):
     یک تایم بنویسند و قانون ۹ آمارشان را جدا می‌خواهد."""
     p = Path(ledger) if ledger else LEDGER
     out = []
-    for line in p.read_text().splitlines():
+    for line in _ledger.text_lines(p):
         if not line.strip():
             continue
         r = json.loads(line)

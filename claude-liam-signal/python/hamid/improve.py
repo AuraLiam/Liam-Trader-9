@@ -55,6 +55,7 @@ import random
 import statistics
 import sys
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -72,7 +73,7 @@ NOT_TRADES = ("expired",)
 def _rows():
     out = []
     try:
-        for line in CLOSED.read_text(encoding="utf-8").splitlines():
+        for line in _ledger.text_lines(CLOSED):
             line = line.strip()
             if not line:
                 continue

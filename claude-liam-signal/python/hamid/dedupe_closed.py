@@ -63,7 +63,31 @@ def scan(path=None):
 
 
 def run(apply=False, path=None, quiet=False):
-    p = Path(path) if path else CLOSED
+    """یک فایل (path) یا — پیش‌فرض — همهٔ فایل‌های دفتر بسته.
+
+    دفتر بسته از ۲۶ سپتامبر هفتگی‌پاره است (hamid/ledger.py): فایلِ یخ‌زده و
+    پاره‌های هفتگی هر کدام جدا تمیز می‌شوند. تکرارِ **بین** فایل‌ها را
+    خواننده (`ledger.read`) بر هویت یکتا می‌کند — این‌جا هیچ ردیفی از یک
+    فایل به فایلِ دیگر جابه‌جا نمی‌شود (قانون ضد-merge).
+    """
+    if path is not None:
+        return _run_one(apply, Path(path), quiet)
+    from hamid import ledger as _ledger
+    fs = _ledger.files(CLOSED)
+    if not fs:
+        print("دفتر بسته وجود ندارد")
+        return {"kept": 0, "dropped": 0}
+    tot = {"kept": 0, "dropped": 0, "broken": 0, "total": 0, "files": []}
+    for f in fs:
+        r = _run_one(apply, f, quiet)
+        for k in ("kept", "dropped", "broken", "total"):
+            tot[k] += r.get(k, 0)
+        tot["files"].append({"file": f.name, **{k: r.get(k) for k in ("kept", "dropped")}})
+    tot["dup_pct"] = round(tot["dropped"] / max(1, tot["total"]) * 100, 1)
+    return tot
+
+
+def _run_one(apply, p, quiet):
     if not p.exists():
         print("دفتر بسته وجود ندارد")
         return {"kept": 0, "dropped": 0}

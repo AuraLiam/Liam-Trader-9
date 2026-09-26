@@ -22,6 +22,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
@@ -102,9 +103,9 @@ def signal_stats(feed):
 
 def _closed(since_ms):
     out = []
-    if not CLOSED.exists():
+    if not _ledger.exists(CLOSED):
         return out
-    for line in open(CLOSED, encoding="utf-8"):
+    for line in _ledger.text_lines(CLOSED):
         try:
             r = json.loads(line)
         except Exception:                            # noqa: BLE001

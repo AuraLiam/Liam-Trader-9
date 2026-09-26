@@ -47,6 +47,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
@@ -181,9 +182,9 @@ def rows(path=None):
     """ردیف‌های بستهٔ یکتا (یکتایی پیش از هر CI — تصحیح ۲۴ اوت)."""
     p = Path(path or CLOSED)
     out, seen = [], set()
-    if not p.exists():
+    if not _ledger.exists(p):
         return out
-    for line in p.read_text(encoding="utf-8").splitlines():
+    for line in _ledger.text_lines(p):
         if not line.strip():
             continue
         try:

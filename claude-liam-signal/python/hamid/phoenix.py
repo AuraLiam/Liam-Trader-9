@@ -41,6 +41,7 @@ import math
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 PY = HERE.parent
@@ -807,8 +808,8 @@ def score_outcomes(closed_path=None, now_ms=None):
     # تکرار، هم n را چند برابر می‌کند و هم بازهٔ اطمینان را ساختگی تنگ —
     # یعنی مراقبی زودتر از حقش «تأییدشده» می‌شود و وزن می‌گیرد.
     seen = set()
-    if p.exists():
-        for line in p.read_text(encoding="utf-8").splitlines():
+    if _ledger.exists(p):
+        for line in _ledger.text_lines(p):
             if not line.strip():
                 continue
             try:

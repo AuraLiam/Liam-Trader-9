@@ -31,6 +31,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -126,9 +127,9 @@ def parse(text: str, name="x.csv"):
 def _sent_signals():
     out = []
     for p in (CLOSED, OPEN):
-        if not p.exists():
+        if not _ledger.exists(p):
             continue
-        for ln in p.read_text(encoding="utf-8").splitlines():
+        for ln in _ledger.text_lines(p):
             try:
                 r = json.loads(ln)
             except Exception:                        # noqa: BLE001

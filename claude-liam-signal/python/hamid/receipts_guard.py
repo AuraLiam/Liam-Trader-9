@@ -74,6 +74,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
@@ -128,7 +129,7 @@ def _ident(row, fields):
 def _read_jsonl(p):
     out = []
     try:
-        for line in p.read_text(encoding="utf-8").splitlines():
+        for line in _ledger.text_lines(p):
             line = line.strip()
             if line.startswith("{"):
                 out.append(json.loads(line))

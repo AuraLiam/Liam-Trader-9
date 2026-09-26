@@ -48,6 +48,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -82,10 +83,10 @@ def config():
 
 def load(path=None, stage=STAGE):
     p = Path(path) if path else CLOSED
-    if not p.exists():
+    if not _ledger.exists(p):
         return []
     out = []
-    with p.open(encoding="utf-8", errors="replace") as fh:
+    with _ledger.opened(p) as fh:
         for line in fh:
             if not line.strip():
                 continue

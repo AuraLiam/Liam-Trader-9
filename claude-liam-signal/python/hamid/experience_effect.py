@@ -33,6 +33,7 @@ import random
 import sys
 import time
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -48,9 +49,9 @@ MIN_N = 8                    # زیر این، بوت‌استرپ عدد بی�
 def load(since_ms=0, sent_only=True):
     """معامله‌های نمره‌خورده. sent_only = فقط دفتر سیگنالِ واقعاً ارسال‌شده."""
     out = []
-    if not CLOSED.exists():
+    if not _ledger.exists(CLOSED):
         return out
-    for line in CLOSED.read_text(encoding="utf-8").splitlines():
+    for line in _ledger.text_lines(CLOSED):
         if not line.strip():
             continue
         try:

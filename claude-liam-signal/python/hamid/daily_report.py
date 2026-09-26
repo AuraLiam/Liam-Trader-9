@@ -17,6 +17,7 @@ import sys
 import time
 from collections import defaultdict
 from pathlib import Path
+from hamid import ledger as _ledger                   # noqa: E402 - دفتر هفتگی‌پاره
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
@@ -31,10 +32,10 @@ SIG_STAGES = ("signal", "sig-ibs", "sig-smc", "sig-alarm", "sig-pump-radar")
 
 def rows(path):
     p = Path(path)
-    if not p.exists():
+    if not _ledger.exists(p):
         return []
     out = []
-    for line in p.read_text().splitlines():
+    for line in _ledger.text_lines(p):
         if line.strip():
             try:
                 out.append(json.loads(line))
