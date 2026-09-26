@@ -72,7 +72,8 @@ def kget(sym, tf, n):
 
 
 intake = {"generated": NOW - 60000, "items": [
-    {"id": "ext:news", "family": "external", "ok": True, "age_min": 20, "digest": {"n": 7}},
+    {"id": "ext:news", "family": "external", "ok": True, "age_min": 20,
+     "payload": {"count": 7, "hot": [{"source": "s", "title": "t"}]}},   # شکلِ واقعیِ intake
     {"id": "ext:calendar", "family": "external", "ok": False, "age_min": 20, "error": "403"},
     {"id": "state:dominance.json", "family": "state", "ok": True, "age_min": 12, "digest": {"v": 1}},
     {"id": "state:market-stance.json", "family": "state", "ok": True, "age_min": 500, "digest": {}},
@@ -102,7 +103,7 @@ check("منبع مرده → why_not، نه عدد", not o6["dead"]["ok"] and "4
       and o6["dead"]["summary"] is None)
 check("هر (نماد،تایم) یک بار کشیده شد", calls.count(("BTCUSDT", "1h")) == 1, str(calls))
 o14 = {r["id"]: r for r in doc["owners"]["E14"]["items"]}
-check("خوراک سالم → ok با خلاصه", o14["news"]["ok"] and o14["news"]["summary"] == {"n": 7})
+check("خوراک سالم → ok با خلاصهٔ واقعیِ payload (نه خالی)", o14["news"]["ok"] and o14["news"]["summary"].get("count") == 7)
 check("خوراک ناموفق → why_not", not o14["cal"]["ok"] and "ناموفق" in o14["cal"]["why_not"])
 check("خوراک غایب در intake → why_not", not o14["fg"]["ok"] and "نیست" in o14["fg"]["why_not"])
 o3 = {r["id"]: r for r in doc["owners"]["E03"]["items"]}

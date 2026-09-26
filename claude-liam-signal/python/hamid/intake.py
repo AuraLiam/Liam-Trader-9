@@ -190,7 +190,14 @@ def collect_external(timeout_s=SOURCE_TIMEOUT_S, intel=None):
                 it.update(ok=False, err="no fetcher")
             else:
                 try:
-                    it.update(ok=True, payload=cut(f.result(timeout=timeout_s)))
+                    pay = cut(f.result(timeout=timeout_s))
+                    # منبعی که خودش «در دسترس نیست» می‌گوید، موفق نیست (قانون ۱) —
+                    # ۲۶ سپتامبر: unlocks با status=UNAVAILABLE «ok:true» می‌گرفت.
+                    bad = isinstance(pay, dict) and str(pay.get("status", "")).upper() in (
+                        "UNAVAILABLE", "UNVERIFIED", "ERROR")
+                    it.update(ok=not bad, payload=pay)
+                    if bad:
+                        it["err"] = f"payload:{pay.get('status')}"
                 except FutTimeout:
                     it.update(ok=False, err=f"timeout>{timeout_s}s")
                 except Exception as e:               # noqa: BLE001
@@ -291,9 +298,11 @@ def _selftest():
             def calendar(self): time.sleep(3); return []
             def news(self): return [{"title": "t" * 300, "source": "s", "at": 1}]
             def trending(self): return list(range(30))
-            def unlocks(self): return []
+            def unlocks(self): return {"status": "UNAVAILABLE", "why": "HTTPError", "events": []}
         ext = collect_external(timeout_s=1, intel=FakeIntel())
         by = {i["source"]: i for i in ext}
+        check("خوراکی که خودش UNAVAILABLE می‌گوید ok:false می‌گیرد",
+              by["unlocks"]["ok"] is False and "UNAVAILABLE" in by["unlocks"].get("err", ""))
         check("منبعِ موفق payloadِ بریده می‌گیرد", by["fear_greed"]["ok"] and by["fear_greed"]["payload"] == {"value": 33, "label": "ترس"})
         check("منبعِ خطادار ok:false با نامِ خطا — نه عددِ ساختگی",
               by["funding"]["ok"] is False and by["funding"]["err"] == "RuntimeError")
@@ -306,10 +315,11 @@ def _selftest():
               set(by) == {s for s, _, _ in EXTERNAL})
 
         doc = build(now, external=True, intel=FakeIntel(), registry=reg, timeout_s=1)
-        # سه شکست: d.json خراب + funding خطا + calendar کند (سقف ۱ ثانیه)
+        # چهار شکست: d.json خراب + funding خطا + calendar کند (سقف ۱ ثانیه)
+        # + unlocks که خودش UNAVAILABLE گفت
         check("شمارِ شکست و کهنه روی سرِ صندوق است",
-              doc["n_failed"] == 3 and doc["stale"] == ["b.json"]
-              and {"funding", "calendar", "d.json"} <= set(doc["failed"]),
+              doc["n_failed"] == 4 and doc["stale"] == ["b.json"]
+              and {"funding", "calendar", "d.json", "unlocks"} <= set(doc["failed"]),
               str((doc["n_failed"], doc["stale"], doc["failed"])))
         check("مرزِ صادقانه روی خروجی است (قانون ۱۲)", "قانون ۱۵" in doc["boundary"])
 

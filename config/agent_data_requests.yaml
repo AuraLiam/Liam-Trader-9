@@ -56,3 +56,57 @@ requests:
       file: market-stance.json
       why: موضع هفتگی بازار پیش از رأی دامیننس
       max_age_min: 120
+  # ── ۲۶ سپتامبر: ایجنت‌های عملیاتی که هیچ درخواستی نداشتند (ممیزی منابع) ──
+  execution:                             # تأیید ورود ۵د — ستاپ و بستر را باید ببیند
+    - id: setups
+      kind: state
+      file: latest.json
+      why: ستاپ‌های منتشرشده (SIGNAL/ARMED) که ورودشان تأیید می‌شود
+      max_age_min: 45
+    - id: dominance
+      kind: state
+      file: dominance.json
+      why: دروازهٔ USDT.D پیش از تأیید ورود (قانون ۳)
+      max_age_min: 45
+  order-block:
+    - id: ob_radar
+      kind: state
+      file: ob-radar.json
+      why: رویدادهای OB_APPROACHING/BREAKER_DETECTED رادار
+      max_age_min: 240
+  liquidity:
+    - id: top_liquidity
+      kind: state
+      file: top-liquidity.json
+      why: جدول نقدینگی نمادها
+      max_age_min: 360
+    - id: funding
+      kind: feed
+      feed: funding
+      why: فاندینگ BTC/ETH/SOL — لایهٔ نقدینگی، نه ماشه
+      max_age_min: 180
+  market-structure:
+    - id: setups
+      kind: state
+      file: latest.json
+      why: ستاپی که مکانش در ساختار ۴س/۱س/۱۵د سنجیده می‌شود
+      max_age_min: 45
+    - id: btc_4h
+      kind: kline
+      symbol: BTCUSDT
+      tf: 4h
+      n: 220
+      why: ساختار ۴س BTC با ≥۲۰۰ کندل (قانون ۰۰)
+      max_age_min: 300
+  lead-lag:
+    - id: btc_patterns
+      kind: state
+      file: btc-patterns.json
+      why: حرکت/الگوی BTC که لید-لگ از آن شروع می‌شود
+      max_age_min: 120
+  data-quality:
+    - id: system_state
+      kind: state
+      file: system-state.json
+      why: حکم گذرگاه وضعیت — کهنگی/یتیم/گم‌شده (قانون ۱۳)
+      max_age_min: 45

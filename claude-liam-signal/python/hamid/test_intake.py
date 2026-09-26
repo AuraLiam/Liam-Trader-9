@@ -69,6 +69,23 @@ for p in agents:
         bad.append((p.name, key, want))
 check("کلیدِ سطل داخل هر ایجنت با نامش می‌خواند", not bad, str(bad[:4]))
 
+# ۴ب) هیچ ایجنت عملیاتی سطلِ خالی نمی‌گیرد — روی قراردادِ واقعی، نه نمونهٔ دستی.
+# عیبِ ۲۶ سپتامبر: market-structure فقط به E07 وصل بود که فایلی ندارد، پس
+# سطلش همیشه خالی بود و قاعدهٔ «read_next خالی = چیزی نخوان» کورش می‌کرد.
+from hamid import dispatch as _D                                 # noqa: E402
+_items = [{"id": f"state:{f}", "family": "state", "owner": r.get("owner"),
+           "consumer": r.get("consumer"), "ok": True, "at": 1, "digest": {}}
+          for f, r in reg.items()]
+_eng = set()
+for _it in _items:
+    _eng |= _D._engines_for(_it)
+_empty = {a: e for a, e in _D.AGENT_ENGINES.items() if not (set(e) & _eng)}
+check("هر ایجنت عملیاتی دست‌کم یک فایلِ قرارداد در سطلش دارد", not _empty, str(_empty))
+check("مصرف‌کنندهٔ ترکیبیِ قرارداد («E18/E22 + MCP»، «panel+telegram») مسیر می‌گیرد",
+      {"E22", "E11"} <= _D._engines_for({"family": "state", "owner": "E18",
+                                         "consumer": "E18/E22/E11 + MCP"})
+      and "E25" in _D._engines_for({"family": "state", "owner": "E17", "consumer": "panel+telegram"}))
+
 # ۵) قانون ۱۷ مکتوب است و به محافظ اشاره می‌کند
 rule = ROOT / ".claude" / "rules" / "17-intake-buckets.md"
 check("قانون ۱۷ وجود دارد", rule.exists())

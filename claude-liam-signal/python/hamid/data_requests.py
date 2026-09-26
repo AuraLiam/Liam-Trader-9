@@ -171,7 +171,11 @@ def fulfill(requests, kget=_kget_default, intake=None, now_ms=None):
                     else:
                         age = intake_age if it.get("age_min") is None else it.get("age_min")
                         row["age_min"] = None if age is None else round(age, 1)
-                        row["summary"] = it.get("digest") or {k: it.get(k) for k in ("ok", "note", "error") if k in it}
+                        # intake خوراکِ بیرونی را زیر `payload` می‌گذارد، نه `digest` —
+                        # ۲۶ سپتامبر: خلاصهٔ خبر/تقویم خالی می‌رسید و قوس (E14) کور بود.
+                        row["summary"] = (it.get("payload") if it.get("payload") is not None
+                                          else it.get("digest")) or {
+                            k: it.get(k) for k in ("ok", "note", "error", "err") if k in it}
                         row["ok"] = bool(it.get("ok")) and age is not None and age <= cap
                         if not row["ok"]:
                             row["why_not"] = ("خوراک ناموفق" if not it.get("ok")

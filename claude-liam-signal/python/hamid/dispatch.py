@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -70,12 +71,16 @@ EXTERNAL_ROUTES = {
 
 # نُه ایجنتِ عملیاتی → انجین‌هایی که سطلشان را می‌خوانند
 AGENT_ENGINES = {
-    "macro-dominance":     ("E03", "E04", "E05"),
-    "market-structure":    ("E07",),
-    "order-block":         ("E08",),
+    # ۲۶ سپتامبر: E04/E07/E09 فایلِ خودشان را ندارند، پس market-structure
+    # همیشه سطلِ خالی می‌گرفت و قاعدهٔ «read_next خالی = چیزی نخوان» عملاً
+    # کورش می‌کرد. ورودیِ واقعیِ کارش اضافه شد: ستاپ‌ها (E17)، اردر بلاک
+    # (E08)، بستر BTC (E06). execution هم ستاپ و دامیننس را ندید.
+    "macro-dominance":     ("E03", "E04", "E05", "E06"),
+    "market-structure":    ("E07", "E17", "E08", "E06"),
+    "order-block":         ("E08", "E10"),
     "liquidity":           ("E10",),
-    "lead-lag":            ("E12",),
-    "execution":           ("E09", "E11", "E19"),
+    "lead-lag":            ("E12", "E06"),
+    "execution":           ("E09", "E11", "E19", "E17", "E03"),
     "post-trade-learning": ("E20", "E21"),
     "research":            ("E22", "E13"),
     "data-quality":        ("E02", "E23"),
@@ -99,12 +104,15 @@ def _engines_for(item):
         if item.get("owner"):
             out.add(item["owner"])
         cons = item.get("consumer")
+        # مصرف‌کننده در قرارداد متنِ آزاد است («panel+telegram»، «E18/E22/E11 + MCP»)؛
+        # تا ۲۶ سپتامبر فقط رشتهٔ دقیق خوانده می‌شد و ستونِ مصرف‌کننده هیچ‌چیز را مسیر نمی‌داد.
         for c in (cons if isinstance(cons, list) else [cons] if cons else []):
-            c = str(c).strip()
-            if c.startswith("E") and c[1:].isdigit():
-                out.add(c)
-            elif c in CONSUMER_ALIAS and CONSUMER_ALIAS[c]:
-                out.add(CONSUMER_ALIAS[c])
+            for tok in re.split(r"[+·/,\s]+", str(c)):
+                tok = tok.strip()
+                if re.fullmatch(r"E\d\d", tok):
+                    out.add(tok)
+                elif tok in CONSUMER_ALIAS and CONSUMER_ALIAS[tok]:
+                    out.add(CONSUMER_ALIAS[tok])
         out.add("E00")                               # ارکستراتور همه را می‌بیند
     else:
         eng, _ = EXTERNAL_ROUTES.get(item.get("source"), ((), "viewpoint"))
