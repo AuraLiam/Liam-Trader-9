@@ -84,7 +84,55 @@ def run(apply=False, path=None, quiet=False):
             tot[k] += r.get(k, 0)
         tot["files"].append({"file": f.name, **{k: r.get(k) for k in ("kept", "dropped")}})
     tot["dup_pct"] = round(tot["dropped"] / max(1, tot["total"]) * 100, 1)
+    tot["cross"] = _cross(apply, fs, quiet)
     return tot
+
+
+def _cross(apply, fs, quiet):
+    """ردیفِ فایلِ یخ‌زده که هویتش در پارهٔ **هفتهٔ خودش** هست — تکرارِ بین‌فایلی.
+
+    ریشه (۲۶ سپتامبر): `receipts_guard.restore` کلِ دفتر (یخ‌زده + پاره) را در
+    فایلِ یخ‌زده بازنویسی کرد و ۴٬۷۳۵ ردیفِ پارهٔ W39 دوباره آن‌جا نشست (رفع
+    ریشه در همان ماژول). این پاک‌سازی همان کلاس را برای هر تکرارِ بعدی هم
+    می‌گیرد. فقط از فایلِ یخ‌زده حذف می‌شود و فقط وقتی پارهٔ همان هفته همان
+    هویت را دارد — پس هیچ معامله‌ای گم نمی‌شود؛ خانهٔ طبیعی‌اش پاره است.
+    """
+    from hamid import ledger as _ledger
+    base = CLOSED
+    parts = _ledger.parts(base)
+    if not base.exists() or not parts:
+        return {"dropped": 0}
+    wk = {}
+    for pp in parts:
+        tag = pp.stem[len(base.stem) + 1:]
+        keys = set()
+        for ln in _ledger._lines(pp):
+            try:
+                keys.add(key(json.loads(ln)))
+            except Exception:                        # noqa: BLE001
+                pass
+        wk[tag] = keys
+    keep, dropped = [], 0
+    for ln in _ledger._lines(base):
+        try:
+            r = json.loads(ln)
+            ms = r.get("closed")
+            tag = _ledger.week_tag(ms) if isinstance(ms, (int, float)) and ms > 1e12 else None
+            if tag in wk and key(r) in wk[tag]:
+                dropped += 1
+                continue
+        except Exception:                            # noqa: BLE001
+            pass
+        keep.append(ln)
+    if not quiet:
+        print(f"تکرارِ بین‌فایلی (یخ‌زده ∩ پارهٔ هفتهٔ خودش): {dropped}")
+    if apply and dropped:
+        bak = base.with_suffix(f".jsonl.bak-{time.strftime('%Y%m%d-%H%M%S')}")
+        shutil.copy2(base, bak)
+        tmp = base.with_suffix(".jsonl.tmp")
+        tmp.write_text("\n".join(keep) + "\n", encoding="utf-8")
+        tmp.replace(base)
+    return {"dropped": dropped}
 
 
 def _run_one(apply, p, quiet):

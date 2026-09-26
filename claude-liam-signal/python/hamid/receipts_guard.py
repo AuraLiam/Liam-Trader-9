@@ -223,6 +223,13 @@ def restore(bk_dir):
             rows.append(r)
             seen.add(k)
             added += 1
+            if not is_open:
+                # دفتر بسته هفتگی‌پاره است: فقط append به پارهٔ خودِ ردیف.
+                # ۲۶ سپتامبر: بازنویسیِ کلِ `rows` (یخ‌زده + پاره‌ها) در فایلِ
+                # یخ‌زده، ۴٬۷۳۵ ردیفِ پاره را دوباره در closed.jsonl نوشت.
+                _ledger.append(tgt, r, "closed")
+        if not is_open:
+            continue
         tgt.parent.mkdir(parents=True, exist_ok=True)
         tgt.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n"
                                for x in rows), encoding="utf-8")

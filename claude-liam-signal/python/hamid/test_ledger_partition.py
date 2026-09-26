@@ -106,6 +106,41 @@ for p in SRC.glob("*.py"):
                 direct.append(f"{p.name}:{c}")
 check("هیچ ماژولی مستقیم به دفترِ یخ‌زده append نمی‌کند", not direct, direct)
 
+# ۶ب — رفتاری: دو نویسنده‌ای که ۲۶ سپتامبر فایلِ یخ‌زده را پر کردند/پاک می‌کنند.
+from hamid import receipts_guard as _RG, dedupe_closed as _DC      # noqa: E402
+_t = Path(tempfile.mkdtemp())
+_old = (ledger.PUBLISHED, _RG.ROOT, _DC.CLOSED, _RG.ARCHIVE)
+try:
+    ledger.PUBLISHED = [_t / "brain"]
+    _RG.ROOT, _RG.ARCHIVE = _t, _t / "signals" / "archive"
+    _cl = _t / "brain" / "paper" / "closed.jsonl"
+    _cl.parent.mkdir(parents=True)
+    _fz = {"sym": "OLD", "opened": 1, "entry": 1.0, "why": {"stage": "sig"}, "closed": W38}
+    _cl.write_text(json.dumps(_fz) + "\n")
+    _p = {"sym": "NEW", "opened": 2, "entry": 2.0, "why": {"stage": "sig"}, "closed": W39}
+    ledger.append(_cl, _p, "closed")
+    _bk = _t / "bk" / "receipts"
+    _bk.mkdir(parents=True)
+    _lost = {"sym": "LOST", "opened": 3, "entry": 3.0, "why": {"stage": "sig"}, "closed": W39}
+    (_bk / "closed.jsonl").write_text("\n".join(json.dumps(x) for x in (_fz, _p, _lost)) + "\n")
+    _size = _cl.stat().st_size
+    _RG.restore(_t / "bk")
+    check("restore فایلِ یخ‌زده را بازنویسی نمی‌کند (ردیفِ پاره به آن برنمی‌گردد)",
+          _cl.stat().st_size == _size, f"{_size} → {_cl.stat().st_size}")
+    check("و ردیفِ گم‌شده به پارهٔ هفتهٔ خودش برمی‌گردد",
+          sorted(r["sym"] for r in ledger.read(_cl)) == ["LOST", "NEW", "OLD"])
+    # حالت خرابِ ۲۶ سپتامبر را دستی می‌سازیم: ردیفِ پاره در یخ‌زده هم هست
+    with _cl.open("a") as _f:
+        _f.write(json.dumps(_p) + "\n")
+    _DC.CLOSED = _cl
+    _res = _DC._cross(True, ledger.files(_cl), True)
+    check("پاک‌سازی بین‌فایلی فقط تکرارِ هفتهٔ پاره را از یخ‌زده برمی‌دارد",
+          _res["dropped"] == 1 and [json.loads(x)["sym"] for x in _cl.read_text().splitlines()] == ["OLD"],
+          str(_res))
+    check("و هیچ معامله‌ای گم نمی‌شود", sorted(r["sym"] for r in ledger.read(_cl)) == ["LOST", "NEW", "OLD"])
+finally:
+    ledger.PUBLISHED, _RG.ROOT, _DC.CLOSED, _RG.ARCHIVE = _old
+
 # ۷ — روی مخزنِ واقعی (فقط با --runway): به داده بسته است نه به کد، پس در
 # دروازهٔ سخت نیست — درسِ ۶ سپتامبر: آزمونِ وابسته به داده در دروازهٔ سخت
 # چرخه را می‌خواباند. در گامِ «آزمون ابزارها» دیده می‌شود، و watchdog هم.
