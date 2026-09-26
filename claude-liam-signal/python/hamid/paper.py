@@ -914,6 +914,15 @@ def mark():
     return len(still), closed
 
 
+def aside_stages():
+    """مرحله‌هایی که در سرتیترِ موجودیِ «سیگنال‌شده» نیستند — مشتق از `_NOT_SIGNAL`.
+
+    «v2» عمداً بیرون می‌ماند (همان ستاپ سیگنال‌شده با نسخهٔ دیگر موتور) و
+    «alarm» دفتر جدای خودش را دارد.
+    """
+    return tuple(st for st in _NOT_SIGNAL if st != "v2") + ("alarm",)
+
+
 def _equity():
     """Fixed-fractional balance from the closed book. Expired orders contribute
     nothing, because they were never trades.
@@ -946,8 +955,12 @@ def _equity():
     # رکورد استراتژی سیگنال‌شده را ناخوانا می‌کند.
     # «v2» عمداً این‌جا نیست (برخلاف `_NOT_SIGNAL`): دفتر v2 همان ستاپ
     # سیگنال‌شده با نسخهٔ دیگر موتور است و در این خلاصه شمرده می‌شود.
-    _aside = EXPERIMENT_STAGES + ("first", "inducement", "practice", "alarm",
-                                  "vetoed", "scalp", "shock")
+    #
+    # عیبِ ۲۶ سپتامبر: این فهرست دست‌نویس بود و از `_NOT_SIGNAL` جدا افتاد؛
+    # میز مراقبان (gd-*)، stage-vetoed و rule-vetoed — ~۳۴هزار معاملهٔ
+    # آزمایشی — به سرتیترِ دفتر حمید نشت کردند و موجودی مرکب $3.3e28 شد.
+    # درمانِ کلاس: مشتق از همان منبعِ واحد، نه یک سطرِ دیگر در فهرست.
+    _aside = aside_stages()
 
     def _stage(t):
         return (t.get("why") or {}).get("stage") or ""

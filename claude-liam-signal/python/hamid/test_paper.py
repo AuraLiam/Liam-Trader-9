@@ -329,6 +329,28 @@ def t_guardian_stages_never_count_as_signal():
           str([g for g in gids if f"gd-{g}" not in paper._NOT_SIGNAL]))
     # اثبات منفی: یک مرحلهٔ ساختگیِ ثبت‌نشده **نباید** مستثنا باشد
     check("مرحلهٔ ثبت‌نشده مستثنا نیست", "gd-notaguardian" not in paper._NOT_SIGNAL)
+    # سرتیترِ موجودی (equity.json) هم از همان منبع: ۲۶ سپتامبر فهرستِ
+    # دست‌نویسِ `_equity` جا ماند و ~۳۴هزار ردیفِ آزمایشی موجودی را $3.3e28 کرد.
+    aside = set(paper.aside_stages())
+    check("سرتیترِ موجودی هر مرحلهٔ غیرسیگنال را کنار می‌گذارد (جز v2)",
+          set(paper._NOT_SIGNAL) - {"v2"} <= aside,
+          str(sorted(set(paper._NOT_SIGNAL) - {"v2"} - aside)))
+    import tempfile, json as _j
+    from pathlib import Path as _P
+    d = _P(tempfile.mkdtemp())
+    old = paper.CLOSED, paper.EQUITY
+    paper.CLOSED, paper.EQUITY = d / "c.jsonl", d / "e.json"
+    try:
+        rows = [{"sym": "A", "opened": i, "entry": 1, "R": 1.0, "closed": i,
+                 "why": {"stage": "gd-leo"}} for i in range(3000)]
+        rows.append({"sym": "B", "opened": 1, "entry": 1, "R": 1.0, "closed": 1,
+                     "why": {"stage": "second"}})
+        paper.CLOSED.write_text("\n".join(_j.dumps(r) for r in rows) + "\n")
+        eq = paper._equity()
+        check("ردیفِ میز مراقبان به سرتیترِ موجودی نشت نمی‌کند",
+              eq["trades"] == 1 and eq["balance"] == 1010.0, f"{eq['trades']} {eq['balance']}")
+    finally:
+        paper.CLOSED, paper.EQUITY = old
 
 
 def main():
