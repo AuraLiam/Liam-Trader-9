@@ -84,6 +84,15 @@ def award(closed_trades, now_ms=None):
                 "from_experience": exp_bonus == 2})
             given += 1
     if not given:
+        # بی‌جایزه هم تابلو مهرِ «هنوز زنده‌ام» می‌گیرد — وگرنه چند ساعتِ آرام
+        # بدون معاملهٔ اثرانگشت‌دار «کهنه» خوانده می‌شد (ممیزی ۲۶ سپتامبر).
+        if OUT.exists():
+            try:
+                cur = json.loads(OUT.read_text(encoding="utf-8"))
+                cur["generated"] = now
+                OUT.write_text(json.dumps(cur, ensure_ascii=False, indent=1))
+            except Exception:                        # noqa: BLE001
+                pass
         return 0
     st["history"] = st["history"][-KEEP_HISTORY:]
     LEDGER.parent.mkdir(parents=True, exist_ok=True)

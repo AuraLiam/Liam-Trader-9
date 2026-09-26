@@ -57,6 +57,14 @@ def run():
     check("تابلوی پنل مرتب بر اساس امتیاز", out["board"][0]["engine"] == "E08"
           and out["recent"], str(out["board"][:2]))
 
+    # ۶) دورِ بی‌جایزه هم مهرِ تابلو را تازه می‌کند (ممیزی ۲۶ سپتامبر) —
+    # وگرنه ساعت‌های آرام «کهنه» خوانده می‌شد، بی‌آنکه چیزی خراب باشد.
+    before = out["generated"]
+    rw.award([], now_ms=before + 3_600_000)
+    after = json.loads(rw.OUT.read_text())
+    check("دورِ بی‌جایزه مهرِ تابلو را تازه می‌کند و تابلو را دست نمی‌زند",
+          after["generated"] == before + 3_600_000 and after["board"] == out["board"])
+
     print(f"\n✓ همهٔ {OK} آزمون دفتر جایزه گذشت")
 
 
