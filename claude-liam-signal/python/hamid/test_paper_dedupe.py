@@ -55,6 +55,15 @@ check("و متنشان متفاوت است (همان چیزی که ادغامِ 
       json.dumps(a) != json.dumps(b))
 check("کلیدِ paper و کلیدِ ادغامِ تعارض مو‌به‌مو یکی‌اند",
       P.trade_key(a) == RBC.trade_key(a), f"{P.trade_key(a)} vs {RBC.trade_key(a)}")
+# ۲۶ سپتامبر: `why` متنی (درس جهت، رویدادها) کلید را می‌ترکاند و ناشر
+# «مال ما» می‌گرفت — ردیفِ رانرِ دیگر در تصادم گم می‌شد.
+_txt = {"sym": "X", "entry": 1.0, "why": "تا 1.54R در سود رفت و برگشت"}
+try:
+    _k1, _k2 = P.trade_key(_txt), RBC.trade_key(_txt)
+    check("`why` متنی کلید را نمی‌ترکاند و دو پیاده‌سازی یکی‌اند",
+          _k1 == _k2 == ("X", None, 1.0, None), f"{_k1} vs {_k2}")
+except Exception as _e:                                          # noqa: BLE001
+    check("`why` متنی کلید را نمی‌ترکاند و دو پیاده‌سازی یکی‌اند", False, repr(_e))
 check("`closed` داخل کلید نیست (وگرنه هیچ تکراری گرفته نمی‌شد)",
       P.trade_key(row(closed=1)) == P.trade_key(row(closed=999_999)))
 check("ورودِ متفاوت = معاملهٔ متفاوت",

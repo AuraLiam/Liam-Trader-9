@@ -787,8 +787,12 @@ def trade_key(rec):
     آن یکی تعارضِ بین دو رانر را جمع می‌کند، این یکی جلوی ثبتِ دوباره را
     داخل همان رانر می‌گیرد. `test_paper_dedupe` هم‌ارزی‌شان را می‌سنجد.
     """
+    # `why` در دفترهای غیرمعامله‌ای (درس جهت، رویدادها) متن است نه شیء —
+    # ۲۶ سپتامبر: `.get` روی رشته می‌ترکید و ناشر «مال ما» می‌گرفت، یعنی
+    # ردیف‌های رانرِ دیگر در تصادم بی‌صدا گم می‌شدند.
+    why = rec.get("why")
     return (rec.get("sym"), rec.get("opened"), rec.get("entry"),
-            (rec.get("why") or {}).get("stage"))
+            why.get("stage") if isinstance(why, dict) else None)
 
 
 def closed_keys():
