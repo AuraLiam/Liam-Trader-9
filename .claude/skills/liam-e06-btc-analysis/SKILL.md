@@ -29,7 +29,7 @@ Produce the full BTC context using 4H/1H/15M/5M structure, S/R, trendlines/chann
 
 - BTC OHLCV
 - USDT.D/BTC.D/macro packets
-- CoinGlass derivatives/liquidity
+- Derivatives/liquidity: `intel.funding`, `intel.open_interest`, `liqmap` (estimates). CoinGlass is **UNAVAILABLE** (no key/source wired) — optional; its absence is not a reason to fabricate numbers (rule 1)
 - indicators
 
 ## Deterministic Python responsibilities

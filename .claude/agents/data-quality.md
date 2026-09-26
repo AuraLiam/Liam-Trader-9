@@ -1,7 +1,11 @@
 ---
 name: data-quality
 description: کیفیت داده — تازگی، منبع، فیلد گمشده، اختلاف صرافی‌ها. قبل از اعتماد به هر تحلیل مهم یا وقتی دو منبع نمی‌خوانند.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e02-market-data-quality
+  - liam-e23-supervisor-sre
+  - liam-e23-signal-health
 ---
 # ایجنت کیفیت داده
 
@@ -10,7 +14,7 @@ tools: Read, Grep, Glob, Bash
 دو منبع ناسازگار → برچسب DATA_CONFLICT و توقف ادعا.
 
 پیاده‌شده: sources.py (چند-صرافی با sane-check و venue failover)،
-hamid/watchdog.py (تازگی پنل/موتورها، بعد از هر انتشار)، hamid/medic.py
+hamid/watchdog.py (تازگی پنل/موتورها، بعد از هر انتشار)، medic.py (ریشهٔ python/)
 (احیای ورک‌فلوی خوابیده)، دروازهٔ هم‌زمانی در ارسال، health.yml.
 یادآوری: شبکهٔ کانتینر توسعه فقط گیت‌هاب را می‌بیند — هر چک بیرونی روی
 رانر Actions اجرا می‌شود، نه محلی.

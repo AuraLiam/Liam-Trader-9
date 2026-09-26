@@ -51,6 +51,7 @@ Detect, validate, score, track, invalidate, and learn high-quality OB/FVG/liquid
 
 ## Hard rules
 
+- Hamid's OB definition (rule 21, canonical in `hamid/orderblock.py`): the **first opposite-colour candle whose body is larger than the sum of all its wicks**, and it must be **proven by a past reaction on the same timeframe**. An unproven (virgin) zone is a candidate, not a valid OB.
 - Last opposite candle alone is never sufficient.
 - Require displacement plus meaningful BOS/MSS and contextual evidence.
 - Track CANDIDATE/FRESH/TOUCHED/PARTIAL/MITIGATED/WEAKENED/CONSUMED/BREAKER/INVALIDATED.

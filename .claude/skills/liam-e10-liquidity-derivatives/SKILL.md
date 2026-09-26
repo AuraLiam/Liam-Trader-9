@@ -30,7 +30,7 @@ Map stop-hunt risk, liquidation concentrations, order-book imbalance, OI/funding
 ## Required inputs
 
 - order book/trades
-- CoinGlass map/heatmap
+- Liquidation map: `liqmap` estimate (labelled as estimate). CoinGlass map/heatmap is **UNAVAILABLE** (no key/source wired) — optional, never fabricated
 - OI/funding/liquidations
 - structure/OB
 

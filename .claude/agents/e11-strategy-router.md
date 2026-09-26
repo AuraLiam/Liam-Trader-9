@@ -7,6 +7,8 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e11-strategy-router
+  - liam-hamid-trading-method
+  - liam-pullback-opposing-ob-rotation
 memory: project
 effort: high
 background: true

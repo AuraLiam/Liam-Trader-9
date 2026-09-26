@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e10-liquidity-derivatives
+  - liam-e10-order-flow-level2
 memory: project
 effort: high
 background: true

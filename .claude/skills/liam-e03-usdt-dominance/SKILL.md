@@ -29,7 +29,7 @@ Analyze USDT dominance independently using Hamid’s 200-candle 4H→1H→15M me
 
 - USDT market cap dominance series
 - 4H/1H/15M candles
-- macro/news context
+- macro/news context (viewpoint only, optional — rule 15; never a gate)
 - historical regimes
 
 ## Deterministic Python responsibilities

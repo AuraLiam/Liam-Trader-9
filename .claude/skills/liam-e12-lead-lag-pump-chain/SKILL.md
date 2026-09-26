@@ -52,11 +52,11 @@ Detect historical and live pump chains: when a leader moves, identify repeat fol
 - Analyze all available leader pumps, not only the latest two.
 - Two repeated followers create RESEARCH_WATCH, not an automatic signal.
 - A follower signal still requires live volume plus Hamid strategy gates.
-- Never answer that the cycle was missed; maintain the clock continuously.
+- Pump review runs exactly 5 times per Tehran day (`pump-review.yml`, UTC cron `13 2,7,12,17,21`) — rule 07. The continuous 3–5 min radar was retired on 20 Aug (alarm ledger n=3,096, −0.180R, CI below zero). A pumped coin waits for the next review; no out-of-schedule alert.
 
 ## Learning routine
 
-Run immediately on every qualifying pump event; nightly incremental recomputation; weekly false-discovery and regime stability audit.
+Five scheduled reviews per Tehran day (see `liam-e12-pump-review`); nightly incremental lead-lag recomputation; weekly false-discovery and regime stability audit.
 
 ## Memory and evidence
 

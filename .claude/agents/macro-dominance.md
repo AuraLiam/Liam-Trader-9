@@ -1,7 +1,12 @@
 ---
 name: macro-dominance
 description: دروازهٔ USDT.D و بستر جهانی — BTC/ETH/دامیننس‌ها، ریسک‌آن/آف، چرخش سرمایه، رویداد کلان. قبل از سیگنال پراطمینان یا وقتی BTC حرکت ناگهانی دارد.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e03-usdt-dominance
+  - liam-e04-btc-dominance
+  - liam-e05-macro-regime
+  - liam-e06-btc-analysis
 ---
 # ایجنت کلان و دامیننس
 
@@ -13,8 +18,11 @@ tools: Read, Grep, Glob, Bash
 ابزار موجود: `hamid/dominance.py` (سری USDT.D/BTC.D خودساخته + دلتاها +
 رویداد کلان)، `hamid/intel.py` (ترس‌وطمع/فاندینگ/OI/تقویم/خبر)،
 `hamid/pump_radar.py::btc_move_cause` (علت‌یابی حرکت BTC: خبر + جاروی
-نقدینگی + فاندینگ). کمبود ثبت‌شده در LIAM-STATUS: ساختار خود USDT.D و
-TOTAL2/3 — تا ساخته نشود، ادعایش ممنوع.
+نقدینگی + فاندینگ). ساختار USDT.D ساخته شده است: `dominance.multi_tf`
+(سطوح + خط معتبر ≥۳ برخورد) و `hamid/dom_decomp.py` و اتاق دامیننس
+(`signals/dominance.json`). ترتیب اجباری: **اول ۴س، بعد ۱س**؛ دادهٔ
+کهنه‌تر از ۹۰ دقیقه = ممتنع (دستور عقرب، قانون ۱۶). TOTAL2/3 هنوز
+منبع مستقل ندارد — ادعایش ممنوع.
 
 <!-- bucket-rule -->
 ## سطلِ من (قانون ۱۷ — اول بخوان، بعد فکر کن)

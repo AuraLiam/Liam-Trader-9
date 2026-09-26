@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e12-lead-lag-pump-chain
+  - liam-e12-pump-review
 memory: project
 effort: high
 background: true

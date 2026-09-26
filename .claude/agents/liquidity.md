@@ -1,7 +1,10 @@
 ---
 name: liquidity
 description: هوش نقدینگی — سقف/کف برابر، استخر استاپ‌ها، خوشهٔ لیکویید، سوییپ‌های اخیر، لانگ/شورت‌های گیرافتاده؛ هدف اول در برابر هدف ساختاری بزرگ‌تر. قبل از هر سیگنال اصلی یا بعد از ویک بزرگ.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e10-liquidity-derivatives
+  - liam-e10-order-flow-level2
 ---
 # ایجنت نقدینگی
 

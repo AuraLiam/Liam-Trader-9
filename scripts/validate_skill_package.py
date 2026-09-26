@@ -21,6 +21,41 @@ def frontmatter(path: Path) -> dict:
     return yaml.safe_load(text[4:end]) or {}
 
 
+# مهارت‌هایی که ایجنت اصلی خودش صدا می‌زند (user-invocable) — زیرایجنت لازم ندارند.
+LEAD_ONLY_SKILLS = {"signal-work", "work-report"}
+
+
+def _skill_wiring(root: Path, rows) -> list:
+    """هر مهارت باید دست‌کم یک ایجنت داشته باشد که بارش کند (۲۶ سپتامبر).
+
+    عیبِ اندازه‌گیری‌شده: ۱۰ مهارت (از جمله قواعد ورود کندلی قانون ۱۰ و
+    برنامهٔ ۵نوبتهٔ پامپ) هیچ ایجنتی نداشتند؛ پس «تزریق به مهارت» هرگز به
+    استدلالِ ایجنت نمی‌رسید. ۹ ایجنت عملیاتی اصلاً ابزار Skill نداشتند.
+    """
+    errs = []
+    agents = sorted((root / ".claude/agents").glob("*.md"))
+    skills = {p.parent.name for p in (root / ".claude/skills").glob("*/SKILL.md")}
+    used = set()
+    by_id = {f"{r['id'].lower()}-{r['slug']}.md": r["claude_skill"] for r in rows}
+    for a in agents:
+        fm = frontmatter(a)
+        lst = fm.get("skills") or []
+        used.update(lst)
+        for sk in lst:
+            if sk not in skills:
+                errs.append(f"agent {a.name} references missing skill {sk}")
+        if not lst:
+            errs.append(f"agent {a.name} loads no skill")
+        elif "Skill" not in str(fm.get("tools", "")):
+            errs.append(f"agent {a.name} lists skills but lacks the Skill tool")
+        own = by_id.get(a.name)
+        if own and own not in lst:
+            errs.append(f"agent {a.name} does not load its own skill {own}")
+    for sk in sorted(skills - used - LEAD_ONLY_SKILLS):
+        errs.append(f"skill {sk} is loaded by no agent")
+    return errs
+
+
 def _tracked(root: Path):
     """فقط فایل‌هایی که گیت واقعاً می‌شناسد.
 
@@ -87,6 +122,8 @@ def validate(root: Path) -> list[str]:
             runtime = yaml.safe_load(runtime_path.read_text(encoding="utf-8"))
             if runtime.get("engine_id") != eid:
                 errors.append(f"runtime skill ID mismatch: {runtime_path}")
+
+    errors += _skill_wiring(root, rows)
 
     signal = yaml.safe_load((root / "config/signal_policy.yaml").read_text(encoding="utf-8"))
     if signal.get("release_mode") != "immediate_per_symbol_no_batch_barrier":
@@ -157,7 +194,7 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
     if not args.quiet:
-        print("LIAM package validation OK: 27 engines, 27 agents, immediate 30s/event-driven policy, live execution disabled.")
+        print("LIAM package validation OK: 27 engines, 36 agents (27 specialist + 9 operational), every skill wired, immediate 30s/event-driven policy, live execution disabled.")
     return 0
 
 

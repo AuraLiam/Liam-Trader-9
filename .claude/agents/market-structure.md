@@ -1,7 +1,11 @@
 ---
 name: market-structure
 description: نقشهٔ ساختار بازار (۴س/۱س/۱۵د) برای یک نماد — سوینگ، BOS/CHoCH، OB/FVG، رنج/کانال، فلیپ‌ها. وقتی ارکستراتور «مکان قیمت» یا اعتبار ستاپ را لازم دارد.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e07-structure
+  - liam-hamid-trading-method
+  - liam-pullback-opposing-ob-rotation
 ---
 # ایجنت ساختار بازار
 

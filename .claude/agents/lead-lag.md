@@ -1,7 +1,10 @@
 ---
 name: lead-lag
 description: کشف رابطهٔ لید-لگ — چه ارزی قبل/بعد از این ارز حرکت می‌کند، با چه تأخیر و قدرتی. وقتی پامپ/دامپ معنادار رخ می‌دهد یا همبستگی غیرمنتظره دیده می‌شود.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e12-lead-lag-pump-chain
+  - liam-e12-pump-review
 ---
 # ایجنت لید-لگ
 

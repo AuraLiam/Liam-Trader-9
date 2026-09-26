@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e23-supervisor-sre
+  - liam-e23-signal-health
 memory: project
 effort: high
 background: true

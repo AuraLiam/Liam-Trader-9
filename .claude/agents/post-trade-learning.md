@@ -1,7 +1,10 @@
 ---
 name: post-trade-learning
 description: بازبینی پس از معامله — هر ستاپ بسته/باطل‌شده را به پروندهٔ درس تبدیل می‌کند و فقط درس قابل‌استفادهٔ مجدد را به حافظه می‌فرستد. بعد از تسویه یا شکست تکرارشونده.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e20-post-trade-review
+  - liam-e21-memory-curator
 ---
 # ایجنت یادگیری پس از معامله
 

@@ -61,7 +61,8 @@ metadata:
 
 ainvest.com/news · coinmarketcap.com/headlines · coingecko.com/en/news ·
 coindesk.com · theblock.co — خبر فقط با ثبت منبع و retrieved_at وارد
-تحلیل می‌شود (قانون ۰۳).
+تحلیل می‌شود (قانون ۰۳)، و فقط به‌عنوان **دیدگاه** (قانون ۱۵): هیچ خبری
+وارد دروازه یا امتیاز تصمیم نمی‌شود.
 
 ## Definition of done
 

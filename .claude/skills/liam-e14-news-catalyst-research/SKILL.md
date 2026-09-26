@@ -52,12 +52,12 @@ Continuously discover, verify, date, relate, and monitor project launches, listi
 
 - Discovery source is not proof.
 - Every material catalyst needs provenance and verification status.
-- Never trade only because of a rumor.
+- News, calendar, social and FOMO are **viewpoint only** (rule 15): they never enter a gate or a score. Their only route is the agent poll (`hamid/news_poll.py`), weighted by each agent's scored track record (Wilson CI lower bound > 0.5, cap 5%). The only exception is the ≤2h USD macro window that halves size (`macro_guard`) — volatility protection, not news interpretation.
 - Store launch time, timezone, affected assets, source confidence, and expiry.
 
 ## Learning routine
 
-X/official streams continuously; 72-hour catalyst sweep daily; new-project review every 6 hours; weekly source and taxonomy update.
+Official streams via `intel.news`/`intel.calendar` (X access is not connected — do not claim it); 72-hour catalyst sweep daily; new-project review every 6 hours; weekly source and taxonomy update.
 
 ## Memory and evidence
 

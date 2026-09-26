@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e22-improvement-research-director
+  - liam-research-governance
 memory: project
 effort: high
 background: true

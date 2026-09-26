@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e09-indicators
+  - liam-e09-candlestick-evidence
 memory: project
 effort: high
 background: true

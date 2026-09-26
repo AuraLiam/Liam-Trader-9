@@ -1,7 +1,11 @@
 ---
 name: research
 description: تحقیق رویدادمحور و پرسش-محور — فقط وقتی دلیل معنادار هست (شکست تکرارشونده، رفتار غیرعادی بازار، جهش حجم بی‌توضیح، ضعف نامفهوم استراتژی، منبع دادهٔ جدید، مشکل کد). هرگز برای «گشتن بی‌هدف».
-tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, Skill
+skills:
+  - liam-research-governance
+  - liam-e22-improvement-research-director
+  - liam-e13-historical-analog
 ---
 # ایجنت تحقیق
 

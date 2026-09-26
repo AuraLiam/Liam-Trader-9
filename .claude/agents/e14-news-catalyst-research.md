@@ -7,6 +7,7 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e14-news-catalyst-research
+  - liam-research-governance
 memory: project
 effort: high
 background: true

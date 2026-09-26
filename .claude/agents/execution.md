@@ -1,7 +1,12 @@
 ---
 name: execution
 description: تأیید اجرای ۵ دقیقه — sweep/reclaim/micro-BOS/displacement و هم‌زمانی با نقطهٔ ورود، فقط وقتی ستاپ تایم بالا از قبل معتبر است.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
+skills:
+  - liam-e09-candlestick-evidence
+  - liam-signal-release-gate
+  - liam-e11-strategy-router
+  - liam-hamid-trading-method
 ---
 # ایجنت اجرا (۵د)
 

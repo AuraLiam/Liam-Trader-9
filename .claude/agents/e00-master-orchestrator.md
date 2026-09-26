@@ -7,6 +7,8 @@ permissionMode: plan
 maxTurns: 100
 skills:
   - liam-e00-master-orchestrator
+  - liam-hamid-trading-method
+  - liam-signal-release-gate
 memory: project
 effort: high
 background: true
