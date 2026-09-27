@@ -1,15 +1,15 @@
 {
- "generated": 1790489276105,
+ "generated": 1790493563462,
  "window_days": 7,
- "since": 1789884476105,
+ "since": 1789888763462,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-20": {
-    "pump_report": 5,
-    "signal": 20,
-    "dom_report": 18,
     "outcome": 22,
+    "pump_report": 4,
+    "dom_report": 17,
+    "signal": 17,
     "work_report": 3,
     "trade_mgmt": 1
    },
@@ -56,16 +56,17 @@
     "outcome": 67
    },
    "2026-09-27": {
-    "dom_report": 5,
-    "signal": 6,
-    "outcome": 32
+    "dom_report": 6,
+    "signal": 8,
+    "outcome": 33,
+    "pump_report": 1
    }
   },
   "total": {
+   "outcome": 228,
    "pump_report": 37,
-   "signal": 164,
    "dom_report": 166,
-   "outcome": 227,
+   "signal": 163,
    "work_report": 21,
    "trade_mgmt": 4
   },
@@ -85,11 +86,11 @@
   }
  },
  "signals": {
-  "n": 164,
+  "n": 163,
   "per_day": {
    "2026-09-20": {
-    "n": 20,
-    "first": "06:38",
+    "n": 17,
+    "first": "08:12",
     "last": "22:46"
    },
    "2026-09-21": {
@@ -123,22 +124,22 @@
     "last": "23:24"
    },
    "2026-09-27": {
-    "n": 6,
+    "n": 8,
     "first": "00:48",
-    "last": "05:06"
+    "last": "06:18"
    }
   },
   "strategy": {
-   "smc": 109,
-   "ibs": 55
+   "ibs": 54,
+   "smc": 109
   },
   "tf": {
-   "15m": 18,
-   "5m": 146
+   "5m": 147,
+   "15m": 16
   },
   "dir": {
-   "LONG": 120,
-   "SHORT": 44
+   "SHORT": 43,
+   "LONG": 120
   },
   "hour_utc": {
    "0": 16,
@@ -146,9 +147,9 @@
    "2": 5,
    "3": 2,
    "4": 5,
-   "5": 4,
+   "5": 5,
    "6": 8,
-   "7": 7,
+   "7": 5,
    "8": 15,
    "9": 13,
    "10": 4,
@@ -168,29 +169,42 @@
   }
  },
  "outcomes": {
-  "sent": 164,
-  "matched": 160,
+  "sent": 163,
+  "matched": 159,
   "unmatched": 4,
-  "match_pct": 97.6,
+  "match_pct": 97.5,
   "overall": {
-   "n": 160,
-   "mean_net": -0.041,
-   "sum_net": -6.5,
-   "win_pct": 66.9,
+   "n": 159,
+   "mean_net": -0.033,
+   "sum_net": -5.3,
+   "win_pct": 66.7,
    "outcomes": {
-    "trail": 102,
-    "stop": 22,
     "expired": 30,
     "target": 5,
-    "timeout": 1
+    "trail": 101,
+    "stop": 21,
+    "timeout": 2
    }
   },
   "by": {
    "strategy": {
+    "ibs": {
+     "n": 51,
+     "mean_net": -0.211,
+     "sum_net": -10.7,
+     "win_pct": 58.8,
+     "outcomes": {
+      "expired": 8,
+      "target": 3,
+      "trail": 27,
+      "stop": 11,
+      "timeout": 2
+     }
+    },
     "smc": {
      "n": 108,
-     "mean_net": 0.049,
-     "sum_net": 5.3,
+     "mean_net": 0.051,
+     "sum_net": 5.5,
      "win_pct": 70.4,
      "outcomes": {
       "trail": 74,
@@ -198,75 +212,64 @@
       "target": 2,
       "stop": 10
      }
-    },
-    "ibs": {
-     "n": 52,
-     "mean_net": -0.228,
-     "sum_net": -11.8,
-     "win_pct": 59.6,
-     "outcomes": {
-      "stop": 12,
-      "trail": 28,
-      "expired": 8,
-      "target": 3,
-      "timeout": 1
-     }
     }
    },
    "tf": {
-    "15m": {
-     "n": 18,
-     "mean_net": -0.238,
-     "sum_net": -4.3,
-     "win_pct": 55.6,
+    "5m": {
+     "n": 143,
+     "mean_net": -0.016,
+     "sum_net": -2.4,
+     "win_pct": 67.8,
      "outcomes": {
-      "trail": 10,
-      "stop": 3,
-      "expired": 4,
+      "expired": 26,
+      "target": 5,
+      "trail": 92,
+      "stop": 19,
       "timeout": 1
      }
     },
-    "5m": {
-     "n": 142,
-     "mean_net": -0.016,
-     "sum_net": -2.2,
-     "win_pct": 68.3,
+    "15m": {
+     "n": 16,
+     "mean_net": -0.182,
+     "sum_net": -2.9,
+     "win_pct": 56.2,
      "outcomes": {
-      "trail": 92,
-      "expired": 26,
-      "target": 5,
-      "stop": 19
+      "trail": 9,
+      "expired": 4,
+      "stop": 2,
+      "timeout": 1
      }
     }
    },
    "dir": {
-    "LONG": {
-     "n": 118,
-     "mean_net": 0.005,
-     "sum_net": 0.5,
-     "win_pct": 70.3,
-     "outcomes": {
-      "trail": 78,
-      "target": 5,
-      "expired": 20,
-      "stop": 15
-     }
-    },
     "SHORT": {
-     "n": 42,
-     "mean_net": -0.168,
-     "sum_net": -7.0,
-     "win_pct": 57.1,
+     "n": 41,
+     "mean_net": -0.136,
+     "sum_net": -5.6,
+     "win_pct": 58.5,
      "outcomes": {
-      "stop": 7,
       "expired": 10,
       "trail": 24,
+      "stop": 6,
+      "timeout": 1
+     }
+    },
+    "LONG": {
+     "n": 118,
+     "mean_net": 0.003,
+     "sum_net": 0.3,
+     "win_pct": 69.5,
+     "outcomes": {
+      "target": 5,
+      "expired": 20,
+      "trail": 77,
+      "stop": 15,
       "timeout": 1
      }
     }
    }
   },
-  "trail_zero_share_pct": 8.8,
+  "trail_zero_share_pct": 8.9,
   "open_or_unfound": 4,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
