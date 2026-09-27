@@ -476,6 +476,17 @@
    "kind": "live",
    "cadence_note": "در زنجیرهٔ ۵دقیقه‌ای + چرخه اجرا می‌شود؛ سقف ۴۵ مثل بقیهٔ خروجی‌های زنجیره"
   },
+  "nurse.json": {
+   "layer": "L7_health",
+   "owner": "E23",
+   "producer": "hamid/engine_nurse.py --write (pump-radar.yml + hamid-cycle.yml)",
+   "max_age_min": 45,
+   "consumer": "panel+agent",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "پرستار انجین‌ها: هر دور زنجیره معاینه می‌کند و مالکِ کهنه را با dispatch ورک‌فلوی خودش بیدار می‌کند؛ پادزهر دولایه جلوی اسپم dispatch را می‌گیرد. optional مثل scorecard.json: در چک‌اوتِ تازه غایب است، روی زنجیره هر دور ساخته می‌شود"
+  },
   "dash-backtest.json": {
    "layer": "L6_learning",
    "owner": "E18",

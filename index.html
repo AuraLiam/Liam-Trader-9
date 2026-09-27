@@ -292,6 +292,7 @@ input.f{background:var(--panel2);border:1px solid var(--line2);border-radius:9px
     <div id="opsRooms" class="grid" style="margin-top:12px"></div>
     <div class="box" style="margin-top:12px"><h3>برنامهٔ کاری اتاق‌ها <span class="dim" style="font-size:11px;font-weight:400" id="curMeta"></span></h3><div id="curBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>یکپارچگی سامانه <span class="dim" style="font-size:11px;font-weight:400" id="sysStateMeta">هر لایه، مالکش، و اینکه داده‌اش تازه است یا نه</span></h3><div id="sysStateBox"></div></div>
+    <div class="box" style="margin-top:12px"><h3>پرستار انجین‌ها <span class="dim" style="font-size:11px;font-weight:400" id="nurseMeta">کهنه شد → خطِ خودش بیدار می‌شود؛ هر درمان تجربه می‌شود</span></h3><div id="nurseBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>حلقهٔ بسته <span class="dim" style="font-size:11px;font-weight:400" id="loopMeta">هر سیگنالِ رفته: پنل · یادگیری · علت‌یابی</span></h3><div id="loopBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>اتاق فومو <span class="dim" style="font-size:11px;font-weight:400" id="fomoMeta">داغی جمعیت + شاهدِ اپ fomo — فقط ثبت و سنجش، نه دروازه</span></h3><div id="fomoBox"></div></div>
     <div class="box" style="margin-top:12px"><h3>تمرین تاریخی و حافظهٔ پایدار <span class="dim" style="font-size:11px;font-weight:400" id="hroomMeta">بازپخش بدون نگاه به آینده — فقط دادهٔ واقعی؛ کمبود صریح اعلام می‌شود</span></h3><div id="hroomBox"></div></div>
@@ -3754,6 +3755,40 @@ function renderSys(){
 }
 setInterval(sysFetch,120000);setTimeout(sysFetch,4800);
 (()=>{const s=DB.get("sys_cache");if(s&&!SYS.data){SYS.data=s;setTimeout(renderSys,600);}})();
+/* nurse panel card (2026-09-25) — permanent fix for engine->panel link drops:
+   shows each stale engine owner, its wake action, and the skill-ledger trail. */
+const NURSE={data:null};
+async function nurseFetch(){
+  try{
+    const r=await fetch("./signals/nurse.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.generated){NURSE.data=j;DB.set("nurse_cache",j);renderNurse();}}
+  }catch(e){}
+}
+function renderNurse(){
+  const el=$("#nurseBox");if(!el)return;
+  const j=NURSE.data;
+  if(!j||!j.generated){el.innerHTML=`<div class="dim" style="font-size:12px" dir="rtl">
+    پرستار هنوز معاینه‌ای منتشر نکرده — زنجیرهٔ بعدی می‌سازدش.</div>`;return;}
+  const V={TREATED:["🟢","درمان انجام شد — انجین‌های کهنه بیدار شدند"],
+           MONITORED:["🟡","معاینه شد — برخی در پادزهر/منتظرِ اجرا"],
+           HEALTHY:["🟢","همهٔ انجین‌ها داخل قرارداد تازگی‌شان"]}[j.verdict]||["⚪",j.verdict];
+  const meta=$("#nurseMeta");
+  if(meta)meta.textContent=`${j.n_stale_owners} مالکِ کهنه · ${j.n_woken} بیدار شد · `
+    +Math.round((Date.now()-j.generated)/60000)+"د پیش";
+  const row=a=>{
+    const mark={woken:"🟢",cooldown:"⏳",treatment_disabled:"⚪",monitor_only:"⚪",wake_failed:"🔴"}[a.verdict]||"⚪";
+    return `<div style="display:flex;gap:8px;padding:2px 0;font-size:11px">
+      <span>${mark}</span><span style="min-width:34px" class="mono">${a.owner||""}</span>
+      <span style="min-width:170px" class="${a.verdict==="wake_failed"?"warn":""}" dir="rtl">${a.files||""}</span>
+      <span class="dim" dir="rtl">${a.note||""}</span></div>`;};
+  const acts=(j.actions||[]).map(row).join("")||`<div class="dim" style="font-size:12px" dir="rtl">عیبی نبود — همه داخل قرارداد</div>`;
+  const st=(j.structural||[]).length?`<div style="margin-top:8px;font-size:11.5px" class="warn" dir="rtl">
+    ⚠️ درمانِ پیدرپی (عیبِ ساختاری کادنس): ${(j.structural||[]).map(s=>`${s.skill} ×${s.times}`).join(" · ")}</div>`:"";
+  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px" dir="rtl">${V[0]} <b>${V[1]}</b></div>${acts}${st}
+    <div class="dim" style="font-size:10.5px;margin-top:8px" dir="rtl">${j.policy||""}</div>`;
+}
+setInterval(nurseFetch,120000);setTimeout(nurseFetch,5600);
+(()=>{const n=DB.get("nurse_cache");if(n&&!NURSE.data){NURSE.data=n;setTimeout(renderNurse,700);}})();
 /* اتاق فومو (۲ سپتامبر) — داغی جمعیت از دادهٔ عمومی + شاهدِ دستی از اپ fomo
    (که API ندارد). فقط نمایش و ثبت؛ هیچ امتیاز/دروازه‌ای از این کارت نمی‌آید. */
 const FOMO={data:null};

@@ -608,3 +608,15 @@ jobs:
         if: always() && github.ref == 'refs/heads/main'
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.msg_budget --check
+
+      # پرستار انجین‌ها (دستور حمید ۲۵ سپتامبر) — بعد از انتشار: مالکِ کهنه
+      # را از گذرگاه وضعیت می‌گیرد، ورک‌فلوی همان مالک را بیدار می‌کند و
+      # تجربهٔ هر درمان/تولیدِ تازه را در دفتر مهارت (E21) ثبت می‌کند.
+      # در زنجیرهٔ ۵دقیقه‌ای هم هست؛ هر کدام زودتر رسید، دیگری بی‌اثر
+      # می‌شود (پادزهر دو لایه). خط از دست رفته = انجینی که کهنه می‌ماند.
+      - name: پرستار انجین‌ها
+        if: always() && github.ref == 'refs/heads/main'
+        working-directory: claude-liam-signal/python
+        env:
+          REVIVE: "1"
+        run: python3 -m hamid.engine_nurse --write || true
