@@ -619,4 +619,5 @@ jobs:
         working-directory: claude-liam-signal/python
         env:
           REVIVE: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 -m hamid.engine_nurse --write || true

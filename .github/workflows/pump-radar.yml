@@ -164,6 +164,9 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # پرستار انجین‌ها (۲۷ سپتامبر) برای dispatch ورک‌فلو به توکن نیاز
+          # دارد — همان قاعدهٔ medic.yml؛ GITHUB_TOKEN خودکار به env نمی‌رسد.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # منبع کندل: بیت‌یونیکس پرپچوال، اسپات پشتیبان (دستور حمید ۳۱ اوت/۲
           # سپتامبر؛ اثبات رانر: venue-probe کاوش ۷ — ۴۲۰ کندل سالم، بی‌شکاف).
           LIAM9_CANDLES: perp
