@@ -64,6 +64,14 @@ def load(since_ms=0, sent_only=True):
         if sent_only and not stage.startswith("sig-"):
             continue
         out.append(t)
+    # خالص از کارمزد، از منبع واحد (ممیزی ۲۶ سپتامبر): این سنجه ناخالص
+    # می‌شمرد، و اثرِ تجربه دقیقاً از راه کارمزد (پهنای استاپ) می‌آید —
+    # ناخالص ~۰ و خالص +۰.۱۱ بود. هر حکمِ «کمک کرد» باید روی خالص باشد.
+    try:
+        from hamid import fees as _fees
+        _fees.apply_net(out)
+    except Exception:                                # noqa: BLE001
+        pass
     return out
 
 
@@ -82,7 +90,7 @@ def boot_diff(a, b, n_boot=N_BOOT, seed=SEED):
 
 
 def _side(rows, flag):
-    return [t["R"] for t in rows
+    return [t["R_net"] if t.get("R_net") is not None else t["R"] for t in rows
             if bool((t.get("why") or {}).get("exp_used")) is flag]
 
 

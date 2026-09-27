@@ -102,6 +102,20 @@ def _net(r):
     return r["R"] - (fee if fee is not None else 0.0)
 
 
+# ۶ سپتامبر ۱۱:۳۰ UTC: پایهٔ تولید خودش به قاعدهٔ ۸۰٪ عوض شد (paper.PROD_TRAIL_FRAC).
+# ممیزی ۲۶ سپتامبر: study() جفت‌های قبل و بعد را یک‌کاسه می‌کرد — «g80 منهای
+# نسخهٔ یک» با «g80 منهای خودش» (۳۴۴ از ۳۶۱ جفتِ دورهٔ تازه عیناً برابر) میانگین
+# می‌شد و هر دو حکم بی‌معنا بود. حکم فقط از دورهٔ جاری؛ دورهٔ قبل جدا گزارش می‌شود.
+BASE_CHANGED_MS = 1788694200000
+
+
+def _era(k):
+    opened = k[2] if isinstance(k, tuple) and len(k) > 2 else None
+    if isinstance(opened, (int, float)) and opened > 1e12 and opened < BASE_CHANGED_MS:
+        return "before"
+    return "current"
+
+
 def pairs():
     """جفت‌های (پایه، بازو) روی همان ستاپ — کلید: نماد+ورود+لحظهٔ باز شدن.
 
@@ -189,7 +203,12 @@ def _sign(g):
 
 
 def study():
-    ps = pairs()
+    ps_all = pairs()
+    ps, history = {}, {}
+    for tag, pops in ps_all.items():
+        ps[tag] = {k: [r for r in v if _era(r.get("key")) == "current"] for k, v in pops.items()}
+        old = [r for v in pops.values() for r in v if _era(r.get("key")) == "before"]
+        history[tag] = _group(old) if old else None
     arms = {}
     for tag, pops in ps.items():
         groups = {k: _group(v) for k, v in pops.items()}
@@ -223,11 +242,14 @@ def study():
                 by_reg[reg] = _group(sub)
         arms[tag] = {**pooled, "verdict": v, "why": why,
                      "consistent": not clash, "by_population": groups,
-                     "by_regime": by_reg}
+                     "by_regime": by_reg,
+                     # پیش از ۶ سپتامبر: بازو در برابر نسخهٔ یک (تاریخی، نه حکم)
+                     "before_base_change": history.get(tag)}
     return {
         "generated": int(time.time() * 1000),
         "fingerprint": fingerprint(),
         "z": Z, "n_promote": N_PROMOTE, "n_reject": N_REJECT,
+        "era_since_ms": BASE_CHANGED_MS,
         "arms": arms,
         "stopping_rule": (
             f"PROMOTE = CI خالصِ جفتی کاملاً بالای صفر روی n≥{N_PROMOTE} "

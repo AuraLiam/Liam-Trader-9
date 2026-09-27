@@ -194,7 +194,18 @@ def run(now_ms=None, inbox=None, ledger=None, signals=None):
                 continue
     pn = [r["pnl"] for r in allrows if isinstance(r.get("pnl"), (int, float))]
     mt = [r for r in allrows if r.get("matched")]
-    return {"generated": now, "n_files": len(files), "n_new": len(new), "n_total": len(allrows),
+    # «تازه» ≠ «داده دارد» (درس ۶ سپتامبر، کلاس ۴). تا ۲۷ سپتامبر این فایل
+    # هر چرخه با n=0 تازه می‌شد و گذرگاه آن را «سالم» می‌دید؛ هیچ‌جا نمی‌گفت
+    # که هیچ نتیجهٔ واقعی‌ای هرگز نرسیده. حالا وضعیت و راهِ رساندنش صریح است.
+    status = "OK" if allrows else "NO_LIVE_DATA"
+    link = _link_state()
+    return {"generated": now, "status": status,
+            "how_to": (None if allrows else
+                       "از بیت‌یونیکس: Futures → History (Position/Trade) → Export؛ فایل را "
+                       "با نامی که با bitunix شروع شود (csv یا json) در brain/holding/inbox/ "
+                       "بگذار یا در چت بفرست — تطبیق با سیگنال‌ها خودکار است."),
+            "dashboard_link": link,
+            "n_files": len(files), "n_new": len(new), "n_total": len(allrows),
             "n_matched": len(mt), "n_unmatched": len(allrows) - len(mt),
             "pnl_sum": round(sum(pn), 4) if pn else None,
             "win_pct": round(100 * sum(1 for x in pn if x > 0) / len(pn), 1) if pn else None,
@@ -202,6 +213,20 @@ def run(now_ms=None, inbox=None, ledger=None, signals=None):
             "recent": [{k: r.get(k) for k in ("sym", "dir", "entry", "exit", "pnl", "closed", "matched")} for r in allrows[-10:]],
             "boundary": ("نتایج از فایلِ صادرشده می‌آیند نه از API (کلیدی در ریپو نیست). ردیفِ "
                          "بی‌تطبیق حدس زده نمی‌شود. n و روش روی خروجی است")}
+
+
+def _link_state():
+    """آخرین وضعیتِ خط پنل→داشبورد از signals/live-link.json (فقط خواندن)."""
+    try:
+        j = json.loads((ROOT / "signals" / "live-link.json").read_text(encoding="utf-8"))
+    except Exception:                                # noqa: BLE001
+        return None
+    ev = j.get("events") or []
+    blocked = [e for e in ev if e.get("kind") == "EXEC_BLOCKED"]
+    last = blocked[-1] if blocked else None
+    return {"blocked_events": len(blocked), "of_events": len(ev),
+            "last_blocked_at": (last or {}).get("t"),
+            "last_blocked_why": ((last or {}).get("data") or {}).get("why")}
 
 
 def write(doc):
@@ -253,6 +278,11 @@ def _selftest():
     d2 = run(now_ms=1_800_000_000_001, inbox=tmp, ledger=tmp / "l.jsonl", signals=sigs)
     check("دورِ دوم تکرار نمی‌نویسد (هویت = هشِ ردیف)", d2["n_new"] == 0 and d2["n_total"] == 3)
     check("مرزِ «فایل نه API» روی خروجی", "API" in d["boundary"])
+    check("با داده: وضعیت OK و بی‌راهنما", d["status"] == "OK" and d["how_to"] is None)
+    _e = Path(tempfile.mkdtemp(prefix="live-empty-"))
+    d0 = run(now_ms=1_800_000_000_002, inbox=_e, ledger=_e / "l.jsonl", signals=sigs)
+    check("بی‌داده: NO_LIVE_DATA با راهِ رساندن — نه «تازه و سالم»",
+          d0["status"] == "NO_LIVE_DATA" and "Export" in (d0["how_to"] or "") and d0["pnl_sum"] is None)
     import brain as _b
     old = getattr(_b, "SANDBOX", False); _b.SANDBOX = True
     try:
