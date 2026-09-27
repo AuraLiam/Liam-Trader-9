@@ -447,14 +447,18 @@ with _tf2.TemporaryDirectory() as _td3:
     _old_closed = _P2.CLOSED
     try:
         _P2.CLOSED = _pl.Path(_td3) / "closed.jsonl"
-        def _exp(sym, entry, outcome="expired"):
+        def _exp(sym, entry, outcome="expired", opened=1, stage="sig-smc"):
             return json.dumps({"sym": sym, "entry": entry, "outcome": outcome,
-                                "closed": 1, "why": {"stage": "sig-smc"}},
+                                "closed": 1, "opened": opened, "why": {"stage": stage}},
                                ensure_ascii=False)
         _P2.CLOSED.write_text("\n".join([
-            _exp("LOKAUSDT", 0.1236), _exp("LOKAUSDT", 0.1236),
-            _exp("LOKAUSDT", 0.1236),
-            _exp("AAAUSDT", 1.0),                     # فقط یک انقضا
+            _exp("LOKAUSDT", 0.1236, opened=1), _exp("LOKAUSDT", 0.1236, opened=2),
+            _exp("LOKAUSDT", 0.1236, opened=3),
+            # فقط یک انقضای واقعی — با دو آینهٔ آزمایشی که همان لحظه باز شدند
+            # (۲۷ سپتامبر: قبلاً این «۳» خوانده می‌شد و دروازه روی ۱ می‌بست)
+            _exp("AAAUSDT", 1.0, opened=5),
+            _exp("AAAUSDT", 1.0, opened=5, stage="exp-trail-g65"),
+            _exp("AAAUSDT", 1.0, opened=5, stage="exp-trail-g80"),
             _exp("BBBUSDT", 2.0, "stop"),             # اصلاً منقضی نبوده
             _exp("BBBUSDT", 2.0, "target"),
         ]) + "\n", encoding="utf-8")
@@ -462,9 +466,9 @@ with _tf2.TemporaryDirectory() as _td3:
         check("شمارش انقضا فقط منقضی‌ها را می‌شمارد",
               _fr.get(("LOKAUSDT", 0.1236)) == 3
               and _fr.get(("BBBUSDT", 2.0)) is None, str(_fr))
-        check("ورودِ یک‌بار منقضی زیر آستانه می‌ماند",
+        check("ورودِ یک‌بار منقضی زیر آستانه می‌ماند — آینه‌های همان رویداد شمرده نمی‌شوند",
               _fr.get(("AAAUSDT", 1.0)) == 1
-              and _fr.get(("AAAUSDT", 1.0)) < _tg.FROZEN_MIN_EXPIRED)
+              and _fr.get(("AAAUSDT", 1.0)) < _tg.FROZEN_MIN_EXPIRED, str(_fr))
         check("ورودِ متفاوتِ همان ارز شمرده نمی‌شود (کلید شامل قیمت است)",
               _fr.get(("LOKAUSDT", 0.2)) is None)
 

@@ -965,7 +965,14 @@ def _frozen_entries():
     ضدتکرارِ ۳ و ۶ ساعته، که آن‌ها هم دروازهٔ تحویل‌اند. هیچ آستانهٔ
     تصمیمی عوض نشد (قانون ۰۳).
     """
-    counts = {}
+    # ### تصحیح ۲۷ سپتامبر (تأیید صریح حمید) — شمارش بر «رویداد»، نه ردیف
+    #
+    # ممیزی ۲۶ سپتامبر: آینه‌های آزمایشی (exp-trail-g65/g80، exp-geo-x2) هر
+    # ستاپ را کپی می‌کنند و با آن منقضی می‌شوند؛ ۶۹٪ انقضاهای sig- در
+    # رویدادهای ۳–۴ردیفه بودند، پس **یک** انقضای واقعی «۲+» خوانده می‌شد و
+    # دروازه عملاً روی ۱ بسته بود — نه روی ۲ که قاعده می‌گوید. آینه همان
+    # `opened` پایه را دارد؛ پس هر (نماد، ورود، لحظهٔ باز شدن) یک رویداد است.
+    eps = {}
     try:
         from hamid import paper as _p
         for t in _p._read(_p.CLOSED):
@@ -974,11 +981,11 @@ def _frozen_entries():
             e = t.get("entry")
             if isinstance(e, (int, float)):
                 k = (t.get("sym"), round(float(e), 10))
-                counts[k] = counts.get(k, 0) + 1
+                eps.setdefault(k, set()).add(t.get("opened"))
     except Exception as e:                           # noqa: BLE001 - دفتر ناخوانا = دروازهٔ خاموش
         print(f"telegram: دفتر ستاپ یخ‌زده خوانده نشد ({type(e).__name__}) — "
               "دروازه خاموش می‌ماند", flush=True)
-    return counts
+    return {k: len(v) for k, v in eps.items()}
 
 
 def send_signals(signals, render_chart, limit=8):
