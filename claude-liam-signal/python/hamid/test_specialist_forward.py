@@ -170,6 +170,16 @@ check("ورک‌فلو قفل را می‌زند", "specialist_forward --freeze"
 check("و بعدش نمرهٔ رو-به-جلو را می‌گیرد", "--score" in wf)
 check("و با ناشر یگانه منتشر می‌کند (قانون ۱۴)", "scripts/publish.sh" in wf)
 
+# ── سقف ترید بر ارز (تأیید حمید، ۲۷ سپتامبر): فقط میز رو-به-جلو بالا رفت ──
+from hamid import specialist_lab as _L                         # noqa: E402
+check("سقف رو-به-جلو بالاتر از سقف آزمایشگاه است (n دیگر روی ۵×ارز قفل نیست)",
+      F.FORWARD_PER_SYMBOL > _L.PER_SYMBOL, f"{F.FORWARD_PER_SYMBOL} vs {_L.PER_SYMBOL}")
+check("آزمایشگاه همان ۵ ترید بر ارز را نگه می‌دارد (قانون ۲۱)", _L.PER_SYMBOL == 5)
+check("نمره‌دهی پیش‌فرض با سقف رو-به-جلو است",
+      __import__("inspect").signature(F.score).parameters["per_symbol"].default == F.FORWARD_PER_SYMBOL)
+check("کرون شبانه هرگز خودش قفل را از نو نمی‌سازد (refreeze فقط با ورودی دستی)",
+      'default: "false"' in wf and '--refreeze' in wf and 'inputs.refreeze }}" = "true"' in wf)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}: {FAIL}")

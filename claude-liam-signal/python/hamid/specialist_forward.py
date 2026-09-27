@@ -86,6 +86,11 @@ FWD_LEDGER = ROOT / "brain" / "specialists" / "forward.jsonl"
 OUT = ROOT / "signals" / "specialist-forward.json"
 
 Z_SIDAK = 2.58                 # ۱۲ آزمون هم‌زمان، دوطرفه ۰.۰۵
+# سقفِ ترید بر ارز **فقط در میز رو-به-جلو** (تأیید صریح حمید، ۲۷ سپتامبر).
+# با سقف ۵ (همانِ آزمایشگاه)، n هر میز روی ~۹۲۵ (۵ × ~۱۸۵ ارز) قفل مانده بود
+# و بزرگ‌شدنِ پنجره هیچ نمونه‌ای اضافه نمی‌کرد — هر ۱۲ میز UNDECIDED با
+# نیم‌پهنای ~±۰.۱۴R، بی‌راهی به حکم. آزمایشگاه همان ۵ را نگه می‌دارد (قانون ۲۱).
+FORWARD_PER_SYMBOL = 20
 N_PROMOTE = 200
 N_REJECT = 400
 BAR_MIN = 15                   # دقیقه — تایم‌فریم میز
@@ -132,6 +137,7 @@ def freeze(now_ms=None, refreeze=False, lab=None, log=print):
             hist.append({**old, "retired_at": now})
         specs[sid] = {"id": sid, "fa": d.get("fa"), "strategy_fa": d.get("strategy_fa"),
                       "frozen_at": now, "fp": fp, "params": used, "base": base,
+                      "per_symbol": FORWARD_PER_SYMBOL,
                       "adopted": bool((d.get("improvement") or {}).get("adopted")),
                       "lab_generated": src.get("generated")}
         made.append(sid)
@@ -179,7 +185,7 @@ def _first_index_after(cd, ts):
     return len(cd)
 
 
-def score(now_ms=None, n_symbols=200, per_symbol=PER_SYMBOL, klines=None,
+def score(now_ms=None, n_symbols=200, per_symbol=FORWARD_PER_SYMBOL, klines=None,
           universe=None, log=print):
     """هر متخصص: نسخهٔ قفل‌شده در برابر پایهٔ خودش، فقط روی کندلِ بعد از قفل."""
     now = int(now_ms if now_ms is not None else time.time() * 1000)
@@ -334,6 +340,7 @@ def main(argv=()):
     ap.add_argument("--score", action="store_true")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--symbols", type=int, default=200)
+    ap.add_argument("--per-symbol", type=int, default=FORWARD_PER_SYMBOL)
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(list(argv))
     if a.selftest:
@@ -341,7 +348,7 @@ def main(argv=()):
     if a.freeze or a.refreeze:
         print(json.dumps(freeze(refreeze=a.refreeze), ensure_ascii=False))
     if a.score or not (a.freeze or a.refreeze):
-        d = score(n_symbols=a.symbols)
+        d = score(n_symbols=a.symbols, per_symbol=a.per_symbol)
         print(render(d))
         if a.write:
             write(d)

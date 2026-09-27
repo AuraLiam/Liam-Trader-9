@@ -20,6 +20,9 @@ on:
       improve:
         description: "چرخهٔ بهبود (true/false)"
         default: "true"
+      refreeze:
+        description: "قفل رو-به-جلو از نو (فقط با دستور صریح حمید) — true/false"
+        default: "false"
   schedule:
     # یک نوبت شبانه، ساعت ۰۳:۱۱ UTC — پیش از گزارش صبحِ تهران.
     - cron: "11 3 * * *"
@@ -75,7 +78,11 @@ jobs:
         working-directory: claude-liam-signal/python
         run: |
           set -o pipefail
-          python3 -m hamid.specialist_forward --freeze
+          if [ "${{ github.event.inputs.refreeze }}" = "true" ]; then
+            python3 -m hamid.specialist_forward --refreeze
+          else
+            python3 -m hamid.specialist_forward --freeze
+          fi
           python3 -m hamid.specialist_forward --score --write \
             --symbols ${{ github.event.inputs.symbols || '200' }} | tail -30
 
