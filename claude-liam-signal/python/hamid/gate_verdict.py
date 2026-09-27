@@ -161,6 +161,51 @@ def _need(vals):
     return max(0, MIN_N - n, by_width - n)
 
 
+def _passed_net(path=None):
+    """خالصِ سیگنال‌های **عبورکرده** (sig-*) — پایهٔ مقایسهٔ درست.
+
+    ممیزی ۲۶ سپتامبر: حکمِ GATE_PAYS وتوشده‌ها را با **صفر** می‌سنجد.
+    تقریباً همه‌چیز در این دفتر خالصاً منفی است، پس «زیر صفر» نمی‌گوید
+    دروازه ضرر را جدا کرده؛ فقط می‌گوید کارمزد بالاست. پرسشِ درست این است
+    که وتوشده‌ها از عبورکرده‌ها بدترند یا نه.
+    """
+    p = Path(path or CLOSED)
+    out, seen = [], set()
+    if not _ledger.exists(p):
+        return out
+    for line in _ledger.text_lines(p):
+        try:
+            r = json.loads(line)
+        except Exception:                            # noqa: BLE001
+            continue
+        st = str((r.get("why") or {}).get("stage") or "") if isinstance(r.get("why"), dict) else ""
+        if not st.startswith("sig-") or r.get("outcome") in ("expired", "no_fill", None):
+            continue
+        if not isinstance(r.get("R"), (int, float)):
+            continue
+        ident = (r.get("sym"), r.get("dir"), r.get("entry"), r.get("opened"))
+        if ident in seen:
+            continue
+        seen.add(ident)
+        fee = _fee_r(r)
+        if fee is not None:
+            out.append(float(r["R"]) - fee)
+    return out
+
+
+def _diff_ci(a, b):
+    """اختلاف میانگین a − b با CI۹۵ ولش (ناجفت)."""
+    if len(a) < 2 or len(b) < 2:
+        return None
+    ma, mb = statistics.mean(a), statistics.mean(b)
+    se = math.sqrt(statistics.variance(a) / len(a) + statistics.variance(b) / len(b))
+    d = ma - mb
+    return {"diff": round(d, 4), "lo": round(d - 1.96 * se, 4), "hi": round(d + 1.96 * se, 4),
+            "verdict": ("وتوشده بدتر از عبورکرده" if d + 1.96 * se < 0 else
+                        "وتوشده بهتر از عبورکرده" if d - 1.96 * se > 0 else
+                        "تفاوتی با عبورکرده ثابت نشد")}
+
+
 def judge(path=None, now_ms=None, stage=None):
     rs = rows(path, stage=stage or STAGE)
     net = [r["_net"] for r in rs if r["_net"] is not None]
@@ -178,6 +223,14 @@ def judge(path=None, now_ms=None, stage=None):
         why = (f"هنوز تصمیم‌پذیر نیست — n={len(net)} از {MIN_N}"
                + (f"، حدود {left} نمونهٔ دیگر تا نیم‌پهنای ±{HALF_WIDTH_TARGET}R"
                   if left else ""))
+
+    passed = _passed_net(path)
+    vs_passed = {"passed": _ci(passed), "vetoed_minus_passed": _diff_ci(net, passed)}
+    if verdict == "GATE_PAYS" and vs_passed["vetoed_minus_passed"] and \
+            vs_passed["vetoed_minus_passed"]["hi"] >= 0:
+        why += (" — ولی در برابر سیگنال‌های عبورکرده بدتر بودنش ثابت نشد "
+                f"(اختلاف {vs_passed['vetoed_minus_passed']['diff']:+.4f}R، CI شامل صفر)؛ "
+                "یعنی ضررش بیشتر از کارمزد است تا از جهت")
 
     def slice_by(keyfn):
         buckets = {}
@@ -208,6 +261,9 @@ def judge(path=None, now_ms=None, stage=None):
         "stage": stage or STAGE, "min_n": MIN_N,
         "verdict": verdict, "why": why,
         "gross": c_gross, "net": c_net,
+        # پایهٔ درست (۲۶ سپتامبر): وتوشده در برابر عبورکرده، نه در برابر صفر.
+        # قاعدهٔ توقفِ ثبت‌شده عوض نشد؛ این شاهدِ کنار حکم است.
+        "vs_passed": vs_passed,
         "by_dir": slice_by(lambda r: (r.get("dir") or "").upper() or None),
         "by_mode": slice_by(_mode),
         "by_tf": slice_by(lambda r: r.get("tf")),
@@ -232,6 +288,9 @@ def render(v):
         if c:
             L.append(f"  {lbl}  n={c['n']:<5} {c['mean']:+.4f}R "
                      f"CI[{c['lo']:+.4f}, {c['hi']:+.4f}]  {c['verdict']}")
+    vp = (v.get("vs_passed") or {}).get("vetoed_minus_passed")
+    if vp:
+        L.append(f"  در برابر عبورکرده: {vp['diff']:+.4f}R CI[{vp['lo']:+.4f}, {vp['hi']:+.4f}]  {vp['verdict']}")
     for title, key in (("جهت", "by_dir"), ("نوع وتو", "by_mode"),
                        ("تایم‌فریم", "by_tf"), ("روند ۴س/۱س", "by_trend")):
         if v[key]:

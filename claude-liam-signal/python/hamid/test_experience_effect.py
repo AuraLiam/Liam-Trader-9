@@ -108,6 +108,15 @@ check("فایل صریح می‌گوید exp_used علیت را ثابت نمی�
 check("و هشدار وتو (دو گروه هم‌شکل نیستند) نوشته شده",
       "وتو" in src and "هم‌شکل" in src)
 
+# ۲۶ سپتامبر: سنجه روی ناخالص بود (اختلاف ~۰) در حالی که خالص +۰.۱۱ بود.
+_rows = [{"R": 1.0, "entry": 100.0, "sl": 99.9, "sym": "XUSDT", "why": {"exp_used": True}}] * 3
+from hamid import fees as _F                                     # noqa: E402
+_F.apply_net(_rows)
+_s = EE._side(_rows, True)
+check("اثر تجربه روی R خالص از کارمزد سنجیده می‌شود، نه ناخالص",
+      _s and all(x < 1.0 for x in _s), str(_s))
+check("و load() خودش خالص را از منبع واحد می‌سازد", "apply_net(out)" in src)
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")

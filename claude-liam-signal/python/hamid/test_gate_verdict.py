@@ -137,6 +137,17 @@ _win = GV.judge(path=_ledger([_row(i, R=2.0 + (0.02 if i % 2 else -0.02))
 check("وتوشده‌های برنده → LOOSEN_CANDIDATE (پولِ روی میز رد شد)",
       _win["verdict"] == "LOOSEN_CANDIDATE", _win["verdict"])
 
+# ── ۵ب. پایهٔ درست: وتوشده در برابر عبورکرده، نه در برابر صفر (۲۶ سپتامبر) ──
+_same = ([_row(i, R=-1.0 + (0.02 if i % 2 else -0.02)) for i in range(GV.MIN_N + 40)]
+         + [_row(1000 + i, R=-1.0 + (0.02 if i % 2 else -0.02), stage="sig-ibs") for i in range(60)])
+_vs = GV.judge(path=_ledger(_same))
+_d = (_vs.get("vs_passed") or {}).get("vetoed_minus_passed")
+check("حکم کنار خودش مقایسه با سیگنال‌های عبورکرده را دارد",
+      _d is not None and _vs["vs_passed"]["passed"]["n"] == 60, str(_vs.get("vs_passed")))
+check("وقتی وتوشده از عبورکرده بدتر نیست، GATE_PAYS صریح می‌گوید «ثابت نشد»",
+      _vs["verdict"] == "GATE_PAYS" and "ثابت نشد" in _vs["why"], _vs["why"])
+check("قاعدهٔ توقفِ ثبت‌شده دست نخورد (هنوز همان GATE_PAYS)", _vs["verdict"] == "GATE_PAYS")
+
 # ── ۶. برش‌هایی که سؤال حمید را جواب می‌دهند ─────────────────────────────
 _mix = ([_row(i, "SHORT", 1.4) for i in range(60)]
         + [_row(500 + i, "LONG", -1.0,

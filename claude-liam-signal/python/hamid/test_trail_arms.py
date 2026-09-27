@@ -391,6 +391,17 @@ def run():
     check("۵۰ ردیفِ قاعدهٔ قدیم + ۳ ردیفِ جدید ⇒ فقط ۳ تا داوری می‌شود",
           len(_judged) == 3, str(len(_judged)))
 
+    # ── دورهٔ پایه (۲۶ سپتامبر): بعد از ۶ سپتامبر پایهٔ تولید خودش ۸۰٪ است؛
+    # یک‌کاسه‌کردنِ دو دوره «g80 منهای نسخهٔ یک» را با «g80 منهای خودش»
+    # میانگین می‌گرفت.
+    _b = A.BASE_CHANGED_MS
+    check("جفتِ پیش از تغییرِ پایه «قبل» است", A._era(("X", 1.0, _b - 1)) == "before")
+    check("جفتِ بعد از تغییرِ پایه «جاری» است", A._era(("X", 1.0, _b + 1)) == "current")
+    check("کلیدِ بی‌مهرِ زمانِ واقعی (فیکسچر) جاری حساب می‌شود", A._era(("X", 1.0, 5)) == "current")
+    _src = (pathlib.Path(A.__file__)).read_text(encoding="utf-8")
+    check("حکم فقط از دورهٔ جاری ساخته می‌شود و دورهٔ قبل جدا گزارش می‌شود",
+          '_era(r.get("key")) == "current"' in _src and '"before_base_change"' in _src)
+
     print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
     return 1 if FAIL else 0
 
