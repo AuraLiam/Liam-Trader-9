@@ -1,4 +1,4 @@
-"""پاسبان تک‌باتی و تک‌گیت‌هابی — دستور صریح حمید، ۲۰ اوت.
+"""پاسبان تک‌باتی و تک‌گیت‌هابی — دستور صریح حمید، ۲۰ اوت (+ استثنای ۲۷ سپتامبر).
 
 «سیگنال‌ها فقط روی یک بات: @LiamTrader9_Bot. هر بات اضافه از کدها پاک شود.
 همه‌چیز فقط روی گیت‌هاب Auraliam؛ هر ریپوی دیگری بیرون.»
@@ -68,24 +68,63 @@ def run():
                 hits.append(f"{p.relative_to(ROOT)}: {b}")
     check("هیچ متغیر بات دوم/سوم در کد زنده نیست", not hits, "؛ ".join(hits[:6]))
 
-    # ── ۲) telegram.py هیچ منطق آینه‌ای ندارد ──────────────────────────
+    # ── ۲) تنها آینهٔ مجاز: سیگنال به بات دوم (دستور صریح حمید، ۲۷ سپتامبر) ──
+    #
+    # مرز قرمز ۲۰ اوت لغو نشد؛ یک استثنای محدود با شرط‌های قابل‌سنجش گرفت.
     tg = (PY / "telegram.py").read_text()
-    check("telegram.py آینه/مقصد دوم ندارد",
-          "_mirror" not in tg and "creds2" not in tg
-          and "MIRROR_METHODS" not in tg)
-    check("telegram.py فقط یک جفت اعتبارنامه می‌خواند",
-          tg.count("TELEGRAM_BOT_TOKEN") >= 1
-          and "TELEGRAM_BOT_TOKEN_2" not in tg)
+    check("telegram.py فقط یک جفت اعتبارنامهٔ اصلی می‌خواند",
+          tg.count("TELEGRAM_BOT_TOKEN") >= 1 and "TELEGRAM_BOT_TOKEN_2" not in tg)
+    check("آینهٔ قدیمی (۱۴ اوت) برنگشته",
+          "creds2" not in tg and "MIRROR_METHODS" not in tg and "def _mirror" not in tg)
+    body = tg[tg.index("def send_signals"):]
+    _end = body.find("\ndef ", 10)
+    body = body if _end < 0 else body[:_end]
+    calls = [ln for ln in tg.splitlines()
+             if "mirror_signal(" in ln and "def mirror_signal" not in ln]
+    check("آینه فقط یک جا صدا زده می‌شود: داخل send_signals",
+          len(calls) == 1 and "mirror_signal(s, png, cap_full)" in body, str(calls))
+    check("آینه فقط بعد از تحویلِ تأییدشده روی بات اصلی",
+          body.index("if tg_mid:\n                mirror_signal(") > body.index("_save_sent(sent)"))
+    check("scrub توکن آینه را هم می‌پوشاند", '"SIGNAL_MIRROR_BOT_TOKEN"' in
+          tg[tg.index("def scrub"):tg.index("def scrub") + 900])
+    # رفتاری: بی سکرت آینه خاموش است؛ با سکرت، شکستش استثنا بیرون نمی‌دهد
+    import os as _os
+    sys.path.insert(0, str(PY))
+    import telegram as _T
+    for k in _T.MIRROR_ENV:
+        _os.environ.pop(k, None)
+    check("بی هر دو سکرت، آینه خاموش است", _T.mirror_signal({"sym": "X"}, None, "c") is False)
+    _os.environ.update({_T.MIRROR_ENV[0]: "1:x", _T.MIRROR_ENV[1]: "1"})
+    _op = _T._post_once
+    _T._post_once = lambda *a, **k: (_ for _ in ()).throw(OSError("boom 1:x"))
+    try:
+        r = _T.mirror_signal({"sym": "X"}, None, "caption")
+    except Exception:                                  # noqa: BLE001
+        r = "raised"
+    finally:
+        _T._post_once = _op
+        for k in _T.MIRROR_ENV:
+            _os.environ.pop(k, None)
+    check("شکستِ آینه استثنا بیرون نمی‌دهد (بات اصلی آسیب نمی‌بیند)", r is False, str(r))
 
-    # ── ۳) ورک‌فلوها فقط سکرت تک‌بات را می‌دهند ────────────────────────
-    wf_hits = []
+    # ── ۳) سکرت آینه فقط در سه گامِ ارسالِ سیگنال ─────────────────────────
+    ALLOWED_WF = {"pump-radar.yml", "live-scan.yml", "hamid-cycle.yml"}
+    wf_hits, mirror_wf = [], set()
     for p in (ROOT / ".github" / "workflows").glob("*.yml"):
         t = p.read_text()
         for b in ("TELEGRAM_BOT_TOKEN_2", "TELEGRAM_CHAT_ID_2"):
             if b in t:
                 wf_hits.append(f"{p.name}: {b}")
-    check("هیچ ورک‌فلویی سکرت بات دوم را پاس نمی‌دهد", not wf_hits,
+        if "SIGNAL_MIRROR_" in t:
+            mirror_wf.add(p.name)
+    check("هیچ ورک‌فلویی سکرت‌های ممنوعِ بات دوم را پاس نمی‌دهد", not wf_hits,
           "؛ ".join(wf_hits[:6]))
+    check("سکرت آینه فقط به گام‌های ارسال سیگنال می‌رسد", mirror_wf <= ALLOWED_WF,
+          str(sorted(mirror_wf - ALLOWED_WF)))
+    stray = [str(p.relative_to(ROOT)) for p in live_files()
+             if p.suffix == ".py" and p.name not in ("telegram.py", Path(__file__).name)
+             and "SIGNAL_MIRROR_" in p.read_text(errors="ignore")]
+    check("هیچ ماژول دیگری آینه را نمی‌خواند", not stray, str(stray))
 
     # ── ۴) فقط گیت‌هاب Auraliam ────────────────────────────────────────
     # ارجاع به هر مالک دیگری در کد زنده ممنوع است. «actions/» استثناست

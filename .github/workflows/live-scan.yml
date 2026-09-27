@@ -116,6 +116,10 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # آینهٔ سیگنال به بات دوم (دستور حمید ۲۷ سپتامبر) — فقط سیگنال؛
+          # بی این دو سکرت خاموش است.
+          SIGNAL_MIRROR_BOT_TOKEN: ${{ secrets.SIGNAL_MIRROR_BOT_TOKEN }}
+          SIGNAL_MIRROR_CHAT_ID: ${{ secrets.SIGNAL_MIRROR_CHAT_ID }}
           LIAM9_CANDLES: perp     # بیت‌یونیکس پرپچوال، اسپات پشتیبان (۲ سپتامبر)
         run: |
           set -o pipefail

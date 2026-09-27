@@ -169,6 +169,57 @@ def creds():
     return (tok, chat) if tok and chat else (None, None)
 
 
+# ── آینهٔ سیگنال به بات دوم (دستور صریح حمید، ۲۷ سپتامبر) ─────────────────
+#
+# حمید: «میخوام سیگنال‌ها به این ربات تلگرامی هم فرستاده بشه» و بعد «هر ۴
+# گزینه به ترتیب». این **استثنای محدود** مرز قرمز ۲۰ اوت است، نه لغوش:
+#   · فقط **سیگنال** (همان عکس و کپشن) — آلارم، گزارش، نتیجه و ریپلای نه.
+#   · فقط دو سکرت با نام صریح؛ بی هر دو، آینه خاموش است و هیچ چیزی عوض نمی‌شود.
+#   · بعد از تأییدِ تحویل روی بات اصلی؛ شکستِ آینه هرگز بات اصلی یا
+#     ضدتکرار یا دفتر را لمس نمی‌کند.
+# توکنی که در چت فرستاده شد لو رفته است و هرگز در کد/لاگ نمی‌نشیند؛ حمید
+# آن را در BotFather باطل و توکن تازه را در Secrets می‌گذارد.
+MIRROR_ENV = ("SIGNAL_MIRROR_BOT_TOKEN", "SIGNAL_MIRROR_CHAT_ID")
+
+
+def mirror_creds():
+    tok = os.environ.get(MIRROR_ENV[0], "").strip()
+    chat = os.environ.get(MIRROR_ENV[1], "").strip()
+    return (tok, chat) if tok and chat else (None, None)
+
+
+def mirror_signal(s, png, cap_full):
+    """همان سیگنال به بات آینه. هرگز استثنا بیرون نمی‌دهد."""
+    tok, chat = mirror_creds()
+    if not tok:
+        return False
+    try:
+        head, rest = _split_caption(cap_full) if png else (cap_full[:TEXT_LIMIT], "")
+        if png:
+            with open(png, "rb") as f:
+                blob = f.read()
+            r = _post_once(tok, "sendPhoto",
+                           {"chat_id": chat, "caption": head, "parse_mode": "HTML"},
+                           {"photo": (f"{s['sym']}.png", blob)})
+            mid = ((r or {}).get("result") or {}).get("message_id")
+            if rest and mid:
+                _post_once(tok, "sendMessage",
+                           {"chat_id": chat, "text": rest, "parse_mode": "HTML",
+                            "reply_to_message_id": mid,
+                            "allow_sending_without_reply": "true",
+                            "disable_web_page_preview": "true"})
+        else:
+            _post_once(tok, "sendMessage",
+                       {"chat_id": chat, "text": head, "parse_mode": "HTML",
+                        "disable_web_page_preview": "true"})
+        print(f"  ↪ آینه: {s['sym']} به بات دوم هم رفت", flush=True)
+        return True
+    except Exception as e:                           # noqa: BLE001 - آینه، اصلی را نمی‌کشد
+        print(f"  ↪ آینه: {s['sym']} به بات دوم نرفت ({type(e).__name__}: "
+              f"{scrub(str(e))[:120]}) — بات اصلی تحویل گرفته است", flush=True)
+        return False
+
+
 def scrub(text):
     """Remove the bot token from anything about to be printed.
 
@@ -181,7 +232,8 @@ def scrub(text):
     already hold is not a safety property, it is luck.
     """
     out = str(text)
-    for tok in (os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),):
+    for tok in (os.environ.get("TELEGRAM_BOT_TOKEN", "").strip(),
+                os.environ.get("SIGNAL_MIRROR_BOT_TOKEN", "").strip()):
         if not tok:
             continue
         out = out.replace(tok, "***")
@@ -426,10 +478,12 @@ def _key(s):
 
 
 def _post(token, method, fields, files=None):
-    """ارسال — فقط و فقط به یک مقصد: @LiamTrader9_Bot.
+    """ارسال به بات اصلی (@LiamTrader9_Bot).
 
-    هیچ آینه، هیچ مقصد دوم، هیچ کپی. اگر روزی کسی خواست مقصد دیگری اضافه
-    کند، باید این تابع را عوض کند و آزمون test_single_bot سرخ می‌شود.
+    هر پیامی — آلارم، گزارش، نتیجه، سیگنال — از این‌جا فقط به بات اصلی
+    می‌رود. تنها استثنا `mirror_signal` است که فقط سیگنال را، بعد از تحویل
+    این‌جا، به بات دومِ مصوب حمید (۲۷ سپتامبر) هم می‌فرستد؛ test_single_bot
+    هر مقصد دیگری را سرخ می‌کند.
     """
     return _post_once(token, method, fields, files)
 
@@ -1393,6 +1447,9 @@ def send_signals(signals, render_chart, limit=8):
                         "tf": s.get("tf")}, s.get("tg_msg_id"))
             ok += 1
             print(f"  sent {s['sym']} {s['tf']} {s['dir']}{'' if png else ' (text only)'}", flush=True)
+            # آینه فقط بعد از تحویلِ تأییدشده روی بات اصلی (دستور ۲۷ سپتامبر)
+            if tg_mid:
+                mirror_signal(s, png, cap_full)
             _log_final(s)
             # هر سیگنالِ رفته باید درس هم بشود — استاپ زاما در هیچ دفتری نبود
             # چون ارسالی‌های اسکن کاغذی نمی‌شدند. حالا هر ارسال، اگر قبلاً در
