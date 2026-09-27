@@ -347,7 +347,7 @@ with tempfile.TemporaryDirectory() as _td3:
 
 _csrc = (HERE / "cycle.py").read_text(encoding="utf-8")
 check("کلاس: چرخه هضمِ عقب‌مانده را صدا می‌زند، نه فقط پنجرهٔ خودش",
-      "digest_backlog()" in _csrc)
+      "digest_backlog(" in _csrc)   # با skip= هم امضا عوض شد (4128bc09/47515b02)
 
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

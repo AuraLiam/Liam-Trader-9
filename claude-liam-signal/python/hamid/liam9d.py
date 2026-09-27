@@ -325,6 +325,8 @@ GIT_ONLY = {
     "hamid.depth_collector --probe": "کاوش دستی",
     "hamid.depth_collector --stats": "گزارش خلاصه برای صفحهٔ Actions",
     "hamid.pump_radar --min-pct": "رادار پامپ داخل pump_desk صدا زده می‌شود",
+    "hamid.engine_nurse --write":
+        "پرستار انجین‌ها: dispatch ورک‌فلو فقط با GITHUB_TOKEN ممکن است — روی Actions (pump-radar/hamid-cycle) معنا دارد؛ محلی حکم treatment_disabled صادر می‌کند و نوشتن‌اش بی‌فایده است (۲۷ سپتامبر)",
 }
 
 
