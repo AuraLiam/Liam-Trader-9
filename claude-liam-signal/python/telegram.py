@@ -47,6 +47,47 @@ ARCHIVE_DIR = Path(__file__).resolve().parent.parent.parent / "signals" / "archi
 # ۵ دقیقه باشه.» هر tf دیگری در گلوگاه ارسال بلند رد می‌شود.
 ALLOWED_TFS = {"5m", "15m"}
 
+# ── هندسهٔ ×۲ روی سیگنال ۱۵ دقیقه (تأیید صریح حمید، ۲۷ سپتامبر) ──────────
+#
+# پشتوانه (قانون ۲۰): بازوی جفتیِ exp-tf15-x2 در برابر exp-tf15، با قاعدهٔ
+# توقفِ از پیش ثبت‌شده — PROMOTE روی n=۲۲۶ (۱۸ سپتامبر)، بازسنجی ۲۶ سپتامبر
+# روی n=۱٬۶۴۰: +۰.۱۷۰R خالص، CI [+۰.۱۲۷, +۰.۲۱۳]. استاپ و تارگت دو برابر
+# (RR ثابت) و **سایز نصف** تا ضررِ دلاریِ هر استاپ همان بماند.
+#
+# جای اجرا عمداً **بعد از آخرین دروازه** است: همهٔ دروازه‌ها (هم‌زمانی،
+# روند، بازجویی) روی همان هندسهٔ پایه داوری می‌کنند که بازوی آزمایش رویش
+# سنجیده شد — هیچ دروازه‌ای به‌خاطر استاپِ پهن‌تر شل نمی‌شود. بازوی کنترلِ
+# exp-tf15 مستقل از ارسال نمونه‌گیری می‌شود و زنده می‌ماند.
+GEO15_MULT = 2.0
+GEO15_SIZE = 0.5
+
+
+def apply_geo15(s):
+    """سیگنالِ ۱۵د → استاپ/تارگت ×۲ و سایز نصف. درجا؛ دوباره‌زدنش بی‌اثر است."""
+    if s.get("tf") != "15m" or s.get("geo"):
+        return s
+    try:
+        e, sl, tp1 = float(s["entry"]), float(s["sl"]), float(s["tp1"])
+    except (KeyError, TypeError, ValueError):
+        return s
+    if e <= 0 or e == sl:
+        return s
+    base = {"sl": sl, "tp1": tp1, "tp2": s.get("tp2")}
+    s["sl"] = round(e + (sl - e) * GEO15_MULT, 10)
+    s["tp1"] = round(e + (tp1 - e) * GEO15_MULT, 10)
+    if s.get("tp2") is not None:
+        try:
+            s["tp2"] = round(e + (float(s["tp2"]) - e) * GEO15_MULT, 10)
+        except (TypeError, ValueError):
+            pass
+    if s.get("stop_pct") is not None:
+        try:
+            s["stop_pct"] = round(float(s["stop_pct"]) * GEO15_MULT, 4)
+        except (TypeError, ValueError):
+            pass
+    s["geo"] = {"mult": GEO15_MULT, "size_mult": GEO15_SIZE, "base": base}
+    return s
+
 
 # سقف‌های خودِ تلگرام — نه انتخاب ما (منبع: Bot API، فیلد caption/text)
 CAPTION_LIMIT = 1024
@@ -614,6 +655,10 @@ def caption(s):
         except Exception:                            # noqa: BLE001
             pass
     L.append("")
+    if s.get("geo"):
+        L.append(f"📐 <b>هندسهٔ ×{s['geo']['mult']:g} (۱۵ دقیقه) — سایز را نصف کن</b> "
+                 "<i>تا ضرر دلاریِ هر استاپ همان بماند (استاپ و تارگت دو برابر، "
+                 "RR ثابت؛ بازوی جفتی n=۱٬۶۴۰، +۰.۱۷R خالص).</i>")
     L.append(f"ورود    <code>{s['entry']:.10g}</code>")
     L.append(f"استاپ   <code>{s['sl']:.10g}</code>")
     L.append(f"تارگت۱  <code>{s['tp1']:.10g}</code>")
@@ -1265,6 +1310,8 @@ def send_signals(signals, render_chart, limit=8):
         except Exception as e:                        # noqa: BLE001
             s["phoenix"] = None
             print(f"  ققنوس {s['sym']} رأی نداد ({type(e).__name__}) — سیگنال بی‌حکم می‌رود", flush=True)
+        # هندسهٔ ×۲ روی ۱۵د — بعد از آخرین دروازه، قبل از چارت/کپشن/دفتر
+        apply_geo15(s)
         png = None
         try:
             png = render_chart(s, str(tmp / f"{s['sym']}-{s['tf']}.png"))
@@ -1360,6 +1407,10 @@ def send_signals(signals, render_chart, limit=8):
                                    "tg_msg_id": tg_mid}],
                                  {"sent_at": int(time.time() * 1000),
                                   "tg_msg_id": tg_mid,
+                                  # ردپای هندسهٔ اجراشده (۲۷ سپتامبر) — تا ماشین شبانه
+                                  # سیگنال‌های ×۲ را از پایه جدا بسنجد
+                                  "geo_mult": (s.get("geo") or {}).get("mult"),
+                                  "size_mult": (s.get("geo") or {}).get("size_mult"),
                                   "pattern_align": ((s.get("premortem") or {}).get("patterns") or {}).get("align"),
                                   "patterns": ((s.get("premortem") or {}).get("patterns") or {}).get("by_tf"),
                                   "ob_align": ((s.get("premortem") or {}).get("ob_ctx") or {}).get("align"),
