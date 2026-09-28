@@ -104,5 +104,28 @@ check("هر اقدام یک حکم از مجموعهٔ شناخته دارد",
                                "cooldown", "woken", "wake_failed")
           for a in doc.get("actions", [])))
 
+# ── خطِ واقعیِ هر فایل (۲۸ سپتامبر): بیدارسازی بر تولیدکننده، نه بر مالک ──
+check("گزارش ساعتی دامیننس خطِ خودش را بیدار می‌کند، نه dominance.yml",
+      EN.workflow_for({"producer": "hamid/dominance_report.py", "owner": "E03"})
+      == "dominance-report.yml")
+check("خطِ زندهٔ داشبورد (live-link) میز اسکلپ را بیدار می‌کند",
+      EN.workflow_for({"producer": "hamid/scalp_exec.py (via liam9_link)", "owner": "E25"})
+      == "scalp.yml")
+check("وقتی نقشهٔ مالک درست است، همان می‌ماند",
+      EN.workflow_for({"producer": "hamid/council.py", "owner": "E00"}) == "hamid-cycle.yml")
+# کلاس: برای هر فایلِ زندهٔ قرارداد، اگر تولیدکننده‌اش در ورک‌فلوی زمان‌بندی‌شده‌ای
+# اجرا می‌شود، خطی که پرستار بیدار می‌کند باید یکی از همان‌ها باشد.
+_reg = json.loads((EN.ROOT / "config" / "state_registry.json").read_text(encoding="utf-8"))["files"]
+_wrong = []
+for _f, _r in _reg.items():
+    if _r.get("kind") != "live" or _r.get("owner") in EN.NO_LIVE_FILES:
+        continue
+    _c = EN._producer_workflows(_r.get("producer") or "")
+    _w = EN.workflow_for({"producer": _r.get("producer"), "owner": _r.get("owner")})
+    if _c and _w not in _c:
+        _wrong.append(f"{_f}: {_w} ∉ {_c}")
+check("هیچ فایلِ زنده‌ای خطی را بیدار نمی‌کند که تولیدکننده‌اش را اجرا نمی‌کند",
+      not _wrong, str(_wrong[:4]))
+
 print(f"\n{OK} بررسی گذشت" + (f"، {len(FAIL)} افتاد: {FAIL}" if FAIL else ""))
 sys.exit(1 if FAIL else 0)

@@ -123,7 +123,54 @@ WAKE_COOLDOWN_MIN = {
     "news-hunt.yml": 90,
     "pump-review.yml": 120,        # ۵ نوبت روزانه = هر ~۵ ساعت
     "ob-lab.yml": 90,
+    "dominance-report.yml": 50,    # گزارش ساعتی؛ ضدتکرار خودش ۵۰د است
 }
+
+# ── خطِ واقعیِ هر فایل، مشتق از خودِ ورک‌فلوها (۲۸ سپتامبر) ──────────────
+#
+# عیبِ اندازه‌گیری‌شده: WAKE بر «مالک» است، ولی فایل‌های یک مالک از خط‌های
+# متفاوت می‌آیند. dominance-report.json (E03) را dominance-report.yml می‌سازد،
+# نه dominance.yml؛ پرستار خطِ غلط را بیدار می‌کرد و گزارش ساعتیِ دامیننس
+# ۲۶۵ دقیقه کهنه ماند (کرونِ «۱۹ * * * *» فقط هر ۳–۶ ساعت واقعاً اجرا
+# می‌شد). live-link.json (E25) را scalp.yml می‌نویسد، نه hamid-cycle.
+# درمانِ کلاس: فهرستِ دست‌نویس نه — تولیدکنندهٔ ثبت‌شده در قرارداد، در
+# متنِ ورک‌فلوها جست‌وجو می‌شود. WAKE فقط پشتیبانِ فایلِ بی‌تولیدکننده است.
+WF_DIR = ROOT / ".github" / "workflows"
+
+
+def _producer_workflows(producer: str) -> list[str]:
+    """ورک‌فلوهای زمان‌بندی‌شده‌ای که ماژولِ تولیدکننده را اجرا می‌کنند."""
+    p = (producer or "").split(" ")[0].strip()
+    if not p.endswith(".py"):
+        return []
+    mod = p[:-3].replace("/", ".")                   # hamid/x.py → hamid.x
+    base = Path(p).name[:-3]                          # scan.py → scan
+    pats = [f"-m {mod}", f"{base}.py", f"import {base}", f"-m {base} "]
+    out = []
+    for wf in sorted(WF_DIR.glob("*.yml")):
+        try:
+            t = wf.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if "cron:" not in t:
+            continue
+        if any(x in t for x in pats):
+            out.append(wf.name)
+    return out
+
+
+def workflow_for(row: dict) -> str | None:
+    """خطی که این فایلِ کهنه را واقعاً تازه می‌کند."""
+    owner_wf = WAKE.get(row.get("owner"))
+    cands = _producer_workflows(row.get("producer") or "")
+    if not cands:
+        return owner_wf
+    if owner_wf in cands:
+        return owner_wf
+    # زنجیره (pump-radar) هرگز مستقیم بیدار نمی‌شود — خودش هر ۵ دقیقه می‌آید
+    cands = [c for c in cands if c != "pump-radar.yml"] or cands
+    return cands[0]
+
 
 # حافظهٔ درون-فرایندی — زنجیره هر دور reset می‌کند؛ مهرِ این job این‌جا می‌ماند
 _PROC_WAKES: dict[str, dict] = {}
@@ -256,14 +303,19 @@ def examine(write: bool = False) -> dict:
     tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     can_treat = bool(tok) and os.environ.get("REVIVE") == "1"
 
-    actions, wakes = [], {}
+    # گروه بر «خطِ واقعی» هر فایل، نه بر مالک (۲۸ سپتامبر)
+    groups: dict[tuple, list] = {}
     for owner in sorted(stale):
-        bad = stale[owner]
-        oldest = max(bad, key=lambda r: r.get("age_min") or 0)
-        names = ", ".join(r["file"] for r in bad[:4])
-        wf = WAKE.get(owner)
         if owner in NO_LIVE_FILES:
             continue
+        for r in stale[owner]:
+            groups.setdefault((owner, workflow_for(r)), []).append(r)
+
+    actions, wakes = [], {}
+    for (owner, wf) in sorted(groups, key=lambda k: (k[0], k[1] or "")):
+        bad = groups[(owner, wf)]
+        oldest = max(bad, key=lambda r: r.get("age_min") or 0)
+        names = ", ".join(r["file"] for r in bad[:4])
         if wf is None:
             actions.append({
                 "owner": owner, "files": names,
