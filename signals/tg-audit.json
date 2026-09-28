@@ -1,16 +1,15 @@
 {
- "generated": 1790618873654,
+ "generated": 1790625450599,
  "window_days": 7,
- "since": 1790014073654,
+ "since": 1790020650599,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-21": {
-    "pump_report": 1,
-    "work_report": 2,
-    "outcome": 11,
-    "dom_report": 6,
-    "signal": 5
+    "outcome": 7,
+    "dom_report": 4,
+    "signal": 3,
+    "work_report": 1
    },
    "2026-09-22": {
     "pump_report": 6,
@@ -55,20 +54,20 @@
     "work_report": 24
    },
    "2026-09-28": {
-    "signal": 19,
-    "dom_report": 19,
-    "work_report": 29,
+    "signal": 20,
+    "dom_report": 22,
+    "work_report": 33,
     "trade_mgmt": 1,
-    "outcome": 28,
-    "pump_report": 4
+    "outcome": 29,
+    "pump_report": 5
    }
   },
   "total": {
+   "outcome": 227,
+   "dom_report": 167,
+   "signal": 160,
+   "work_report": 73,
    "pump_report": 40,
-   "work_report": 70,
-   "outcome": 230,
-   "dom_report": 166,
-   "signal": 161,
    "trade_mgmt": 4
   },
   "alert_classes": {},
@@ -87,16 +86,16 @@
    ],
    "work_report": [
     "2026-09-27:24",
-    "2026-09-28:29"
+    "2026-09-28:33"
    ]
   }
  },
  "signals": {
-  "n": 161,
+  "n": 160,
   "per_day": {
    "2026-09-21": {
-    "n": 5,
-    "first": "18:47",
+    "n": 3,
+    "first": "21:37",
     "last": "22:57"
    },
    "2026-09-22": {
@@ -130,22 +129,22 @@
     "last": "23:41"
    },
    "2026-09-28": {
-    "n": 19,
+    "n": 20,
     "first": "00:15",
-    "last": "17:18"
+    "last": "19:31"
    }
   },
   "strategy": {
-   "smc": 95,
-   "ibs": 66
+   "smc": 93,
+   "ibs": 67
   },
   "tf": {
-   "5m": 148,
+   "5m": 147,
    "15m": 13
   },
   "dir": {
-   "SHORT": 50,
-   "LONG": 111
+   "LONG": 110,
+   "SHORT": 50
   },
   "hour_utc": {
    "0": 14,
@@ -166,7 +165,7 @@
    "15": 6,
    "16": 5,
    "17": 4,
-   "18": 3,
+   "18": 2,
    "19": 6,
    "20": 7,
    "21": 4,
@@ -175,44 +174,44 @@
   }
  },
  "outcomes": {
-  "sent": 161,
-  "matched": 159,
+  "sent": 160,
+  "matched": 158,
   "unmatched": 2,
   "match_pct": 98.8,
   "overall": {
-   "n": 159,
+   "n": 158,
    "mean_net": -0.104,
-   "sum_net": -16.5,
-   "win_pct": 66.7,
+   "sum_net": -16.4,
+   "win_pct": 67.1,
    "outcomes": {
-    "expired": 23,
     "trail": 103,
     "stop": 26,
     "target": 3,
+    "expired": 22,
     "timeout": 4
    }
   },
   "by": {
    "strategy": {
     "smc": {
-     "n": 94,
-     "mean_net": 0.056,
-     "sum_net": 5.3,
-     "win_pct": 76.6,
+     "n": 92,
+     "mean_net": 0.057,
+     "sum_net": 5.2,
+     "win_pct": 77.2,
      "outcomes": {
-      "expired": 14,
-      "trail": 71,
+      "trail": 70,
       "stop": 8,
+      "expired": 13,
       "target": 1
      }
     },
     "ibs": {
-     "n": 65,
-     "mean_net": -0.335,
-     "sum_net": -21.8,
-     "win_pct": 52.3,
+     "n": 66,
+     "mean_net": -0.329,
+     "sum_net": -21.7,
+     "win_pct": 53.0,
      "outcomes": {
-      "trail": 32,
+      "trail": 33,
       "target": 2,
       "stop": 18,
       "expired": 9,
@@ -222,15 +221,15 @@
    },
    "tf": {
     "5m": {
-     "n": 146,
-     "mean_net": -0.093,
+     "n": 145,
+     "mean_net": -0.094,
      "sum_net": -13.6,
-     "win_pct": 66.4,
+     "win_pct": 66.9,
      "outcomes": {
-      "expired": 22,
       "trail": 94,
       "stop": 24,
       "target": 3,
+      "expired": 21,
       "timeout": 3
      }
     },
@@ -248,18 +247,6 @@
     }
    },
    "dir": {
-    "SHORT": {
-     "n": 49,
-     "mean_net": -0.245,
-     "sum_net": -12.0,
-     "win_pct": 53.1,
-     "outcomes": {
-      "expired": 10,
-      "stop": 10,
-      "trail": 26,
-      "timeout": 3
-     }
-    },
     "LONG": {
      "n": 110,
      "mean_net": -0.041,
@@ -271,6 +258,18 @@
       "target": 3,
       "expired": 13,
       "timeout": 1
+     }
+    },
+    "SHORT": {
+     "n": 48,
+     "mean_net": -0.248,
+     "sum_net": -11.9,
+     "win_pct": 54.2,
+     "outcomes": {
+      "expired": 9,
+      "stop": 10,
+      "trail": 26,
+      "timeout": 3
      }
     }
    }
