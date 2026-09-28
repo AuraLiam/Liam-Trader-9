@@ -1,9 +1,10 @@
 {
- "generated": 1790593569866,
- "buckets_at": 1790593569830,
+ "generated": 1790594979681,
+ "buckets_at": 1790594979658,
  "n_agents": 9,
- "n_todo": 8,
+ "n_todo": 9,
  "todo": [
+  "post-trade-learning",
   "data-quality",
   "execution",
   "lead-lag",
@@ -13,11 +14,47 @@
   "order-block",
   "research"
  ],
- "idle": [
-  "post-trade-learning"
- ],
+ "idle": [],
  "events": [],
  "rows": [
+  {
+   "agent": "post-trade-learning",
+   "engines": [
+    "E20",
+    "E21"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E20",
+     "items": [
+      "direction-lessons.json"
+     ]
+    },
+    {
+     "kind": "stale",
+     "engine": "E21",
+     "items": [
+      "learning-proof.json"
+     ]
+    },
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:work-report.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/direction-lessons.json",
+    "signals/learning-proof.json",
+    "signals/work-report.json"
+   ],
+   "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:work-report.json کهنه: direction-lessons.json باز کن: signals/direction-lessons.json، sign | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json باز کن: signals/learning-proof.json"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -206,26 +243,18 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:curriculum.json",
+      "state:engine-focus.json",
       "state:scorecard.json"
      ]
     }
    ],
    "read_next": [
+    "signals/curriculum.json",
+    "signals/engine-focus.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "post-trade-learning",
-   "engines": [
-    "E20",
-    "E21"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:curriculum.json، state:engine-focus.json، state:scorecard.json باز کن: signals/curriculum. | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
