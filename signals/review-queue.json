@@ -1,9 +1,10 @@
 {
- "generated": 1790564480441,
- "buckets_at": 1790564480403,
+ "generated": 1790565976225,
+ "buckets_at": 1790565976159,
  "n_agents": 9,
- "n_todo": 8,
+ "n_todo": 9,
  "todo": [
+  "post-trade-learning",
   "data-quality",
   "execution",
   "lead-lag",
@@ -13,11 +14,31 @@
   "order-block",
   "research"
  ],
- "idle": [
-  "post-trade-learning"
- ],
+ "idle": [],
  "events": [],
  "rows": [
+  {
+   "agent": "post-trade-learning",
+   "engines": [
+    "E20",
+    "E21"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E21",
+     "items": [
+      "skills.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/skills.json"
+   ],
+   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: skills.json باز کن: signals/skills.json"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -87,6 +108,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -94,7 +116,7 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
@@ -213,18 +235,6 @@
     "signals/scorecard.json"
    ],
    "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "post-trade-learning",
-   "engines": [
-    "E20",
-    "E21"
-   ],
-   "needs_reasoning": false,
-   "priority": 9,
-   "reasons": [],
-   "read_next": [],
-   "digest": "E20: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E21: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
