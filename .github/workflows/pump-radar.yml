@@ -96,7 +96,7 @@ jobs:
         run: |
           set -o pipefail
           H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals)/' | sha256sum | cut -c1-16)
-          N=$(git ls-files signals config | sha256sum | cut -c1-8)
+          N=$(git ls-files 'signals/*.json' config | sha256sum | cut -c1-8)   # فقط نام‌های سطح بالا؛ آرشیو/پارتیشن هر روز عوض می‌شود
           echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
         id: gate
@@ -227,7 +227,7 @@ jobs:
             k=$((k + 1))
             t0=$(date +%s)
             left=$(( END - t0 ))
-            if [ "$left" -lt 150 ]; then
+            if [ "$left" -lt 300 ]; then
               echo "بودجهٔ job تمام است (${left}ثانیه مانده) — $((k - 1)) دور چرخید"
               break
             fi
@@ -266,7 +266,11 @@ jobs:
             # پاره‌ها هم باید از reset جان سالم ببرند، وگرنه تسویه‌های تازه گم می‌شوند.
             cp brain/paper/closed-*-W*.jsonl "$BK/" 2>/dev/null || true
             for i in 1 2 3 4 5 6 7 8; do
-              git fetch origin main -q
+              # ۱۵:۳۰ همان روز: بعد از pushِ ردشده، fetchِ بی‌سقف ۲۱ دقیقه خوابید و job روی
+              # سقف مرد؛ حالا هر فرمان شبکه‌ای سقف ۱۲۰ثانیه دارد و تلاشِ دوباره فقط
+              # وقتی در بودجه جا شود.
+              if [ $(( END - $(date +%s) )) -lt 300 ]; then echo "بودجه برای تلاش $i کافی نیست — این دور رها شد"; break; fi
+              timeout 120 git fetch origin main -q
               git reset --hard origin/main -q
               (cd claude-liam-signal/python && python3 -m hamid.pump_radar --reapply "$BK")
               # بقای رسیدهای ارسال (رفع «رسید گم‌شدهٔ یونی»، ۳۰ اوت).
@@ -383,12 +387,12 @@ jobs:
               git add signals brain 2>/dev/null || true
               git diff --cached --quiet && { echo "چیزی برای ثبت نیست"; break; }
               git commit -q -m "زنجیرهٔ سیگنال $(date -u '+%Y-%m-%d %H:%M UTC')"
-              git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
+              timeout 120 git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
               sleep $((i * 4 + RANDOM % 7))
             done
 
             # انتشار روی پنل (gh-pages)
-            if git fetch origin gh-pages -q; then
+            if timeout 120 git fetch origin gh-pages -q; then
               rm -rf /tmp/ghp
               if git worktree add /tmp/ghp origin/gh-pages --detach -q; then
                 mkdir -p /tmp/ghp/signals
@@ -404,9 +408,9 @@ jobs:
                   if ! git diff --cached --quiet; then
                     git commit -q -m "زنجیرهٔ سیگنال $(date -u '+%H:%M') UTC"
                     for i in 1 2 3 4 5 6 7 8; do
-                      git push origin HEAD:gh-pages -q \
+                      timeout 120 git push origin HEAD:gh-pages -q \
                         && { echo "deployed=1" >> "$GITHUB_OUTPUT"; break; }
-                      git fetch origin gh-pages -q || true
+                      timeout 120 git fetch origin gh-pages -q || true
                       git merge -X ours -m "ادغام gh-pages" origin/gh-pages -q || { git merge --abort 2>/dev/null || true; }
                     done
                   fi )

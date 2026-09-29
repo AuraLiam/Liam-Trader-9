@@ -89,7 +89,7 @@ jobs:
         run: |
           set -o pipefail
           H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals)/' | sha256sum | cut -c1-16)
-          N=$(git ls-files signals config | sha256sum | cut -c1-8)
+          N=$(git ls-files 'signals/*.json' config | sha256sum | cut -c1-8)   # فقط نام‌های سطح بالا؛ آرشیو/پارتیشن هر روز عوض می‌شود
           echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
         id: gate
