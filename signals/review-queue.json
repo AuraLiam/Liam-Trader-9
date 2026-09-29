@@ -1,6 +1,6 @@
 {
- "generated": 1790701239290,
- "buckets_at": 1790701239252,
+ "generated": 1790703531921,
+ "buckets_at": 1790703531879,
  "n_agents": 9,
  "n_todo": 9,
  "todo": [
@@ -24,22 +24,17 @@
     "E23"
    ],
    "needs_reasoning": true,
-   "priority": 1,
+   "priority": 2,
    "reasons": [
-    {
-     "kind": "stale",
-     "engine": "E23",
-     "items": [
-      "scheduler.json"
-     ]
-    },
     {
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:depth-health.json",
       "state:escalation.json",
       "state:funnel.json",
       "state:nurse.json",
+      "state:scheduler.json",
       "state:sentinel.json",
       "state:skeptic.json",
       "state:tg-audit.json"
@@ -47,6 +42,7 @@
     }
    ],
    "read_next": [
+    "signals/depth-health.json",
     "signals/escalation.json",
     "signals/funnel.json",
     "signals/nurse.json",
@@ -55,7 +51,7 @@
     "signals/skeptic.json",
     "signals/tg-audit.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 7 تازه · 1 کهنه · 0 شکست · 6 تغییر از دورِ قبل. تغییر: state:escalation.json، state:funnel.json، state:nurse.json، state:sentinel.json، state:skeptic."
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 7 تغییر از دورِ قبل. تغییر: state:escalation.json، state:funnel.json، state:nurse.json، state:scheduler.json، state:sentine"
   },
   {
    "agent": "execution",
@@ -113,14 +109,20 @@
      "engine": null,
      "items": [
       "ext:trending",
-      "state:btc-patterns.json"
+      "state:btc-patterns.json",
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
      ]
     }
    ],
    "read_next": [
-    "signals/btc-patterns.json"
+    "signals/btc-patterns.json",
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json، ext:trending دیدگاه (نه دروازه  | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
