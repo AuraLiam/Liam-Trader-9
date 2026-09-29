@@ -419,6 +419,26 @@ _tm_c = re.search(r"timeout-minutes:\s*(\d+)", _chain)
 _bud_c = re.search(r'JOB_TIMEOUT_MIN:\s*"?(\d+)', _chain)
 check("بودجهٔ حلقهٔ زنجیره از سقفِ job مشتق است (JOB_TIMEOUT_MIN == timeout-minutes)",
       bool(_tm_c and _bud_c) and _tm_c.group(1) == _bud_c.group(1))
+# ۱۵:۳۰ همان روز: بعد از pushِ ردشده، `git fetch` بی‌سقف ۲۱ دقیقه خوابید و
+# زنجیره روی سقف مرد — همان کلاسی که ناشر یگانه با NET_TIMEOUT برایش ساخته
+# شد. دو حلقهٔ همیشه‌روشن هیچ فرمان شبکه‌ای بی‌سقف ندارند؛ بقیه ratchet.
+UNBOUNDED_NET_GIT_MAX = 70
+_unb = {}
+for f in files:
+    for ln in f.read_text(encoding="utf-8").splitlines():
+        s = ln.strip()
+        if s.startswith("#"):
+            continue
+        if re.search(r"git (fetch|push|pull) ", s) and not re.search(r"(timeout \d+|_net) git", s):
+            _unb[f.name] = _unb.get(f.name, 0) + 1
+check("زنجیره و ضربان هیچ فرمان شبکه‌ایِ بی‌سقف ندارند",
+      not _unb.get("pump-radar.yml") and not _unb.get("heartbeat.yml"))
+if _unb.get("pump-radar.yml") or _unb.get("heartbeat.yml"):
+    print(f"      ↳ {{k: v for k, v in _unb.items() if k in ('pump-radar.yml', 'heartbeat.yml')}}")
+check(f"فرمان شبکه‌ایِ بی‌سقف تکثیر نشد ({sum(_unb.values())} ≤ {UNBOUNDED_NET_GIT_MAX})",
+      sum(_unb.values()) <= UNBOUNDED_NET_GIT_MAX)
+if sum(_unb.values()) < UNBOUNDED_NET_GIT_MAX:
+    print(f"      ↳ ratchet را پایین بیاور: UNBOUNDED_NET_GIT_MAX = {sum(_unb.values())}")
 check("حلقهٔ زنجیره شمارِ ثابتِ دور ندارد (بودجه‌محور است)",
       "for k in 1 2 3 4 5 6 7 8" not in _chain and "END=$((" in _chain and "JOB_T0" in _chain)
 

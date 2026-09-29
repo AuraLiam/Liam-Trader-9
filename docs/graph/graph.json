@@ -952,7 +952,7 @@
 "kind": "module",
 "label": "hamid.h1_backtest",
 "file": "claude-liam-signal/python/hamid/h1_backtest.py",
-"lines": 361
+"lines": 394
 },
 {
 "id": "mod:hamid.handoff",
@@ -1148,7 +1148,7 @@
 "kind": "module",
 "label": "hamid.mcp_server",
 "file": "claude-liam-signal/python/hamid/mcp_server.py",
-"lines": 354
+"lines": 360
 },
 {
 "id": "mod:hamid.memory",
@@ -1330,7 +1330,7 @@
 "kind": "module",
 "label": "hamid.pump_radar",
 "file": "claude-liam-signal/python/hamid/pump_radar.py",
-"lines": 1652
+"lines": 1661
 },
 {
 "id": "mod:hamid.pump_study",
@@ -3723,7 +3723,7 @@
 "kind": "test",
 "label": "hamid.test_h1",
 "file": "claude-liam-signal/python/hamid/test_h1.py",
-"lines": 195
+"lines": 207
 },
 {
 "id": "mod:hamid.test_history_analysis",
@@ -4472,14 +4472,14 @@
 "kind": "test",
 "label": "hamid.test_work_report",
 "file": "claude-liam-signal/python/hamid/test_work_report.py",
-"lines": 272
+"lines": 273
 },
 {
 "id": "mod:hamid.test_workflows",
 "kind": "test",
 "label": "hamid.test_workflows",
 "file": "claude-liam-signal/python/hamid/test_workflows.py",
-"lines": 602
+"lines": 606
 },
 {
 "id": "mod:test_liam9_strategy",
@@ -6526,9 +6526,9 @@
 "to": "mod:hamid.deep"
 },
 {
-"from": "mod:hamid.agent_scores",
+"from": "mod:deep_run",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:telegram"
 },
 {
 "from": "mod:hamid.agent_scores",
@@ -6544,6 +6544,11 @@
 "from": "mod:hamid.analyze_btc",
 "rel": "imports",
 "to": "mod:hamid.intel"
+},
+{
+"from": "mod:hamid.analyze_btc",
+"rel": "imports",
+"to": "mod:hamid.stack"
 },
 {
 "from": "mod:hamid.analyze_btc",
@@ -6581,9 +6586,9 @@
 "to": "mod:hamid.cycle"
 },
 {
-"from": "mod:hamid.bandit",
+"from": "mod:hamid.backtest",
 "rel": "imports",
-"to": "mod:hamid.direction_autopsy"
+"to": "mod:hamid.stack"
 },
 {
 "from": "mod:hamid.bandit",
@@ -6613,22 +6618,17 @@
 {
 "from": "mod:hamid.bridge",
 "rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.bridge",
+"rel": "imports",
 "to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.btc_patterns",
 "rel": "imports",
-"to": "mod:hamid.dominance"
-},
-{
-"from": "mod:hamid.btc_patterns",
-"rel": "imports",
 "to": "mod:hamid.lagcorr"
-},
-{
-"from": "mod:hamid.btc_patterns",
-"rel": "imports",
-"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.btc_patterns",
@@ -6643,22 +6643,12 @@
 {
 "from": "mod:hamid.btc_sensitivity",
 "rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"to": "mod:hamid.lagcorr"
 },
 {
 "from": "mod:hamid.btc_sensitivity",
 "rel": "produces",
 "to": "state:signals/btc-sensitivity.json"
-},
-{
-"from": "mod:hamid.bubbles",
-"rel": "imports",
-"to": "mod:hamid.liquidity"
-},
-{
-"from": "mod:hamid.bubbles",
-"rel": "imports",
-"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.bubbles",
@@ -6669,11 +6659,6 @@
 "from": "mod:hamid.build_short_dashboard",
 "rel": "imports",
 "to": "mod:hamid.build_dashboard"
-},
-{
-"from": "mod:hamid.cases",
-"rel": "imports",
-"to": "mod:hamid.loss_autopsy"
 },
 {
 "from": "mod:hamid.classify",
@@ -6688,22 +6673,7 @@
 {
 "from": "mod:hamid.control",
 "rel": "imports",
-"to": "mod:hamid.cycle"
-},
-{
-"from": "mod:hamid.control",
-"rel": "imports",
-"to": "mod:hamid.selfcheck"
-},
-{
-"from": "mod:hamid.control",
-"rel": "imports",
 "to": "mod:hamid.stack"
-},
-{
-"from": "mod:hamid.council",
-"rel": "imports",
-"to": "mod:hamid.phoenix"
 },
 {
 "from": "mod:hamid.council",
@@ -6712,8 +6682,93 @@
 },
 {
 "from": "mod:hamid.curriculum",
+"rel": "imports",
+"to": "mod:hamid.scorecard"
+},
+{
+"from": "mod:hamid.curriculum",
 "rel": "produces",
 "to": "state:signals/curriculum.json"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.announce"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.bridge"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.cases"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.classify"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.inducement"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.intel"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.lagcorr"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.liqmap"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.ob_intel"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.research"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.rewards"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.stack"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.structure"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.universe"
+},
+{
+"from": "mod:hamid.cycle",
+"rel": "imports",
+"to": "mod:hamid.venues"
 },
 {
 "from": "mod:hamid.cycle",
@@ -6737,18 +6792,13 @@
 },
 {
 "from": "mod:hamid.dash_backtest",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.dash_backtest",
 "rel": "produces",
 "to": "state:signals/dash-backtest.json"
-},
-{
-"from": "mod:hamid.data_requests",
-"rel": "imports",
-"to": "mod:hamid.dispatch"
-},
-{
-"from": "mod:hamid.data_requests",
-"rel": "imports",
-"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.data_requests",
@@ -6758,27 +6808,7 @@
 {
 "from": "mod:hamid.dedupe_closed",
 "rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.cycle"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.dominance"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.inducement"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.intel"
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.deep",
@@ -6788,7 +6818,7 @@
 {
 "from": "mod:hamid.deep",
 "rel": "imports",
-"to": "mod:hamid.memory"
+"to": "mod:hamid.liqmap"
 },
 {
 "from": "mod:hamid.deep",
@@ -6798,17 +6828,7 @@
 {
 "from": "mod:hamid.deep",
 "rel": "imports",
-"to": "mod:hamid.orderblocks"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
 "to": "mod:hamid.patterns"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.premortem"
 },
 {
 "from": "mod:hamid.deep",
@@ -6816,9 +6836,9 @@
 "to": "mod:hamid.stack"
 },
 {
-"from": "mod:hamid.deep",
+"from": "mod:hamid.depth_bos",
 "rel": "imports",
-"to": "mod:hamid.structure"
+"to": "mod:hamid.depth_collector"
 },
 {
 "from": "mod:hamid.depth_bos",
@@ -6838,11 +6858,6 @@
 {
 "from": "mod:hamid.direction_autopsy",
 "rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.direction_autopsy",
-"rel": "imports",
 "to": "mod:hamid.paper"
 },
 {
@@ -6854,11 +6869,6 @@
 "from": "mod:hamid.direction_lessons",
 "rel": "imports",
 "to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.direction_lessons",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.direction_lessons",
@@ -6881,14 +6891,29 @@
 "to": "state:signals/docs-probe.json"
 },
 {
-"from": "mod:hamid.dom_tf",
+"from": "mod:hamid.dom_tf_study",
 "rel": "imports",
-"to": "mod:hamid.structure"
+"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.dom_tf_study",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:hamid.dom_tf"
+},
+{
+"from": "mod:hamid.dominance",
+"rel": "imports",
+"to": "mod:hamid.dom_decomp"
+},
+{
+"from": "mod:hamid.dominance",
+"rel": "imports",
+"to": "mod:hamid.dom_forecast"
+},
+{
+"from": "mod:hamid.dominance",
+"rel": "imports",
+"to": "mod:hamid.dom_tf"
 },
 {
 "from": "mod:hamid.dominance",
@@ -6903,6 +6928,11 @@
 {
 "from": "mod:hamid.dominance",
 "rel": "imports",
+"to": "mod:hamid.stables"
+},
+{
+"from": "mod:hamid.dominance",
+"rel": "imports",
 "to": "mod:hamid.structure"
 },
 {
@@ -6912,13 +6942,18 @@
 },
 {
 "from": "mod:hamid.dominance_desk",
-"rel": "produces",
-"to": "state:signals/dominance-desk.json"
+"rel": "imports",
+"to": "mod:hamid.base_map"
 },
 {
-"from": "mod:hamid.dominance_report",
+"from": "mod:hamid.dominance_desk",
 "rel": "imports",
-"to": "mod:hamid.cadence_gate"
+"to": "mod:hamid.dom_tf"
+},
+{
+"from": "mod:hamid.dominance_desk",
+"rel": "produces",
+"to": "state:signals/dominance-desk.json"
 },
 {
 "from": "mod:hamid.dominance_report",
@@ -6931,29 +6966,14 @@
 "to": "state:signals/edge.json"
 },
 {
-"from": "mod:hamid.engine_dossier",
-"rel": "imports",
-"to": "mod:hamid.engine_map"
-},
-{
 "from": "mod:hamid.engine_nurse",
 "rel": "imports",
 "to": "mod:hamid.skill_ledger"
 },
 {
 "from": "mod:hamid.engine_nurse",
-"rel": "imports",
-"to": "mod:hamid.state_bus"
-},
-{
-"from": "mod:hamid.engine_nurse",
 "rel": "produces",
 "to": "state:signals/nurse.json"
-},
-{
-"from": "mod:hamid.escalation",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.escalation",
@@ -6972,11 +6992,6 @@
 },
 {
 "from": "mod:hamid.execution_gate",
-"rel": "imports",
-"to": "mod:hamid.sizing"
-},
-{
-"from": "mod:hamid.execution_gate",
 "rel": "produces",
 "to": "state:signals/exec-outbox.json"
 },
@@ -6987,33 +7002,18 @@
 },
 {
 "from": "mod:hamid.experience_effect",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.experience_effect",
 "rel": "produces",
 "to": "state:signals/experience-effect.json"
 },
 {
 "from": "mod:hamid.feed_watch",
+"rel": "imports",
+"to": "mod:hamid.alert_gate"
+},
+{
+"from": "mod:hamid.feed_watch",
 "rel": "produces",
 "to": "state:signals/feed-health.json"
-},
-{
-"from": "mod:hamid.fill_books",
-"rel": "imports",
-"to": "mod:hamid.backtest"
-},
-{
-"from": "mod:hamid.fill_books",
-"rel": "imports",
-"to": "mod:hamid.cycle"
-},
-{
-"from": "mod:hamid.fill_books",
-"rel": "imports",
-"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.fill_books",
@@ -7031,21 +7031,6 @@
 "to": "mod:hamid.trainer"
 },
 {
-"from": "mod:hamid.fill_books",
-"rel": "imports",
-"to": "mod:hamid.tv_indicators"
-},
-{
-"from": "mod:hamid.fomo",
-"rel": "imports",
-"to": "mod:hamid.evidence_packet"
-},
-{
-"from": "mod:hamid.fomo",
-"rel": "imports",
-"to": "mod:hamid.intel"
-},
-{
 "from": "mod:hamid.fomo",
 "rel": "imports",
 "to": "mod:hamid.venues"
@@ -7054,6 +7039,11 @@
 "from": "mod:hamid.fomo",
 "rel": "produces",
 "to": "state:signals/fomo.json"
+},
+{
+"from": "mod:hamid.gainer_radar",
+"rel": "imports",
+"to": "mod:hamid.alert_gate"
 },
 {
 "from": "mod:hamid.gainer_radar",
@@ -7083,7 +7073,7 @@
 {
 "from": "mod:hamid.geom_lab",
 "rel": "imports",
-"to": "mod:hamid.stairs"
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.geom_lab",
@@ -7097,28 +7087,8 @@
 },
 {
 "from": "mod:hamid.guardian_delta",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.guardian_delta",
 "rel": "produces",
 "to": "state:signals/guardian-delta.json"
-},
-{
-"from": "mod:hamid.guardian_desk",
-"rel": "imports",
-"to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.guardian_desk",
-"rel": "imports",
-"to": "mod:hamid.phoenix"
-},
-{
-"from": "mod:hamid.guardian_desk",
-"rel": "imports",
-"to": "mod:hamid.stairs"
 },
 {
 "from": "mod:hamid.guardian_desk",
@@ -7127,43 +7097,13 @@
 },
 {
 "from": "mod:hamid.guardian_exam",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.guardian_exam",
-"rel": "imports",
-"to": "mod:hamid.phoenix"
-},
-{
-"from": "mod:hamid.guardian_exam",
 "rel": "produces",
 "to": "state:signals/guardian-exam.json"
 },
 {
 "from": "mod:hamid.guardian_lab",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.guardian_lab",
-"rel": "imports",
-"to": "mod:hamid.phoenix"
-},
-{
-"from": "mod:hamid.guardian_lab",
 "rel": "produces",
 "to": "state:signals/guardian-lab.json"
-},
-{
-"from": "mod:hamid.guardian_live",
-"rel": "imports",
-"to": "mod:hamid.phoenix"
-},
-{
-"from": "mod:hamid.h1_backtest",
-"rel": "imports",
-"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.h1_backtest",
@@ -7174,16 +7114,6 @@
 "from": "mod:hamid.health",
 "rel": "imports",
 "to": "mod:hamid.research"
-},
-{
-"from": "mod:hamid.history_analysis",
-"rel": "imports",
-"to": "mod:hamid.dash_backtest"
-},
-{
-"from": "mod:hamid.history_backtest",
-"rel": "imports",
-"to": "mod:hamid.dash_backtest"
 },
 {
 "from": "mod:hamid.history_room",
@@ -7197,28 +7127,23 @@
 },
 {
 "from": "mod:hamid.improve",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.improve",
 "rel": "produces",
 "to": "state:signals/improve.json"
 },
 {
-"from": "mod:hamid.inducement",
+"from": "mod:hamid.intake",
 "rel": "imports",
-"to": "mod:hamid.orderblock"
-},
-{
-"from": "mod:hamid.inducement",
-"rel": "imports",
-"to": "mod:hamid.structure"
+"to": "mod:hamid.intel"
 },
 {
 "from": "mod:hamid.intake",
 "rel": "produces",
 "to": "state:signals/intake.json"
+},
+{
+"from": "mod:hamid.intel",
+"rel": "imports",
+"to": "mod:hamid.research"
 },
 {
 "from": "mod:hamid.intel",
@@ -7236,9 +7161,19 @@
 "to": "state:signals/learning-proof.json"
 },
 {
+"from": "mod:hamid.ledger",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
 "from": "mod:hamid.levels_db",
 "rel": "imports",
 "to": "mod:hamid.structure"
+},
+{
+"from": "mod:hamid.levels_db",
+"rel": "imports",
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.liam9d",
@@ -7251,19 +7186,14 @@
 "to": "state:signals/liam9d.json"
 },
 {
+"from": "mod:hamid.liquidity",
+"rel": "imports",
+"to": "mod:hamid.structure"
+},
+{
 "from": "mod:hamid.live_results",
 "rel": "produces",
 "to": "state:signals/live-results.json"
-},
-{
-"from": "mod:hamid.live_service",
-"rel": "imports",
-"to": "mod:hamid.pump_radar"
-},
-{
-"from": "mod:hamid.live_service",
-"rel": "imports",
-"to": "mod:hamid.pump_watchlist"
 },
 {
 "from": "mod:hamid.live_service",
@@ -7274,11 +7204,6 @@
 "from": "mod:hamid.loop_audit",
 "rel": "imports",
 "to": "mod:hamid.evidence_packet"
-},
-{
-"from": "mod:hamid.loop_audit",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.loop_audit",
@@ -7294,16 +7219,6 @@
 "from": "mod:hamid.loss_autopsy",
 "rel": "produces",
 "to": "state:signals/loss-analysis.json"
-},
-{
-"from": "mod:hamid.macro_guard",
-"rel": "imports",
-"to": "mod:hamid.dominance"
-},
-{
-"from": "mod:hamid.macro_guard",
-"rel": "imports",
-"to": "mod:hamid.intel"
 },
 {
 "from": "mod:hamid.macro_guard",
@@ -7323,22 +7238,37 @@
 {
 "from": "mod:hamid.mcp_server",
 "rel": "imports",
-"to": "mod:hamid.dispatch"
-},
-{
-"from": "mod:hamid.mcp_server",
-"rel": "imports",
 "to": "mod:hamid.evidence_packet"
 },
 {
 "from": "mod:hamid.mcp_server",
 "rel": "imports",
-"to": "mod:hamid.graphify"
+"to": "mod:hamid.geometry_verdict"
+},
+{
+"from": "mod:hamid.mcp_server",
+"rel": "imports",
+"to": "mod:hamid.handoff"
+},
+{
+"from": "mod:hamid.mcp_server",
+"rel": "imports",
+"to": "mod:hamid.review_queue"
 },
 {
 "from": "mod:hamid.memory",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:hamid.cases"
+},
+{
+"from": "mod:hamid.memory",
+"rel": "imports",
+"to": "mod:hamid.direction_lessons"
+},
+{
+"from": "mod:hamid.memory",
+"rel": "imports",
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.msg_budget",
@@ -7363,17 +7293,17 @@
 {
 "from": "mod:hamid.notif_bridge",
 "rel": "imports",
+"to": "mod:hamid.analyze_pump"
+},
+{
+"from": "mod:hamid.notif_bridge",
+"rel": "imports",
 "to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.ob_intel",
 "rel": "imports",
-"to": "mod:hamid.orderblocks"
-},
-{
-"from": "mod:hamid.ob_intel",
-"rel": "imports",
-"to": "mod:hamid.structure"
+"to": "mod:hamid.lagcorr"
 },
 {
 "from": "mod:hamid.ob_intel",
@@ -7411,11 +7341,6 @@
 "to": "mod:hamid.structure"
 },
 {
-"from": "mod:hamid.orderblocks",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
 "from": "mod:hamid.overseer",
 "rel": "produces",
 "to": "state:signals/overseer.json"
@@ -7424,11 +7349,6 @@
 "from": "mod:hamid.paper",
 "rel": "imports",
 "to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.paper",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.paper",
@@ -7457,6 +7377,16 @@
 },
 {
 "from": "mod:hamid.phoenix",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.phoenix",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.phoenix",
 "rel": "produces",
 "to": "state:signals/phoenix.json"
 },
@@ -7473,7 +7403,27 @@
 {
 "from": "mod:hamid.premortem",
 "rel": "imports",
-"to": "mod:hamid.liquidity"
+"to": "mod:hamid.analyze_pump"
+},
+{
+"from": "mod:hamid.premortem",
+"rel": "imports",
+"to": "mod:hamid.dom_tf"
+},
+{
+"from": "mod:hamid.premortem",
+"rel": "imports",
+"to": "mod:hamid.lagcorr"
+},
+{
+"from": "mod:hamid.premortem",
+"rel": "imports",
+"to": "mod:hamid.liqmap"
+},
+{
+"from": "mod:hamid.premortem",
+"rel": "imports",
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.premortem",
@@ -7491,6 +7441,11 @@
 "to": "mod:hamid.structure"
 },
 {
+"from": "mod:hamid.premortem",
+"rel": "imports",
+"to": "mod:hamid.tv_indicators"
+},
+{
 "from": "mod:hamid.publish_experience",
 "rel": "imports",
 "to": "mod:hamid.paper"
@@ -7499,6 +7454,11 @@
 "from": "mod:hamid.publish_experience",
 "rel": "produces",
 "to": "state:signals/experience.json"
+},
+{
+"from": "mod:hamid.publish_top_liquidity",
+"rel": "imports",
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.publish_top_liquidity",
@@ -7513,17 +7473,12 @@
 {
 "from": "mod:hamid.pump_probe",
 "rel": "imports",
-"to": "mod:hamid.orderblocks"
+"to": "mod:hamid.lagcorr"
 },
 {
-"from": "mod:hamid.pump_probe",
+"from": "mod:hamid.pump_profile",
 "rel": "imports",
-"to": "mod:hamid.patterns"
-},
-{
-"from": "mod:hamid.pump_probe",
-"rel": "imports",
-"to": "mod:hamid.structure"
+"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.pump_radar",
@@ -7538,12 +7493,17 @@
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:hamid.lagcorr"
 },
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.liquidity"
+"to": "mod:hamid.liqmap"
+},
+{
+"from": "mod:hamid.pump_radar",
+"rel": "imports",
+"to": "mod:hamid.merge_sent"
 },
 {
 "from": "mod:hamid.pump_radar",
@@ -7553,12 +7513,12 @@
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.pump_study"
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.pump_watchlist"
+"to": "mod:hamid.pump_study"
 },
 {
 "from": "mod:hamid.pump_radar",
@@ -7571,9 +7531,24 @@
 "to": "state:signals/pump-radar.json"
 },
 {
+"from": "mod:hamid.pump_watchlist",
+"rel": "imports",
+"to": "mod:hamid.memory"
+},
+{
+"from": "mod:hamid.pump_watchlist",
+"rel": "imports",
+"to": "mod:hamid.trend_gate"
+},
+{
 "from": "mod:hamid.receipts_guard",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.regime_verdict",
+"rel": "imports",
+"to": "mod:hamid.geometry_verdict"
 },
 {
 "from": "mod:hamid.regime_verdict",
@@ -7583,17 +7558,7 @@
 {
 "from": "mod:hamid.revalidate",
 "rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.revalidate",
-"rel": "imports",
 "to": "mod:hamid.universe"
-},
-{
-"from": "mod:hamid.review_queue",
-"rel": "imports",
-"to": "mod:hamid.dispatch"
 },
 {
 "from": "mod:hamid.review_queue",
@@ -7606,6 +7571,11 @@
 "to": "state:signals/rewards.json"
 },
 {
+"from": "mod:hamid.risk_desk",
+"rel": "imports",
+"to": "mod:hamid.council"
+},
+{
 "from": "mod:hamid.router",
 "rel": "produces",
 "to": "state:signals/router.json"
@@ -7614,11 +7584,6 @@
 "from": "mod:hamid.scalp",
 "rel": "produces",
 "to": "state:signals/scalp.json"
-},
-{
-"from": "mod:hamid.scalp1m",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.scalp1m",
@@ -7646,9 +7611,9 @@
 "to": "state:signals/scalp-exec.json"
 },
 {
-"from": "mod:hamid.scalp_report",
+"from": "mod:hamid.scalp_sweep",
 "rel": "imports",
-"to": "mod:hamid.ledger"
+"to": "mod:hamid.scalp"
 },
 {
 "from": "mod:hamid.scalp_sweep",
@@ -7657,18 +7622,33 @@
 },
 {
 "from": "mod:hamid.scalp_sweep",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.scalp_sweep",
 "rel": "produces",
 "to": "state:signals/scalp-sweep.json"
 },
 {
 "from": "mod:hamid.scalp_verdict",
-"rel": "imports",
-"to": "mod:hamid.ledger"
-},
-{
-"from": "mod:hamid.scalp_verdict",
 "rel": "produces",
 "to": "state:signals/scalp-verdict.json"
+},
+{
+"from": "mod:hamid.scenario_backtest",
+"rel": "imports",
+"to": "mod:hamid.scenarios"
+},
+{
+"from": "mod:hamid.scenario_backtest",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.scenario_backtest",
+"rel": "imports",
+"to": "mod:hamid.volatility_universe"
 },
 {
 "from": "mod:hamid.scenario_backtest",
@@ -7693,17 +7673,7 @@
 {
 "from": "mod:hamid.scorecard",
 "rel": "imports",
-"to": "mod:hamid.direction_autopsy"
-},
-{
-"from": "mod:hamid.scorecard",
-"rel": "imports",
 "to": "mod:hamid.paper"
-},
-{
-"from": "mod:hamid.scorecard",
-"rel": "imports",
-"to": "mod:hamid.pump_profile"
 },
 {
 "from": "mod:hamid.scorecard",
@@ -7723,12 +7693,22 @@
 {
 "from": "mod:hamid.selfcheck",
 "rel": "imports",
+"to": "mod:hamid.stack"
+},
+{
+"from": "mod:hamid.selfcheck",
+"rel": "imports",
 "to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.sentinel",
 "rel": "produces",
 "to": "state:signals/sentinel.json"
+},
+{
+"from": "mod:hamid.shock_desk",
+"rel": "imports",
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.shock_desk",
@@ -7748,6 +7728,11 @@
 {
 "from": "mod:hamid.short_backtest",
 "rel": "imports",
+"to": "mod:hamid.history_ingest"
+},
+{
+"from": "mod:hamid.short_backtest",
+"rel": "imports",
 "to": "mod:hamid.trainer"
 },
 {
@@ -7761,14 +7746,14 @@
 "to": "state:signals/short-backtest.json"
 },
 {
-"from": "mod:hamid.short_lab",
+"from": "mod:hamid.short_sampler",
 "rel": "imports",
-"to": "mod:hamid.direction_autopsy"
+"to": "mod:hamid.bandit"
 },
 {
-"from": "mod:hamid.signal_audit",
+"from": "mod:hamid.short_sampler",
 "rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.signal_audit",
@@ -7797,6 +7782,16 @@
 },
 {
 "from": "mod:hamid.specialist_forward",
+"rel": "imports",
+"to": "mod:hamid.specialist_lab"
+},
+{
+"from": "mod:hamid.specialist_forward",
+"rel": "imports",
+"to": "mod:hamid.specialist_run"
+},
+{
+"from": "mod:hamid.specialist_forward",
 "rel": "produces",
 "to": "state:signals/specialist-forward.json"
 },
@@ -7808,7 +7803,7 @@
 {
 "from": "mod:hamid.specialist_lab",
 "rel": "imports",
-"to": "mod:hamid.specialist_run"
+"to": "mod:hamid.test_specialist_lab"
 },
 {
 "from": "mod:hamid.specialist_lab",
@@ -7823,22 +7818,22 @@
 {
 "from": "mod:hamid.specialist_run",
 "rel": "imports",
+"to": "mod:hamid.specialist_lab"
+},
+{
+"from": "mod:hamid.specialist_run",
+"rel": "imports",
 "to": "mod:hamid.universe"
-},
-{
-"from": "mod:hamid.stack",
-"rel": "imports",
-"to": "mod:hamid.orderblock"
-},
-{
-"from": "mod:hamid.stack",
-"rel": "imports",
-"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.stairs",
 "rel": "imports",
-"to": "mod:hamid.microstructure"
+"to": "mod:hamid.direction_autopsy"
+},
+{
+"from": "mod:hamid.stairs",
+"rel": "imports",
+"to": "mod:hamid.orderblocks"
 },
 {
 "from": "mod:hamid.stairs",
@@ -7858,22 +7853,7 @@
 {
 "from": "mod:hamid.strategy_api",
 "rel": "imports",
-"to": "mod:hamid.cycle"
-},
-{
-"from": "mod:hamid.strategy_api",
-"rel": "imports",
-"to": "mod:hamid.execution_gate"
-},
-{
-"from": "mod:hamid.strategy_api",
-"rel": "imports",
-"to": "mod:hamid.sizing"
-},
-{
-"from": "mod:hamid.strategy_duo",
-"rel": "imports",
-"to": "mod:hamid.dash_backtest"
+"to": "mod:hamid.deep"
 },
 {
 "from": "mod:hamid.strategy_duo",
@@ -7881,9 +7861,9 @@
 "to": "mod:hamid.history_backtest"
 },
 {
-"from": "mod:hamid.structure_room",
+"from": "mod:hamid.strategy_duo",
 "rel": "imports",
-"to": "mod:hamid.lines_wf"
+"to": "mod:hamid.history_ingest"
 },
 {
 "from": "mod:hamid.structure_room",
@@ -7896,9 +7876,19 @@
 "to": "mod:hamid.structure"
 },
 {
-"from": "mod:hamid.test_agent_scores",
+"from": "mod:hamid.test_alert_gate",
 "rel": "tests",
-"to": "mod:hamid.agent_scores"
+"to": "mod:hamid.alert_gate"
+},
+{
+"from": "mod:hamid.test_bandit",
+"rel": "tests",
+"to": "mod:hamid.bandit"
+},
+{
+"from": "mod:hamid.test_big_money",
+"rel": "tests",
+"to": "mod:hamid.big_money"
 },
 {
 "from": "mod:hamid.test_big_money_backtest",
@@ -7921,9 +7911,9 @@
 "to": "mod:hamid.coin_history"
 },
 {
-"from": "mod:hamid.test_curriculum",
+"from": "mod:hamid.test_conformance",
 "rel": "tests",
-"to": "mod:hamid.curriculum"
+"to": "mod:hamid.conformance"
 },
 {
 "from": "mod:hamid.test_data_requests",
@@ -7931,14 +7921,24 @@
 "to": "mod:hamid.data_requests"
 },
 {
-"from": "mod:hamid.test_depth_bos",
+"from": "mod:hamid.test_deep",
 "rel": "tests",
-"to": "mod:hamid.depth_bos"
+"to": "mod:hamid.deep"
 },
 {
-"from": "mod:hamid.test_depth_collector",
+"from": "mod:hamid.test_direction_lessons",
 "rel": "tests",
-"to": "mod:hamid.depth_collector"
+"to": "mod:hamid.direction_lessons"
+},
+{
+"from": "mod:hamid.test_docs_probe",
+"rel": "tests",
+"to": "mod:hamid.docs_probe"
+},
+{
+"from": "mod:hamid.test_dom_decomp",
+"rel": "tests",
+"to": "mod:hamid.dom_decomp"
 },
 {
 "from": "mod:hamid.test_dom_forecast",
@@ -7946,24 +7946,34 @@
 "to": "mod:hamid.dom_forecast"
 },
 {
-"from": "mod:hamid.test_dominance",
+"from": "mod:hamid.test_dom_tf",
 "rel": "tests",
-"to": "mod:hamid.dominance"
+"to": "mod:hamid.dom_tf"
 },
 {
-"from": "mod:hamid.test_dominance_desk",
+"from": "mod:hamid.test_engine_dossier",
 "rel": "tests",
-"to": "mod:hamid.dominance_desk"
+"to": "mod:hamid.engine_dossier"
 },
 {
-"from": "mod:hamid.test_engine_map",
+"from": "mod:hamid.test_engine_nurse",
 "rel": "tests",
-"to": "mod:hamid.engine_map"
+"to": "mod:hamid.engine_nurse"
+},
+{
+"from": "mod:hamid.test_escalation",
+"rel": "tests",
+"to": "mod:hamid.escalation"
 },
 {
 "from": "mod:hamid.test_evidence_packet",
 "rel": "tests",
 "to": "mod:hamid.evidence_packet"
+},
+{
+"from": "mod:hamid.test_experience_effect",
+"rel": "tests",
+"to": "mod:hamid.experience_effect"
 },
 {
 "from": "mod:hamid.test_fees",
@@ -7974,6 +7984,11 @@
 "from": "mod:hamid.test_fill_books",
 "rel": "tests",
 "to": "mod:hamid.fill_books"
+},
+{
+"from": "mod:hamid.test_fomo",
+"rel": "tests",
+"to": "mod:hamid.fomo"
 },
 {
 "from": "mod:hamid.test_gainer_radar",
@@ -7996,19 +8011,14 @@
 "to": "mod:hamid.history_backtest"
 },
 {
-"from": "mod:hamid.test_history_room",
+"from": "mod:hamid.test_history_ingest",
 "rel": "tests",
-"to": "mod:hamid.history_room"
+"to": "mod:hamid.history_ingest"
 },
 {
-"from": "mod:hamid.test_intake",
+"from": "mod:hamid.test_improve",
 "rel": "tests",
-"to": "mod:hamid.intake"
-},
-{
-"from": "mod:hamid.test_levels_db",
-"rel": "tests",
-"to": "mod:hamid.levels_db"
+"to": "mod:hamid.improve"
 },
 {
 "from": "mod:hamid.test_liam9d",
@@ -8021,9 +8031,9 @@
 "to": "mod:hamid.library_verify"
 },
 {
-"from": "mod:hamid.test_lines_wf",
+"from": "mod:hamid.test_live_service",
 "rel": "tests",
-"to": "mod:hamid.lines_wf"
+"to": "mod:hamid.live_service"
 },
 {
 "from": "mod:hamid.test_loop_audit",
@@ -8036,6 +8046,11 @@
 "to": "mod:hamid.macro_guard"
 },
 {
+"from": "mod:hamid.test_market_stance",
+"rel": "tests",
+"to": "mod:hamid.market_stance"
+},
+{
 "from": "mod:hamid.test_mcp_server",
 "rel": "tests",
 "to": "mod:hamid.mcp_server"
@@ -8046,19 +8061,19 @@
 "to": "mod:hamid.microstructure"
 },
 {
-"from": "mod:hamid.test_msg_budget",
-"rel": "tests",
-"to": "mod:hamid.msg_budget"
-},
-{
 "from": "mod:hamid.test_newsboard",
 "rel": "tests",
 "to": "mod:hamid.newsboard"
 },
 {
-"from": "mod:hamid.test_order_ticket",
+"from": "mod:hamid.test_ob_intel",
 "rel": "tests",
-"to": "mod:hamid.order_ticket"
+"to": "mod:hamid.ob_intel"
+},
+{
+"from": "mod:hamid.test_orderblocks",
+"rel": "tests",
+"to": "mod:hamid.orderblocks"
 },
 {
 "from": "mod:hamid.test_overseer",
@@ -8076,24 +8091,29 @@
 "to": "mod:hamid.patterns"
 },
 {
-"from": "mod:hamid.test_phoenix",
-"rel": "tests",
-"to": "mod:hamid.phoenix"
-},
-{
-"from": "mod:hamid.test_polymarket",
-"rel": "tests",
-"to": "mod:hamid.polymarket"
-},
-{
 "from": "mod:hamid.test_position_watch",
 "rel": "tests",
 "to": "mod:hamid.position_watch"
 },
 {
-"from": "mod:hamid.test_pump_study",
+"from": "mod:hamid.test_publish_top_liquidity",
 "rel": "tests",
-"to": "mod:hamid.pump_study"
+"to": "mod:hamid.publish_top_liquidity"
+},
+{
+"from": "mod:hamid.test_pump_desk",
+"rel": "tests",
+"to": "mod:hamid.pump_desk"
+},
+{
+"from": "mod:hamid.test_pump_profile",
+"rel": "tests",
+"to": "mod:hamid.pump_profile"
+},
+{
+"from": "mod:hamid.test_pump_radar",
+"rel": "tests",
+"to": "mod:hamid.pump_radar"
 },
 {
 "from": "mod:hamid.test_pump_watchlist",
@@ -8116,9 +8136,14 @@
 "to": "mod:hamid.scalp1m"
 },
 {
-"from": "mod:hamid.test_scalp_sweep",
+"from": "mod:hamid.test_scalp_dash_backtest",
 "rel": "tests",
-"to": "mod:hamid.scalp_sweep"
+"to": "mod:hamid.scalp_dash_backtest"
+},
+{
+"from": "mod:hamid.test_scalp_exec",
+"rel": "tests",
+"to": "mod:hamid.scalp_exec"
 },
 {
 "from": "mod:hamid.test_scalp_verdict",
@@ -8126,9 +8151,9 @@
 "to": "mod:hamid.scalp_verdict"
 },
 {
-"from": "mod:hamid.test_scenario_backtest",
+"from": "mod:hamid.test_scorecard",
 "rel": "tests",
-"to": "mod:hamid.scenario_backtest"
+"to": "mod:hamid.scorecard"
 },
 {
 "from": "mod:hamid.test_shadow_service",
@@ -8136,9 +8161,9 @@
 "to": "mod:hamid.shadow_service"
 },
 {
-"from": "mod:hamid.test_signal_audit",
+"from": "mod:hamid.test_short_lab",
 "rel": "tests",
-"to": "mod:hamid.signal_audit"
+"to": "mod:hamid.short_lab"
 },
 {
 "from": "mod:hamid.test_skill_ledger",
@@ -8151,14 +8176,9 @@
 "to": "mod:hamid.spec_check"
 },
 {
-"from": "mod:hamid.test_specialist_forward",
+"from": "mod:hamid.test_stables",
 "rel": "tests",
-"to": "mod:hamid.specialist_forward"
-},
-{
-"from": "mod:hamid.test_specialist_lab",
-"rel": "tests",
-"to": "mod:hamid.specialist_lab"
+"to": "mod:hamid.stables"
 },
 {
 "from": "mod:hamid.test_stairs",
@@ -8166,19 +8186,19 @@
 "to": "mod:hamid.stairs"
 },
 {
-"from": "mod:hamid.test_structure_room",
-"rel": "tests",
-"to": "mod:hamid.structure_room"
-},
-{
-"from": "mod:hamid.test_tf_geo_arms",
-"rel": "tests",
-"to": "mod:hamid.tf_geo_arms"
-},
-{
 "from": "mod:hamid.test_trail_alert",
 "rel": "tests",
 "to": "mod:hamid.trail_alert"
+},
+{
+"from": "mod:hamid.test_trail_arms",
+"rel": "tests",
+"to": "mod:hamid.trail_arms"
+},
+{
+"from": "mod:hamid.test_trail_lab",
+"rel": "tests",
+"to": "mod:hamid.trail_lab"
 },
 {
 "from": "mod:hamid.test_trainer",
@@ -8191,14 +8211,29 @@
 "to": "mod:hamid.trend_gate"
 },
 {
+"from": "mod:hamid.test_tv_indicators",
+"rel": "tests",
+"to": "mod:hamid.tv_indicators"
+},
+{
+"from": "mod:hamid.test_venue_probe",
+"rel": "tests",
+"to": "mod:hamid.venue_probe"
+},
+{
+"from": "mod:hamid.test_venues",
+"rel": "tests",
+"to": "mod:hamid.venues"
+},
+{
+"from": "mod:hamid.tf_geo_arms",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
 "from": "mod:hamid.tf_geo_arms",
 "rel": "produces",
 "to": "state:signals/tf-geo-arms.json"
-},
-{
-"from": "mod:hamid.tg_audit",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.tg_audit",
@@ -8207,23 +8242,18 @@
 },
 {
 "from": "mod:hamid.trail_alert",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.trail_alert",
 "rel": "produces",
 "to": "state:signals/trail-alert.json"
 },
 {
 "from": "mod:hamid.trail_arms",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.trail_arms",
 "rel": "produces",
 "to": "state:signals/trail-arms.json"
-},
-{
-"from": "mod:hamid.trail_lab",
-"rel": "imports",
-"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.trail_lab",
@@ -8236,26 +8266,6 @@
 "to": "mod:hamid.ob_intel"
 },
 {
-"from": "mod:hamid.trainer",
-"rel": "imports",
-"to": "mod:hamid.orderblocks"
-},
-{
-"from": "mod:hamid.trainer",
-"rel": "imports",
-"to": "mod:hamid.stairs"
-},
-{
-"from": "mod:hamid.trainer",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.venue_probe",
-"rel": "imports",
-"to": "mod:hamid.depth_collector"
-},
-{
 "from": "mod:hamid.venue_probe",
 "rel": "produces",
 "to": "state:signals/venue-compare.json"
@@ -8263,7 +8273,7 @@
 {
 "from": "mod:hamid.volatility_universe",
 "rel": "imports",
-"to": "mod:hamid.scenario_backtest"
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.volatility_universe",
@@ -8271,9 +8281,19 @@
 "to": "state:signals/volatile-universe.json"
 },
 {
-"from": "mod:hamid.work_report",
+"from": "mod:hamid.volume_impact",
 "rel": "imports",
-"to": "mod:hamid.cadence_gate"
+"to": "mod:hamid.dash_backtest"
+},
+{
+"from": "mod:hamid.volume_impact",
+"rel": "imports",
+"to": "mod:hamid.history_analysis"
+},
+{
+"from": "mod:hamid.volume_impact",
+"rel": "imports",
+"to": "mod:hamid.history_ingest"
 },
 {
 "from": "mod:hamid.work_report",
@@ -8284,11 +8304,6 @@
 "from": "mod:hamid.work_report",
 "rel": "imports",
 "to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.work_report",
-"rel": "imports",
-"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.work_report",
@@ -8322,18 +8337,8 @@
 },
 {
 "from": "mod:liam9_link",
-"rel": "imports",
-"to": "mod:brain"
-},
-{
-"from": "mod:liam9_link",
 "rel": "produces",
 "to": "state:signals/link-commands.json"
-},
-{
-"from": "mod:liam9_shock_strategy",
-"rel": "imports",
-"to": "mod:brain"
 },
 {
 "from": "mod:liam9_short_dash",
@@ -8381,19 +8386,9 @@
 "to": "mod:hamid.memory"
 },
 {
-"from": "mod:mine",
-"rel": "imports",
-"to": "mod:backtest"
-},
-{
 "from": "mod:research.reading_loop",
 "rel": "produces",
 "to": "state:signals/reading.json"
-},
-{
-"from": "mod:scan",
-"rel": "imports",
-"to": "mod:backtest"
 },
 {
 "from": "mod:scan",
@@ -8429,16 +8424,6 @@
 "from": "mod:scan",
 "rel": "imports",
 "to": "mod:hamid.trend_gate"
-},
-{
-"from": "mod:scan",
-"rel": "imports",
-"to": "mod:sources"
-},
-{
-"from": "mod:scan",
-"rel": "imports",
-"to": "mod:telegram"
 },
 {
 "from": "mod:scan",
@@ -8517,11 +8502,6 @@
 },
 {
 "from": "mod:telegram",
-"rel": "imports",
-"to": "mod:sources"
-},
-{
-"from": "mod:telegram",
 "rel": "produces",
 "to": "state:signals/sent.json"
 },
@@ -8539,6 +8519,16 @@
 "from": "mod:tg_batch",
 "rel": "imports",
 "to": "mod:hamid.structure"
+},
+{
+"from": "mod:tg_batch",
+"rel": "imports",
+"to": "mod:telegram"
+},
+{
+"from": "mod:tg_health",
+"rel": "imports",
+"to": "mod:telegram"
 },
 {
 "from": "rule:03-learning-memory-governance",
