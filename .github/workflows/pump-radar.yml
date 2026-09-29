@@ -313,6 +313,9 @@ jobs:
               # فایل زنده. پادزهر دولایه جلوی اسپم dispatch را می‌گیرد؛
               # REVIVE=1 لازم است تا درمان واقعاً اجرا شود (همان قاعدهٔ مدیک).
               (cd claude-liam-signal/python && REVIVE=1 python3 -m hamid.engine_nurse --write) || true
+              # زمان‌بندِ داخلی — پیش از کامیتِ همین دور، وگرنه resetِ دورِ بعد خروجی‌اش را می‌برد
+              # (اندازه‌گیری ۱۶:۰۴: scheduler.json ۸۲ دقیقه کهنه ماند چون بعد از کامیت نوشته می‌شد)
+              (cd claude-liam-signal/python && python3 -m hamid.scheduler --dispatch --write) || true
               # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
               # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
               # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
@@ -418,8 +421,6 @@ jobs:
             # زمان‌بندِ داخلی (۲۹ سپتامبر): کرونِ گیت‌هاب هر خط را فقط ~۴ بار
             # در روز اجرا می‌کرد؛ این‌جا هر دور، هر خطِ کرون‌دارِ سررسیدگذشته
             # با dispatch بیدار می‌شود — فهرست از خودِ ورک‌فلوها مشتق است.
-            (cd claude-liam-signal/python && python3 -m hamid.scheduler --dispatch --write) || true
-
             took=$(( $(date +%s) - t0 ))
             wait=$(( 180 - took )); [ "$wait" -lt 5 ] && wait=5
             if [ $(( $(date +%s) + wait + 150 )) -ge "$END" ]; then
@@ -463,7 +464,7 @@ jobs:
         # هر خطِ سررسیدگذشته را بیدار می‌کند. ضداسپم: در حال اجرا/صف = دست
         # نزن؛ هر خط حداکثر یک بار در نصفِ فاصلهٔ کرونش.
         working-directory: claude-liam-signal/python
-        run: python3 -m hamid.scheduler --dispatch --write || true
+        run: python3 -m hamid.scheduler --dispatch || true
 
       - name: زنجیرهٔ حلقهٔ بعد
         if: always() && steps.guard.outputs.skip != '1'

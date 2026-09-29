@@ -419,14 +419,25 @@ def run(hours=None, as_json=False, quiet=False, write=True):
     return rep
 
 
-def send_telegram(rep):
+def send_telegram(rep, force=False):
     """گزارش نوبت‌دار به تلگرام — دستور صریح حمید (۲۶ اوت): «دائم ترید کن
     و نتیجه و استراتژی‌های جدید را بگو». محصولِ خواسته‌شده است؛ هر نوبت
     محتوای تازه دارد، پس دروازهٔ ضدتکرار لازم ندارد (ثبت در DIRECT_OK)."""
     import telegram as tg
+    from hamid import cadence_gate as CG
     token, chat = tg.creds()
     if not token:
         print("تلگرام: توکن نیست — گزارش فقط چاپ شد")
+        return False
+    # ۲۹ سپتامبر: ۴۲ گزارش کار در یک روز (۲۸ سپتامبر) — ورک‌فلو روی سقف ۱۵
+    # دقیقه cancelled می‌شد، عیب‌یاب «خطِ مرده» می‌دید و دوباره dispatch
+    # می‌کرد، و هر اجرا پیش از مردن گزارش را فرستاده بود. سقفِ زمان رفع شد،
+    # ولی درمانِ کلاس این است که گزارشِ نوبت‌دار نتواند بیرون از نوبتش
+    # برود: دروازهٔ کادنسِ مشترک (سه‌منبعی، مستقل از push) — همان که گزارش
+    # دامیننس از ۷ سپتامبر دارد. force فقط برای اجرای دستی.
+    ok, why, age = CG.allow("work_report")
+    if not ok and not force:
+        print(f"گزارش کار نرفت — نوبتش نرسیده ({why}، آخرین {age:.0f}د پیش؛ کادنس {CG.MIN_GAP_MIN['work_report']}د)")
         return False
     body = text(rep)
     tg._post(token, "sendMessage",
@@ -434,6 +445,7 @@ def send_telegram(rep):
               "disable_web_page_preview": "true"})
     tg.record_out("work_report", "گزارش کار",
                   {"chars": len(body)})
+    CG.mark("work_report")
     print("گزارش کار به تلگرام رفت")
     return True
 

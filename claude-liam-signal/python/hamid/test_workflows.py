@@ -409,6 +409,10 @@ check("زمان‌بند داخلِ حلقهٔ زنجیره است، نه فقط
       _chain.find("hamid.scheduler --dispatch") < _chain.find("name: زمان‌بندِ داخلی"))
 check("فهرست دست‌نویس WAKE از زنجیره رفته (کلاسِ فهرستِ دست‌نویس)",
       "for WAKE in" not in _chain)
+# ۱۶:۰۴ همان روز: scheduler.json ۸۲ دقیقه کهنه ماند — نوشته می‌شد ولی *بعد* از
+# کامیتِ دور، و resetِ دورِ بعد آن را می‌بُرد. خروجیِ حلقه باید پیش از کامیت باشد.
+check("زمان‌بند داخل حلقه پیش از کامیتِ همان دور می‌نویسد",
+      _chain.find("hamid.scheduler --dispatch --write") < _chain.find("git add signals brain"))
 # سقفِ job و بودجهٔ حلقه یک عددند — ۲۹ سپتامبر ۶۲ اجرای پیاپیِ زنجیره روی
 # سقف ۳۲ دقیقه cancelled شد چون حلقه ۸ دورِ ثابت داشت و آزمون ۶.۵ دقیقه بود.
 _tm_c = re.search(r"timeout-minutes:\s*(\d+)", _chain)
