@@ -21,7 +21,7 @@ concurrency:
 jobs:
   train:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
@@ -105,44 +105,11 @@ jobs:
         run: python3 -m hamid.coin_history --symbols 200 --bars 1000 || true
 
       - name: ثبت دفتر و درس‌ها
+        # ۲۹ سپتامبر: حلقهٔ pushِ دست‌نویسِ این گام ۱۸۲۸ ثانیه (۳۰ دقیقه) طول
+        # کشید — fetch/merge روی تاریخچهٔ ۴.۴ گیگابایتی، همان کلاسی که قانون
+        # ۱۴ برایش ناشر یگانه ساخت. brain/lessons هم هست (۲۷ سپتامبر): هضمِ
+        # حافظه درسِ جهتِ مخالف را در brain/lessons/direction.jsonl می‌نویسد.
         run: |
-          git config user.name "Hamid Signal Agent"
-          git config user.email "noreply@anthropic.com"
-          # brain/lessons هم هست (۲۷ سپتامبر): هضمِ حافظه درسِ جهتِ مخالف
-          # را در brain/lessons/direction.jsonl می‌نویسد (memory.py→E20)؛
-          # نبودش در این فهرست یعنی تغییرِ کامیت‌نشده مانعِ merge می‌شد و
-          # پوش می‌سوخت (اثبات رانر ۰۸:۰۳) — classify.json کهنه می‌ماند.
-          git add brain/paper/ brain/memory/ brain/learning/ brain/lessons/ brain/improve/ brain/levels/ brain/coins/ || true
-          for _f in signals/classify.json signals/improve.json; do [ -f "$_f" ] && git add "$_f"; done
-          if git diff --cached --quiet; then
-            echo "دادهٔ تازه‌ای نبود"
-            exit 0
-          fi
-          git commit -q -m "میز تمرین $(date -u '+%Y-%m-%d %H:%M UTC')"
-          # ریبیس روی فایل‌های تولیدشده تعارض بی‌دلیل می‌سازد (چرخه و رادار
-          # هم‌زمان به همین مسیرها می‌نویسند) و آن‌وقت rebase --abort یعنی
-          # کل کار دور ریخته می‌شود. الگوی خودِ مخزن: merge با «مال خودمان»
-          # برای دفتر تولیدشده، و رد کردن هر فایل دارای مارکر تعارض.
-          for attempt in 1 2 3 4 5 6 7 8; do
-            git push origin HEAD:main && exit 0
-            git fetch origin main || true
-            if ! git merge --no-edit --allow-unrelated-histories origin/main; then
-              # فقط همان فایلی که این job تولید کرده، نه کل signals/ —
-              # چرخه هم‌زمان به signals/latest.json می‌نویسد و --ours روی
-              # کل پوشه می‌توانست خروجی تازهٔ آن را عقب ببرد.
-              # ۱۵ اوت: `--ours` اینجا ۳۹۰ ردیف دفتر معامله را پاک کرد — رانر
-              # نسخهٔ کهنهٔ خودش را «مال ما» دید. حالا هر فایل با معنای خودش
-              # حل می‌شود: دفتر append-only اجتماع، درس اجتماع، index بازسازی،
-              # و فقط عکس‌فوری signals نسخهٔ تازه را می‌گیرد.
-              python3 "$GITHUB_WORKSPACE/scripts/resolve_brain_conflicts.py" \
-                || { git merge --abort || true; }
-              git commit --no-edit || { git merge --abort || true; }
-            fi
-            if git grep -qE "^(<<<<<<< |>>>>>>> )" -- brain signals/classify.json; then
-              echo "پوش نشد: مارکر تعارض باقی مانده"
-              exit 1
-            fi
-            sleep $((attempt * 4 + RANDOM % 7))
-          done
-          echo "پوش نشد — اجرای بعدی جبران می‌کند (دفتر محلی سالم است)"
-          exit 1
+          scripts/publish.sh -m "میز تمرین $(date -u '+%Y-%m-%d %H:%M UTC')" \
+            brain/paper brain/memory brain/learning brain/lessons brain/improve \
+            brain/levels brain/coins signals/classify.json signals/improve.json

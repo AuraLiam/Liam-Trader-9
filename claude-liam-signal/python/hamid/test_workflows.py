@@ -274,7 +274,8 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
 # تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
 # می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
 import os as _os                                       # noqa: E402
-INLINE_PUSHERS_MAX = 30      # ۲ سپتامبر: hamid-cycle، work-report، scout،
+INLINE_PUSHERS_MAX = 28      # ۲۹ سپتامبر: trainer و depth-collect مهاجرت کردند
+                             # ۲ سپتامبر: hamid-cycle، work-report، scout،
                              # history-ingest، strategy-volume، dominance-report،
                              # pump-review مهاجرت کردند
 NO_SHARED_DEPS_MAX = 27
@@ -393,11 +394,29 @@ check(f"هر حلقهٔ پوش gh-pages ادغام ضدتعارض -X ours دار
 # کهنه ماند. رفع، بیدارکردنِ چرخه از داخل زنجیره است؛ اگر کسی این گام را
 # بردارد، همان خرابیِ بی‌صدا برمی‌گردد. پس برداشتنش چرخه را سرخ می‌کند.
 _chain = (WF / "pump-radar.yml").read_text(encoding="utf-8")
-check("زنجیره چرخه را در کهنگی بیدار می‌کند (رفع اُفتادنِ کرون)",
-      "hamid-cycle.yml/dispatches" in _chain
-      and "hamid-latest.json" in _chain)
-check("بیدارکردن مشروط به کهنگی است، نه هر دور (ضد‌اسپمِ اجرا)",
-      'AGE" -gt' in _chain or "AGE\" -gt" in _chain)
+# ۲۹ سپتامبر — تعمیمِ همان رفع به کلاس: اندازه‌گیری ۱۲۰۰ اجرای آخر نشان داد
+# هر خطِ کرون‌دار (نه فقط چرخه) ~۴ بار در روز اجرا می‌شد. وصله‌های
+# دست‌نویس (بیدارکردن چرخه بر کهنگی + فهرست WAKE) با یک زمان‌بندِ مشتق از
+# کرونِ خودِ ورک‌فلوها (hamid/scheduler.py) جایگزین شد؛ حالا خاصیت این است:
+# هر دو حلقهٔ همیشه‌روشن زمان‌بند را با --dispatch می‌زنند، و زمان‌بند هر
+# خطِ کرون‌دارِ dispatch‌پذیر را پوشش می‌دهد (test_scheduler).
+_hb = (WF / "heartbeat.yml").read_text(encoding="utf-8")
+check("زنجیره زمان‌بندِ داخلی را با --dispatch می‌زند (رفع اُفتادنِ کرون)",
+      "hamid.scheduler --dispatch" in _chain)
+check("ضربان هم زمان‌بندِ داخلی را می‌زند (دو حاملِ مستقل)",
+      "hamid.scheduler --dispatch" in _hb)
+check("زمان‌بند داخلِ حلقهٔ زنجیره است، نه فقط پایان job",
+      _chain.find("hamid.scheduler --dispatch") < _chain.find("name: زمان‌بندِ داخلی"))
+check("فهرست دست‌نویس WAKE از زنجیره رفته (کلاسِ فهرستِ دست‌نویس)",
+      "for WAKE in" not in _chain)
+# سقفِ job و بودجهٔ حلقه یک عددند — ۲۹ سپتامبر ۶۲ اجرای پیاپیِ زنجیره روی
+# سقف ۳۲ دقیقه cancelled شد چون حلقه ۸ دورِ ثابت داشت و آزمون ۶.۵ دقیقه بود.
+_tm_c = re.search(r"timeout-minutes:\s*(\d+)", _chain)
+_bud_c = re.search(r'JOB_TIMEOUT_MIN:\s*"?(\d+)', _chain)
+check("بودجهٔ حلقهٔ زنجیره از سقفِ job مشتق است (JOB_TIMEOUT_MIN == timeout-minutes)",
+      bool(_tm_c and _bud_c) and _tm_c.group(1) == _bud_c.group(1))
+check("حلقهٔ زنجیره شمارِ ثابتِ دور ندارد (بودجه‌محور است)",
+      "for k in 1 2 3 4 5 6 7 8" not in _chain and "END=$((" in _chain and "JOB_T0" in _chain)
 
 # ── کلاسِ عیب: «کهنه بودن» با mtime سنجیده نمی‌شود (۳۰ اوت) ─────────────
 # هر اجرای Actions چک‌اوتِ تازه است، پس mtime هر فایل «همین الان» است و

@@ -58,7 +58,7 @@ jobs:
     # ۱۵ دقیقه کار بی‌ثمر و چرخهٔ منتشرشده هر ~۲ ساعت به‌جای هر ۳۰ دقیقه.
     # سقف ۴۰: حاشیهٔ ۱۵ دقیقه، هنوز زیر کادنس دو چرخهٔ کرون. محافظ:
     # test_workflows (کف ۳۵).
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       # ── چرا ۲۰۰ و نه ۰ (اندازه‌گیری ۱۱ سپتامبر) ───────────────────────
       # `fetch-depth: 0` یعنی کلِ تاریخچهٔ ۴.۴ گیگابایتی. در اجرای ۱۹:۲۳
@@ -82,7 +82,24 @@ jobs:
       - name: وابستگی‌های پایتون
         run: pip -q install -r requirements-ci.txt
 
+      # حافظهٔ دروازه (۲۹ سپتامبر): خودآزمایی ~۸ دقیقه است و هر ~۳۰ دقیقه
+      # روی همان کدِ بی‌تغییر تکرار می‌شد — همان سازوکار زنجیره (pump-radar).
+      - name: اثرانگشت کد برای حافظهٔ دروازه
+        id: code
+        run: |
+          set -o pipefail
+          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals)/' | sha256sum | cut -c1-16)
+          N=$(git ls-files signals config | sha256sum | cut -c1-8)
+          echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: gate
+        with:
+          path: .gate-ok
+          key: gate-cycle-${{ steps.code.outputs.hash }}
+
       - name: Method self-check
+        id: selftest
+        if: steps.gate.outputs.cache-hit != 'true'
         # The method's own tests run before it is allowed to produce a signal.
         # These are cheap and they catch the failure mode that matters here: a
         # level engine that is subtly wrong does not crash, it just draws lines
@@ -98,6 +115,7 @@ jobs:
           python3 -m hamid.test_orderblocks
           python3 -m hamid.test_ob_intel
           python3 -m hamid.test_deep
+          python3 -m hamid.test_scheduler
           python3 -m hamid.test_learning
           python3 -m hamid.test_fixit
           python3 -m hamid.test_trainer
@@ -198,6 +216,15 @@ jobs:
       #
       # شکستِ این‌ها یعنی «ابزار merge ایراد دارد»، نه «سیگنال غلط می‌شود».
       # پس هنوز اجرا و دیده می‌شوند، ولی جلوی تحلیل بازار را نمی‌گیرند.
+      - name: ثبت دروازهٔ سبز در حافظه
+        if: steps.selftest.outcome == 'success'
+        run: echo "${{ steps.code.outputs.hash }}" > .gate-ok
+      - uses: actions/cache/save@v4
+        if: steps.selftest.outcome == 'success'
+        with:
+          path: .gate-ok
+          key: gate-cycle-${{ steps.code.outputs.hash }}
+
       - name: آزمون ابزارها (شکستش چرخه را نمی‌خواباند)
         continue-on-error: true
         working-directory: claude-liam-signal/python

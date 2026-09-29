@@ -1136,6 +1136,17 @@
    "kind": "snapshot",
    "optional": true,
    "cadence_note": "کاوش دستیِ صرافی‌ها — ۲۶ سپتامبر ثبت شد تا اجرای بعدی یتیم نسازد"
+  },
+  "scheduler.json": {
+   "layer": "L7_health",
+   "owner": "E23",
+   "producer": "hamid/scheduler.py --dispatch --write (pump-radar.yml + heartbeat.yml)",
+   "max_age_min": 45,
+   "consumer": "panel+agent",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "زمان‌بندِ داخلی (۲۹ سپتامبر): هر دورِ زنجیره (~۳د) و هر چرخهٔ ضربان (~۲۰د) هر خطِ کرون‌دارِ سررسیدگذشته را با dispatch بیدار می‌کند — چون کرونِ گیت‌هاب در این ریپو فقط ~۴ بار در روز واقعاً می‌زند. optional مثل nurse.json: در چک‌اوتِ تازه غایب است"
   }
  }
 }
