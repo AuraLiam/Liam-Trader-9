@@ -230,6 +230,37 @@ def equity_curve(trades, risk_pct, daily_cap_pct=5.0, start=1000.0):
             "max_drawdown_pct": round(max_dd, 2), "blocked_by_daily_cap": blocked}
 
 
+def paired(books, base="base"):
+    """اختلافِ جفتیِ هر بازو با پایه روی همان (نماد، لحظهٔ ورود) — ۲۹ سپتامبر.
+
+    چرا: مقایسهٔ دو CI جدا (پایه +۰.۱۰۷ [۰.۰۳, ۰.۱۹] در برابر تریلِ دیرتر
+    +۰.۱۵۹ [۰.۰۸, ۰.۲۵]) نمی‌گوید *اختلاف* از نویز جداست یا نه؛ همان
+    معامله‌ها با دو قاعدهٔ خروج، جفتی سنجیده می‌شوند (همان روش بازوهای
+    تریل و هندسه). PROMOTE فقط پیشنهاد است (قانون ۰۳/۱۲).
+    """
+    def key(t):
+        return (t.get("sym"), t.get("opened"), t.get("dir"))
+    b = {key(t): t["R_net"] for t in books.get(base, []) if t.get("R_net") is not None}
+    out = {}
+    for k, trades in books.items():
+        if k == base:
+            continue
+        d = [t["R_net"] - b[key(t)] for t in trades if key(t) in b and t.get("R_net") is not None]
+        n = len(d)
+        if n < 2:
+            out[k] = {"n": n, "diff": None, "ci95": None, "verdict": "n کم"}
+            continue
+        m = sum(d) / n
+        sd = (sum((x - m) ** 2 for x in d) / (n - 1)) ** 0.5
+        h = 1.96 * sd / n ** 0.5
+        lo, hi = round(m - h, 4), round(m + h, 4)
+        out[k] = {"n": n, "diff": round(m, 4), "ci95": [lo, hi],
+                  "verdict": ("PROMOTE_CANDIDATE" if lo > 0 and n >= 200 else
+                              "REJECT" if hi < 0 and n >= 400 else "UNDECIDED"),
+                  "note": "اختلاف جفتی روی همان (نماد، ورود، جهت)؛ پیپر، بی‌لغزش"}
+    return out
+
+
 def describe(name, trades):
     if not trades:
         return {"name": name, "n": 0}
@@ -291,7 +322,9 @@ def run(symbols=60, bars=1000, quiet=False):
         print(f"  {skipped} نماد رد شد: {drops}")
 
     all_tr = books["base"]
+    pairs = paired(books)
     res = {"generated": int(time.time() * 1000), "panel": "لیام تریدر ۹",
+           "paired": pairs,
            "engine": H1.P["version"], "symbols": done, "skipped": skipped, "drop_reasons": drops,
            "bars": bars,
            "source": "کندل واقعی ۱ ساعته (نه شبیه‌ساز)",

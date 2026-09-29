@@ -244,6 +244,28 @@ if _pub is not None:
     check("کارِ اجرای دیگر پاک نشد (origin که جلو رفته بود، ماند)",
           _got.get("other.json") == 7, f"روی origin: {_got.get('other.json')!r}")
 
+# ── دروازهٔ کادنس (۲۹ سپتامبر: ۴۲ گزارش در یک روز) ───────────────────
+import telegram as _tg                                          # noqa: E402
+from hamid import cadence_gate as _CG                           # noqa: E402
+_posts = []
+_orig = (_tg.creds, _tg._post, _tg.record_out, _CG.allow, _CG.mark, W.text)
+W.text = lambda rep: "گزارش آزمایشی"
+_tg.creds = lambda: ("tok", "chat")
+_tg._post = lambda *a, **k: _posts.append(a[1])
+_tg.record_out = lambda *a, **k: None
+_CG.mark = lambda *a, **k: None
+_rep = dict(since="a", until="b", hours=8, n=0)
+_CG.allow = lambda kind, **k: (False, "too-soon", 31.0)
+_r1 = W.send_telegram(_rep)
+check("گزارشِ بیرون از نوبت نمی‌رود (دروازهٔ کادنس)", _r1 is False and not _posts, str(_posts))
+_r2 = W.send_telegram(_rep, force=True)
+check("force اجرای دستی را می‌گذراند", _r2 is True and len(_posts) == 1)
+_CG.allow = lambda kind, **k: (True, "aged", 400.0)
+_r3 = W.send_telegram(_rep)
+check("نوبتِ رسیده می‌رود", _r3 is True and len(_posts) == 2)
+check("کادنس گزارش کار در جدول مشترک اعلام شده (۳ نوبت/روز)", _CG.MIN_GAP_MIN.get("work_report", 0) >= 240)
+_tg.creds, _tg._post, _tg.record_out, _CG.allow, _CG.mark, W.text = _orig
+
 print()
 if FAIL:
     print(f"شکست: {len(FAIL)} از {OK + len(FAIL)}")
