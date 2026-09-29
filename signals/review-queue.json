@@ -1,6 +1,6 @@
 {
- "generated": 1790695474032,
- "buckets_at": 1790695473996,
+ "generated": 1790695767216,
+ "buckets_at": 1790695767181,
  "n_agents": 9,
  "n_todo": 8,
  "todo": [
@@ -25,22 +25,32 @@
     "E23"
    ],
    "needs_reasoning": true,
-   "priority": 2,
+   "priority": 1,
    "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E23",
+     "items": [
+      "scheduler.json"
+     ]
+    },
     {
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:depth-health.json",
       "state:nurse.json",
       "state:skeptic.json"
      ]
     }
    ],
    "read_next": [
+    "signals/depth-health.json",
     "signals/nurse.json",
+    "signals/scheduler.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:nurse.json، state:skeptic.json باز کن: signals/nurse.json، signals/skeptic.json"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 7 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:nurse.json، state:skeptic.json کهنه: scheduler.json باز کن: signals/nurse.json، signals/s"
   },
   {
    "agent": "execution",
@@ -85,6 +95,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -92,7 +103,7 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
@@ -203,16 +214,14 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:improve.json",
       "state:scorecard.json"
      ]
     }
    ],
    "read_next": [
-    "signals/improve.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:improve.json، state:scorecard.json باز کن: signals/improve.json، signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "post-trade-learning",
