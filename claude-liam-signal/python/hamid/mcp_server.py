@@ -63,6 +63,19 @@ def t_bucket(key: str):
             "buckets_at": doc.get("generated"), "found": bool(b)}
 
 
+def t_graph(query: str = ""):
+    from hamid import graphify as GF
+    g = GF.build()
+    if not (query or "").strip():
+        kinds = {}
+        for n in g.nodes.values():
+            kinds[GF.KINDS.get(n["kind"], n["kind"])] = kinds.get(GF.KINDS.get(n["kind"], n["kind"]), 0) + 1
+        return {"text": "گرافیفای پنل — query بده (نام فایل/ماژول/انجین/ورک‌فلو/ایجنت). " + json.dumps(kinds, ensure_ascii=False),
+                "found": False, "nodes": len(g.nodes), "edges": len(g.edges), "kinds": kinds}
+    return {"text": GF.who(g, query), "found": GF.resolve(g, query) is not None,
+            "nodes": len(g.nodes), "edges": len(g.edges)}
+
+
 def t_review_queue():
     from hamid import review_queue as RQ
     q = RQ.build(prev=_load(RQ.OUT))
@@ -195,6 +208,8 @@ def _schema(props=None, required=None):
 TOOLS = {
     "review_queue": dict(fn=t_review_queue, schema=_schema(), readonly=True,
                          desc="صف بازبینی «تولز اول، بعد ایجنت»: کدام ایجنت روی کدام تغییر/کهنگی/شکست باید فکر کند؛ بقیه بی‌کارند و صدا زده نمی‌شوند. اول این را بزن."),
+    "graph": dict(fn=t_graph, schema=_schema({"query": {"type": "string", "description": "نام فایل وضعیت (latest.json)، ماژول (hamid/paper.py)، انجین (E23)، ورک‌فلو (scalp.yml)، ایجنت یا کارت پنل؛ خالی = شمار گره‌ها"}}), readonly=True,
+                  desc="گرافیفای پنل (۲۹ سپتامبر): همسایه‌های یک چیز در نقشهٔ دانشِ مشتق از منبع حقیقت — چه کسی می‌سازد/می‌خواند/آزمون می‌کند/نمایش می‌دهد. بی مدل زبانی؛ به‌جای گشتنِ پوشه."),
     "bucket": dict(fn=t_bucket, schema=_schema({"key": {"type": "string", "description": "کد انجین (E03) یا نام ایجنت (macro-dominance)"}}, ["key"]), readonly=True,
                    desc="سطل یک انجین/ایجنت (قانون ۱۷): خلاصه + read_next. اگر read_next خالی بود چیزی عوض نشده — فایلی باز نکن."),
     "signal_file": dict(fn=t_signal_file, schema=_schema({"name": {"type": "string", "description": "نام فایل داخل signals/ (مثل dominance.json) — فقط نام‌های ثبت‌شده در قرارداد"}}, ["name"]), readonly=True,

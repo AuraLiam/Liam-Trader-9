@@ -207,6 +207,8 @@ jobs:
           python3 -m hamid.test_trail_alert
           python3 -m hamid.test_polymarket
           python3 -m hamid.test_escalation
+          python3 -m hamid.graphify --selftest
+          python3 -m hamid.graphify --build
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
@@ -504,7 +506,7 @@ jobs:
       # هر کدام را در مخزن موقت بازسازی می‌کند.
       - name: Publish to main
         if: github.ref == 'refs/heads/main'
-        run: scripts/publish.sh -m "Hamid cycle $(date -u '+%Y-%m-%d %H:%M') UTC" signals brain
+        run: scripts/publish.sh -m "Hamid cycle $(date -u '+%Y-%m-%d %H:%M') UTC" signals brain docs/graph
 
       # پنل از gh-pages سرو می‌شود و فایل را نسبت به خودش می‌خواند. بدون این
       # مرحله، چرخه فقط روی main منتشر می‌شد و پنل حمید یک فایل ۳۹ ساعته

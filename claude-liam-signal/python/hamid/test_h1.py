@@ -188,6 +188,18 @@ def run():
     lo, hi = BT.boot_ci([1.0] * 40)
     check("CI با نمونهٔ کافی بازه می‌دهد", lo is not None and lo <= 1.0 <= hi)
 
+    # ۹) اختلاف جفتی بازو با پایه (۲۹ سپتامبر) — همان (نماد، ورود، جهت)
+    _b = {"base": [{"sym": "A", "opened": i, "dir": "LONG", "R_net": 0.1} for i in range(450)],
+          "trail_half": [{"sym": "A", "opened": i, "dir": "LONG", "R_net": 0.1 + (0.3 if i % 2 else 0.2)} for i in range(250)],
+          "worse": [{"sym": "A", "opened": i, "dir": "LONG", "R_net": -0.4} for i in range(450)],
+          "unpaired": [{"sym": "Z", "opened": 9999, "dir": "LONG", "R_net": 5.0}]}
+    _p = BT.paired(_b)
+    check("جفت‌ها فقط روی همان (نماد، ورود، جهت) ساخته می‌شوند", _p["unpaired"]["n"] == 0 and _p["trail_half"]["n"] == 250)
+    check("اختلاف مثبت با CI بالای صفر و n≥۲۰۰ → PROMOTE_CANDIDATE",
+          _p["trail_half"]["verdict"] == "PROMOTE_CANDIDATE" and abs(_p["trail_half"]["diff"] - 0.25) < 1e-6)
+    check("اختلاف منفی با n≥۴۰۰ → REJECT", _p["worse"]["verdict"] == "REJECT")
+    check("پایه خودش در خروجی نیست", "base" not in _p)
+
     print(f"\n✓ همهٔ {OK} آزمون موتور ۱ ساعته گذشت")
 
 

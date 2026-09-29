@@ -942,11 +942,19 @@ def _pick_chart(kc, p):
         return None
 
 
-def send_telegram(source, picks, blocks, kc=None):
+def send_telegram(source, picks, blocks, kc=None, force=False):
     import telegram as tg
+    from hamid import cadence_gate as CG
     token, chat = tg.creds()
     if not token:
         print("تلگرام: توکن نیست — چیزی فرستاده نشد (پیام در پنل ثبت است)")
+        return False
+    # ۲۹ سپتامبر: ممیزی ۷ روزه ۴ روز «۶ گزارش پامپ» داشت (سقف ۵) — نوبتِ ششم
+    # از dispatchِ پرستار/عیب‌یاب می‌آمد. همان دروازهٔ کادنسِ مشترکِ گزارش کار
+    # و دامیننس؛ نوبت‌های کرون (فاصلهٔ ≥۴ ساعت) همیشه می‌گذرند.
+    ok, why, age = CG.allow("pump_report")
+    if not ok and not force:
+        print(f"گزارش پامپ نرفت — نوبتش نرسیده ({why}، آخرین {age:.0f}د پیش؛ کادنس {CG.MIN_GAP_MIN['pump_report']}د)")
         return False
     sent = _load_sent()
     key = "|".join(f"{p['symbol']}@{p['entry']:.6g}" for p in picks)
@@ -974,6 +982,7 @@ def send_telegram(source, picks, blocks, kc=None):
         tg.record_out("pump_report", f"گزارش پامپ — {len(picks)} نامزد",
                       {"n": len(picks),
                        "top": (picks[0].get("symbol") if picks else None)})
+        CG.mark("pump_report")
     except Exception as e:                           # noqa: BLE001
         print(f"تلگرام نفرستاد: {tg.scrub(e)}")
         return False
