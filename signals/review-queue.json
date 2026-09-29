@@ -1,13 +1,13 @@
 {
- "generated": 1790666172107,
- "buckets_at": 1790666172070,
+ "generated": 1790666449327,
+ "buckets_at": 1790666449290,
  "n_agents": 9,
  "n_todo": 9,
  "todo": [
-  "data-quality",
-  "post-trade-learning",
-  "execution",
   "lead-lag",
+  "post-trade-learning",
+  "data-quality",
+  "execution",
   "liquidity",
   "macro-dominance",
   "market-structure",
@@ -18,38 +18,36 @@
  "events": [],
  "rows": [
   {
-   "agent": "data-quality",
+   "agent": "lead-lag",
    "engines": [
-    "E02",
-    "E23"
+    "E12",
+    "E06"
    ],
    "needs_reasoning": true,
    "priority": 1,
    "reasons": [
     {
      "kind": "stale",
-     "engine": "E02",
+     "engine": "E12",
      "items": [
-      "depth-health.json"
+      "pump-desk.json",
+      "pump-radar.json"
      ]
     },
     {
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:funnel.json",
-      "state:nurse.json",
-      "state:skeptic.json"
+      "state:btc-patterns.json"
      ]
     }
    ],
    "read_next": [
-    "signals/depth-health.json",
-    "signals/funnel.json",
-    "signals/nurse.json",
-    "signals/skeptic.json"
+    "signals/btc-patterns.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
    ],
-   "digest": "E02: 2 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: depth-health.json باز کن: signals/depth-health.json | E23: 9 آیتم · 7 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:skeptic.json باز کن: signals/funnel.json، signals/nur"
+   "digest": "E12: 5 آیتم · 2 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: pump-desk.json، pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: signals/pump- | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "post-trade-learning",
@@ -73,21 +71,39 @@
      "items": [
       "learning-proof.json"
      ]
-    },
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:work-report.json"
-     ]
     }
    ],
    "read_next": [
     "signals/direction-lessons.json",
-    "signals/learning-proof.json",
-    "signals/work-report.json"
+    "signals/learning-proof.json"
    ],
-   "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:work-report.json کهنه: direction-lessons.json باز کن: signals/direction-lessons.json، sign | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json باز کن: signals/learning-proof.json"
+   "digest": "E20: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json باز کن: signals/direction-lessons.json | E21: 3 آیتم · 2 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: learning-proof.json باز کن: signals/learning-proof.json"
+  },
+  {
+   "agent": "data-quality",
+   "engines": [
+    "E02",
+    "E23"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:depth-health.json",
+      "state:nurse.json",
+      "state:skeptic.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/depth-health.json",
+    "signals/nurse.json",
+    "signals/skeptic.json"
+   ],
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 9 آیتم · 7 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:nurse.json، state:skeptic.json باز کن: signals/nurse.json، signals/skeptic.json"
   },
   {
    "agent": "execution",
@@ -118,31 +134,6 @@
     "signals/latest.json"
    ],
    "digest": "E11: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 2 آیتم · 2 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json باز کن: signals/latest.json | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، sta"
-  },
-  {
-   "agent": "lead-lag",
-   "engines": [
-    "E12",
-    "E06"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "ext:trending",
-      "state:btc-patterns.json",
-      "state:btc-sensitivity.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/btc-patterns.json",
-    "signals/btc-sensitivity.json"
-   ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:btc-sensitivity.json، ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: sig | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
@@ -253,18 +244,14 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:curriculum.json",
-      "state:engine-focus.json",
       "state:scorecard.json"
      ]
     }
    ],
    "read_next": [
-    "signals/curriculum.json",
-    "signals/engine-focus.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:curriculum.json، state:engine-focus.json، state:scorecard.json باز کن: signals/curriculum. | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
