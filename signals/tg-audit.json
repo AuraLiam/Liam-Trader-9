@@ -1,17 +1,17 @@
 {
- "generated": 1790785627890,
+ "generated": 1790787690967,
  "window_days": 7,
- "since": 1790180827890,
+ "since": 1790182890967,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-23": {
-    "signal": 8,
-    "pump_report": 3,
-    "dom_report": 7,
     "work_report": 2,
     "trade_mgmt": 2,
-    "outcome": 8
+    "dom_report": 6,
+    "signal": 7,
+    "outcome": 8,
+    "pump_report": 2
    },
    "2026-09-24": {
     "signal": 21,
@@ -59,21 +59,21 @@
    },
    "2026-09-30": {
     "pump_report": 3,
-    "dom_report": 15,
+    "dom_report": 16,
     "trade_mgmt": 2,
-    "outcome": 25,
+    "outcome": 27,
     "alert": 4,
     "signal": 19,
     "work_report": 2
    }
   },
   "total": {
-   "signal": 166,
-   "pump_report": 37,
-   "dom_report": 169,
    "work_report": 104,
    "trade_mgmt": 6,
-   "outcome": 237,
+   "dom_report": 169,
+   "signal": 165,
+   "outcome": 239,
+   "pump_report": 36,
    "alert": 7
   },
   "alert_classes": {
@@ -102,11 +102,11 @@
   }
  },
  "signals": {
-  "n": 166,
+  "n": 165,
   "per_day": {
    "2026-09-23": {
-    "n": 8,
-    "first": "16:33",
+    "n": 7,
+    "first": "18:14",
     "last": "22:43"
    },
    "2026-09-24": {
@@ -146,16 +146,16 @@
    }
   },
   "strategy": {
-   "smc": 92,
-   "ibs": 74
+   "ibs": 74,
+   "smc": 91
   },
   "tf": {
-   "15m": 12,
-   "5m": 154
+   "5m": 154,
+   "15m": 11
   },
   "dir": {
-   "SHORT": 69,
-   "LONG": 97
+   "LONG": 97,
+   "SHORT": 68
   },
   "hour_utc": {
    "0": 10,
@@ -174,7 +174,7 @@
    "13": 7,
    "14": 6,
    "15": 4,
-   "16": 5,
+   "16": 4,
    "17": 5,
    "18": 2,
    "19": 6,
@@ -185,17 +185,17 @@
   }
  },
  "outcomes": {
-  "sent": 166,
-  "matched": 166,
+  "sent": 165,
+  "matched": 165,
   "unmatched": 0,
   "match_pct": 100.0,
   "overall": {
-   "n": 166,
-   "mean_net": -0.042,
-   "sum_net": -7.0,
-   "win_pct": 69.3,
+   "n": 165,
+   "mean_net": -0.043,
+   "sum_net": -7.2,
+   "win_pct": 69.1,
    "outcomes": {
-    "trail": 111,
+    "trail": 110,
     "stop": 23,
     "timeout": 5,
     "expired": 23,
@@ -204,18 +204,6 @@
   },
   "by": {
    "strategy": {
-    "smc": {
-     "n": 92,
-     "mean_net": 0.122,
-     "sum_net": 11.2,
-     "win_pct": 80.4,
-     "outcomes": {
-      "trail": 73,
-      "stop": 7,
-      "expired": 11,
-      "target": 1
-     }
-    },
     "ibs": {
      "n": 74,
      "mean_net": -0.247,
@@ -228,20 +216,21 @@
       "expired": 12,
       "target": 3
      }
+    },
+    "smc": {
+     "n": 91,
+     "mean_net": 0.122,
+     "sum_net": 11.1,
+     "win_pct": 80.2,
+     "outcomes": {
+      "stop": 7,
+      "trail": 72,
+      "expired": 11,
+      "target": 1
+     }
     }
    },
    "tf": {
-    "15m": {
-     "n": 12,
-     "mean_net": -0.159,
-     "sum_net": -1.9,
-     "win_pct": 75.0,
-     "outcomes": {
-      "trail": 9,
-      "timeout": 1,
-      "stop": 2
-     }
-    },
     "5m": {
      "n": 154,
      "mean_net": -0.033,
@@ -254,21 +243,20 @@
       "target": 4,
       "timeout": 4
      }
+    },
+    "15m": {
+     "n": 11,
+     "mean_net": -0.187,
+     "sum_net": -2.1,
+     "win_pct": 72.7,
+     "outcomes": {
+      "timeout": 1,
+      "stop": 2,
+      "trail": 8
+     }
     }
    },
    "dir": {
-    "SHORT": {
-     "n": 69,
-     "mean_net": -0.141,
-     "sum_net": -9.7,
-     "win_pct": 62.3,
-     "outcomes": {
-      "trail": 43,
-      "timeout": 3,
-      "stop": 11,
-      "expired": 12
-     }
-    },
     "LONG": {
      "n": 97,
      "mean_net": 0.028,
@@ -281,10 +269,22 @@
       "target": 4,
       "timeout": 2
      }
+    },
+    "SHORT": {
+     "n": 68,
+     "mean_net": -0.145,
+     "sum_net": -9.9,
+     "win_pct": 61.8,
+     "outcomes": {
+      "timeout": 3,
+      "stop": 11,
+      "trail": 42,
+      "expired": 12
+     }
     }
    }
   },
-  "trail_zero_share_pct": 9.9,
+  "trail_zero_share_pct": 10.0,
   "open_or_unfound": 0,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
