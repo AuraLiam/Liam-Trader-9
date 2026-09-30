@@ -1,17 +1,17 @@
 {
- "generated": 1790799313511,
+ "generated": 1790800859992,
  "window_days": 7,
- "since": 1790194513511,
+ "since": 1790196059992,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-23": {
-    "pump_report": 2,
-    "dom_report": 4,
-    "signal": 4,
+    "signal": 3,
     "outcome": 2,
+    "dom_report": 3,
     "work_report": 1,
-    "trade_mgmt": 1
+    "trade_mgmt": 1,
+    "pump_report": 1
    },
    "2026-09-24": {
     "signal": 21,
@@ -61,19 +61,19 @@
     "pump_report": 4,
     "dom_report": 19,
     "trade_mgmt": 2,
-    "outcome": 27,
+    "outcome": 28,
     "alert": 5,
     "signal": 21,
     "work_report": 3
    }
   },
   "total": {
-   "pump_report": 37,
-   "dom_report": 170,
-   "signal": 164,
-   "outcome": 233,
+   "signal": 163,
+   "outcome": 234,
+   "dom_report": 169,
    "work_report": 104,
    "trade_mgmt": 5,
+   "pump_report": 36,
    "alert": 8
   },
   "alert_classes": {
@@ -102,11 +102,11 @@
   }
  },
  "signals": {
-  "n": 164,
+  "n": 163,
   "per_day": {
    "2026-09-23": {
-    "n": 4,
-    "first": "20:40",
+    "n": 3,
+    "first": "20:52",
     "last": "22:43"
    },
    "2026-09-24": {
@@ -146,15 +146,15 @@
    }
   },
   "strategy": {
-   "ibs": 71,
+   "ibs": 70,
    "smc": 93
   },
   "tf": {
-   "5m": 154,
-   "15m": 10
+   "15m": 10,
+   "5m": 153
   },
   "dir": {
-   "SHORT": 68,
+   "SHORT": 67,
    "LONG": 96
   },
   "hour_utc": {
@@ -178,25 +178,25 @@
    "17": 6,
    "18": 1,
    "19": 6,
-   "20": 8,
+   "20": 7,
    "21": 4,
    "22": 8,
    "23": 5
   }
  },
  "outcomes": {
-  "sent": 164,
+  "sent": 163,
   "matched": 162,
-  "unmatched": 2,
-  "match_pct": 98.8,
+  "unmatched": 1,
+  "match_pct": 99.4,
   "overall": {
    "n": 162,
-   "mean_net": -0.032,
-   "sum_net": -5.2,
-   "win_pct": 69.8,
+   "mean_net": -0.023,
+   "sum_net": -3.7,
+   "win_pct": 70.4,
    "outcomes": {
-    "stop": 22,
-    "trail": 109,
+    "stop": 21,
+    "trail": 110,
     "expired": 23,
     "target": 4,
     "timeout": 4
@@ -205,12 +205,12 @@
   "by": {
    "strategy": {
     "ibs": {
-     "n": 71,
-     "mean_net": -0.229,
-     "sum_net": -16.3,
-     "win_pct": 56.3,
+     "n": 70,
+     "mean_net": -0.212,
+     "sum_net": -14.9,
+     "win_pct": 57.1,
      "outcomes": {
-      "stop": 15,
+      "stop": 14,
       "trail": 37,
       "expired": 12,
       "target": 3,
@@ -218,32 +218,19 @@
      }
     },
     "smc": {
-     "n": 91,
-     "mean_net": 0.122,
+     "n": 92,
+     "mean_net": 0.121,
      "sum_net": 11.1,
-     "win_pct": 80.2,
+     "win_pct": 80.4,
      "outcomes": {
       "stop": 7,
-      "trail": 72,
+      "trail": 73,
       "expired": 11,
       "target": 1
      }
     }
    },
    "tf": {
-    "5m": {
-     "n": 152,
-     "mean_net": -0.025,
-     "sum_net": -3.7,
-     "win_pct": 69.1,
-     "outcomes": {
-      "stop": 20,
-      "trail": 101,
-      "expired": 23,
-      "target": 4,
-      "timeout": 4
-     }
-    },
     "15m": {
      "n": 10,
      "mean_net": -0.145,
@@ -253,17 +240,30 @@
       "stop": 2,
       "trail": 8
      }
+    },
+    "5m": {
+     "n": 152,
+     "mean_net": -0.015,
+     "sum_net": -2.3,
+     "win_pct": 69.7,
+     "outcomes": {
+      "trail": 102,
+      "stop": 19,
+      "expired": 23,
+      "target": 4,
+      "timeout": 4
+     }
     }
    },
    "dir": {
     "SHORT": {
      "n": 67,
-     "mean_net": -0.138,
-     "sum_net": -9.3,
-     "win_pct": 62.7,
+     "mean_net": -0.116,
+     "sum_net": -7.8,
+     "win_pct": 64.2,
      "outcomes": {
-      "stop": 11,
-      "trail": 42,
+      "stop": 10,
+      "trail": 43,
       "expired": 12,
       "timeout": 2
      }
@@ -283,8 +283,8 @@
     }
    }
   },
-  "trail_zero_share_pct": 10.1,
-  "open_or_unfound": 2,
+  "trail_zero_share_pct": 10.0,
+  "open_or_unfound": 1,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
