@@ -952,7 +952,7 @@
 "kind": "module",
 "label": "hamid.h1_backtest",
 "file": "claude-liam-signal/python/hamid/h1_backtest.py",
-"lines": 394
+"lines": 399
 },
 {
 "id": "mod:hamid.handoff",
@@ -1484,7 +1484,7 @@
 "kind": "module",
 "label": "hamid.scheduler",
 "file": "claude-liam-signal/python/hamid/scheduler.py",
-"lines": 324
+"lines": 330
 },
 {
 "id": "mod:hamid.scorecard",
@@ -2293,6 +2293,11 @@
 "id": "path:brain/research/history/5m-manifest.json",
 "kind": "state",
 "label": "brain/research/history/5m-manifest.json"
+},
+{
+"id": "path:signals/conformance.json",
+"kind": "state",
+"label": "signals/conformance.json"
 },
 {
 "id": "path:signals/docs-probe.json",
@@ -3723,7 +3728,7 @@
 "kind": "test",
 "label": "hamid.test_h1",
 "file": "claude-liam-signal/python/hamid/test_h1.py",
-"lines": 207
+"lines": 219
 },
 {
 "id": "mod:hamid.test_history_analysis",
@@ -4185,7 +4190,7 @@
 "kind": "test",
 "label": "hamid.test_scheduler",
 "file": "claude-liam-signal/python/hamid/test_scheduler.py",
-"lines": 148
+"lines": 152
 },
 {
 "id": "mod:hamid.test_scorecard",
@@ -9119,6 +9124,11 @@
 "from": "wf:conformance.yml",
 "rel": "gates",
 "to": "mod:hamid.test_conformance"
+},
+{
+"from": "wf:conformance.yml",
+"rel": "publishes",
+"to": "path:signals/conformance.json"
 },
 {
 "from": "wf:conformance.yml",

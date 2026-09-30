@@ -10,11 +10,11 @@
 | ماژول | 221 |
 | قانون | 23 |
 | مهارت | 35 |
-| فایل وضعیت | 126 |
+| فایل وضعیت | 127 |
 | آزمون | 169 |
 | ورک‌فلو | 57 |
 
-یال‌ها: 1247
+یال‌ها: 1248
 
 ## انجین‌ها
 
@@ -126,6 +126,7 @@
 - **Conclusions conformance** · کرون `29 */2 * * *`
   - → اجرا می‌کند: hamid.conformance
   - → دروازه: hamid.test_conformance
+  - → منتشر می‌کند: signals/conformance.json
 - **Dash backtest** · کرون `23 4 * * *`
   - → اجرا می‌کند: hamid.dash_backtest
   - → دروازه: hamid.test_dash_backtest، hamid.test_exec_contract
@@ -280,6 +281,8 @@
   - ← منتشر می‌کند: History ingest (Drive)، Strategy duo + volume (3y)
 - **brain/research/history/5m-manifest.json**
   - ← منتشر می‌کند: Candles 5m history
+- **signals/conformance.json**
+  - ← منتشر می‌کند: Conclusions conformance
 - **signals/docs-probe.json**
   - ← منتشر می‌کند: Venue probe
 - **signals/fomo.json**
