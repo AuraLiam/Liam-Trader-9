@@ -200,6 +200,18 @@ def run():
     check("اختلاف منفی با n≥۴۰۰ → REJECT", _p["worse"]["verdict"] == "REJECT")
     check("پایه خودش در خروجی نیست", "base" not in _p)
 
+    # ۱۰) استاپ روی ورود (ریسک صفر) بک‌تست را نمی‌کشد — ۳۰ سپتامبر ZeroDivisionError
+    _orig_an = BT.H1.analyze
+    BT.H1.analyze = lambda *a, **k: {"action": "LONG", "entry": 1.0, "sl": 1.0, "tp1": 1.1,
+                                     "quality": 70, "stop_pct": 0.0, "exp_used": False}
+    try:
+        _c1 = [{"t": 3600000 * i, "o": 1.0, "h": 1.01, "l": 0.99, "c": 1.0} for i in range(320)]
+        _c4 = [{"t": 14400000 * i, "o": 1.0, "h": 1.01, "l": 0.99, "c": 1.0} for i in range(240)]
+        _b = BT.replay_symbol("ZZZ", _c1, _c4)
+        check("ستاپِ بی‌ریسک رد می‌شود، نه تقسیم بر صفر", _b["base"] == [])
+    finally:
+        BT.H1.analyze = _orig_an
+
     print(f"\n✓ همهٔ {OK} آزمون موتور ۱ ساعته گذشت")
 
 

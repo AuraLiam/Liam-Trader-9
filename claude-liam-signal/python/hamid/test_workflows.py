@@ -274,7 +274,7 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
 # تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
 # می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
 import os as _os                                       # noqa: E402
-INLINE_PUSHERS_MAX = 28      # ۲۹ سپتامبر: trainer و depth-collect مهاجرت کردند
+INLINE_PUSHERS_MAX = 27      # ۳۰ سپتامبر: conformance؛ ۲۹ سپتامبر: trainer و depth-collect
                              # ۲ سپتامبر: hamid-cycle، work-report، scout،
                              # history-ingest، strategy-volume، dominance-report،
                              # pump-review مهاجرت کردند
@@ -422,7 +422,7 @@ check("بودجهٔ حلقهٔ زنجیره از سقفِ job مشتق است (J
 # ۱۵:۳۰ همان روز: بعد از pushِ ردشده، `git fetch` بی‌سقف ۲۱ دقیقه خوابید و
 # زنجیره روی سقف مرد — همان کلاسی که ناشر یگانه با NET_TIMEOUT برایش ساخته
 # شد. دو حلقهٔ همیشه‌روشن هیچ فرمان شبکه‌ای بی‌سقف ندارند؛ بقیه ratchet.
-UNBOUNDED_NET_GIT_MAX = 70
+UNBOUNDED_NET_GIT_MAX = 68
 _unb = {}
 for f in files:
     for ln in f.read_text(encoding="utf-8").splitlines():

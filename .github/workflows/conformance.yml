@@ -40,14 +40,6 @@ jobs:
         run: python3 -m hamid.conformance
 
       - name: کامیت گزارش
-        run: |
-          git config user.name "Conformance"
-          git config user.email "conformance@liam9.ai"
-          for _f in signals/conformance.json; do [ -f "$_f" ] && git add "$_f"; done
-          git diff --cached --quiet && exit 0
-          git commit -m "پاسبان نتیجه‌گیری‌ها $(date -u +'%H:%M UTC')"
-          for i in 1 2 3 4 5 6 7 8; do
-            git push origin HEAD:main && exit 0
-            sleep $((i * 4 + RANDOM % 7)); git fetch origin main; git rebase origin/main || exit 1
-          done
-          exit 1
+        # ۳۰ سپتامبر: ۱۱ اجرا در ۲۸ ساعت قرمز — حلقهٔ pushِ دست‌نویس بعد از ردشدن
+        # push، rebase می‌کرد و روی «unstaged changes» می‌مرد. ناشر یگانه (قانون ۱۴).
+        run: scripts/publish.sh -m "پاسبان نتیجه‌گیری‌ها $(date -u +'%H:%M UTC')" signals/conformance.json

@@ -208,6 +208,12 @@ def decide(row: dict, runs: list[dict], now: datetime, last_wake_ms: int | None)
     if last is not None and last >= due - timedelta(minutes=1):
         r["verdict"] = "on_time"; r["why"] = "از آخرین سررسید اجرا شده"
         return r
+    # ۳۰ سپتامبر: کرونِ گیت‌هاب گاهی رویدادِ ساعت‌ها پیش را دیر می‌زند (work-report
+    # ۱۸:۰۲ برای کرون ۱۲:۳۰)؛ اگر همین تازگی اجرا شده، سررسیدِ بعدی را دوباره
+    # نزن — نصفِ فاصلهٔ کرون «تازه» است (۲ اجرای زائد در ۲۸ ساعت اندازه‌گیری شد).
+    if last is not None and (now - last).total_seconds() < iv * 30:
+        r["verdict"] = "on_time"; r["why"] = f"اجرای تازه ({r['lag_min']:.0f}د < نصفِ فاصلهٔ {iv}د)"
+        return r
     if (now - due).total_seconds() < GRACE_MIN * 60:
         r["verdict"] = "grace"; r["why"] = f"سررسید تازه است (<{GRACE_MIN}د) — فرصت به کرونِ گیت‌هاب"
         return r

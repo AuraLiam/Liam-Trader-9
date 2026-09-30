@@ -189,6 +189,11 @@ def replay_symbol(sym, c1h, c4h, step=1, variants=None,
         if sig["action"] == "NO_SIGNAL":
             i += step
             continue
+        if not (abs(float(sig.get("entry") or 0) - float(sig.get("sl") or 0)) > 0):
+            # ۳۰ سپتامبر: استاپ روی ورود (ریسک صفر) → ZeroDivisionError و کلِ
+            # بک‌تست شبانه قرمز. ستاپِ بی‌ریسک ستاپ نیست؛ رد می‌شود، نه تقسیم بر صفر.
+            i += step
+            continue
         base_bars, base_row = 1, None
         for v in vs:
             res, r, r_net, bars = _run_one(_shape(sig, v), c1h, i, sig)
