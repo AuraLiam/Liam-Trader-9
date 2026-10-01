@@ -401,19 +401,9 @@ def _live_kget(sym, tf, n):
 
 
 def _live_symbols(limit=40):
-    """نمادهای اسکنِ زنده (signals/latest.json)، SIGNAL/ARMED جلوتر — بی‌شبکهٔ اضافه."""
-    try:
-        d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
-    except Exception:                                 # noqa: BLE001
-        return []
-    rank = {"SIGNAL": 0, "ARMED": 1, "PULLBACK_1": 2}
-    seen, out = set(), []
-    for s in sorted(d.get("symbols") or [], key=lambda x: rank.get(x.get("stage"), 9)):
-        if s.get("sym") and s["sym"] not in seen:
-            seen.add(s["sym"]); out.append(s["sym"])
-        if len(out) >= limit:
-            break
-    return out
+    """نمادهای اسکنِ زنده (signals/latest.json)، SIGNAL/ARMED جلوتر — خوانندهٔ واحد."""
+    from hamid import latest_setups as LS
+    return LS.symbols(limit=limit)
 
 
 if __name__ == "__main__":

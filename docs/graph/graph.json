@@ -952,7 +952,7 @@
 "kind": "module",
 "label": "hamid.h1_backtest",
 "file": "claude-liam-signal/python/hamid/h1_backtest.py",
-"lines": 399
+"lines": 401
 },
 {
 "id": "mod:hamid.handoff",
@@ -1246,7 +1246,7 @@
 "kind": "module",
 "label": "hamid.paper",
 "file": "claude-liam-signal/python/hamid/paper.py",
-"lines": 1336
+"lines": 1337
 },
 {
 "id": "mod:hamid.patterns",
@@ -1400,7 +1400,7 @@
 "kind": "module",
 "label": "hamid.risk_desk",
 "file": "claude-liam-signal/python/hamid/risk_desk.py",
-"lines": 261
+"lines": 303
 },
 {
 "id": "mod:hamid.router",
@@ -1428,7 +1428,7 @@
 "kind": "module",
 "label": "hamid.scalp1m",
 "file": "claude-liam-signal/python/hamid/scalp1m.py",
-"lines": 394
+"lines": 432
 },
 {
 "id": "mod:hamid.scalp_dash_backtest",
@@ -1506,6 +1506,13 @@
 "label": "hamid.selfcheck",
 "file": "claude-liam-signal/python/hamid/selfcheck.py",
 "lines": 240
+},
+{
+"id": "mod:hamid.send_lock",
+"kind": "module",
+"label": "hamid.send_lock",
+"file": "claude-liam-signal/python/hamid/send_lock.py",
+"lines": 102
 },
 {
 "id": "mod:hamid.sentinel",
@@ -1666,7 +1673,7 @@
 "kind": "module",
 "label": "hamid.structure_room",
 "file": "claude-liam-signal/python/hamid/structure_room.py",
-"lines": 262
+"lines": 328
 },
 {
 "id": "mod:hamid.taxonomy",
@@ -1799,7 +1806,7 @@
 "kind": "module",
 "label": "liam9_h1_strategy",
 "file": "claude-liam-signal/python/liam9_h1_strategy.py",
-"lines": 703
+"lines": 707
 },
 {
 "id": "mod:liam9_link",
@@ -1928,7 +1935,7 @@
 "kind": "module",
 "label": "telegram",
 "file": "claude-liam-signal/python/telegram.py",
-"lines": 1552
+"lines": 1583
 },
 {
 "id": "mod:tg_batch",
@@ -2991,6 +2998,15 @@
 "critical": false
 },
 {
+"id": "state:signals/risk-desk.json",
+"kind": "state",
+"label": "signals/risk-desk.json",
+"layer": "L4_decision",
+"kind_": "live",
+"cap": 90,
+"critical": false
+},
+{
 "id": "state:signals/router.json",
 "kind": "state",
 "label": "signals/router.json",
@@ -3040,6 +3056,15 @@
 "layer": "L4_decision",
 "kind_": "live",
 "cap": 660,
+"critical": false
+},
+{
+"id": "state:signals/scalp1m.json",
+"kind": "state",
+"label": "signals/scalp1m.json",
+"layer": "L4_decision",
+"kind_": "live",
+"cap": 45,
 "critical": false
 },
 {
@@ -3178,6 +3203,15 @@
 "label": "signals/strategy-params.json",
 "layer": "L4_decision",
 "kind_": "ledger",
+"critical": false
+},
+{
+"id": "state:signals/structure-room.json",
+"kind": "state",
+"label": "signals/structure-room.json",
+"layer": "L3_structure",
+"kind_": "live",
+"cap": 90,
 "critical": false
 },
 {
@@ -3759,6 +3793,13 @@
 "lines": 80
 },
 {
+"id": "mod:hamid.test_ibs5_mute",
+"kind": "test",
+"label": "hamid.test_ibs5_mute",
+"file": "claude-liam-signal/python/hamid/test_ibs5_mute.py",
+"lines": 67
+},
+{
 "id": "mod:hamid.test_improve",
 "kind": "test",
 "label": "hamid.test_improve",
@@ -4205,6 +4246,13 @@
 "label": "hamid.test_scout_basemap",
 "file": "claude-liam-signal/python/hamid/test_scout_basemap.py",
 "lines": 157
+},
+{
+"id": "mod:hamid.test_send_lock",
+"kind": "test",
+"label": "hamid.test_send_lock",
+"file": "claude-liam-signal/python/hamid/test_send_lock.py",
+"lines": 116
 },
 {
 "id": "mod:hamid.test_sentinel",
@@ -5803,6 +5851,11 @@
 {
 "from": "card:پنل",
 "rel": "consumes",
+"to": "state:signals/risk-desk.json"
+},
+{
+"from": "card:پنل",
+"rel": "consumes",
 "to": "state:signals/router.json"
 },
 {
@@ -5824,6 +5877,11 @@
 "from": "card:پنل",
 "rel": "consumes",
 "to": "state:signals/scalp.json"
+},
+{
+"from": "card:پنل",
+"rel": "consumes",
+"to": "state:signals/scalp1m.json"
 },
 {
 "from": "card:پنل",
@@ -5869,6 +5927,11 @@
 "from": "card:پنل",
 "rel": "consumes",
 "to": "state:signals/skills.json"
+},
+{
+"from": "card:پنل",
+"rel": "consumes",
+"to": "state:signals/structure-room.json"
 },
 {
 "from": "card:پنل",
@@ -6051,6 +6114,11 @@
 "to": "state:signals/btc-patterns.json"
 },
 {
+"from": "eng:E07",
+"rel": "owns",
+"to": "state:signals/structure-room.json"
+},
+{
 "from": "eng:E08",
 "rel": "owns",
 "to": "state:signals/ob-lab.json"
@@ -6084,6 +6152,11 @@
 "from": "eng:E11",
 "rel": "owns",
 "to": "state:signals/scalp.json"
+},
+{
+"from": "eng:E11",
+"rel": "owns",
+"to": "state:signals/scalp1m.json"
 },
 {
 "from": "eng:E11",
@@ -6163,7 +6236,22 @@
 {
 "from": "eng:E16",
 "rel": "owns",
+"to": "state:signals/risk-desk.json"
+},
+{
+"from": "eng:E16",
+"rel": "owns",
 "to": "state:signals/viability-gate.json"
+},
+{
+"from": "eng:E17",
+"rel": "consumes",
+"to": "state:signals/risk-desk.json"
+},
+{
+"from": "eng:E17",
+"rel": "consumes",
+"to": "state:signals/structure-room.json"
 },
 {
 "from": "eng:E17",
@@ -6279,6 +6367,11 @@
 "from": "eng:E18",
 "rel": "owns",
 "to": "state:signals/trail-lab.json"
+},
+{
+"from": "eng:E19",
+"rel": "consumes",
+"to": "state:signals/scalp1m.json"
 },
 {
 "from": "eng:E19",
@@ -7581,6 +7674,11 @@
 "to": "mod:hamid.council"
 },
 {
+"from": "mod:hamid.risk_desk",
+"rel": "produces",
+"to": "state:signals/risk-desk.json"
+},
+{
 "from": "mod:hamid.router",
 "rel": "produces",
 "to": "state:signals/router.json"
@@ -7594,6 +7692,11 @@
 "from": "mod:hamid.scalp1m",
 "rel": "imports",
 "to": "mod:hamid.trend_gate"
+},
+{
+"from": "mod:hamid.scalp1m",
+"rel": "produces",
+"to": "state:signals/scalp1m.json"
 },
 {
 "from": "mod:hamid.scalp_dash_backtest",
@@ -7881,6 +7984,11 @@
 "to": "mod:hamid.structure"
 },
 {
+"from": "mod:hamid.structure_room",
+"rel": "produces",
+"to": "state:signals/structure-room.json"
+},
+{
 "from": "mod:hamid.test_alert_gate",
 "rel": "tests",
 "to": "mod:hamid.alert_gate"
@@ -8159,6 +8267,11 @@
 "from": "mod:hamid.test_scorecard",
 "rel": "tests",
 "to": "mod:hamid.scorecard"
+},
+{
+"from": "mod:hamid.test_send_lock",
+"rel": "tests",
+"to": "mod:hamid.send_lock"
 },
 {
 "from": "mod:hamid.test_shadow_service",
@@ -8494,6 +8607,11 @@
 "from": "mod:telegram",
 "rel": "imports",
 "to": "mod:hamid.premortem"
+},
+{
+"from": "mod:telegram",
+"rel": "imports",
+"to": "mod:hamid.send_lock"
 },
 {
 "from": "mod:telegram",
@@ -9523,6 +9641,11 @@
 {
 "from": "wf:hamid-cycle.yml",
 "rel": "gates",
+"to": "mod:hamid.test_ibs5_mute"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "gates",
 "to": "mod:hamid.test_learning"
 },
 {
@@ -9723,6 +9846,11 @@
 {
 "from": "wf:hamid-cycle.yml",
 "rel": "gates",
+"to": "mod:hamid.test_send_lock"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "gates",
 "to": "mod:hamid.test_sentinel"
 },
 {
@@ -9892,6 +10020,16 @@
 },
 {
 "from": "wf:hamid-cycle.yml",
+"rel": "produces",
+"to": "state:signals/risk-desk.json"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "produces",
+"to": "state:signals/structure-room.json"
+},
+{
+"from": "wf:hamid-cycle.yml",
 "rel": "runs",
 "to": "mod:hamid.agent_scores"
 },
@@ -10033,6 +10171,11 @@
 {
 "from": "wf:hamid-cycle.yml",
 "rel": "runs",
+"to": "mod:hamid.risk_desk"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "runs",
 "to": "mod:hamid.router"
 },
 {
@@ -10054,6 +10197,11 @@
 "from": "wf:hamid-cycle.yml",
 "rel": "runs",
 "to": "mod:hamid.state_bus"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "runs",
+"to": "mod:hamid.structure_room"
 },
 {
 "from": "wf:hamid-cycle.yml",
@@ -10398,6 +10546,11 @@
 {
 "from": "wf:pump-radar.yml",
 "rel": "gates",
+"to": "mod:hamid.test_ibs5_mute"
+},
+{
+"from": "wf:pump-radar.yml",
+"rel": "gates",
 "to": "mod:hamid.test_intake"
 },
 {
@@ -10524,6 +10677,11 @@
 "from": "wf:pump-radar.yml",
 "rel": "gates",
 "to": "mod:hamid.test_scorecard"
+},
+{
+"from": "wf:pump-radar.yml",
+"rel": "gates",
+"to": "mod:hamid.test_send_lock"
 },
 {
 "from": "wf:pump-radar.yml",
@@ -10872,6 +11030,11 @@
 },
 {
 "from": "wf:scalp.yml",
+"rel": "produces",
+"to": "state:signals/scalp1m.json"
+},
+{
+"from": "wf:scalp.yml",
 "rel": "publishes",
 "to": "path:brain/paper"
 },
@@ -10879,6 +11042,11 @@
 "from": "wf:scalp.yml",
 "rel": "runs",
 "to": "mod:hamid.scalp"
+},
+{
+"from": "wf:scalp.yml",
+"rel": "runs",
+"to": "mod:hamid.scalp1m"
 },
 {
 "from": "wf:scalp.yml",

@@ -240,11 +240,8 @@ def write_desk(setups=None, equity=1000.0):
     هر ستاپِ SIGNALِ منتشرشونده حکم ورود + اهرم/سایزِ پیشنهادی می‌گیرد →
     `signals/risk-desk.json`. شاهد است؛ سایزِ واقعی را داشبورد از ریسک می‌سازد."""
     if setups is None:
-        try:
-            d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
-            setups = [x for x in (d.get("symbols") or []) if x.get("stage") == "SIGNAL"]
-        except Exception:                             # noqa: BLE001
-            setups = []
+        from hamid import latest_setups as LS
+        setups = LS.setups(stages=("SIGNAL",))
     rows = []
     for x in setups[:24]:
         try:
