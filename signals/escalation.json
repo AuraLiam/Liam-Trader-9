@@ -1,8 +1,40 @@
 {
- "generated": 1790860375159,
+ "generated": 1790862316160,
  "panel": "لیام تریدر ۹",
  "window_h": 24,
- "sig_rows": 19,
- "escalations": [],
+ "sig_rows": 18,
+ "escalations": [
+  {
+   "rule": "E1",
+   "sev": "high",
+   "title": "3 استاپ سیگنالِ پیاپی",
+   "rooms": [
+    "post-trade-learning",
+    "order-block",
+    "market-structure"
+   ],
+   "evidence": [
+    "LDOUSDT SHORT 10-01 13:36UTC stop",
+    "XAUTUSDT SHORT 10-01 11:05UTC stop",
+    "PAXGUSDT SHORT 10-01 11:05UTC stop"
+   ],
+   "directive": "علت‌یابی همگانی: هر سه اتاق پروندهٔ همین معامله‌ها را بخوانند و یافته را در brain/cases ثبت کنند؛ تغییر فقط از مسیر یک-تغییر-در-چرخه."
+  },
+  {
+   "rule": "E2",
+   "sev": "high",
+   "title": "استاپ SHORT در 3 ارز مختلف در پنجره",
+   "rooms": [
+    "order-block",
+    "market-structure"
+   ],
+   "evidence": [
+    "PAXGUSDT SHORT 10-01 11:05UTC stop",
+    "XAUTUSDT SHORT 10-01 11:05UTC stop",
+    "LDOUSDT SHORT 10-01 13:36UTC stop"
+   ],
+   "directive": "الگوی تکراری بین‌ارزی: کیفیت اردر بلاک‌ها و خطوط روند همین ستاپ‌ها بازبینی شود — همان مثال حمید (OB و ترندلاین دوباره وارد عمل)."
+  }
+ ],
  "note": "ماشین آستانه فقط ارجاع می‌دهد؛ تصمیم و تغییر از مسیر یک-تغییر-کنترل‌شده-در-چرخه می‌رود (قانون ۰۳)."
 }
