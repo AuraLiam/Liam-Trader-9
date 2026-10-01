@@ -1147,6 +1147,39 @@
    "optional": true,
    "kind": "live",
    "cadence_note": "زمان‌بندِ داخلی (۲۹ سپتامبر): هر دورِ زنجیره (~۳د) و هر چرخهٔ ضربان (~۲۰د) هر خطِ کرون‌دارِ سررسیدگذشته را با dispatch بیدار می‌کند — چون کرونِ گیت‌هاب در این ریپو فقط ~۴ بار در روز واقعاً می‌زند. optional مثل nurse.json: در چک‌اوتِ تازه غایب است"
+  },
+  "structure-room.json": {
+   "layer": "L3_structure",
+   "owner": "E07",
+   "producer": "hamid/structure_room.py --write (hamid-cycle.yml)",
+   "max_age_min": 90,
+   "consumer": "panel+E17",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "رانر اتاق ساختار (۱ اکتبر): هر چرخهٔ حمید ستاپ‌های منتشرشونده را روی ۴س→۱س→۱۵د می‌خواند؛ شاهد، نه دروازه"
+  },
+  "risk-desk.json": {
+   "layer": "L4_decision",
+   "owner": "E16",
+   "producer": "hamid/risk_desk.py --write (hamid-cycle.yml)",
+   "max_age_min": 90,
+   "consumer": "panel+E17",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "رانر میز ریسک (۱ اکتبر): حکم ورود + اهرم/سایزِ پیشنهادی برای هر ستاپ SIGNAL؛ شاهد"
+  },
+  "scalp1m.json": {
+   "layer": "L4_decision",
+   "owner": "E11",
+   "producer": "hamid/scalp1m.py --run (scalp.yml)",
+   "max_age_min": 45,
+   "consumer": "panel+E19",
+   "critical": false,
+   "optional": true,
+   "kind": "live",
+   "cadence_note": "موتور قطعی ۱ دقیقه (قانون ۱۰) هر ۱۵ دقیقه از scalp.yml؛ تا ۱ اکتبر رانر نداشت"
   }
  }
 }

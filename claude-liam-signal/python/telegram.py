@@ -46,6 +46,13 @@ ARCHIVE_DIR = Path(__file__).resolve().parent.parent.parent / "signals" / "archi
 # دستور صریح حمید (۲۶ اوت شب): «ارسال سیگنال فقط توی تایم‌فریم‌های ۱۵ و
 # ۵ دقیقه باشه.» هر tf دیگری در گلوگاه ارسال بلند رد می‌شود.
 ALLOWED_TFS = {"5m", "15m"}
+# توقفِ تحویل برای (استراتژی، تایم‌فریم) — دستور حمید، ۱ اکتبر («همه را انجام بده»).
+# شواهد (دفتر پیپر ۳۰ روزه، کارمزد از منبع واحد، CI خوشه‌ای بر روز):
+# IBS روی ۵د n=۲۱۰، −۰.۲۴۱R [−۰.۳۴, −۰.۱۵] کاملاً زیر صفر؛ SMC روی ۵د سربه‌سر.
+# دروازهٔ **تحویل** است نه استراتژی: ستاپ ساخته و ارزیابی می‌شود و در دفترِ
+# ضدواقع (`ibs5-muted`) با کندل واقعی بسته می‌شود تا همین تصمیم هم با CI
+# سنجیده شود؛ فقط به تلگرام نمی‌رود. بازگشتش فقط با CI بالای صفر + دستور حمید.
+MUTED_PAIRS = {("ibs", "5m")}
 
 # ── هندسهٔ ×۲ روی سیگنال ۱۵ دقیقه (تأیید صریح حمید، ۲۷ سپتامبر) ──────────
 #
@@ -1200,6 +1207,20 @@ def send_signals(signals, render_chart, limit=8):
     tmp = Path(__file__).resolve().parent / ".charts"
     tmp.mkdir(exist_ok=True)
     for s in fresh:
+        if (s.get("strategy"), s.get("tf")) in MUTED_PAIRS:
+            print(f"  توقفِ تحویل: {s['sym']} {s.get('strategy')} {s.get('tf')} {s['dir']} — "
+                  "به دفترِ ضدواقع رفت، به تلگرام نه (دستور ۱ اکتبر)", flush=True)
+            try:
+                from hamid import paper as _paper_m
+                _paper_m.open_from(
+                    [{"symbol": s["sym"], "dir": s["dir"], "entry": s["entry"], "sl": s["sl"],
+                      "tp1": s.get("tp1") or s["entry"], "tp2": s.get("tp2"),
+                      "stage_tag": "ibs5-muted", "tf": s.get("tf")}],
+                    {"veto_why": "muted_ibs5", "strategy": s.get("strategy"),
+                     "quality": s.get("quality"), "conf": s.get("conf"), "ev": s.get("ev")})
+            except Exception:                         # noqa: BLE001
+                pass
+            continue
         # هم‌زمانی با نقطهٔ ورود — شکایت حمید: سیگنال یا از ورود رد شده بود
         # یا فاصلهٔ زیادی داشت. همین لحظه آخرین کندل ۵ دقیقه خوانده می‌شود؛
         # ردشده یا دورتر از حد → ارسال نمی‌شود، بی‌استثنا.
@@ -1373,6 +1394,16 @@ def send_signals(signals, render_chart, limit=8):
             print(f"  ققنوس {s['sym']} رأی نداد ({type(e).__name__}) — سیگنال بی‌حکم می‌رود", flush=True)
         # هندسهٔ ×۲ روی ۱۵د — بعد از آخرین دروازه، قبل از چارت/کپشن/دفتر
         apply_geo15(s)
+        # قفلِ ارسال (۱ اکتبر): یک نویسنده برای هر (نماد، جهت) بین رانرهای
+        # هم‌زمان — ادعای اتمیک روی گیت‌هاب. شکستِ شبکه نرم است (ارسال می‌رود).
+        try:
+            from hamid import send_lock as _lock
+            _ok, _why = _lock.claim(s["sym"], s["dir"], s.get("tf"))
+        except Exception as e:                        # noqa: BLE001
+            _ok, _why = True, f"قفل در دسترس نبود ({type(e).__name__})"
+        if not _ok:
+            print(f"  قفل ارسال: {s['sym']} {s['dir']} نرفت — {_why}", flush=True)
+            continue
         png = None
         try:
             png = render_chart(s, str(tmp / f"{s['sym']}-{s['tf']}.png"))

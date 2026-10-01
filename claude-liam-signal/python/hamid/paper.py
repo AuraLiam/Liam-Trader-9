@@ -89,6 +89,7 @@ GUARDIAN_STAGES = tuple(f"gd-{g}" for g in (
 # جدا از `gate-vetoed` می‌ماند و هرگز با آن جمع نمی‌شود (دو سؤال جدا).
 _NOT_SIGNAL = ("first", "inducement", "practice", "vetoed", "gate-vetoed",
                "stage-vetoed", "rule-vetoed",   # rule-vetoed: وتوی قانون تأییدشدهٔ منفی (۱۴ سپتامبر)
+               "ibs5-muted",                    # ibs5-muted: توقفِ تحویل IBS روی ۵د (دستور حمید، ۱ اکتبر)
                "v2", "scalp", "shock") + EXPERIMENT_STAGES \
               + GUARDIAN_STAGES + SPECIALIST_STAGES
 

@@ -40,9 +40,12 @@
     python3 -m hamid.risk_desk --demo
 """
 import sys
+import time
+import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE.parent))
 
 from hamid import council as CN                      # noqa: E402
@@ -128,6 +131,9 @@ def size_band(conf):
         if conf >= lo:
             return share, why
     return 0.0, "اطمینان ناکافی"
+
+
+OUT = ROOT / "signals" / "risk-desk.json"
 
 
 def assess(setup, evidence=None, equity=None, open_positions=0,
@@ -228,8 +234,44 @@ def from_council(engine="risk", setup=None, evidence=None, proposal=None,
     return r
 
 
+def write_desk(setups=None, equity=1000.0):
+    """رانرِ میز ریسک (۱ اکتبر — تا امروز E16 خروجیِ زنده نداشت).
+
+    هر ستاپِ SIGNALِ منتشرشونده حکم ورود + اهرم/سایزِ پیشنهادی می‌گیرد →
+    `signals/risk-desk.json`. شاهد است؛ سایزِ واقعی را داشبورد از ریسک می‌سازد."""
+    if setups is None:
+        try:
+            d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
+            setups = [x for x in (d.get("symbols") or []) if x.get("stage") == "SIGNAL"]
+        except Exception:                             # noqa: BLE001
+            setups = []
+    rows = []
+    for x in setups[:24]:
+        try:
+            r = assess({"symbol": x.get("sym"), "direction": x.get("dir"), "entry": x.get("entry"),
+                        "sl": x.get("sl"), "tp": x.get("tp1")},
+                       evidence={}, equity=equity)
+            rows.append({k: r.get(k) for k in ("symbol", "direction", "verdict", "why", "confidence",
+                                                "missing_evidence", "leverage", "leverage_why",
+                                                "size_share", "notional_usd", "margin_usd")})
+        except Exception as e:                        # noqa: BLE001
+            rows.append({"symbol": x.get("sym"), "direction": x.get("dir"), "verdict": "ERROR",
+                         "why": f"{type(e).__name__}: {e}"[:120]})
+    res = {"generated": int(time.time() * 1000), "owner": "E16", "producer": "hamid/risk_desk.py",
+           "panel": "لیام تریدر ۹", "equity_assumed": equity, "n": len(rows),
+           "enter": sum(1 for r in rows if r.get("verdict") == "ENTER"), "rows": rows,
+           "boundary": "شاهدِ ریسک؛ بی شاهدِ شورا اطمینانش پایین است و این صادقانه نوشته می‌شود. سایزِ واقعی از ریسک ۲٪ داشبورد می‌آید"}
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    return res
+
+
 def main(argv=None):
     argv = list(argv if argv is not None else sys.argv[1:])
+    if "--write" in argv:
+        r = write_desk()
+        print(f"میز ریسک: {r['n']} ستاپ · {r['enter']} ENTER → {OUT.name}")
+        return 0
     if "--demo" in argv or not argv:
         r = from_council(
             setup={"symbol": "BTCUSDT", "direction": "long",

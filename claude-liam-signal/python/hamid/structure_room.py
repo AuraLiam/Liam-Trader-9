@@ -33,9 +33,12 @@
     python3 -m hamid.structure_room --demo
 """
 import sys
+import time
+import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[2]
 sys.path.insert(0, str(HERE.parent))
 
 from hamid import lines_wf as LW                     # noqa: E402
@@ -44,6 +47,7 @@ from hamid import structure as ST                    # noqa: E402
 
 # ترتیب اجباری تحلیل (قانون ۰۰): بالا به پایین، هرگز برعکس.
 ORDER = ("4h", "1h", "15m")
+OUT = ROOT / "signals" / "structure-room.json"
 ANCHOR_DAYS = {"4h": 30.0, "1h": 7.0, "15m": 2.0}    # «یک هفته» روی ۱س؛ بالاتر بلندتر
 OB_TFS = ("1h", "15m")                               # دستور حمید: OB در ۱س و ۱۵د
 MIN_BARS = 60                                        # کمتر از این، تایم گزارش ندارد
@@ -244,8 +248,70 @@ def report(sym, candles):
                         "و هیچ دروازه‌ای را عوض نمی‌کند (قانون ۰۳/۱۲)"}
 
 
+def _rows_to_dicts(rows):
+    out = []
+    for k in rows or []:
+        if isinstance(k, dict):
+            out.append(k)
+        else:
+            try:
+                out.append({"t": int(k[0]), "o": float(k[1]), "h": float(k[2]),
+                            "l": float(k[3]), "c": float(k[4]),
+                            "v": float(k[5]) if len(k) > 5 else 0.0})
+            except Exception:                         # noqa: BLE001
+                continue
+    return out
+
+
+def _published_symbols(limit=12):
+    """نمادهای ستاپ‌های منتشرشوندهٔ همین لحظه (SIGNAL/ARMED) از signals/latest.json."""
+    try:
+        d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
+    except Exception:                                 # noqa: BLE001
+        return []
+    seen, out = set(), []
+    for s in sorted(d.get("symbols") or [], key=lambda x: {"SIGNAL": 0, "ARMED": 1}.get(x.get("stage"), 9)):
+        if s.get("stage") in ("SIGNAL", "ARMED") and s.get("sym") and s["sym"] not in seen:
+            seen.add(s["sym"]); out.append(s["sym"])
+        if len(out) >= limit:
+            break
+    return out
+
+
+def write_room(symbols=None, kget=None, limit=12):
+    """رانرِ اتاق ساختار (۱ اکتبر — تا امروز E07 خروجیِ زنده نداشت).
+
+    هر ستاپِ منتشرشونده را روی ۴س→۱س→۱۵د می‌خواند و `signals/structure-room.json`
+    می‌نویسد. شاهد است نه دروازه (قانون ۰۳/۱۲)؛ بی‌کندل = ردیفِ «بی‌داده»، نه عدد جعلی."""
+    if kget is None:
+        import sources as _src
+        kget = lambda s, tf, n: _src.klines(s, tf, n)      # noqa: E731
+    syms = symbols if symbols is not None else _published_symbols(limit)
+    rows = []
+    for sym in syms:
+        try:
+            cds = {tf: _rows_to_dicts(kget(sym, tf, 300)) for tf in ORDER}
+            r = report(sym, cds)
+            rows.append({"sym": sym, "ready": r["ready"], "bias": r["stance"].get("bias"),
+                         "stance": r["stance"], "defects": r["defects"], "text": r["text"]})
+        except Exception as e:                        # noqa: BLE001
+            rows.append({"sym": sym, "ready": False, "bias": "UNKNOWN",
+                         "defects": [f"بی‌داده: {type(e).__name__}"], "text": ""})
+    res = {"generated": int(time.time() * 1000), "owner": "E07", "producer": "hamid/structure_room.py",
+           "panel": "لیام تریدر ۹", "n": len(rows), "ready": sum(1 for r in rows if r["ready"]),
+           "rows": rows,
+           "boundary": "اتاق ساختار گزارش می‌دهد و نقص برمی‌گرداند؛ سیگنال صادر نمی‌کند و دروازه‌ای را عوض نمی‌کند"}
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    return res
+
+
 def main(argv=None):
     argv = list(argv if argv is not None else sys.argv[1:])
+    if "--write" in argv:
+        r = write_room()
+        print(f"اتاق ساختار: {r['n']} نماد · {r['ready']} آماده → {OUT.name}")
+        return 0
     if "--demo" in argv or not argv:
         cds = {"4h": LW.synth("channel_up", n=300),
                "1h": LW.synth("ascending_triangle", n=300),

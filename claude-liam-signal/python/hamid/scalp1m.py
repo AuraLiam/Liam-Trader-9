@@ -388,7 +388,45 @@ def _reasons(rejects):
     return out
 
 
+def _live_kget(sym, tf, n):
+    import sources as _src
+    out = []
+    for k in _src.klines(sym, tf, n) or []:
+        if isinstance(k, dict):
+            out.append(k)
+        else:
+            out.append({"t": int(k[0]), "o": float(k[1]), "h": float(k[2]),
+                        "l": float(k[3]), "c": float(k[4]), "v": float(k[5]) if len(k) > 5 else 0.0})
+    return out
+
+
+def _live_symbols(limit=40):
+    """نمادهای اسکنِ زنده (signals/latest.json)، SIGNAL/ARMED جلوتر — بی‌شبکهٔ اضافه."""
+    try:
+        d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
+    except Exception:                                 # noqa: BLE001
+        return []
+    rank = {"SIGNAL": 0, "ARMED": 1, "PULLBACK_1": 2}
+    seen, out = set(), []
+    for s in sorted(d.get("symbols") or [], key=lambda x: rank.get(x.get("stage"), 9)):
+        if s.get("sym") and s["sym"] not in seen:
+            seen.add(s["sym"]); out.append(s["sym"])
+        if len(out) >= limit:
+            break
+    return out
+
+
 if __name__ == "__main__":
-    print(__doc__.split("##")[0].strip())
-    print("این موتور منبع داده را تزریقی می‌گیرد؛ اجرای واقعی از "
-          "ورک‌فلوی scalp.yml یا سرویس محلی است.")
+    if "--run" in sys.argv:
+        # رانرِ واقعی (۱ اکتبر — تا امروز هیچ ورک‌فلویی این موتور را نمی‌زد).
+        # دامیننس از عکس‌فوریِ زنجیره؛ کندل از منبع واحد؛ خروجی signals/scalp1m.json.
+        dom = None
+        try:
+            dom = json.loads((ROOT / "signals" / "dominance.json").read_text(encoding="utf-8"))
+        except Exception:                             # noqa: BLE001
+            dom = None
+        run(_live_symbols(), _live_kget, dom=dom)
+    else:
+        print(__doc__.split("##")[0].strip())
+        print("این موتور منبع داده را تزریقی می‌گیرد؛ اجرای واقعی: "
+              "`python3 -m hamid.scalp1m --run` از ورک‌فلوی scalp.yml یا سرویس محلی.")

@@ -42,6 +42,11 @@ jobs:
       - name: Run scalp desk
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.scalp
+      - name: موتور قطعی ۱ دقیقه (قانون ۱۰) — رانر ۱ اکتبر
+        working-directory: claude-liam-signal/python
+        env:
+          LIAM9_CANDLES: perp
+        run: python3 -m hamid.scalp1m --run || true
       # پل اسکلپ→داشبورد (دستور حمید ۱۹ اوت): ستاپِ مناسبِ اسکلپ فوری
       # به سفارش فیوچرز امضاشده تبدیل می‌شود. mode=demo؛ پول واقعی فقط با
       # LIAM9_ALLOW_LIVE=1 روی ماشین خود حمید.

@@ -116,6 +116,8 @@ jobs:
           python3 -m hamid.test_ob_intel
           python3 -m hamid.test_deep
           python3 -m hamid.test_scheduler
+          python3 -m hamid.test_ibs5_mute
+          python3 -m hamid.test_send_lock
           python3 -m hamid.test_learning
           python3 -m hamid.test_fixit
           python3 -m hamid.test_trainer
@@ -209,6 +211,9 @@ jobs:
           python3 -m hamid.test_escalation
           python3 -m hamid.graphify --selftest
           python3 -m hamid.graphify --build
+          # رانرهای E07 و E16 (۱ اکتبر) — شاهدِ ساختار و ریسک روی ستاپ‌های منتشرشونده
+          python3 -m hamid.structure_room --write || true
+          python3 -m hamid.risk_desk --write || true
 
       # ابزارِ کنارِ خط تولید — نه خودِ خط تولید.
       #
