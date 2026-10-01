@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -474,6 +475,70 @@ check("دلیلِ واقعیِ رد شدن (نه فقط خبرِ رد شدن) ب
 _src_pub = PUBLISH.read_text(encoding="utf-8")
 check("خطای پوش دیگر به /dev/null نمی‌رود",
       'git push -q "$REMOTE" "$NEW:refs/heads/$BRANCH" 2>/dev/null' not in _src_pub)
+w.close()
+
+# ── ۱ اکتبر: دو دفترِ ضدتکرار زیر signals/ اجتماع می‌شوند، نه «ما»ی کور ────
+#
+# زنجیرهٔ سیگنال از این روز با همین ناشر منتشر می‌شود (به‌جای حلقهٔ
+# reset+reapply خودش). reapply برای sent.json و telegram-log اجتماع داشت؛
+# ناشر هم باید داشته باشد وگرنه دو حامل (زنجیره/اسکن زنده) کلیدهای هم را
+# پاک می‌کنند — همان پنجره‌ای که سیگنال تکراری از آن رد می‌شود.
+print("── دفترهای ضدتکرار signals/ ──")
+w = World()
+w.other_push({"signals/sent.json": json.dumps({"a": 3, "c": 2}),
+              "signals/telegram-log.json": json.dumps(
+                  {"generated": 12, "sent": [{"at": 12, "sym": "YUSDT"}]})})
+(w.work / "signals/sent.json").write_text(json.dumps({"a": 1, "b": 7}))
+(w.work / "signals/telegram-log.json").write_text(json.dumps(
+    {"generated": 11, "sent": [{"at": 11, "sym": "ZUSDT"}, {"at": 10, "sym": "XUSDT"}]}))
+r = w.publish("signals")
+check("دفتر ضدتکرار در تعارض: خروج ۰", r.returncode == 0, (r.stdout + r.stderr)[-400:])
+_sent = json.loads(w.on_origin("signals/sent.json") or "{}")
+check("sent.json: هر کلید تازه‌ترین مهر از هر دو طرف (هیچ کلیدی گم نشد)",
+      _sent == {"a": 3, "b": 7, "c": 2}, str(_sent))
+_log = json.loads(w.on_origin("signals/telegram-log.json") or "{}")
+check("telegram-log: ردیف‌های هر دو طرف، تازه‌ترین اول، بی‌تکرار",
+      [r_["sym"] for r_ in _log.get("sent", [])] == ["YUSDT", "ZUSDT", "XUSDT"], str(_log))
+check("telegram-log: مهرِ generated از طرفِ تازه‌تر", _log.get("generated") == 12, str(_log.get("generated")))
+w.close()
+
+# ── ۱ اکتبر: تازه‌سازیِ نانوشته‌ها از origin پیش از داوری (refresh_unwritten) ──
+#
+# چرخهٔ حمید ~۳۰ دقیقه طول می‌کشد و گذرگاه وضعیت در انتهایش روی چک‌اوتِ
+# شروعِ job داوری می‌کرد → SICK کاذب (۱۴:۲۸: ۷ فایل «۴۵ دقیقه» که روی origin
+# ۲ دقیقه سن داشتند). خاصیت: فایلی که origin جلو برده و ما ننوشته‌ایم تازه
+# می‌شود؛ فایلی که ما نوشته‌ایم (کامیت‌نشده) دست نمی‌خورد؛ fetch ناموفق =
+# هیچ تغییری؛ هیچ merge/reset.
+print("── تازه‌سازی نانوشته‌ها: scripts/refresh_unwritten.sh ──")
+REFRESH = REPO / "scripts" / "refresh_unwritten.sh"
+check("اسکریپت تازه‌سازی وجود دارد و اجرایی است", REFRESH.exists() and os.access(REFRESH, os.X_OK))
+_rs = "\n".join(l for l in REFRESH.read_text(encoding="utf-8").splitlines()
+                if not l.strip().startswith("#"))
+check("تازه‌سازی هیچ merge/reset/pull ندارد",
+      not re.search(r"git (merge|reset|pull|checkout -B)\b", _rs))
+check("هر فرمان شبکه‌ای تازه‌سازی سقف دارد",
+      'timeout "$NET_TIMEOUT" git fetch' in _rs
+      and not re.search(r"(?<!\$NET_TIMEOUT\" )git (fetch|push|pull)\b", _rs.replace('timeout "$NET_TIMEOUT" git fetch', "")))
+w = World()
+shutil.copy(REFRESH, w.work / "scripts" / "refresh_unwritten.sh")
+w.other_push({"signals/other.json": '{"generated": 50}', "signals/latest.json": '{"generated": 60}'})
+(w.work / "signals/latest.json").write_text('{"generated": 99}')          # نوشتهٔ همین اجرا
+(w.work / "signals/new-here.json").write_text('{"generated": 5}')        # فایلِ تازهٔ ردیابی‌نشده
+r = subprocess.run(["bash", "scripts/refresh_unwritten.sh", "signals"], cwd=w.work,
+                   env=dict(os.environ, GIT_TERMINAL_PROMPT="0"), capture_output=True, text=True)
+check("تازه‌سازی: خروج ۰", r.returncode == 0, r.stdout + r.stderr)
+check("فایلِ نانوشته‌ای که origin جلو برده، تازه شد",
+      (w.work / "signals/other.json").read_text() == '{"generated": 50}')
+check("فایلِ نوشته‌شدهٔ همین اجرا دست نخورد (نسخهٔ origin رویش ننشست)",
+      (w.work / "signals/latest.json").read_text() == '{"generated": 99}')
+check("فایلِ تازهٔ ردیابی‌نشده سرِ جایش ماند", (w.work / "signals/new-here.json").exists())
+check("لاگ تازه‌سازی شمار را می‌گوید", "۱ فایل از origin تازه شد" in r.stdout or "1 فایل از origin تازه شد" in r.stdout, r.stdout)
+# بعد از تازه‌سازی، انتشارِ همین اجرا هنوز درست کار می‌کند (فایل تازه‌شده
+# با origin یکی است، فایلِ ما می‌رود)
+r = w.publish("signals")
+check("انتشار بعد از تازه‌سازی: خروج ۰", r.returncode == 0, (r.stdout + r.stderr)[-300:])
+check("خروجیِ ما بعد از تازه‌سازی منتشر شد", w.on_origin("signals/latest.json") == '{"generated": 99}')
+check("فایلِ تازه‌شده همان نسخهٔ origin ماند", w.on_origin("signals/other.json") == '{"generated": 50}')
 w.close()
 
 print()

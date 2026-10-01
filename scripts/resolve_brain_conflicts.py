@@ -535,9 +535,68 @@ def take_ours(path):
     return "عکس‌فوری تازهٔ همین اجرا"
 
 
+def merge_sent_keys(path):
+    """`signals/sent.json` — حافظهٔ ضدتکرار تلگرام: {کلید: مهر میلی‌ثانیه}.
+
+    دفتر است نه عکس‌فوری. تا ۱ اکتبر این فایل از قاعدهٔ فراگیرِ signals/
+    («مهرِ تازه‌تر برنده») می‌گذشت و چون `generated` ندارد، عملاً «ما»ی کور
+    بود: دو حامل (زنجیره و اسکن زنده) هر کدام کلیدهای دیگری را پاک
+    می‌کردند — همان پنجره‌ای که سیگنال تکراری از آن رد می‌شود. قاعده همان
+    `hamid.merge_sent` حلقهٔ قدیمی زنجیره است: هر کلید، تازه‌ترین مهر از هر
+    دو طرف."""
+    out = {}
+    for st in (2, 3):
+        try:
+            d = json.loads(_stage(st, path) or "{}")
+        except Exception:                            # noqa: BLE001
+            d = {}
+        if isinstance(d, dict):
+            for k, v in d.items():
+                if isinstance(v, (int, float)) and v > out.get(k, 0):
+                    out[k] = v
+    (ROOT / path).write_text(json.dumps(out, indent=1), encoding="utf-8")
+    return f"{len(out)} کلید ضدتکرار ارسال (اجتماع، تازه‌ترین مهر)"
+
+
+def merge_tglog(path):
+    """`signals/telegram-log.json` — ۴۰ ارسال اخیر `{"generated", "sent": [...]}`.
+
+    ردیف‌ها بر هویت `(at, sym)` اجتماع می‌شوند، تازه‌ترین اول، سقف ۴۰ (همان
+    سقفِ خودِ telegram.py)؛ `generated` و بقیهٔ کلیدها از طرفِ تازه‌تر.
+    این سومین منبعِ ضدتکرار است (`telegram._load_sent`): ردیفِ گم‌شده
+    این‌جا یعنی کلیدِ بازسازی‌نشده و پنجرهٔ تکرار."""
+    docs = []
+    for st in (2, 3):
+        try:
+            d = json.loads(_stage(st, path) or "{}")
+        except Exception:                            # noqa: BLE001
+            d = {}
+        docs.append(d if isinstance(d, dict) else {})
+    seen, rows = set(), []
+    for d in docs:
+        for r in (d.get("sent") or []):
+            if not isinstance(r, dict):
+                continue
+            k = (r.get("at"), r.get("sym"))
+            if k in seen:
+                continue
+            seen.add(k)
+            rows.append(r)
+    rows.sort(key=lambda r: float(r.get("at") or 0), reverse=True)
+    base = max(docs, key=lambda d: float(d.get("generated") or 0))
+    out = dict(base)
+    out["sent"] = rows[:40]
+    (ROOT / path).write_text(json.dumps(out, ensure_ascii=False, indent=1),
+                             encoding="utf-8")
+    return f"{len(out['sent'])} ردیف لاگ ارسال (اجتماع بر هویت)"
+
+
 EXACT = {
     "brain/memory/lessons.json": merge_lessons,
     "brain/learning/index.json": rebuild_index,
+    # دو دفترِ ضدتکرار زیر signals/ — قبل از قاعدهٔ فراگیرِ عکس‌فوری (۱ اکتبر)
+    "signals/sent.json": merge_sent_keys,
+    "signals/telegram-log.json": merge_tglog,
 }
 
 # ── دفترِ انباشته در برابر عکس‌فوریِ مشتق‌شده ─────────────────────────────

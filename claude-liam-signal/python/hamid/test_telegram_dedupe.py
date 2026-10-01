@@ -386,12 +386,19 @@ cl3 = [json.loads(x) for x in
 check("reapply دوباره → هیچ ردیف تکراری (اجتماع بر هویت معامله)",
       len(op3) == len(op2) and len(cl3) == len(cl2),
       f"op {len(op2)}→{len(op3)} cl {len(cl2)}→{len(cl3)}")
-# ورک‌فلو باید این سه را در بکاپ بین‌دوری بگیرد
+# ۱ اکتبر: زنجیره دیگر بکاپ/reset ندارد — با ناشر یگانه منتشر می‌شود و بقای
+# این سه دفتر کارِ حل‌کنندهٔ همان ناشر است (sent.json → اجتماع با تازه‌ترین
+# مهر، دفترهای پیپر → اجتماع بر هویت معامله). خاصیت همان است، جایش عوض شد.
 wf = (PY.parents[1] / ".github" / "workflows" / "pump-radar.yml").read_text()
-check("زنجیره sent.json و دفترهای پیپر را در بکاپ بین‌دوری می‌گیرد",
-      'cp signals/sent.json "$BK/"' in wf
-      and 'cp brain/paper/open.jsonl "$BK/"' in wf
-      and 'cp brain/paper/closed.jsonl "$BK/"' in wf)
+_wf_body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
+import importlib.util as _ilu                                    # noqa: E402
+_spec = _ilu.spec_from_file_location("rbc", PY.parents[1] / "scripts" / "resolve_brain_conflicts.py")
+_rbc = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_rbc)
+check("زنجیره با ناشر یگانه منتشر می‌شود و حل‌کننده sent.json و دفترهای پیپر را اجتماع می‌کند (نه بکاپ/reset)",
+      "scripts/publish.sh" in _wf_body and "reset --hard" not in _wf_body
+      and _rbc.handler_for("signals/sent.json") is _rbc.merge_sent_keys
+      and _rbc.handler_for("brain/paper/open.jsonl") is _rbc.merge_open_ledger
+      and _rbc.handler_for("brain/paper/closed.jsonl") is _rbc.merge_frozen_closed)
 
 # ── کلاسِ عیبِ ۳۱ اوت: ارسالِ هم‌زمان روی دو رانرِ جدا ──────────────────
 #

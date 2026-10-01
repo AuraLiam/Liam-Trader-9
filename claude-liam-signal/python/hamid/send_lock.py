@@ -65,7 +65,11 @@ def claim(sym, direction, tf=None, ttl_min=TTL_MIN, now_ms=None, run=None, tok=N
         # تک‌نویسنده) معنایی ندارد و نباید روی ریپوی واقعی بنویسد
         return True, "بیرون از رانر — قفل غیرفعال"
     if not tok:
-        return True, "بی‌توکن — قفل غیرفعال (محلی)"
+        # روی رانر بی‌توکن یعنی گامِ ورک‌فلو GITHUB_TOKEN را به env نداده —
+        # عیبِ سیم‌کشی است، نه حالتِ عادی (۱ اکتبر: اسکن زنده و چرخه همین
+        # بودند و قفل بی‌صدا هیچ‌کاره شد). محافظ: test_send_lock روی هر گامِ
+        # ارسال. این‌جا نرم می‌ماند تا سیگنال گم نشود، ولی بلند می‌گوید.
+        return True, "بی‌توکن — قفل غیرفعال؛ GITHUB_TOKEN به env این گام نرسیده (عیب سیم‌کشی)"
     url = f"https://api.github.com/repos/{REPO}/contents/{_path(sym, direction)}"
     body = {"at": now, "sym": sym, "dir": direction, "tf": tf,
             "run": run or os.environ.get("GITHUB_RUN_ID") or "local"}

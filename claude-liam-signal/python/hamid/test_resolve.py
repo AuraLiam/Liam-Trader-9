@@ -164,6 +164,12 @@ check("هر jsonl زیر brain (مثلاً learning) هم پوشش دارد",
       rbc.handler_for("brain/learning/experiences.jsonl") is rbc.merge_jsonl)
 check("signals عکس‌فوری می‌گیرد نه اجتماع — با قاعدهٔ «مهرِ تازه‌تر برنده»",
       rbc.handler_for("signals/pump-radar.json") is rbc.merge_newest_generated)
+# ۱ اکتبر: دو دفترِ ضدتکرار زیر signals/ عکس‌فوری نیستند — اجتماع می‌گیرند
+# (زنجیره از این روز با ناشر یگانه منتشر می‌شود؛ reapply قدیمی همین را داشت)
+check("sent.json دفتر ضدتکرار است: اجتماع با تازه‌ترین مهر، نه عکس‌فوری",
+      rbc.handler_for("signals/sent.json") is rbc.merge_sent_keys)
+check("telegram-log.json دفتر است: اجتماع ردیف‌ها، نه عکس‌فوری",
+      rbc.handler_for("signals/telegram-log.json") is rbc.merge_tglog)
 check("index.json بازساخته می‌شود نه merge",
       rbc.handler_for("brain/learning/index.json") is rbc.rebuild_index)
 check("مسیر ناشناخته حدس زده نمی‌شود",

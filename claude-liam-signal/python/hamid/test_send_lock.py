@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import sys
 import urllib.error
 from pathlib import Path
@@ -105,9 +106,49 @@ i_lock = body_.index("_lock.claim(")
 check("قفل بعد از هندسهٔ ×۲ (آخرین دروازه) و پیش از چارت/ارسال است",
       body_.index("apply_geo15(s)") < i_lock < body_.index("render_chart(s,"))
 check("شکستِ قفل سیگنال را گم نمی‌کند (استثنا → ادامه)", "_ok, _why = True" in body_)
+# ۱ اکتبر: دلیلِ قفل فقط در ردشدن چاپ می‌شد؛ «بی‌توکن → مجاز» بی‌صدا بود و
+# ۴ ساعت کسی نفهمید قفل در دو حامل خاموش است. حالا هر ادعا یک خط دارد.
+_seg = body_[i_lock:body_.index("render_chart(s,")]
+check("دلیلِ قفل همیشه چاپ می‌شود، مجاز یا رد (قفلِ ساکت ممنوع)",
+      "قفل ارسال" in _seg and _seg.index("قفل ارسال") < _seg.index("if not _ok"))
 wf = HERE.parents[2] / ".github" / "workflows"
 check("پاسبان در دروازهٔ هر دو زنجیره",
       all("hamid.test_send_lock" in (wf / f).read_text(encoding="utf-8") for f in ("hamid-cycle.yml", "pump-radar.yml")))
+
+# ── کلاسِ عیب ۱ اکتبر: قفلی که اعتبارش به گامِ ارسال نرسیده ────────────────
+#
+# LDOUSDT ۱۳:۱۴:۴۳ (زنجیره، ادعا ثبت شد) و ۱۳:۱۶:۱۹ (اسکن زنده) — ۹۶ ثانیه؛
+# AAVEUSDT ۱۴:۳۰:۵۲ و ۱۴:۳۱:۴۶ — ۵۴ ثانیه. گامِ «Scan and deliver» اسکن زنده و
+# «Run the cycle» چرخه GITHUB_TOKEN را به env نمی‌دادند؛ قفل «بی‌توکن → مجاز»
+# می‌گفت و هیچ‌کس نمی‌دید. آزمونِ قبلی فقط سیم‌کشیِ *کد* را می‌سنجید، نه
+# ورک‌فلو را. خاصیت: **هر** گامی که فرستنده را صدا می‌زند، توکن دارد.
+import yaml                                                      # noqa: E402
+
+_SENDER = re.compile(r"scan\.py[^\n]*--telegram|hamid\.cycle\b")
+_missing, _found = [], 0
+for f in sorted(wf.glob("*.yml")):
+    try:
+        doc = yaml.safe_load(f.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        continue
+    wf_env = (doc.get("env") or {}) if isinstance(doc, dict) else {}
+    for jname, job in ((doc.get("jobs") or {}) if isinstance(doc, dict) else {}).items():
+        if not isinstance(job, dict):
+            continue
+        job_env = job.get("env") or {}
+        for st in (job.get("steps") or []):
+            if not isinstance(st, dict):
+                continue
+            run = "\n".join(l for l in (st.get("run") or "").splitlines()
+                            if not l.strip().startswith("#"))
+            if not _SENDER.search(run):
+                continue
+            _found += 1
+            env = {**wf_env, **job_env, **(st.get("env") or {})}
+            if "GITHUB_TOKEN" not in env and "GH_TOKEN" not in env:
+                _missing.append(f"{f.name}: «{st.get('name')}»")
+check(f"هر گامِ ارسال (scan --telegram / hamid.cycle) GITHUB_TOKEN دارد — {_found} گام، غایب: {_missing or 'هیچ'}",
+      _found >= 3 and not _missing)
 
 print()
 if BAD:

@@ -274,7 +274,7 @@ check(f"هر عقب‌نشینیِ پوش jitter دارد — دو رانر هم
 # تازه‌ای که ناشرِ خودش را بیاورد یا pip پراکنده بنویسد، همین‌جا سرخ
 # می‌شود. با هر مهاجرت، دو عددِ زیر پایین آورده می‌شود.
 import os as _os                                       # noqa: E402
-INLINE_PUSHERS_MAX = 27      # ۳۰ سپتامبر: conformance؛ ۲۹ سپتامبر: trainer و depth-collect
+INLINE_PUSHERS_MAX = 26      # ۱ اکتبر: زنجیرهٔ سیگنال (pump-radar)؛ ۳۰ سپتامبر: conformance؛ ۲۹ سپتامبر: trainer و depth-collect
                              # ۲ سپتامبر: hamid-cycle، work-report، scout،
                              # history-ingest، strategy-volume، dominance-report،
                              # pump-review مهاجرت کردند
@@ -411,8 +411,37 @@ check("فهرست دست‌نویس WAKE از زنجیره رفته (کلاسِ 
       "for WAKE in" not in _chain)
 # ۱۶:۰۴ همان روز: scheduler.json ۸۲ دقیقه کهنه ماند — نوشته می‌شد ولی *بعد* از
 # کامیتِ دور، و resetِ دورِ بعد آن را می‌بُرد. خروجیِ حلقه باید پیش از کامیت باشد.
-check("زمان‌بند داخل حلقه پیش از کامیتِ همان دور می‌نویسد",
-      _chain.find("hamid.scheduler --dispatch --write") < _chain.find("git add signals brain"))
+check("زمان‌بند داخل حلقه پیش از انتشارِ همان دور می‌نویسد",
+      0 < _chain.find("hamid.scheduler --dispatch --write") < _chain.find("scripts/publish.sh"))
+# ── ۱ اکتبر: حلقهٔ پوشِ دست‌نویسِ زنجیره → ناشر یگانه (قانون ۱۴) ──────────
+#
+# اندازه‌گیری: هر تلاشِ push = fetch + reset --hard + بازنشاندن بکاپ + اجرای
+# دوبارهٔ همهٔ ماژول‌ها (~۹۵ ثانیه)، و main هر ۱–۲ دقیقه از جای دیگر پوش
+# می‌خورد — دور ۳ اجرای ۳۱۵۷ شش بار رد شد (۷۸۷ ثانیه)، دور ۳ اجرای ۳۱۵۸
+# «رها شد» و دو سیگنالِ رفته (DUSK، AAVE) بی‌ردیف ماندند؛ ۸ شکاف >۱۵ دقیقه
+# در ۲۸ انتشارِ ۲۴ ساعت. خاصیت: داخل حلقه فقط ناشر یگانه، هیچ reset،
+# هیچ push دست‌نویس به main، و انتشارِ هر دور بعد از اسکن همان دور.
+_chain_body = "\n".join(l for l in _chain.splitlines() if not l.strip().startswith("#"))
+check("زنجیره داخل حلقه با ناشر یگانه منتشر می‌کند",
+      "scripts/publish.sh" in _chain_body and _chain_body.find("while :; do") < _chain_body.find("scripts/publish.sh"))
+check("زنجیره هیچ reset --hard و هیچ push دست‌نویس به main ندارد",
+      "reset --hard" not in _chain_body and not re.search(r"git push[^\n]*HEAD:main", _chain_body))
+check("انتشارِ هر دور بعد از اسکنِ همان دور است",
+      0 < _chain_body.find("scan.py --symbols") < _chain_body.find("scripts/publish.sh"))
+check("انتشارِ ناموفق، کامیتِ محلی را باز می‌کند تا دورِ بعد همان خروجی را ببرد",
+      'H0=$(git rev-parse HEAD)' in _chain_body and 'git reset -q "$H0"' in _chain_body)
+# حافظهٔ دروازه: خروجیِ خودِ چرخه (docs/graph، claude-liam-signal/cycles) نباید
+# در اثرانگشت باشد — وگرنه هر ~۳۰ دقیقه کلید عوض می‌شود و آزمون ۸.۵ دقیقه‌ای
+# هر اجرا تکرار می‌شود (۱ اکتبر: سه اجرای پیاپی، سه miss).
+for _nm, _txt in (("زنجیره", _chain), ("چرخه", (WF / "hamid-cycle.yml").read_text(encoding="utf-8"))):
+    _fp = re.search(r"H=\$\(git ls-files -s \| grep -vE '([^']+)'", _txt)
+    check(f"اثرانگشت دروازهٔ {_nm} خروجی‌های تولیدشده (docs/graph، cycles) را کنار می‌گذارد",
+          bool(_fp) and all(x in _fp.group(1) for x in ("brain", "signals", "docs/graph", "claude-liam-signal/cycles")))
+# گذرگاه وضعیت در چرخه روی تازه‌ترین نسخهٔ منتشرشده داوری می‌کند، نه چک‌اوتِ
+# شروعِ job (۱ اکتبر ۱۴:۲۸: SICK کاذب، ۷ فایل «۴۵ دقیقه» که ۲ دقیقه سن داشتند).
+_hc0 = (WF / "hamid-cycle.yml").read_text(encoding="utf-8")
+check("چرخه پیش از گذرگاه وضعیت، signals را از origin تازه می‌کند (فایل‌های نانوشته)",
+      0 < _hc0.find("scripts/refresh_unwritten.sh signals") < _hc0.find("hamid.state_bus --write"))
 # سقفِ job و بودجهٔ حلقه یک عددند — ۲۹ سپتامبر ۶۲ اجرای پیاپیِ زنجیره روی
 # سقف ۳۲ دقیقه cancelled شد چون حلقه ۸ دورِ ثابت داشت و آزمون ۶.۵ دقیقه بود.
 _tm_c = re.search(r"timeout-minutes:\s*(\d+)", _chain)

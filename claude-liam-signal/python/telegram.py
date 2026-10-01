@@ -1401,8 +1401,12 @@ def send_signals(signals, render_chart, limit=8):
             _ok, _why = _lock.claim(s["sym"], s["dir"], s.get("tf"))
         except Exception as e:                        # noqa: BLE001
             _ok, _why = True, f"قفل در دسترس نبود ({type(e).__name__})"
+        # دلیلِ قفل **همیشه** روی لاگ می‌نشیند، مجاز یا رد — ۱ اکتبر قفل در
+        # دو حاملِ ارسال (اسکن زنده، چرخه) بی‌توکن و بی‌صدا غیرفعال بود و
+        # LDO و AAVE هر کدام دو بار رفتند؛ قفلِ ساکت از قفلِ نبوده بدتر است.
+        print(f"  قفل ارسال {s['sym']} {s['dir']}: {'مجاز' if _ok else 'نرفت'} — {_why}",
+              flush=True)
         if not _ok:
-            print(f"  قفل ارسال: {s['sym']} {s['dir']} نرفت — {_why}", flush=True)
             continue
         png = None
         try:

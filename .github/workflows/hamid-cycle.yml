@@ -88,7 +88,11 @@ jobs:
         id: code
         run: |
           set -o pipefail
-          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals)/' | sha256sum | cut -c1-16)
+          # ۱ اکتبر: docs/graph و claude-liam-signal/cycles خروجیِ خودِ چرخه‌اند
+          # و هر ~۳۰ دقیقه عوض می‌شوند — داخل اثرانگشت بودند، پس حافظه هرگز
+          # نمی‌گرفت و آزمون ۸.۵ دقیقه‌ای هر بار تکرار می‌شد (اندازه‌گیری:
+          # سه اجرای پیاپی زنجیره ۱۳:۲۷/۱۴:۰۰/۱۴:۳۳، هر سه miss).
+          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals|docs/graph|claude-liam-signal/cycles)/' | sha256sum | cut -c1-16)
           N=$(git ls-files 'signals/*.json' config | sha256sum | cut -c1-8)   # فقط نام‌های سطح بالا؛ آرشیو/پارتیشن هر روز عوض می‌شود
           echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
@@ -266,6 +270,9 @@ jobs:
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
           CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
+          # قفلِ ارسال (hamid/send_lock، ۱ اکتبر): ادعا با API محتوای گیت‌هاب؛
+          # GITHUB_TOKEN خودکار به env نمی‌رسد و بی آن قفل بی‌صدا غیرفعال است.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # منبع کندل: بیت‌یونیکس پرپچوال، اسپات پشتیبان (دستور حمید؛ اثبات
           # رانر venue-probe کاوش ۷). ردپای candle_src روی هر سیگنال می‌نشیند.
           LIAM9_CANDLES: perp
@@ -424,6 +431,13 @@ jobs:
       - name: بودجهٔ پیام (E25)
         working-directory: claude-liam-signal/python
         run: python3 -m hamid.msg_budget --write
+
+      # ۱ اکتبر ۱۴:۲۸: گذرگاه روی چک‌اوتِ شروعِ همین job (~۳۰ دقیقه پیش)
+      # داوری کرد و SICK داد — ۷ فایل «۴۵ دقیقه کهنه» که روی origin همان
+      # لحظه ۲ دقیقه سن داشتند. داوری باید روی تازه‌ترین نسخهٔ منتشرشده
+      # باشد؛ فایل‌هایی که همین اجرا نوشته دست نمی‌خورند (قانون ۱۴).
+      - name: تازه‌سازی signals از origin (فایل‌های نانوشتهٔ همین اجرا)
+        run: scripts/refresh_unwritten.sh signals || true
 
       - name: نقشهٔ یکپارچگی سامانه (قانون ۱۳)
         # ۲۶ سپتامبر: بی working-directory «No module named hamid» می‌داد و

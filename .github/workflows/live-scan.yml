@@ -116,6 +116,11 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # قفلِ ارسال (hamid/send_lock، ۱ اکتبر) با API محتوای گیت‌هاب ادعا
+          # می‌نویسد؛ GITHUB_TOKEN خودکار به env نمی‌رسد. بی این خط قفل
+          # بی‌صدا غیرفعال بود و LDOUSDT ۱۳:۱۶ و AAVEUSDT ۱۴:۳۱ (۱ اکتبر)
+          # هر کدام ۵۴–۹۶ ثانیه بعد از زنجیره دوباره از همین‌جا رفتند.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # آینهٔ سیگنال به بات دوم (دستور حمید ۲۷ سپتامبر) — فقط سیگنال؛
           # بی این دو سکرت خاموش است.
           SIGNAL_MIRROR_BOT_TOKEN: ${{ secrets.SIGNAL_MIRROR_BOT_TOKEN }}

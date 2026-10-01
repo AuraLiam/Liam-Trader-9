@@ -137,20 +137,24 @@ def run():
     check("نبودِ عکس‌فوری، دلیلِ صریح دارد نه سکوت",
           empty["restored"] == 0 and "why" in empty, str(empty))
 
-    # ── ورک‌فلو: عکس‌فوری بعد از اسکن، بازگردانی داخل حلقه ─────────────
+    # ── ورک‌فلو: کلاسِ عیب («reset پاک می‌کند») دیگر در زنجیره وجود ندارد ──
+    #
+    # ۱ اکتبر: حلقهٔ پوشِ دست‌نویسِ زنجیره (fetch + reset --hard + بازگردانی)
+    # با ناشر یگانه (scripts/publish.sh، قانون ۱۴) جایگزین شد. ناشر هرگز
+    # reset نمی‌کند و دفترها را اجتماع می‌کند، پس عکس‌فوری/بازگردانیِ رسید
+    # لازم نیست — عیب از ریشه حذف شد، نه وصله. خاصیتی که این‌جا سنجیده
+    # می‌شود: هیچ resetی بعد از اسکن نیست، و انتشار **بعد از** اسکن با
+    # همان ناشر است. ماژول receipts_guard برای سرویس محلی/بازیابی می‌ماند.
     wf = (ROOT / ".github/workflows/pump-radar.yml").read_text(encoding="utf-8")
-    check("ورک‌فلو عکس‌فوری رسید را می‌گیرد",
-          "receipts_guard --snapshot" in wf)
-    check("ورک‌فلو رسیدها را در حلقه برمی‌گرداند",
-          "receipts_guard --restore" in wf)
-    i_scan = wf.find("scan.py --symbols")
-    i_snap = wf.find("receipts_guard --snapshot")
-    check("عکس‌فوری **بعد از** اسکن است (قلبِ همین عیب)",
-          0 <= i_scan < i_snap, f"scan={i_scan} snapshot={i_snap}")
-    i_reset = wf.find("reset --hard origin/main")
-    i_rest = wf.find("receipts_guard --restore")
-    check("بازگردانی **بعد از** reset است",
-          0 <= i_reset < i_rest, f"reset={i_reset} restore={i_rest}")
+    body = "\n".join(l for l in wf.splitlines() if not l.strip().startswith("#"))
+    check("زنجیره هیچ reset --hard ندارد (کلاسِ «اسکن رفت، دفتر پاک شد» حذف شد)",
+          "reset --hard" not in body)
+    i_scan = body.find("scan.py --symbols")
+    i_pub = body.find("scripts/publish.sh")
+    check("انتشار **بعد از** اسکن و با ناشر یگانه است",
+          0 <= i_scan < i_pub, f"scan={i_scan} publish={i_pub}")
+    check("زنجیره بکاپ/بازگردانیِ دست‌نویس ندارد (ناشر دفترها را اجتماع می‌کند)",
+          "pump_radar --reapply" not in body and "receipts_guard --restore" not in body)
 
     # ── دفترهای پیپر هم باید جان به در ببرند (تکمیل ۱ سپتامبر) ────────
     #

@@ -95,7 +95,11 @@ jobs:
         if: steps.guard.outputs.skip != '1'
         run: |
           set -o pipefail
-          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals)/' | sha256sum | cut -c1-16)
+          # ۱ اکتبر: docs/graph و claude-liam-signal/cycles خروجیِ چرخهٔ حمیدند و
+          # هر ~۳۰ دقیقه عوض می‌شوند — داخل اثرانگشت بودند، پس حافظه هرگز
+          # نمی‌گرفت و آزمون ۸.۵ دقیقه‌ای هر اجرا تکرار می‌شد (سه اجرای
+          # پیاپی ۱۳:۲۷/۱۴:۰۰/۱۴:۳۳، هر سه miss؛ ۲۵٪ بودجهٔ هر job).
+          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals|docs/graph|claude-liam-signal/cycles)/' | sha256sum | cut -c1-16)
           N=$(git ls-files 'signals/*.json' config | sha256sum | cut -c1-8)   # فقط نام‌های سطح بالا؛ آرشیو/پارتیشن هر روز عوض می‌شود
           echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
@@ -236,163 +240,123 @@ jobs:
             fi
             echo "── دور $k · $(date -u '+%H:%M:%S UTC') · ${left}ثانیه تا پایان بودجه ──"
             # رادار پامپ این‌جا اجرا نمی‌شود (قانون ۰۷ — پنج نوبت روزانه در
-            # pump-review.yml). reapply پایین می‌ماند چون دفترهای مشترک
-            # (telegram-log، حافظه) را در پوش ضدتصادم اجتماع می‌کند.
-            # درس ۲۵ اوت: عکس‌فوری‌هایی که این زنجیره خودش نمی‌سازد
-            # (pump-radar.json، bubbles.json، pump-radar-sent.json) دیگر
-            # بکاپ/بازنشانی نمی‌شوند — بکاپِ چک‌اوتِ کهنه ۱۳ ساعت خروجی
-            # تازهٔ مرور پامپ را در هر کامیت زنجیره پس می‌زد (generated
-            # ساعت ۰۸:۰۳ تا شب برمی‌گشت). فقط تولیدکننده بازنشانی می‌کند.
+            # pump-review.yml). درس ۲۵ اوت پابرجاست: عکس‌فوری‌هایی که این
+            # زنجیره خودش نمی‌سازد (pump-radar.json، bubbles.json) هرگز از
+            # چک‌اوتِ کهنه پس زده نمی‌شوند — ناشر یگانه فقط فایل‌های همین
+            # دور را می‌برد و برای بقیه «مهرِ تازه‌تر برنده» است.
 
-            # ثبت روی main (ضدتصادم)
-            BK=/tmp/pump-radar-backup; mkdir -p "$BK"
-            cp signals/telegram-log.json "$BK/" 2>/dev/null || true
-            cp brain/pump-history.json "$BK/" 2>/dev/null || true
-            cp brain/memory/lessons.json "$BK/" 2>/dev/null || true
-            # دفتر انتظار پامپ — ۱۶ اوت، تشخیص پاسبان C3.
-            # نبودنش این‌جا یک نامتقارنی ساخته بود که حافظهٔ دائمی را
-            # می‌خورد: sweep() نمادِ منقضی را حذف می‌کرد و درسش را
-            # می‌نوشت، بعد بازگشتِ درخت به origin/main دفتر را برمی‌گرداند
-            # (نماد برمی‌گشت) ولی درس در reapply زنده می‌ماند. یعنی حذف
-            # گم می‌شد و درس می‌ماند — و همان ۹ نماد هر ۳ دقیقه دوباره
-            # «منقضی» می‌شدند. ۲۶ ساعت، ۱۹۷ درس تکراری از ۳۰۰.
-            # (هر دو خط تولید مستقل به همین تشخیص رسیدند — اجتماعِ mergeِ ۱۷ اوت.)
-            cp brain/pump-watchlist.json "$BK/" 2>/dev/null || true
-            cp brain/pump-weakness-seen.json "$BK/" 2>/dev/null || true
-            # کلاس عیب ۲۶ اوت شب (PAXG×۵): حافظهٔ ضدتکرار و دفترهای پیپر هم
-            # باید از reset جان به در ببرند — وگرنه شکستِ push یعنی سیگنال
-            # تکراری و پوزیشنِ گم‌شده (نتیجه/ریپلای هرگز نمی‌آید)
-            cp signals/sent.json "$BK/" 2>/dev/null || true
-            cp brain/paper/open.jsonl "$BK/" 2>/dev/null || true
-            cp brain/paper/closed.jsonl "$BK/" 2>/dev/null || true
-            # دفتر بسته هفتگی‌پاره است (hamid/ledger.py، سقف ۱۰۰MB گیت‌هاب):
-            # پاره‌ها هم باید از reset جان سالم ببرند، وگرنه تسویه‌های تازه گم می‌شوند.
-            cp brain/paper/closed-*-W*.jsonl "$BK/" 2>/dev/null || true
-            for i in 1 2 3 4 5 6 7 8; do
-              # ۱۵:۳۰ همان روز: بعد از pushِ ردشده، fetchِ بی‌سقف ۲۱ دقیقه خوابید و job روی
-              # سقف مرد؛ حالا هر فرمان شبکه‌ای سقف ۱۲۰ثانیه دارد و تلاشِ دوباره فقط
-              # وقتی در بودجه جا شود.
-              if [ $(( END - $(date +%s) )) -lt 300 ]; then echo "بودجه برای تلاش $i کافی نیست — این دور رها شد"; break; fi
-              timeout 120 git fetch origin main -q
-              git reset --hard origin/main -q
-              (cd claude-liam-signal/python && python3 -m hamid.pump_radar --reapply "$BK")
-              # بقای رسیدهای ارسال (رفع «رسید گم‌شدهٔ یونی»، ۳۰ اوت).
-              # عکس‌فوریِ $BK قبل از اسکن گرفته می‌شود، پس رسیدهایی که خودِ
-              # اسکن می‌سازد هرگز در آن نیستند؛ reset پاکشان می‌کرد و سیگنالِ
-              # رفته بی‌پرونده می‌ماند. این‌جا با اجتماعِ هویت برمی‌گردند.
-              (cd claude-liam-signal/python && python3 -m hamid.receipts_guard --restore "$BK") || true
-              # دامیننس سوار همین زنجیره — کرون dominance.yml قحطی‌زده بود
-              # (اندازه‌گیری: ۳۲ نقطه در ۳۲.۷ ساعت یعنی عملاً ساعتی، نه ۵دقیقه‌ای).
-              # روی درخت تازهٔ origin/main اجرا می‌شود تا نقطهٔ جدید بی‌تصادم بنشیند.
-              (cd claude-liam-signal/python && python3 -m hamid.dominance) || true
-              # اتاق دامیننس (دستور ۳ سپتامبر): قاعدهٔ پایه + رأی وزنی
-              # تایم‌فریم‌ها (۴س سنگین‌تر از ۵د) + جای دامیننس در کانال ۴س/۱س
-              # + خط مستقل USDC.D + چرخهٔ پول. بستر است، نه دروازه.
-              (cd claude-liam-signal/python && python3 -m hamid.dominance_desk --write) || true
-              # الگوهای BTC (۱س/۴س/۱روزه) و دامیننس — دستور حمید: پایش دائمی
-              (cd claude-liam-signal/python && python3 -m hamid.btc_patterns) || true
-              # نقشهٔ یکپارچگی سامانه (قانون ۱۳) — این‌جا و نه فقط در چرخهٔ
-              # ۳۰دقیقه‌ای، چون خودِ نقشه سقف کهنگی ۴۵د دارد؛ اگر فقط جای
-              # کم‌کادنس اجرا می‌شد، خودش آلارم کاذب تولید می‌کرد.
-              (cd claude-liam-signal/python && python3 -m hamid.state_bus --write) || true
-              # ممیزِ حلقهٔ بسته: هر سیگنالِ رفته باید رد پنل/یادگیری/علت داشته باشد
-              (cd claude-liam-signal/python && python3 -m hamid.loop_audit --write) || true
-              # کارنامهٔ انجین‌ها (دستور حمید ۳۱ اوت) — بعد از state_bus و
-              # loop_audit، چون از خروجی همان‌ها می‌خواند. سقف کهنگی‌اش ۴۵د
-              # است، پس باید در همین زنجیرهٔ */15 باشد نه جای کم‌کادنس‌تر.
-              (cd claude-liam-signal/python && python3 -m hamid.scorecard --write) || true
-              # اسکن‌بردار + دسته‌بند (قانون ۱۷، دستور حمید ۱۳ سپتامبر):
-              # هر دور یک صندوقِ ورودی و سطلِ هر انجین — تا ایجنت‌ها
-              # به‌جای بازکردنِ ده فایل، سطل خودشان را بخوانند و فقط روی
-              # «تغییر» ریزنینگ کنند. بعد از state_bus/scorecard چون از
-              # قرارداد و تازگیِ همان‌ها می‌خواند.
-              (cd claude-liam-signal/python && python3 -m hamid.intake --write) || true
-              (cd claude-liam-signal/python && python3 -m hamid.dispatch --write) || true
-              (cd claude-liam-signal/python && python3 -m hamid.review_queue --write) || true
-              # قانون ۱۹: سفارش دادهٔ ایجنت‌ها — بعد از دسته‌بند، از intake می‌خواند
-              (cd claude-liam-signal/python && python3 -m hamid.data_requests --write) || true
-              # محافظ رویداد کلان برای داشبورد (۱۶ سپتامبر). این‌جا هم هست چون
-              # زنجیره مطمئن‌تر از چرخه اجرا می‌شود و سقف کهنگی ۱۸۰ دقیقه است.
-              (cd claude-liam-signal/python && python3 -m hamid.macro_guard --write) || true
-              # پرستار انجین‌ها (دستور حمید ۲۵ سپتامبر): مالکِ کهنه را پیدا
-              # می‌کند و ورک‌فلوی همان مالک را بیدار می‌کند — درمانِ
-              # همیشگیِ قطعِ اتصال انجین به پنل، برای هر ۲۲ انجینِ دارای
-              # فایل زنده. پادزهر دولایه جلوی اسپم dispatch را می‌گیرد؛
-              # REVIVE=1 لازم است تا درمان واقعاً اجرا شود (همان قاعدهٔ مدیک).
-              (cd claude-liam-signal/python && REVIVE=1 python3 -m hamid.engine_nurse --write) || true
-              # زمان‌بندِ داخلی — پیش از کامیتِ همین دور، وگرنه resetِ دورِ بعد خروجی‌اش را می‌برد
-              # (اندازه‌گیری ۱۶:۰۴: scheduler.json ۸۲ دقیقه کهنه ماند چون بعد از کامیت نوشته می‌شد)
-              (cd claude-liam-signal/python && python3 -m hamid.scheduler --dispatch --write) || true
-              # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
-              # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
-              # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
-              # به تلگرام می‌دهد (ضداسپم داخل خودِ ماژول + دروازهٔ آلارم).
-              (cd claude-liam-signal/python && python3 -m hamid.gainer_radar --write --telegram) || true
-              # گزارش ساعتی دامیننس — از این‌جا هم تلاش می‌شود.
-              #
-              # ورک‌فلوی خودش کرون ساعتی دارد («19 * * * *») و هر ۲۲ اجرا
-              # هم سبز بوده‌اند، ولی اندازه‌گیری ۱ سپتامبر نشان داد در ۶
-              # روز فقط **۲۲ بار** فیره کرده — یعنی ~۳.۷ بار در روز به‌جای
-              # ۲۴، با شکاف‌های تا ۸ ساعت و ۱۷ دقیقه. کرونِ Actions تضمینِ
-              # اجرا نیست و نوبت‌ها را می‌اندازد. پس خرابی در ماژول نبود؛
-              # در زمان‌بند بود.
-              #
-              # درمان: همین زنجیره که واقعاً هر چند دقیقه می‌دود، هر دور
-              # تلاش می‌کند. ضدتکرارِ ۵۰دقیقه‌ایِ داخل خودِ ماژول
-              # (`MIN_GAP_MIN`) کادنس را ساعتی نگه می‌دارد، پس «تلاش
-              # مکرر» به «پیام مکرر» تبدیل نمی‌شود. ورک‌فلوی مستقل هم سر
-              # جایش می‌ماند — هر کدام زودتر رسید، دیگری بی‌اثر می‌شود.
-              # `--send` لازم است: بدون آن ماژول فقط چاپ می‌کند، نه
-              # می‌فرستد و نه مهرِ وضعیت را تازه می‌کند — یعنی گامِ بی‌اثر.
-              (cd claude-liam-signal/python && python3 -m hamid.dominance_report --send --backup) || true
-              # شکاک (دستور حمید ۱ سپتامبر) — بازجویی زنجیره از E01 تا
-              # E25 با سؤال چرخشی. آخرِ همهٔ تولیدکننده‌ها اجرا می‌شود تا
-              # خروجیِ تازهٔ همان دور را ببیند، نه دورِ قبل را.
-              # ۱۴ سپتامبر: بی --telegram — شکاک روی پنل/skeptic.json می‌ماند (قانون ۱۱ بند ۳؛ ۴۵ پیام بی‌مخاطب در ۷ روز)
-              (cd claude-liam-signal/python && python3 -m hamid.skeptic --write) || true
-              # بازبینی کامل سیگنال‌های ارسالی (دستور حمید ۵ سپتامبر: «هر
-              # ۱۵ دقیقه سیگنال‌های ارسالی به تلگرام را کامل بررسی می‌کنی»).
-              # روی همین زنجیره می‌نشیند تا کادنسش از ۱۵ دقیقه بدتر نشود.
-              # شکاک محتوای سیگنال را می‌سنجد؛ این یکی **حسابِ** سیگنال را:
-              # آنچه گزارش می‌کنیم با آرشیو ارسال می‌خواند یا نه.
-              (cd claude-liam-signal/python && python3 -m hamid.signal_audit --write --alert) || true
-              # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
-              # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
-              # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و
-              # شرطِ `find -mmin +1200` هرگز درست نمی‌شد. اثرِ اندازه‌گیری‌شدهٔ
-              # ۳۰ اوت: فایل ۲۴۸۵ دقیقه کهنه ماند و گذرگاه وضعیت DEGRADED
-              # می‌داد. همان کلاسِ عیبِ live-scan — معیارِ غلط برای «کهنه».
-              AGE_BS=$(python3 -c "import json,time;print(int((time.time()*1000-json.load(open('signals/btc-sensitivity.json'))['generated'])/60000))" 2>/dev/null || echo 999999)
-              echo "btc-sensitivity age: ${AGE_BS}min"
-              if [ "$AGE_BS" -gt 1200 ]; then
-                (cd claude-liam-signal/python && python3 -m hamid.btc_sensitivity --write) || true
-              fi
-              # اسکن استراتژی‌ها هم سوار همین زنجیره — شکایت حمید (۱۲ اوت):
-              # «همه سیگنال‌ها با هم می‌آیند». علت، اسکنِ دسته‌ایِ ~۲۰دقیقه‌ای
-              # بود: هرچه در یک اجرا تأیید شده بود یک‌جا می‌رفت. حالا هر ۵
-              # دقیقه اسکن می‌شود و سیگنال حداکثر یک کندل ۵د بعد از تأیید
-              # می‌رود. اسکن فقط در تلاش اول اجرا می‌شود؛ در تلاش‌های بعدیِ
-              # push خروجی‌هایش برگردانده و sent.json اجتماع می‌شود تا نه
-              # سیگنالی دوباره برود نه دفتر ضدتکرار گم شود.
-              if [ ! -f "/tmp/scan-done-$k" ]; then
-                (cd claude-liam-signal/python && timeout 240 python3 scan.py --symbols 60 --rotate 200 --core 30 --telegram) || true
-                touch "/tmp/scan-done-$k"
-                cp signals/latest.json /tmp/scan-latest.json 2>/dev/null || true
-                cp signals/sent.json /tmp/scan-sent.json 2>/dev/null || true
-                # رسیدهای همین اسکن را کنار بگذار — تلاش‌های بعدیِ پوش
-                # با reset پاکشان می‌کنند و بدون این، سیگنالِ رفته
-                # بی‌پرونده می‌ماند (یونی، ۳۰ اوت ۱۲:۰۸)
-                (cd claude-liam-signal/python && python3 -m hamid.receipts_guard --snapshot "$BK") || true
-              else
-                cp /tmp/scan-latest.json signals/latest.json 2>/dev/null || true
-                (cd claude-liam-signal/python && python3 -m hamid.merge_sent /tmp/scan-sent.json ../../signals/sent.json) || true
-              fi
-              git add signals brain 2>/dev/null || true
-              git diff --cached --quiet && { echo "چیزی برای ثبت نیست"; break; }
-              git commit -q -m "زنجیرهٔ سیگنال $(date -u '+%Y-%m-%d %H:%M UTC')"
-              timeout 120 git push origin HEAD:main -q && { echo "ثبت شد (تلاش $i)"; break; }
-              sleep $((i * 4 + RANDOM % 7))
-            done
+            # ── یک دور = ماژول‌ها یک بار، اسکن یک بار، انتشار با ناشر یگانه (قانون ۱۴) ──
+            #
+            # تا ۱ اکتبر این‌جا حلقهٔ ۸تلاشهٔ دست‌نویسِ خودِ زنجیره بود: هر تلاش =
+            # fetch + reset --hard + بازنشاندن بکاپ + اجرای دوبارهٔ همهٔ ماژول‌ها
+            # (~۹۵ ثانیه) + push. main هر ۱–۲ دقیقه از ورک‌فلوهای دیگر پوش
+            # می‌خورد، پس push در مسابقه می‌باخت. اندازه‌گیری ۱ اکتبر: دور ۳
+            # اجرای ۳۱۵۷ شش بار رد شد و ۷۸۷ ثانیه طول کشید؛ دور ۳ اجرای ۳۱۵۸
+            # بعد از دو رد «رها شد» و سیگنال‌های DUSK و AAVE که همان دور به
+            # تلگرام رفته بودند بدون ردیف دفتر ماندند؛ در ۲۸ انتشارِ ۲۴ ساعت
+            # ۸ شکاف >۱۵ دقیقه. ناشر یگانه فقط فایل‌های همین دور را روی نوکِ
+            # تازهٔ origin می‌نشاند — چند ثانیه، بی reset، دفترها اجتماع
+            # (sent.json و telegram-log هم حالا handler اجتماع دارند).
+            # دامیننس سوار همین زنجیره — کرون dominance.yml قحطی‌زده بود
+            # (اندازه‌گیری: ۳۲ نقطه در ۳۲.۷ ساعت یعنی عملاً ساعتی، نه ۵دقیقه‌ای).
+            # روی درخت تازهٔ origin/main اجرا می‌شود تا نقطهٔ جدید بی‌تصادم بنشیند.
+            (cd claude-liam-signal/python && python3 -m hamid.dominance) || true
+            # اتاق دامیننس (دستور ۳ سپتامبر): قاعدهٔ پایه + رأی وزنی
+            # تایم‌فریم‌ها (۴س سنگین‌تر از ۵د) + جای دامیننس در کانال ۴س/۱س
+            # + خط مستقل USDC.D + چرخهٔ پول. بستر است، نه دروازه.
+            (cd claude-liam-signal/python && python3 -m hamid.dominance_desk --write) || true
+            # الگوهای BTC (۱س/۴س/۱روزه) و دامیننس — دستور حمید: پایش دائمی
+            (cd claude-liam-signal/python && python3 -m hamid.btc_patterns) || true
+            # نقشهٔ یکپارچگی سامانه (قانون ۱۳) — این‌جا و نه فقط در چرخهٔ
+            # ۳۰دقیقه‌ای، چون خودِ نقشه سقف کهنگی ۴۵د دارد؛ اگر فقط جای
+            # کم‌کادنس اجرا می‌شد، خودش آلارم کاذب تولید می‌کرد.
+            (cd claude-liam-signal/python && python3 -m hamid.state_bus --write) || true
+            # ممیزِ حلقهٔ بسته: هر سیگنالِ رفته باید رد پنل/یادگیری/علت داشته باشد
+            (cd claude-liam-signal/python && python3 -m hamid.loop_audit --write) || true
+            # کارنامهٔ انجین‌ها (دستور حمید ۳۱ اوت) — بعد از state_bus و
+            # loop_audit، چون از خروجی همان‌ها می‌خواند. سقف کهنگی‌اش ۴۵د
+            # است، پس باید در همین زنجیرهٔ */15 باشد نه جای کم‌کادنس‌تر.
+            (cd claude-liam-signal/python && python3 -m hamid.scorecard --write) || true
+            # اسکن‌بردار + دسته‌بند (قانون ۱۷، دستور حمید ۱۳ سپتامبر):
+            # هر دور یک صندوقِ ورودی و سطلِ هر انجین — تا ایجنت‌ها
+            # به‌جای بازکردنِ ده فایل، سطل خودشان را بخوانند و فقط روی
+            # «تغییر» ریزنینگ کنند. بعد از state_bus/scorecard چون از
+            # قرارداد و تازگیِ همان‌ها می‌خواند.
+            (cd claude-liam-signal/python && python3 -m hamid.intake --write) || true
+            (cd claude-liam-signal/python && python3 -m hamid.dispatch --write) || true
+            (cd claude-liam-signal/python && python3 -m hamid.review_queue --write) || true
+            # قانون ۱۹: سفارش دادهٔ ایجنت‌ها — بعد از دسته‌بند، از intake می‌خواند
+            (cd claude-liam-signal/python && python3 -m hamid.data_requests --write) || true
+            # محافظ رویداد کلان برای داشبورد (۱۶ سپتامبر). این‌جا هم هست چون
+            # زنجیره مطمئن‌تر از چرخه اجرا می‌شود و سقف کهنگی ۱۸۰ دقیقه است.
+            (cd claude-liam-signal/python && python3 -m hamid.macro_guard --write) || true
+            # پرستار انجین‌ها (دستور حمید ۲۵ سپتامبر): مالکِ کهنه را پیدا
+            # می‌کند و ورک‌فلوی همان مالک را بیدار می‌کند — درمانِ
+            # همیشگیِ قطعِ اتصال انجین به پنل، برای هر ۲۲ انجینِ دارای
+            # فایل زنده. پادزهر دولایه جلوی اسپم dispatch را می‌گیرد؛
+            # REVIVE=1 لازم است تا درمان واقعاً اجرا شود (همان قاعدهٔ مدیک).
+            (cd claude-liam-signal/python && REVIVE=1 python3 -m hamid.engine_nurse --write) || true
+            # زمان‌بندِ داخلی — پیش از انتشارِ همین دور، تا خروجی‌اش در همان کامیت برود
+            # (اندازه‌گیری ۱۶:۰۴ (۲۹ سپتامبر): scheduler.json ۸۲ دقیقه کهنه ماند چون بعد از کامیت نوشته می‌شد)
+            (cd claude-liam-signal/python && python3 -m hamid.scheduler --dispatch --write) || true
+            # رادار گینرهای بیت‌یونیکس (دستور حمید ۱ سپتامبر) — هر ۱۵
+            # دقیقه فهرست گینرها را می‌گیرد، پول‌تازه را از شورت‌اسکوئیز
+            # با جهتِ OI جدا می‌کند، و فقط ارزِ **تازه یا تغییرکرده** را
+            # به تلگرام می‌دهد (ضداسپم داخل خودِ ماژول + دروازهٔ آلارم).
+            (cd claude-liam-signal/python && python3 -m hamid.gainer_radar --write --telegram) || true
+            # گزارش ساعتی دامیننس — از این‌جا هم تلاش می‌شود.
+            #
+            # ورک‌فلوی خودش کرون ساعتی دارد («19 * * * *») و هر ۲۲ اجرا
+            # هم سبز بوده‌اند، ولی اندازه‌گیری ۱ سپتامبر نشان داد در ۶
+            # روز فقط **۲۲ بار** فیره کرده — یعنی ~۳.۷ بار در روز به‌جای
+            # ۲۴، با شکاف‌های تا ۸ ساعت و ۱۷ دقیقه. کرونِ Actions تضمینِ
+            # اجرا نیست و نوبت‌ها را می‌اندازد. پس خرابی در ماژول نبود؛
+            # در زمان‌بند بود.
+            #
+            # درمان: همین زنجیره که واقعاً هر چند دقیقه می‌دود، هر دور
+            # تلاش می‌کند. ضدتکرارِ ۵۰دقیقه‌ایِ داخل خودِ ماژول
+            # (`MIN_GAP_MIN`) کادنس را ساعتی نگه می‌دارد، پس «تلاش
+            # مکرر» به «پیام مکرر» تبدیل نمی‌شود. ورک‌فلوی مستقل هم سر
+            # جایش می‌ماند — هر کدام زودتر رسید، دیگری بی‌اثر می‌شود.
+            # `--send` لازم است: بدون آن ماژول فقط چاپ می‌کند، نه
+            # می‌فرستد و نه مهرِ وضعیت را تازه می‌کند — یعنی گامِ بی‌اثر.
+            (cd claude-liam-signal/python && python3 -m hamid.dominance_report --send --backup) || true
+            # شکاک (دستور حمید ۱ سپتامبر) — بازجویی زنجیره از E01 تا
+            # E25 با سؤال چرخشی. آخرِ همهٔ تولیدکننده‌ها اجرا می‌شود تا
+            # خروجیِ تازهٔ همان دور را ببیند، نه دورِ قبل را.
+            # ۱۴ سپتامبر: بی --telegram — شکاک روی پنل/skeptic.json می‌ماند (قانون ۱۱ بند ۳؛ ۴۵ پیام بی‌مخاطب در ۷ روز)
+            (cd claude-liam-signal/python && python3 -m hamid.skeptic --write) || true
+            # بازبینی کامل سیگنال‌های ارسالی (دستور حمید ۵ سپتامبر: «هر
+            # ۱۵ دقیقه سیگنال‌های ارسالی به تلگرام را کامل بررسی می‌کنی»).
+            # روی همین زنجیره می‌نشیند تا کادنسش از ۱۵ دقیقه بدتر نشود.
+            # شکاک محتوای سیگنال را می‌سنجد؛ این یکی **حسابِ** سیگنال را:
+            # آنچه گزارش می‌کنیم با آرشیو ارسال می‌خواند یا نه.
+            (cd claude-liam-signal/python && python3 -m hamid.signal_audit --write --alert) || true
+            # حساسیت تاریخی به BTC (دستور ۲۹ اوت) — روزی یک بار کافی است.
+            # سنِ فایل از **مهرِ خودش** خوانده می‌شود نه از mtime دیسک:
+            # هر اجرا چک‌اوت تازه است، پس mtime همیشه «همین الان» است و
+            # شرطِ `find -mmin +1200` هرگز درست نمی‌شد. اثرِ اندازه‌گیری‌شدهٔ
+            # ۳۰ اوت: فایل ۲۴۸۵ دقیقه کهنه ماند و گذرگاه وضعیت DEGRADED
+            # می‌داد. همان کلاسِ عیبِ live-scan — معیارِ غلط برای «کهنه».
+            AGE_BS=$(python3 -c "import json,time;print(int((time.time()*1000-json.load(open('signals/btc-sensitivity.json'))['generated'])/60000))" 2>/dev/null || echo 999999)
+            echo "btc-sensitivity age: ${AGE_BS}min"
+            if [ "$AGE_BS" -gt 1200 ]; then
+              (cd claude-liam-signal/python && python3 -m hamid.btc_sensitivity --write) || true
+            fi
+            # اسکن استراتژی‌ها سوار همین زنجیره — شکایت حمید (۱۲ اوت):
+            # «همه سیگنال‌ها با هم می‌آیند». علت، اسکنِ دسته‌ایِ ~۲۰دقیقه‌ای
+            # بود. حالا هر دور یک بار اسکن می‌شود و سیگنال حداکثر یک کندل
+            # ۵د بعد از تأیید می‌رود.
+            (cd claude-liam-signal/python && timeout 240 python3 scan.py --symbols 60 --rotate 200 --core 30 --telegram) || true
+
+            # انتشار همین دور با ناشر یگانه. اگر منتشر نشد، کامیتِ محلیِ ناشر
+            # باز می‌شود تا دورِ بعد همان فایل‌ها را دوباره ببرد (هیچ خروجی‌ای
+            # دور ریخته نمی‌شود — قرارداد ۲ ناشر).
+            H0=$(git rev-parse HEAD)
+            if ! scripts/publish.sh -m "زنجیرهٔ سیگنال $(date -u '+%Y-%m-%d %H:%M UTC')" signals brain; then
+              [ "$(git rev-parse HEAD)" != "$H0" ] && git reset -q "$H0" || true
+              echo "انتشار این دور نشد — دور بعد همان خروجی را دوباره می‌برد"
+            fi
 
             # انتشار روی پنل (gh-pages)
             if timeout 120 git fetch origin gh-pages -q; then
