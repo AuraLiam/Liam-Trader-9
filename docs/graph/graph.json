@@ -1046,6 +1046,13 @@
 "lines": 188
 },
 {
+"id": "mod:hamid.latest_setups",
+"kind": "module",
+"label": "hamid.latest_setups",
+"file": "claude-liam-signal/python/hamid/latest_setups.py",
+"lines": 58
+},
+{
 "id": "mod:hamid.learning_proof",
 "kind": "module",
 "label": "hamid.learning_proof",
@@ -1400,7 +1407,7 @@
 "kind": "module",
 "label": "hamid.risk_desk",
 "file": "claude-liam-signal/python/hamid/risk_desk.py",
-"lines": 303
+"lines": 300
 },
 {
 "id": "mod:hamid.router",
@@ -1428,7 +1435,7 @@
 "kind": "module",
 "label": "hamid.scalp1m",
 "file": "claude-liam-signal/python/hamid/scalp1m.py",
-"lines": 432
+"lines": 422
 },
 {
 "id": "mod:hamid.scalp_dash_backtest",
@@ -1673,7 +1680,7 @@
 "kind": "module",
 "label": "hamid.structure_room",
 "file": "claude-liam-signal/python/hamid/structure_room.py",
-"lines": 328
+"lines": 319
 },
 {
 "id": "mod:hamid.taxonomy",
@@ -3812,6 +3819,13 @@
 "label": "hamid.test_intake",
 "file": "claude-liam-signal/python/hamid/test_intake.py",
 "lines": 100
+},
+{
+"id": "mod:hamid.test_latest_setups",
+"kind": "test",
+"label": "hamid.test_latest_setups",
+"file": "claude-liam-signal/python/hamid/test_latest_setups.py",
+"lines": 45
 },
 {
 "id": "mod:hamid.test_learning",
@@ -7675,6 +7689,11 @@
 },
 {
 "from": "mod:hamid.risk_desk",
+"rel": "imports",
+"to": "mod:hamid.latest_setups"
+},
+{
+"from": "mod:hamid.risk_desk",
 "rel": "produces",
 "to": "state:signals/risk-desk.json"
 },
@@ -7687,6 +7706,11 @@
 "from": "mod:hamid.scalp",
 "rel": "produces",
 "to": "state:signals/scalp.json"
+},
+{
+"from": "mod:hamid.scalp1m",
+"rel": "imports",
+"to": "mod:hamid.latest_setups"
 },
 {
 "from": "mod:hamid.scalp1m",
@@ -7976,6 +8000,11 @@
 {
 "from": "mod:hamid.structure_room",
 "rel": "imports",
+"to": "mod:hamid.latest_setups"
+},
+{
+"from": "mod:hamid.structure_room",
+"rel": "imports",
 "to": "mod:hamid.orderblocks"
 },
 {
@@ -8132,6 +8161,11 @@
 "from": "mod:hamid.test_improve",
 "rel": "tests",
 "to": "mod:hamid.improve"
+},
+{
+"from": "mod:hamid.test_latest_setups",
+"rel": "tests",
+"to": "mod:hamid.latest_setups"
 },
 {
 "from": "mod:hamid.test_liam9d",
@@ -9646,6 +9680,11 @@
 {
 "from": "wf:hamid-cycle.yml",
 "rel": "gates",
+"to": "mod:hamid.test_latest_setups"
+},
+{
+"from": "wf:hamid-cycle.yml",
+"rel": "gates",
 "to": "mod:hamid.test_learning"
 },
 {
@@ -10552,6 +10591,11 @@
 "from": "wf:pump-radar.yml",
 "rel": "gates",
 "to": "mod:hamid.test_intake"
+},
+{
+"from": "wf:pump-radar.yml",
+"rel": "gates",
+"to": "mod:hamid.test_latest_setups"
 },
 {
 "from": "wf:pump-radar.yml",

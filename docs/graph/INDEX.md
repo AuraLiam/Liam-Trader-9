@@ -7,14 +7,14 @@
 | ایجنت | 36 |
 | کارت پنل | 5 |
 | انجین | 28 |
-| ماژول | 222 |
+| ماژول | 223 |
 | قانون | 23 |
 | مهارت | 35 |
 | فایل وضعیت | 130 |
-| آزمون | 171 |
+| آزمون | 172 |
 | ورک‌فلو | 57 |
 
-یال‌ها: 1272
+یال‌ها: 1278
 
 ## انجین‌ها
 
@@ -174,7 +174,7 @@
   - → اجرا می‌کند: hamid.backtest
 - **Hamid cycle** · کرون `17,47 * * * *`
   - → اجرا می‌کند: hamid.agent_scores، hamid.council، hamid.cycle، hamid.dedupe_closed، hamid.direction_lessons، hamid.edge_export، hamid.engine_nurse، hamid.escalation، hamid.experience_effect، hamid.gate_verdict، hamid.graphify، hamid.guardian_delta، hamid.guardian_exam، hamid.handoff، hamid.history_room، hamid.holding_intake، hamid.learning_proof، hamid.live_results، hamid.macro_guard، hamid.market_stance، hamid.msg_budget، hamid.newsboard، hamid.ob_intel، hamid.phoenix، hamid.polymarket، hamid.position_watch، hamid.publish_experience، hamid.publish_top_liquidity، hamid.risk_desk، hamid.router، hamid.selfcheck، hamid.sentinel، hamid.skill_ledger، hamid.state_bus، hamid.structure_room، hamid.tg_audit، hamid.watchdog، hamid.work_report
-  - → دروازه: hamid.geom_lab، hamid.graphify، hamid.ob_lab، hamid.short_backtest، hamid.test_agent_scores، hamid.test_alert_gate، hamid.test_always_learning، hamid.test_announce، hamid.test_big_money، hamid.test_big_money_backtest، hamid.test_brand، hamid.test_candle_source، hamid.test_classify، hamid.test_council، hamid.test_daily_24، hamid.test_dash_backtest، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_data_requests، hamid.test_deep، hamid.test_depth_bos، hamid.test_depth_collector، hamid.test_dominance_desk، hamid.test_edge_export، hamid.test_escalation، hamid.test_exec_contract، hamid.test_exec_feed، hamid.test_experience_effect، hamid.test_fill_books، hamid.test_fixit، hamid.test_fomo، hamid.test_gate_verdict، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_history_room، hamid.test_ibs5_mute، hamid.test_learning، hamid.test_ledger_partition، hamid.test_levels_db، hamid.test_library_verify … (+63)
+  - → دروازه: hamid.geom_lab، hamid.graphify، hamid.ob_lab، hamid.short_backtest، hamid.test_agent_scores، hamid.test_alert_gate، hamid.test_always_learning، hamid.test_announce، hamid.test_big_money، hamid.test_big_money_backtest، hamid.test_brand، hamid.test_candle_source، hamid.test_classify، hamid.test_council، hamid.test_daily_24، hamid.test_dash_backtest، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_data_requests، hamid.test_deep، hamid.test_depth_bos، hamid.test_depth_collector، hamid.test_dominance_desk، hamid.test_edge_export، hamid.test_escalation، hamid.test_exec_contract، hamid.test_exec_feed، hamid.test_experience_effect، hamid.test_fill_books، hamid.test_fixit، hamid.test_fomo، hamid.test_gate_verdict، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_history_room، hamid.test_ibs5_mute، hamid.test_latest_setups، hamid.test_learning، hamid.test_ledger_partition، hamid.test_levels_db … (+64)
   - → می‌سازد: signals/gate-verdict.json، signals/guardian-delta.json، signals/holding.json، signals/live-results.json، signals/macro-guard.json، signals/market-stance.json، signals/msg-budget.json، signals/nurse.json، signals/risk-desk.json، signals/structure-room.json
 - **Source health** · کرون `23 5,17 * * *`
   - → اجرا می‌کند: hamid.health
@@ -214,7 +214,7 @@
   - → اجرا می‌کند: hamid.pump_probe
 - **Signal chain** · کرون `*/15 * * * *`
   - → اجرا می‌کند: hamid.btc_patterns، hamid.btc_sensitivity، hamid.data_requests، hamid.dispatch، hamid.dominance، hamid.dominance_desk، hamid.dominance_report، hamid.engine_nurse، hamid.gainer_radar، hamid.intake، hamid.loop_audit، hamid.macro_guard، hamid.merge_sent، hamid.pump_radar، hamid.receipts_guard، hamid.review_queue، hamid.scheduler، hamid.scorecard، hamid.signal_audit، hamid.skeptic، hamid.state_bus، scan
-  - → دروازه: hamid.geom_lab، hamid.ob_lab، hamid.review_queue، hamid.short_backtest، hamid.test_announce، hamid.test_bandit، hamid.test_brand، hamid.test_candle_source، hamid.test_council، hamid.test_curriculum، hamid.test_daily_24، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_deep، hamid.test_direction_autopsy، hamid.test_dom_decomp، hamid.test_dom_forecast، hamid.test_dom_tf، hamid.test_dominance، hamid.test_dominance_desk، hamid.test_engine_dossier، hamid.test_engine_map، hamid.test_exec_feed، hamid.test_fee_single_source، hamid.test_fixit، hamid.test_fomo، hamid.test_gainer_radar، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_ibs5_mute، hamid.test_intake، hamid.test_learning، hamid.test_ledger_partition، hamid.test_lines_wf، hamid.test_loop_audit، hamid.test_mcp_server، hamid.test_msg_budget، hamid.test_news_poll، hamid.test_newsboard، hamid.test_ob_intel … (+38)
+  - → دروازه: hamid.geom_lab، hamid.ob_lab، hamid.review_queue، hamid.short_backtest، hamid.test_announce، hamid.test_bandit، hamid.test_brand، hamid.test_candle_source، hamid.test_council، hamid.test_curriculum، hamid.test_daily_24، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_deep، hamid.test_direction_autopsy، hamid.test_dom_decomp، hamid.test_dom_forecast، hamid.test_dom_tf، hamid.test_dominance، hamid.test_dominance_desk، hamid.test_engine_dossier، hamid.test_engine_map، hamid.test_exec_feed، hamid.test_fee_single_source، hamid.test_fixit، hamid.test_fomo، hamid.test_gainer_radar، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_ibs5_mute، hamid.test_intake، hamid.test_latest_setups، hamid.test_learning، hamid.test_ledger_partition، hamid.test_lines_wf، hamid.test_loop_audit، hamid.test_mcp_server، hamid.test_msg_budget، hamid.test_news_poll، hamid.test_newsboard … (+39)
   - → می‌سازد: signals/data-requests.json، signals/gainer-radar.json، signals/intake.json، signals/macro-guard.json، signals/nurse.json، signals/scan-coverage.json، signals/scheduler.json، signals/scorecard.json، signals/skeptic.json
 - **Pump review (5x/day)** · کرون `13 2,7,12,17,21 * * *`
   - → اجرا می‌کند: hamid.pump_desk، hamid.pump_radar
