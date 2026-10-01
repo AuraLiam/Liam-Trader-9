@@ -264,18 +264,9 @@ def _rows_to_dicts(rows):
 
 
 def _published_symbols(limit=12):
-    """نمادهای ستاپ‌های منتشرشوندهٔ همین لحظه (SIGNAL/ARMED) از signals/latest.json."""
-    try:
-        d = json.loads((ROOT / "signals" / "latest.json").read_text(encoding="utf-8"))
-    except Exception:                                 # noqa: BLE001
-        return []
-    seen, out = set(), []
-    for s in sorted(d.get("symbols") or [], key=lambda x: {"SIGNAL": 0, "ARMED": 1}.get(x.get("stage"), 9)):
-        if s.get("stage") in ("SIGNAL", "ARMED") and s.get("sym") and s["sym"] not in seen:
-            seen.add(s["sym"]); out.append(s["sym"])
-        if len(out) >= limit:
-            break
-    return out
+    """نمادهای ستاپ‌های منتشرشوندهٔ همین لحظه (SIGNAL/ARMED) — خوانندهٔ واحد."""
+    from hamid import latest_setups as LS
+    return LS.symbols(stages=("SIGNAL", "ARMED"), limit=limit)
 
 
 def write_room(symbols=None, kget=None, limit=12):
