@@ -1,14 +1,14 @@
 {
- "generated": 1790858935343,
+ "generated": 1790860529654,
  "window_days": 7,
- "since": 1790254135343,
+ "since": 1790255729654,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-24": {
-    "signal": 8,
     "dom_report": 11,
     "pump_report": 4,
+    "signal": 7,
     "work_report": 2
    },
    "2026-09-25": {
@@ -60,7 +60,7 @@
    "2026-10-01": {
     "pump_report": 3,
     "outcome": 13,
-    "dom_report": 14,
+    "dom_report": 15,
     "alert": 4,
     "signal": 11,
     "trade_mgmt": 1,
@@ -68,9 +68,9 @@
    }
   },
   "total": {
-   "signal": 161,
-   "dom_report": 172,
+   "dom_report": 173,
    "pump_report": 36,
+   "signal": 160,
    "work_report": 104,
    "outcome": 222,
    "trade_mgmt": 6,
@@ -101,11 +101,11 @@
   }
  },
  "signals": {
-  "n": 161,
+  "n": 160,
   "per_day": {
    "2026-09-24": {
-    "n": 8,
-    "first": "13:14",
+    "n": 7,
+    "first": "14:22",
     "last": "23:10"
    },
    "2026-09-25": {
@@ -145,16 +145,16 @@
    }
   },
   "strategy": {
-   "smc": 93,
-   "ibs": 68
+   "ibs": 68,
+   "smc": 92
   },
   "tf": {
-   "5m": 152,
+   "5m": 151,
    "15m": 9
   },
   "dir": {
-   "LONG": 100,
-   "SHORT": 61
+   "SHORT": 61,
+   "LONG": 99
   },
   "hour_utc": {
    "0": 8,
@@ -170,7 +170,7 @@
    "10": 3,
    "11": 8,
    "12": 10,
-   "13": 7,
+   "13": 6,
    "14": 6,
    "15": 4,
    "16": 4,
@@ -184,37 +184,25 @@
   }
  },
  "outcomes": {
-  "sent": 161,
-  "matched": 159,
+  "sent": 160,
+  "matched": 158,
   "unmatched": 2,
   "match_pct": 98.8,
   "overall": {
-   "n": 159,
+   "n": 158,
    "mean_net": -0.054,
    "sum_net": -8.5,
-   "win_pct": 68.6,
+   "win_pct": 69.0,
    "outcomes": {
-    "expired": 23,
     "stop": 23,
     "trail": 105,
+    "expired": 22,
     "target": 4,
     "timeout": 4
    }
   },
   "by": {
    "strategy": {
-    "smc": {
-     "n": 92,
-     "mean_net": 0.129,
-     "sum_net": 11.9,
-     "win_pct": 80.4,
-     "outcomes": {
-      "expired": 12,
-      "stop": 6,
-      "trail": 73,
-      "target": 1
-     }
-    },
     "ibs": {
      "n": 67,
      "mean_net": -0.304,
@@ -227,18 +215,30 @@
       "target": 3,
       "timeout": 4
      }
+    },
+    "smc": {
+     "n": 91,
+     "mean_net": 0.131,
+     "sum_net": 11.9,
+     "win_pct": 81.3,
+     "outcomes": {
+      "stop": 6,
+      "trail": 73,
+      "expired": 11,
+      "target": 1
+     }
     }
    },
    "tf": {
     "5m": {
-     "n": 150,
+     "n": 149,
      "mean_net": -0.057,
      "sum_net": -8.5,
-     "win_pct": 67.3,
+     "win_pct": 67.8,
      "outcomes": {
-      "expired": 23,
       "stop": 22,
       "trail": 97,
+      "expired": 22,
       "target": 4,
       "timeout": 4
      }
@@ -255,19 +255,6 @@
     }
    },
    "dir": {
-    "LONG": {
-     "n": 99,
-     "mean_net": 0.023,
-     "sum_net": 2.3,
-     "win_pct": 73.7,
-     "outcomes": {
-      "expired": 12,
-      "stop": 12,
-      "trail": 69,
-      "target": 4,
-      "timeout": 2
-     }
-    },
     "SHORT": {
      "n": 60,
      "mean_net": -0.18,
@@ -277,6 +264,19 @@
       "stop": 11,
       "trail": 36,
       "expired": 11,
+      "timeout": 2
+     }
+    },
+    "LONG": {
+     "n": 98,
+     "mean_net": 0.024,
+     "sum_net": 2.3,
+     "win_pct": 74.5,
+     "outcomes": {
+      "stop": 12,
+      "trail": 69,
+      "expired": 11,
+      "target": 4,
       "timeout": 2
      }
     }
