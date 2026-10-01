@@ -7,14 +7,14 @@
 | ایجنت | 36 |
 | کارت پنل | 5 |
 | انجین | 28 |
-| ماژول | 221 |
+| ماژول | 222 |
 | قانون | 23 |
 | مهارت | 35 |
-| فایل وضعیت | 127 |
-| آزمون | 169 |
+| فایل وضعیت | 130 |
+| آزمون | 171 |
 | ورک‌فلو | 57 |
 
-یال‌ها: 1248
+یال‌ها: 1272
 
 ## انجین‌ها
 
@@ -43,6 +43,7 @@
   - → مالک: signals/btc-patterns.json
 - **E07**
   - ← برای انجین: liam-e07-structure-specialist، liam-e07-structure
+  - → مالک: signals/structure-room.json
 - **E08**
   - ← برای انجین: liam-e08-smc-order-block-fvg-specialist، liam-e08-smc-order-block-fvg
   - → مالک: signals/ob-lab.json، signals/ob-radar.json
@@ -53,7 +54,7 @@
   - → مالک: signals/top-liquidity.json
 - **E11**
   - ← برای انجین: liam-e11-strategy-router-specialist، liam-e11-strategy-router
-  - → مالک: signals/scalp-exec.json، signals/scalp.json، signals/shock.json، signals/strategy-params.json
+  - → مالک: signals/scalp-exec.json، signals/scalp.json، signals/scalp1m.json، signals/shock.json، signals/strategy-params.json
   - → می‌خواند: signals/regime-verdict.json، signals/router.json
 - **E12**
   - ← برای انجین: liam-e12-lead-lag-pump-chain-specialist، liam-e12-lead-lag-pump-chain، liam-e12-pump-review
@@ -69,10 +70,11 @@
   - → مالک: signals/fomo.json
 - **E16**
   - ← برای انجین: liam-e16-risk-portfolio-specialist، liam-e16-risk-portfolio
-  - → مالک: signals/viability-gate.json
+  - → مالک: signals/risk-desk.json، signals/viability-gate.json
 - **E17**
   - ← برای انجین: liam-e17-signal-committee-specialist، liam-e17-signal-committee
   - → مالک: signals/gate-verdict.json، signals/hamid-latest.json، signals/latest.json
+  - → می‌خواند: signals/risk-desk.json، signals/structure-room.json
 - **E18**
   - ← برای انجین: liam-e18-paper-replay-backtest-specialist، liam-e18-paper-replay-backtest
   - → مالک: signals/big-money-backtest.json، signals/dash-backtest.json، signals/geom-lab.json، signals/geometry-verdict.json، signals/guardian-lab.json، signals/h1-backtest.json، signals/regime-verdict.json، signals/scalp-dash-backtest.json، signals/scalp-sweep.json، signals/scalp-verdict.json، signals/scenario-backtest.json، signals/scenario-sweep.json، signals/short-backtest-deep.json، signals/short-backtest.json، signals/specialist-forward.json، signals/specialist-lab.json، signals/tf-geo-arms.json، signals/trail-arms.json، signals/trail-lab.json
@@ -80,6 +82,7 @@
 - **E19**
   - ← برای انجین: liam-e19-trade-management-specialist، liam-e19-trade-management
   - → مالک: signals/position-watch.json، signals/trail-alert.json
+  - → می‌خواند: signals/scalp1m.json
 - **E20**
   - ← برای انجین: liam-e20-post-trade-review-specialist، liam-e20-post-trade-review
   - → مالک: signals/daily-report.json، signals/direction-lessons.json، signals/loss-analysis.json، signals/work-report.json
@@ -170,9 +173,9 @@
 - **Hamid method backtest** · کرون `41 3 * * *`
   - → اجرا می‌کند: hamid.backtest
 - **Hamid cycle** · کرون `17,47 * * * *`
-  - → اجرا می‌کند: hamid.agent_scores، hamid.council، hamid.cycle، hamid.dedupe_closed، hamid.direction_lessons، hamid.edge_export، hamid.engine_nurse، hamid.escalation، hamid.experience_effect، hamid.gate_verdict، hamid.graphify، hamid.guardian_delta، hamid.guardian_exam، hamid.handoff، hamid.history_room، hamid.holding_intake، hamid.learning_proof، hamid.live_results، hamid.macro_guard، hamid.market_stance، hamid.msg_budget، hamid.newsboard، hamid.ob_intel، hamid.phoenix، hamid.polymarket، hamid.position_watch، hamid.publish_experience، hamid.publish_top_liquidity، hamid.router، hamid.selfcheck، hamid.sentinel، hamid.skill_ledger، hamid.state_bus، hamid.tg_audit، hamid.watchdog، hamid.work_report
-  - → دروازه: hamid.geom_lab، hamid.graphify، hamid.ob_lab، hamid.short_backtest، hamid.test_agent_scores، hamid.test_alert_gate، hamid.test_always_learning، hamid.test_announce، hamid.test_big_money، hamid.test_big_money_backtest، hamid.test_brand، hamid.test_candle_source، hamid.test_classify، hamid.test_council، hamid.test_daily_24، hamid.test_dash_backtest، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_data_requests، hamid.test_deep، hamid.test_depth_bos، hamid.test_depth_collector، hamid.test_dominance_desk، hamid.test_edge_export، hamid.test_escalation، hamid.test_exec_contract، hamid.test_exec_feed، hamid.test_experience_effect، hamid.test_fill_books، hamid.test_fixit، hamid.test_fomo، hamid.test_gate_verdict، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_history_room، hamid.test_learning، hamid.test_ledger_partition، hamid.test_levels_db، hamid.test_library_verify، hamid.test_lines_wf … (+61)
-  - → می‌سازد: signals/gate-verdict.json، signals/guardian-delta.json، signals/holding.json، signals/live-results.json، signals/macro-guard.json، signals/market-stance.json، signals/msg-budget.json، signals/nurse.json
+  - → اجرا می‌کند: hamid.agent_scores، hamid.council، hamid.cycle، hamid.dedupe_closed، hamid.direction_lessons، hamid.edge_export، hamid.engine_nurse، hamid.escalation، hamid.experience_effect، hamid.gate_verdict، hamid.graphify، hamid.guardian_delta، hamid.guardian_exam، hamid.handoff، hamid.history_room، hamid.holding_intake، hamid.learning_proof، hamid.live_results، hamid.macro_guard، hamid.market_stance، hamid.msg_budget، hamid.newsboard، hamid.ob_intel، hamid.phoenix، hamid.polymarket، hamid.position_watch، hamid.publish_experience، hamid.publish_top_liquidity، hamid.risk_desk، hamid.router، hamid.selfcheck، hamid.sentinel، hamid.skill_ledger، hamid.state_bus، hamid.structure_room، hamid.tg_audit، hamid.watchdog، hamid.work_report
+  - → دروازه: hamid.geom_lab، hamid.graphify، hamid.ob_lab، hamid.short_backtest، hamid.test_agent_scores، hamid.test_alert_gate، hamid.test_always_learning، hamid.test_announce، hamid.test_big_money، hamid.test_big_money_backtest، hamid.test_brand، hamid.test_candle_source، hamid.test_classify، hamid.test_council، hamid.test_daily_24، hamid.test_dash_backtest، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_data_requests، hamid.test_deep، hamid.test_depth_bos، hamid.test_depth_collector، hamid.test_dominance_desk، hamid.test_edge_export، hamid.test_escalation، hamid.test_exec_contract، hamid.test_exec_feed، hamid.test_experience_effect، hamid.test_fill_books، hamid.test_fixit، hamid.test_fomo، hamid.test_gate_verdict، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_history_room، hamid.test_ibs5_mute، hamid.test_learning، hamid.test_ledger_partition، hamid.test_levels_db، hamid.test_library_verify … (+63)
+  - → می‌سازد: signals/gate-verdict.json، signals/guardian-delta.json، signals/holding.json، signals/live-results.json، signals/macro-guard.json، signals/market-stance.json، signals/msg-budget.json، signals/nurse.json، signals/risk-desk.json، signals/structure-room.json
 - **Source health** · کرون `23 5,17 * * *`
   - → اجرا می‌کند: hamid.health
 - **Heartbeat** · کرون `9 * * * *`
@@ -211,7 +214,7 @@
   - → اجرا می‌کند: hamid.pump_probe
 - **Signal chain** · کرون `*/15 * * * *`
   - → اجرا می‌کند: hamid.btc_patterns، hamid.btc_sensitivity، hamid.data_requests، hamid.dispatch، hamid.dominance، hamid.dominance_desk، hamid.dominance_report، hamid.engine_nurse، hamid.gainer_radar، hamid.intake، hamid.loop_audit، hamid.macro_guard، hamid.merge_sent، hamid.pump_radar، hamid.receipts_guard، hamid.review_queue، hamid.scheduler، hamid.scorecard، hamid.signal_audit، hamid.skeptic، hamid.state_bus، scan
-  - → دروازه: hamid.geom_lab، hamid.ob_lab، hamid.review_queue، hamid.short_backtest، hamid.test_announce، hamid.test_bandit، hamid.test_brand، hamid.test_candle_source، hamid.test_council، hamid.test_curriculum، hamid.test_daily_24، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_deep، hamid.test_direction_autopsy، hamid.test_dom_decomp، hamid.test_dom_forecast، hamid.test_dom_tf، hamid.test_dominance، hamid.test_dominance_desk، hamid.test_engine_dossier، hamid.test_engine_map، hamid.test_exec_feed، hamid.test_fee_single_source، hamid.test_fixit، hamid.test_fomo، hamid.test_gainer_radar، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_intake، hamid.test_learning، hamid.test_ledger_partition، hamid.test_lines_wf، hamid.test_loop_audit، hamid.test_mcp_server، hamid.test_msg_budget، hamid.test_news_poll، hamid.test_newsboard، hamid.test_ob_intel، hamid.test_orderblocks … (+36)
+  - → دروازه: hamid.geom_lab، hamid.ob_lab، hamid.review_queue، hamid.short_backtest، hamid.test_announce، hamid.test_bandit، hamid.test_brand، hamid.test_candle_source، hamid.test_council، hamid.test_curriculum، hamid.test_daily_24، hamid.test_dash_silence، hamid.test_dashboard_build، hamid.test_deep، hamid.test_direction_autopsy، hamid.test_dom_decomp، hamid.test_dom_forecast، hamid.test_dom_tf، hamid.test_dominance، hamid.test_dominance_desk، hamid.test_engine_dossier، hamid.test_engine_map، hamid.test_exec_feed، hamid.test_fee_single_source، hamid.test_fixit، hamid.test_fomo، hamid.test_gainer_radar، hamid.test_geo15، hamid.test_guardian_lab، hamid.test_ibs5_mute، hamid.test_intake، hamid.test_learning، hamid.test_ledger_partition، hamid.test_lines_wf، hamid.test_loop_audit، hamid.test_mcp_server، hamid.test_msg_budget، hamid.test_news_poll، hamid.test_newsboard، hamid.test_ob_intel … (+38)
   - → می‌سازد: signals/data-requests.json، signals/gainer-radar.json، signals/intake.json، signals/macro-guard.json، signals/nurse.json، signals/scan-coverage.json، signals/scheduler.json، signals/scorecard.json، signals/skeptic.json
 - **Pump review (5x/day)** · کرون `13 2,7,12,17,21 * * *`
   - → اجرا می‌کند: hamid.pump_desk، hamid.pump_radar
@@ -226,9 +229,10 @@
   - → اجرا می‌کند: hamid.scalp_sweep
   - → دروازه: hamid.test_scalp_report، hamid.test_scalp_sweep
 - **Scalp desk (1m)** · کرون `3,18,33,48 * * * *`
-  - → اجرا می‌کند: hamid.scalp، hamid.scalp_exec، hamid.scalp_verdict
+  - → اجرا می‌کند: hamid.scalp، hamid.scalp1m، hamid.scalp_exec، hamid.scalp_verdict
   - → دروازه: hamid.test_scalp، hamid.test_scalp1m، hamid.test_scalp_verdict
   - → منتشر می‌کند: brain/paper
+  - → می‌سازد: signals/scalp1m.json
 - **Scenario backtest**
   - → اجرا می‌کند: hamid.scenario_backtest
   - → دروازه: hamid.test_microstructure، hamid.test_scenario_backtest
@@ -595,6 +599,10 @@
   - ← می‌خواند: پنل (کل)
   - ← می‌سازد: hamid.rewards
   - ← نمایش: نزدیک‌ترین‌ها به سیگنال
+- **signals/risk-desk.json** · سقف 90د
+  - ← مالک: E16
+  - ← می‌خواند: پنل (کل)، E17
+  - ← می‌سازد: hamid.risk_desk، Hamid cycle
 - **signals/router.json** · سقف 2880د
   - ← مالک: E27
   - ← می‌خواند: پنل (کل)، E01، E11
@@ -619,6 +627,10 @@
   - ← می‌خواند: پنل (کل)
   - ← می‌سازد: hamid.scalp
   - ← نمایش: عملکرد به تفکیک بازهٔ امتیاز، میز اسکلپ ۱ دقیقه
+- **signals/scalp1m.json** · سقف 45د
+  - ← مالک: E11
+  - ← می‌خواند: پنل (کل)، E19
+  - ← می‌سازد: hamid.scalp1m، Scalp desk (1m)
 - **signals/scan-coverage.json** · سقف 45د
   - ← مالک: E01
   - ← می‌خواند: پنل (کل)
@@ -679,6 +691,10 @@
 - **signals/strategy-params.json**
   - ← مالک: E11
   - ← می‌سازد: liam9_strategy
+- **signals/structure-room.json** · سقف 90د
+  - ← مالک: E07
+  - ← می‌خواند: پنل (کل)، E17
+  - ← می‌سازد: hamid.structure_room، Hamid cycle
 - **signals/system-state.json** · سقف 45د
   - ← مالک: E00
   - ← می‌خواند: پنل (کل)
@@ -854,4 +870,4 @@
 - **واچ‌لیست**
   - → نمایش: signals/latest.json
 - **پنل (کل)**
-  - → می‌خواند: signals/btc-patterns.json، signals/bubbles.json، signals/classify.json، signals/conformance.json، signals/council.json، signals/curriculum.json، signals/dash-backtest.json، signals/depth-health.json، signals/direction-lessons.json، signals/dominance-desk.json، signals/dominance.json، signals/escalation.json، signals/experience-effect.json، signals/feed-health.json، signals/fomo.json، signals/funnel.json، signals/gainer-radar.json، signals/guardian-exam.json، signals/guardian-lab.json، signals/h1-backtest.json، signals/hamid-latest.json، signals/history-room.json، signals/improve.json، signals/latest.json، signals/learning-proof.json، signals/liam9d.json، signals/live-heartbeat.json، signals/live-link.json، signals/loop-audit.json، signals/loss-analysis.json، signals/market-stance.json، signals/msg-budget.json، signals/news-poll.json، signals/news.json، signals/newsboard.json، signals/nurse.json، signals/ob-radar.json، signals/overseer.json، signals/phoenix.json، signals/polymarket.json … (+24)
+  - → می‌خواند: signals/btc-patterns.json، signals/bubbles.json، signals/classify.json، signals/conformance.json، signals/council.json، signals/curriculum.json، signals/dash-backtest.json، signals/depth-health.json، signals/direction-lessons.json، signals/dominance-desk.json، signals/dominance.json، signals/escalation.json، signals/experience-effect.json، signals/feed-health.json، signals/fomo.json، signals/funnel.json، signals/gainer-radar.json، signals/guardian-exam.json، signals/guardian-lab.json، signals/h1-backtest.json، signals/hamid-latest.json، signals/history-room.json، signals/improve.json، signals/latest.json، signals/learning-proof.json، signals/liam9d.json، signals/live-heartbeat.json، signals/live-link.json، signals/loop-audit.json، signals/loss-analysis.json، signals/market-stance.json، signals/msg-budget.json، signals/news-poll.json، signals/news.json، signals/newsboard.json، signals/nurse.json، signals/ob-radar.json، signals/overseer.json، signals/phoenix.json، signals/polymarket.json … (+27)
