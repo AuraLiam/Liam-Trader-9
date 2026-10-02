@@ -1,23 +1,109 @@
 {
- "generated": 1790945166923,
- "buckets_at": 1790945166884,
- "n_agents": 9,
- "n_todo": 8,
+ "generated": 1790945414486,
+ "buckets_at": 1790945414447,
+ "n_agents": 11,
+ "n_todo": 10,
  "todo": [
+  "E18",
+  "E22",
+  "research",
   "data-quality",
   "execution",
   "lead-lag",
   "liquidity",
   "macro-dominance",
   "market-structure",
-  "order-block",
-  "research"
+  "order-block"
  ],
  "idle": [
   "post-trade-learning"
  ],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-10-02 11:35 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-02 11:35 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-10-02 11:35 UTC"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-02 11:35 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-10-02 11:35 UTC"
+  },
+  {
+   "agent": "research",
+   "engines": [
+    "E22",
+    "E13"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:scorecard.json"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-02 11:35 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json",
+    "signals/scorecard.json"
+   ],
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -65,16 +151,18 @@
       "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance.json",
-      "state:latest.json"
+      "state:latest.json",
+      "state:trail-alert.json"
      ]
     }
    ],
    "read_next": [
     "signals/dominance-desk.json",
     "signals/dominance.json",
-    "signals/latest.json"
+    "signals/latest.json",
+    "signals/trail-alert.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 5 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json باز کن: signals/latest.json | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، sta"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 5 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json باز کن: signals/latest.json | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغ"
   },
   {
    "agent": "lead-lag",
@@ -89,6 +177,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -96,7 +185,7 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
@@ -195,28 +284,6 @@
    "digest": "E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:funding باز کن: هیچ — چیزی عوض نشده"
   },
   {
-   "agent": "research",
-   "engines": [
-    "E22",
-    "E13"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:scorecard.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/scorecard.json"
-   ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
    "agent": "post-trade-learning",
    "engines": [
     "E20",
@@ -232,7 +299,7 @@
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1790924865026,
+  "generated": 1790945094656,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "REJECT",
