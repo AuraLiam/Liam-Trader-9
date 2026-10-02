@@ -1,5 +1,5 @@
 {
- "generated": 1790946983606,
+ "generated": 1790947206080,
  "usdt_dominance": 6.213,
  "btc_dominance": 58.83,
  "chg_1h": {
@@ -11,7 +11,7 @@
   "btc": 0.1
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: Unemployment Rate (-0.8س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 2570/5068 (51٪)؛ بنچمارکِ همیشه‌تخت 52٪",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Unemployment Rate (-0.8س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: TRANSITION (USDT.D ساختار ۱س down · ۴س up · BTC.D ۱س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 2570/5068 (51٪)؛ بنچمارکِ همیشه‌تخت 52٪؛ بسترِ استیبل: LONG_BTC_ONLY",
  "macro": [
   {
    "title": "Unemployment Rate",
@@ -19,8 +19,8 @@
    "country": "USD"
   }
  ],
- "calendar_ok": "CACHED",
- "calendar_why": "حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403",
+ "calendar_ok": true,
+ "calendar_why": null,
  "structure": {
   "bars_1h": 346,
   "bars_4h": 89,
@@ -315,7 +315,7 @@
   "5m": {
    "usdt": {
     "tf": "5m",
-    "bars": 2945,
+    "bars": 2946,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -323,7 +323,7 @@
    },
    "btc_d": {
     "tf": "5m",
-    "bars": 2945,
+    "bars": 2946,
     "pts_per_bar": 1.0,
     "resolution_ok": false,
     "regime": "LOW_RESOLUTION",
@@ -477,9 +477,21 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "cause": "INSUFFICIENT",
+    "cause": "REDEMPTION",
+    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
     "window_min": 240,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 240د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.028,
+    "d_stable_d": -0.042,
+    "supply_growth": {
+     "USDT": -0.000599,
+     "USDC": -0.001696
+    },
+    "supply_growth_total": -0.000914,
+    "mcap_growth": 0.003897,
+    "usdt_d": 6.213,
+    "stable_d": 8.709,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "regime": {
@@ -499,14 +511,34 @@
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "bias": "INSUFFICIENT",
+    "bias": "LONG_BIAS",
+    "why": "STABLE.D از 8.751 به 8.709 آمد (-0.042، بزرگ‌تر از میانهٔ 0.032) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 240,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+    "threshold": 0.032,
+    "stable_d": 8.709,
+    "d_stable_d": -0.042,
+    "usdt_d": 6.213,
+    "d_usdt_d": -0.028,
+    "cause": "REDEMPTION",
+    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": true,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    }
   },
   "alt_stance": {
-   "stance": "INSUFFICIENT",
-   "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 240د نیست"
+   "stance": "LONG_BTC_ONLY",
+   "why": "پول وارد شده ولی BTC.D بالا — پول به بیت‌کوین می‌رود نه آلت",
+   "bias": "LONG_BIAS",
+   "d_btc_d": 0.1,
+   "cause": "REDEMPTION",
+   "disagrees_with_naive": true,
+   "stable_d": 8.709,
+   "d_stable_d": -0.042,
+   "usdt_d": 6.213,
+   "d_usdt_d": -0.028,
+   "window_min": 240,
+   "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
  }
 }
