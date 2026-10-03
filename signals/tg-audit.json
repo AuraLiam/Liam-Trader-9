@@ -1,13 +1,13 @@
 {
- "generated": 1790987607844,
+ "generated": 1790989203938,
  "window_days": 7,
- "since": 1790382807844,
+ "since": 1790384403938,
  "census": {
   "days": 8,
   "per_day": {
    "2026-09-26": {
-    "signal": 23,
-    "dom_report": 23,
+    "dom_report": 22,
+    "signal": 22,
     "pump_report": 6,
     "work_report": 3,
     "outcome": 67
@@ -65,15 +65,17 @@
    },
    "2026-10-03": {
     "pump_report": 1,
-    "dom_report": 1
+    "dom_report": 2,
+    "signal": 1,
+    "outcome": 2
    }
   },
   "total": {
-   "signal": 161,
    "dom_report": 176,
+   "signal": 161,
    "pump_report": 34,
    "work_report": 103,
-   "outcome": 255,
+   "outcome": 257,
    "trade_mgmt": 9,
    "alert": 17
   },
@@ -83,7 +85,7 @@
   "useless_kinds": {
    "alert": 17
   },
-  "useless_share_pct": 2.3,
+  "useless_share_pct": 2.2,
   "over_cap": {
    "pump_report": [
     "2026-09-26:6",
@@ -106,8 +108,8 @@
   "n": 161,
   "per_day": {
    "2026-09-26": {
-    "n": 23,
-    "first": "00:37",
+    "n": 22,
+    "first": "01:57",
     "last": "23:24"
    },
    "2026-09-27": {
@@ -139,19 +141,24 @@
     "n": 24,
     "first": "00:23",
     "last": "23:51"
+   },
+   "2026-10-03": {
+    "n": 1,
+    "first": "00:33",
+    "last": "00:33"
    }
   },
   "strategy": {
-   "ibs": 55,
-   "smc": 106
+   "ibs": 54,
+   "smc": 107
   },
   "tf": {
-   "15m": 10,
-   "5m": 151
+   "5m": 152,
+   "15m": 9
   },
   "dir": {
-   "LONG": 97,
-   "SHORT": 64
+   "SHORT": 65,
+   "LONG": 96
   },
   "hour_utc": {
    "0": 6,
@@ -182,18 +189,18 @@
  },
  "outcomes": {
   "sent": 161,
-  "matched": 157,
-  "unmatched": 4,
-  "match_pct": 97.5,
+  "matched": 158,
+  "unmatched": 3,
+  "match_pct": 98.1,
   "overall": {
-   "n": 157,
-   "mean_net": -0.047,
-   "sum_net": -7.4,
-   "win_pct": 68.8,
+   "n": 158,
+   "mean_net": -0.049,
+   "sum_net": -7.7,
+   "win_pct": 69.0,
    "outcomes": {
-    "trail": 106,
     "expired": 23,
     "timeout": 4,
+    "trail": 107,
     "stop": 22,
     "target": 2
    }
@@ -201,69 +208,56 @@
   "by": {
    "strategy": {
     "ibs": {
-     "n": 55,
-     "mean_net": -0.28,
-     "sum_net": -15.4,
-     "win_pct": 52.7,
+     "n": 54,
+     "mean_net": -0.292,
+     "sum_net": -15.8,
+     "win_pct": 51.9,
      "outcomes": {
-      "trail": 27,
       "expired": 9,
       "timeout": 4,
+      "trail": 26,
       "stop": 13,
       "target": 2
      }
     },
     "smc": {
-     "n": 102,
+     "n": 104,
      "mean_net": 0.078,
-     "sum_net": 8.0,
-     "win_pct": 77.5,
+     "sum_net": 8.1,
+     "win_pct": 77.9,
      "outcomes": {
-      "trail": 79,
+      "trail": 81,
       "expired": 14,
       "stop": 9
      }
     }
    },
    "tf": {
+    "5m": {
+     "n": 149,
+     "mean_net": -0.05,
+     "sum_net": -7.5,
+     "win_pct": 67.8,
+     "outcomes": {
+      "expired": 23,
+      "timeout": 4,
+      "trail": 99,
+      "stop": 21,
+      "target": 2
+     }
+    },
     "15m": {
      "n": 9,
-     "mean_net": 0.014,
-     "sum_net": 0.1,
+     "mean_net": -0.024,
+     "sum_net": -0.2,
      "win_pct": 88.9,
      "outcomes": {
       "trail": 8,
       "stop": 1
      }
-    },
-    "5m": {
-     "n": 148,
-     "mean_net": -0.051,
-     "sum_net": -7.5,
-     "win_pct": 67.6,
-     "outcomes": {
-      "expired": 23,
-      "timeout": 4,
-      "trail": 98,
-      "stop": 21,
-      "target": 2
-     }
     }
    },
    "dir": {
-    "LONG": {
-     "n": 94,
-     "mean_net": 0.019,
-     "sum_net": 1.8,
-     "win_pct": 75.5,
-     "outcomes": {
-      "trail": 69,
-      "timeout": 2,
-      "stop": 11,
-      "expired": 10,
-      "target": 2
-     }
-    },
     "SHORT": {
      "n": 63,
      "mean_net": -0.145,
@@ -275,11 +269,24 @@
       "trail": 37,
       "stop": 11
      }
+    },
+    "LONG": {
+     "n": 95,
+     "mean_net": 0.015,
+     "sum_net": 1.5,
+     "win_pct": 75.8,
+     "outcomes": {
+      "trail": 70,
+      "timeout": 2,
+      "stop": 11,
+      "expired": 10,
+      "target": 2
+     }
     }
    }
   },
-  "trail_zero_share_pct": 8.5,
-  "open_or_unfound": 4,
+  "trail_zero_share_pct": 8.4,
+  "open_or_unfound": 3,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
