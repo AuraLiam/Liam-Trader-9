@@ -434,9 +434,13 @@ check("انتشارِ ناموفق، کامیتِ محلی را باز می‌ک
 # در اثرانگشت باشد — وگرنه هر ~۳۰ دقیقه کلید عوض می‌شود و آزمون ۸.۵ دقیقه‌ای
 # هر اجرا تکرار می‌شود (۱ اکتبر: سه اجرای پیاپی، سه miss).
 for _nm, _txt in (("زنجیره", _chain), ("چرخه", (WF / "hamid-cycle.yml").read_text(encoding="utf-8"))):
-    _fp = re.search(r"H=\$\(git ls-files -s \| grep -vE '([^']+)'", _txt)
+    _fp = re.search(r"H=\$\(git (-c core\.quotepath=false )?ls-files -s \| grep -vE '([^']+)'", _txt)
     check(f"اثرانگشت دروازهٔ {_nm} خروجی‌های تولیدشده (docs/graph، cycles) را کنار می‌گذارد",
-          bool(_fp) and all(x in _fp.group(1) for x in ("brain", "signals", "docs/graph", "claude-liam-signal/cycles")))
+          bool(_fp) and all(x in _fp.group(2) for x in ("brain", "signals", "docs/graph", "claude-liam-signal/cycles")))
+    # ۴ اکتبر: بی core.quotepath=false، نام‌های غیرلاتینِ brain/patterns در گیومه چاپ
+    # می‌شوند و از فیلترِ brain/ رد می‌شوند → کلید هر چرخه عوض می‌شد و حافظه هرگز نمی‌گرفت
+    check(f"اثرانگشت دروازهٔ {_nm} نامِ غیرلاتین را بی‌گیومه می‌خواند (core.quotepath=false)",
+          bool(_fp) and bool(_fp.group(1)))
 # گذرگاه وضعیت در چرخه روی تازه‌ترین نسخهٔ منتشرشده داوری می‌کند، نه چک‌اوتِ
 # شروعِ job (۱ اکتبر ۱۴:۲۸: SICK کاذب، ۷ فایل «۴۵ دقیقه» که ۲ دقیقه سن داشتند).
 _hc0 = (WF / "hamid-cycle.yml").read_text(encoding="utf-8")

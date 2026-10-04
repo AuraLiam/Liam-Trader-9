@@ -99,7 +99,11 @@ jobs:
           # هر ~۳۰ دقیقه عوض می‌شوند — داخل اثرانگشت بودند، پس حافظه هرگز
           # نمی‌گرفت و آزمون ۸.۵ دقیقه‌ای هر اجرا تکرار می‌شد (سه اجرای
           # پیاپی ۱۳:۲۷/۱۴:۰۰/۱۴:۳۳، هر سه miss؛ ۲۵٪ بودجهٔ هر job).
-          H=$(git ls-files -s | grep -vE '[[:space:]](brain|signals|docs/graph|claude-liam-signal/cycles)/' | sha256sum | cut -c1-16)
+          # core.quotepath=false ضروری است (همان درس ۱۷ اوت حل‌کننده): گیت نامِ غیرلاتین را
+          # در گیومه می‌گذارد ("brain/patterns/hamid-reason-…") و الگوی بالا آن را
+          # «بیرون از brain/» می‌دید — این فایل‌ها هر چرخه عوض می‌شوند، پس حافظه هرگز
+          # نمی‌گرفت (۴ اکتبر: اختلافِ دو اجرای پیاپی فقط همین ۶ فایلِ گیومه‌دار بود).
+          H=$(git -c core.quotepath=false ls-files -s | grep -vE '[[:space:]](brain|signals|docs/graph|claude-liam-signal/cycles)/' | sha256sum | cut -c1-16)
           N=$(git ls-files 'signals/*.json' config | sha256sum | cut -c1-8)   # فقط نام‌های سطح بالا؛ آرشیو/پارتیشن هر روز عوض می‌شود
           echo "hash=${H}-${N}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
