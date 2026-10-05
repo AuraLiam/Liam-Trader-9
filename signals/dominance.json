@@ -1,5 +1,5 @@
 {
- "generated": 1791239876443,
+ "generated": 1791240120082,
  "usdt_dominance": 6.254,
  "btc_dominance": 58.68,
  "chg_1h": {
@@ -11,16 +11,16 @@
   "btc": 0.01
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: FOMC Meeting Minutes (43.4س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 2775/5478 (51٪)؛ بنچمارکِ همیشه‌تخت 61٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: FOMC Meeting Minutes (43.3س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س down · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 2775/5478 (51٪)؛ بنچمارکِ همیشه‌تخت 61٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "FOMC Meeting Minutes",
-   "in_hours": 43.4,
+   "in_hours": 43.3,
    "country": "USD"
   }
  ],
- "calendar_ok": "CACHED",
- "calendar_why": "حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403",
+ "calendar_ok": true,
+ "calendar_why": null,
  "structure": {
   "bars_1h": 360,
   "bars_4h": 92,
@@ -246,13 +246,13 @@
    "usdt_d_from": 6.284,
    "usdt_d_to": 6.254,
    "d_dom_pct": -0.479,
-   "supply_effect_pct": 0.347,
-   "mcap_effect_pct": -0.826,
-   "supply_share": 0.296,
-   "mcap_share": 0.704,
-   "supply_usd_from": 183125373913,
+   "supply_effect_pct": -0.1,
+   "mcap_effect_pct": -0.379,
+   "supply_share": 0.208,
+   "mcap_share": 0.792,
+   "supply_usd_from": 183945315604,
    "supply_usd_to": 183761952882,
-   "mcap_usd_from": 2914152990340,
+   "mcap_usd_from": 2927201075808,
    "mcap_usd_to": 2938310727248,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده",
@@ -274,7 +274,7 @@
     "status": "OK",
     "minutes": 1440,
     "usdt_d_delta": -0.03,
-    "usdc_d_delta": -0.01,
+    "usdc_d_delta": -0.009,
     "usdt_d": 6.254,
     "usdc_d": 2.521,
     "label": "PARTIAL",
@@ -300,10 +300,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": 0.829,
-    "total2_pct": 2.29,
-    "total3_pct": 3.234,
-    "gap_t3_total": 2.405,
+    "total_pct": 0.38,
+    "total2_pct": 1.884,
+    "total3_pct": 2.809,
+    "gap_t3_total": 2.429,
     "total_usd": 2938310727248,
     "total2_usd": 1214109992499,
     "total3_usd": 882962373538,
@@ -462,9 +462,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "MARKET_RISE",
+    "why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.009,
+    "d_stable_d": -0.013,
+    "supply_growth": {
+     "USDT": 0.00049,
+     "USDC": 0.000343
+    },
+    "supply_growth_total": 0.000448,
+    "mcap_growth": 0.001928,
+    "usdt_d": 6.254,
+    "stable_d": 8.775,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "MARKET_RISE",
@@ -486,9 +498,19 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "NEUTRAL",
+    "why": "STABLE.D تقریباً ثابت (-0.013، زیر میانهٔ 0.015) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.015,
+    "stable_d": 8.775,
+    "d_stable_d": -0.013,
+    "usdt_d": 6.254,
+    "d_usdt_d": -0.009,
+    "cause": "MARKET_RISE",
+    "cause_why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
+    "naive_usdt_only": "NEUTRAL",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "NEUTRAL",
