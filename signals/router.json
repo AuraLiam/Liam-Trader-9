@@ -1,30 +1,30 @@
 {
- "generated": 1791174319872,
+ "generated": 1791176751174,
  "panel": "لیام تریدر ۹",
  "owner": "E27 — اتاق توزیع اطلاعات",
  "rule": "اول دسته‌بندی، بعد توزیع. نمادِ بی‌کارت به هیچ اتاقی نمی‌رود.",
  "coverage": {
-  "n": 235,
-  "known": 177,
-  "pct": 75.3,
+  "n": 232,
+  "known": 178,
+  "pct": 76.7,
   "by_sector": {
-   "unknown": 58,
-   "l1": 41,
+   "unknown": 54,
+   "l1": 42,
    "defi": 26,
    "gaming": 22,
-   "meme": 20,
+   "meme": 19,
    "ai": 18,
    "l2": 10,
-   "stocktoken": 6,
+   "stocktoken": 7,
    "infra": 6,
-   "rwa": 4,
    "stable": 4,
-   "oracle": 4,
    "interop": 4,
-   "exchange": 2,
-   "privacy": 2,
+   "oracle": 4,
+   "rwa": 4,
    "major": 2,
+   "privacy": 2,
    "storage": 2,
+   "exchange": 2,
    "payment": 1,
    "depin": 1,
    "lst": 1,
@@ -32,16 +32,13 @@
   }
  },
  "counts": {
-  "universe": 235,
-  "tradable": 230,
+  "universe": 232,
+  "tradable": 227,
   "excluded": 5
  },
  "by_sector": {
   "unknown": [
    "2ZUSDT",
-   "AINUSDT",
-   "AKEUSDT",
-   "ANCUSDT",
    "ARKUSDT",
    "ATHUSDT",
    "ATUSDT",
@@ -59,6 +56,7 @@
    "CTUSDT",
    "EDGEUSDT",
    "ESPUSDT",
+   "FFUSDT",
    "FIDAUSDT",
    "GLMRUSDT",
    "GRAMUSDT",
@@ -75,9 +73,11 @@
    "NIGHTUSDT",
    "NOMUSDT",
    "OPNUSDT",
-   "ORAIUSDT",
    "ORCAUSDT",
-   "POLYUSDT"
+   "POLYUSDT",
+   "PORUSDT",
+   "PUMPBTCUSDT",
+   "QIUSDT"
   ],
   "l1": [
    "ADAUSDT",
@@ -98,6 +98,7 @@
    "ICPUSDT",
    "INJUSDT",
    "IOTAUSDT",
+   "KASUSDT",
    "KLAYUSDT",
    "LTCUSDT",
    "MEGAUSDT",
@@ -118,8 +119,7 @@
    "VANRYUSDT",
    "VETUSDT",
    "XLMUSDT",
-   "XPLUSDT",
-   "XRPUSDT"
+   "XPLUSDT"
   ],
   "defi": [
    "AAVEUSDT",
@@ -177,7 +177,6 @@
    "BMTUSDT",
    "BONKUSDT",
    "DOGEUSDT",
-   "FARTCOINUSDT",
    "FLOKIUSDT",
    "GIGGLEUSDT",
    "MARSCOINUSDT",
@@ -230,6 +229,7 @@
   "stocktoken": [
    "CRCLBUSDT",
    "MSTRBUSDT",
+   "NVDABUSDT",
    "SKHYBUSDT",
    "SNDKBUSDT",
    "SOXLBUSDT",
@@ -243,23 +243,11 @@
    "PARTIUSDT",
    "ZAMAUSDT"
   ],
-  "rwa": [
-   "CFGUSDT",
-   "ONDOUSDT",
-   "PAXGUSDT",
-   "XAUTUSDT"
-  ],
   "stable": [
    "BFUSDUSDT",
    "RLUSDUSDT",
    "USD1USDT",
    "XUSDUSDT"
-  ],
-  "oracle": [
-   "API3USDT",
-   "LINKUSDT",
-   "PYTHUSDT",
-   "TRBUSDT"
   ],
   "interop": [
    "RUNEUSDT",
@@ -267,21 +255,33 @@
    "WUSDT",
    "ZROUSDT"
   ],
-  "exchange": [
-   "ASTERUSDT",
-   "CROUSDT"
+  "oracle": [
+   "API3USDT",
+   "LINKUSDT",
+   "PYTHUSDT",
+   "TRBUSDT"
   ],
-  "privacy": [
-   "DASHUSDT",
-   "ZENUSDT"
+  "rwa": [
+   "CFGUSDT",
+   "ONDOUSDT",
+   "PAXGUSDT",
+   "XAUTUSDT"
   ],
   "major": [
    "BTCUSDT",
    "ETHUSDT"
   ],
+  "privacy": [
+   "DASHUSDT",
+   "ZENUSDT"
+  ],
   "storage": [
    "ARUSDT",
    "BLZUSDT"
+  ],
+  "exchange": [
+   "ASTERUSDT",
+   "CROUSDT"
   ],
   "payment": [
    "COTIUSDT"
@@ -297,23 +297,23 @@
   ]
  },
  "sector_sizes": {
-  "unknown": 58,
-  "l1": 41,
+  "unknown": 54,
+  "l1": 42,
   "defi": 26,
   "gaming": 22,
-  "meme": 20,
+  "meme": 19,
   "ai": 18,
   "l2": 10,
-  "stocktoken": 6,
+  "stocktoken": 7,
   "infra": 6,
-  "rwa": 4,
   "stable": 4,
-  "oracle": 4,
   "interop": 4,
-  "exchange": 2,
-  "privacy": 2,
+  "oracle": 4,
+  "rwa": 4,
   "major": 2,
+  "privacy": 2,
   "storage": 2,
+  "exchange": 2,
   "payment": 1,
   "depin": 1,
   "lst": 1,
@@ -542,9 +542,6 @@
  ],
  "unknown_examples": [
   "2ZUSDT",
-  "AINUSDT",
-  "AKEUSDT",
-  "ANCUSDT",
   "ARKUSDT",
   "ATHUSDT",
   "ATUSDT",
@@ -560,7 +557,10 @@
   "CCUSDT",
   "CHZUSDT",
   "CTUSDT",
-  "EDGEUSDT"
+  "EDGEUSDT",
+  "ESPUSDT",
+  "FFUSDT",
+  "FIDAUSDT"
  ],
  "boundary": "این اتاق تصمیم معاملاتی نمی‌گیرد و آستانه‌ای را عوض نمی‌کند؛ فقط دسته می‌زند و مسیر می‌دهد. حذف‌ها با دلیل ثبت می‌شوند."
 }
