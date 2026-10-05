@@ -1,14 +1,14 @@
 {
- "generated": 1791158566208,
+ "generated": 1791159668449,
  "window_days": 7,
- "since": 1790553766208,
+ "since": 1790554868449,
  "census": {
-  "days": 7,
+  "days": 8,
   "per_day": {
    "2026-09-28": {
-    "signal": 23,
     "dom_report": 26,
     "work_report": 42,
+    "signal": 22,
     "trade_mgmt": 1,
     "outcome": 33,
     "pump_report": 5
@@ -65,12 +65,15 @@
     "pump_report": 4,
     "trade_mgmt": 1,
     "ignition": 1
+   },
+   "2026-10-05": {
+    "signal": 1
    }
   },
   "total": {
-   "signal": 161,
    "dom_report": 183,
    "work_report": 82,
+   "signal": 161,
    "trade_mgmt": 12,
    "outcome": 183,
    "pump_report": 30,
@@ -104,8 +107,8 @@
   "n": 161,
   "per_day": {
    "2026-09-28": {
-    "n": 23,
-    "first": "00:15",
+    "n": 22,
+    "first": "01:39",
     "last": "22:36"
    },
    "2026-09-29": {
@@ -137,19 +140,25 @@
     "n": 22,
     "first": "00:34",
     "last": "21:02"
+   },
+   "2026-10-05": {
+    "n": 1,
+    "first": "00:15",
+    "last": "00:15"
    }
   },
   "strategy": {
-   "smc": 124,
-   "ibs": 37
+   "ibs": 37,
+   "smc": 123,
+   "hamid": 1
   },
   "tf": {
-   "5m": 154,
-   "15m": 7
+   "15m": 8,
+   "5m": 153
   },
   "dir": {
-   "SHORT": 60,
-   "LONG": 101
+   "LONG": 102,
+   "SHORT": 59
   },
   "hour_utc": {
    "0": 6,
@@ -180,16 +189,16 @@
  },
  "outcomes": {
   "sent": 161,
-  "matched": 159,
-  "unmatched": 2,
-  "match_pct": 98.8,
+  "matched": 158,
+  "unmatched": 3,
+  "match_pct": 98.1,
   "overall": {
-   "n": 159,
-   "mean_net": -0.036,
-   "sum_net": -5.7,
-   "win_pct": 69.8,
+   "n": 158,
+   "mean_net": -0.039,
+   "sum_net": -6.2,
+   "win_pct": 69.6,
    "outcomes": {
-    "trail": 109,
+    "trail": 108,
     "expired": 23,
     "stop": 24,
     "timeout": 1,
@@ -198,17 +207,6 @@
   },
   "by": {
    "strategy": {
-    "smc": {
-     "n": 122,
-     "mean_net": 0.019,
-     "sum_net": 2.4,
-     "win_pct": 73.8,
-     "outcomes": {
-      "trail": 90,
-      "stop": 15,
-      "expired": 17
-     }
-    },
     "ibs": {
      "n": 37,
      "mean_net": -0.218,
@@ -221,22 +219,20 @@
       "timeout": 1,
       "target": 2
      }
+    },
+    "smc": {
+     "n": 121,
+     "mean_net": 0.016,
+     "sum_net": 1.9,
+     "win_pct": 73.6,
+     "outcomes": {
+      "trail": 89,
+      "stop": 15,
+      "expired": 17
+     }
     }
    },
    "tf": {
-    "5m": {
-     "n": 152,
-     "mean_net": -0.034,
-     "sum_net": -5.2,
-     "win_pct": 69.1,
-     "outcomes": {
-      "trail": 103,
-      "expired": 23,
-      "stop": 23,
-      "timeout": 1,
-      "target": 2
-     }
-    },
     "15m": {
      "n": 7,
      "mean_net": -0.067,
@@ -246,20 +242,22 @@
       "trail": 6,
       "stop": 1
      }
+    },
+    "5m": {
+     "n": 151,
+     "mean_net": -0.038,
+     "sum_net": -5.7,
+     "win_pct": 68.9,
+     "outcomes": {
+      "trail": 102,
+      "expired": 23,
+      "stop": 23,
+      "timeout": 1,
+      "target": 2
+     }
     }
    },
    "dir": {
-    "SHORT": {
-     "n": 60,
-     "mean_net": -0.159,
-     "sum_net": -9.6,
-     "win_pct": 60.0,
-     "outcomes": {
-      "trail": 36,
-      "expired": 11,
-      "stop": 13
-     }
-    },
     "LONG": {
      "n": 99,
      "mean_net": 0.039,
@@ -272,11 +270,22 @@
       "expired": 12,
       "target": 2
      }
+    },
+    "SHORT": {
+     "n": 59,
+     "mean_net": -0.17,
+     "sum_net": -10.0,
+     "win_pct": 59.3,
+     "outcomes": {
+      "trail": 35,
+      "expired": 11,
+      "stop": 13
+     }
     }
    }
   },
   "trail_zero_share_pct": 3.7,
-  "open_or_unfound": 2,
+  "open_or_unfound": 3,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
