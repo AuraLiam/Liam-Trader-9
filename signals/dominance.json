@@ -1,5 +1,5 @@
 {
- "generated": 1791279949587,
+ "generated": 1791280225020,
  "usdt_dominance": 6.318,
  "btc_dominance": 59.26,
  "chg_1h": {
@@ -11,7 +11,7 @@
   "btc": 0.56
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ BTC.D بالا: پول از آلت به بیت‌کوین؛ رویدادهای کلان پیش رو: FOMC Meeting Minutes (32.2س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2809/5536 (51٪)؛ بنچمارکِ همیشه‌تخت 64٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ BTC.D بالا: پول از آلت به بیت‌کوین؛ ℹ️ تقویم از حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: FOMC Meeting Minutes (32.2س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 2811/5540 (51٪)؛ بنچمارکِ همیشه‌تخت 64٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
  "macro": [
   {
    "title": "FOMC Meeting Minutes",
@@ -19,8 +19,8 @@
    "country": "USD"
   }
  ],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 361,
   "bars_4h": 93,
@@ -112,48 +112,85 @@
   "made_now": [
    {
     "metric": "USDT.D",
-    "horizon_min": 240,
+    "horizon_min": 30,
     "path": "FLAT",
     "reasons": [
      "هیچ شاهد جهت‌داری نیست"
     ],
-    "p": null,
-    "p_n": 13,
-    "p_why": "نمونه 13 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "p": {
+     "UP": 0.05,
+     "DOWN": 0.067,
+     "FLAT": 0.883
+    },
+    "p_claim": 0.883,
+    "p_n": 60,
+    "ev_n": 0
+   },
+   {
+    "metric": "USDT.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "هیچ شاهد جهت‌داری نیست"
+    ],
+    "p": {
+     "UP": 0.143,
+     "DOWN": 0.179,
+     "FLAT": 0.679
+    },
+    "p_claim": 0.679,
+    "p_n": 28,
     "ev_n": 0
    },
    {
     "metric": "BTC.D",
-    "horizon_min": 240,
+    "horizon_min": 30,
     "path": "UP",
     "reasons": [
      "دلتای ۱س BTC.D = +0.060",
      "دلتای ۴س BTC.D = +0.560"
     ],
     "hist": {
-     "n": 1,
-     "hit_pct": 100.0
+     "n": 6,
+     "hit_pct": 0.0
     },
     "p": null,
-    "p_n": 1,
-    "p_why": "نمونه 1 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "p_n": 6,
+    "p_why": "نمونه 6 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 120,
+    "path": "UP",
+    "reasons": [
+     "دلتای ۱س BTC.D = +0.060",
+     "دلتای ۴س BTC.D = +0.560"
+    ],
+    "hist": {
+     "n": 2,
+     "hit_pct": 50.0
+    },
+    "p": null,
+    "p_n": 2,
+    "p_why": "نمونه 2 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
     "ev_n": 2
    }
   ],
-  "graded_now": 2,
+  "graded_now": 4,
   "scoreboard": {
    "BTC.D|120m": {
-    "n": 530,
-    "hit": 143,
-    "hit_pct": 27.0,
-    "dir_n": 1,
-    "dir_hit_pct": 0.0,
-    "baseline_flat_pct": 35.1,
-    "skill": -8.1,
+    "n": 531,
+    "hit": 144,
+    "hit_pct": 27.1,
+    "dir_n": 2,
+    "dir_hit_pct": 50.0,
+    "baseline_flat_pct": 32.4,
+    "skill": -5.3,
     "brier": 0.6736,
     "brier_n": 354,
-    "brier_climate": 0.6662,
-    "brier_skill": -0.0074
+    "brier_climate": 0.6666,
+    "brier_skill": -0.007
    },
    "BTC.D|1440m": {
     "n": 34,
@@ -174,30 +211,30 @@
     "skill": -6.3
    },
    "BTC.D|30m": {
-    "n": 1997,
+    "n": 1998,
     "hit": 873,
     "hit_pct": 43.7,
     "dir_n": 11,
     "dir_hit_pct": 18.2,
-    "baseline_flat_pct": 52.5,
-    "skill": -8.8,
-    "brier": 0.6442,
-    "brier_n": 1342,
-    "brier_climate": 0.6115,
-    "brier_skill": -0.0327
+    "baseline_flat_pct": 51.8,
+    "skill": -8.1,
+    "brier": 0.6444,
+    "brier_n": 1343,
+    "brier_climate": 0.6155,
+    "brier_skill": -0.0289
    },
    "USDT.D|120m": {
-    "n": 530,
+    "n": 531,
     "hit": 269,
-    "hit_pct": 50.8,
+    "hit_pct": 50.7,
     "dir_n": 10,
     "dir_hit_pct": 20.0,
-    "baseline_flat_pct": 67.6,
-    "skill": -16.8,
-    "brier": 0.5837,
-    "brier_n": 264,
-    "brier_climate": 0.4909,
-    "brier_skill": -0.0928
+    "baseline_flat_pct": 64.9,
+    "skill": -14.2,
+    "brier": 0.5863,
+    "brier_n": 265,
+    "brier_climate": 0.5175,
+    "brier_skill": -0.0688
    },
    "USDT.D|1440m": {
     "n": 34,
@@ -218,17 +255,17 @@
     "skill": -1.2
    },
    "USDT.D|30m": {
-    "n": 1997,
-    "hit": 1355,
+    "n": 1998,
+    "hit": 1356,
     "hit_pct": 67.9,
     "dir_n": 43,
     "dir_hit_pct": 2.3,
     "baseline_flat_pct": 90.6,
     "skill": -22.7,
-    "brier": 0.3045,
-    "brier_n": 1361,
+    "brier": 0.3043,
+    "brier_n": 1362,
     "brier_climate": 0.1739,
-    "brier_skill": -0.1306
+    "brier_skill": -0.1304
    }
   },
   "open": 8
@@ -365,14 +402,14 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1385,
+    "bars": 1384,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "up",
     "px": 6.323,
     "threshold": 0.01,
     "threshold_stats": {
-     "n": 1384,
+     "n": 1383,
      "pctl": 0.75,
      "median": 0.005,
      "p90": 0.017
@@ -384,14 +421,14 @@
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1385,
+    "bars": 1384,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "range",
     "px": 59.27,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1384,
+     "n": 1383,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.04
@@ -544,9 +581,9 @@
    },
    "4h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 8.813 به 8.863 رفت (+0.050، بالاتر از میانهٔ 0.03) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 8.813 به 8.863 رفت (+0.050، بالاتر از میانهٔ 0.029) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "threshold": 0.03,
+    "threshold": 0.029,
     "stable_d": 8.863,
     "d_stable_d": 0.05,
     "usdt_d": 6.318,
