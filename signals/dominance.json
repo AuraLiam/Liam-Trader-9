@@ -1,10 +1,10 @@
 {
- "generated": 1791555333376,
+ "generated": 1791555633964,
  "usdt_dominance": 6.563,
  "btc_dominance": 59.27,
  "chg_1h": {
-  "usdt": 0.022,
-  "btc": 0.02
+  "usdt": 0.024,
+  "btc": 0.0
  },
  "chg_4h": {
   "usdt": -0.048,
@@ -202,16 +202,16 @@
   "60m": {
    "status": "OK",
    "minutes": 60,
-   "usdt_d_from": 6.541,
+   "usdt_d_from": 6.539,
    "usdt_d_to": 6.563,
-   "d_dom_pct": 0.336,
-   "supply_effect_pct": -0.205,
-   "mcap_effect_pct": 0.541,
-   "supply_share": 0.275,
-   "mcap_share": 0.725,
-   "supply_usd_from": 183893135812,
+   "d_dom_pct": 0.366,
+   "supply_effect_pct": -0.19,
+   "mcap_effect_pct": 0.557,
+   "supply_share": 0.255,
+   "mcap_share": 0.745,
+   "supply_usd_from": 183865019235,
    "supply_usd_to": 183515636595,
-   "mcap_usd_from": 2811391772087,
+   "mcap_usd_from": 2811821673579,
    "mcap_usd_to": 2796215703113,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -330,14 +330,14 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1409,
+    "bars": 1408,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "down",
     "px": 6.578,
     "threshold": 0.009,
     "threshold_stats": {
-     "n": 1408,
+     "n": 1407,
      "pctl": 0.75,
      "median": 0.004,
      "p90": 0.017
@@ -349,14 +349,14 @@
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1409,
+    "bars": 1408,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "up",
     "px": 59.23,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1408,
+     "n": 1407,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.03
@@ -457,21 +457,9 @@
   },
   "cause": {
    "1h": {
-    "cause": "REDEMPTION",
-    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "cause": "INSUFFICIENT",
     "window_min": 60,
-    "d_usdt_d": 0.022,
-    "d_stable_d": 0.032,
-    "supply_growth": {
-     "USDT": -0.002055,
-     "USDC": -0.001562
-    },
-    "supply_growth_total": -0.001915,
-    "mcap_growth": -0.005413,
-    "usdt_d": 6.563,
-    "stable_d": 9.165,
-    "misleading": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
    },
    "4h": {
     "cause": "REDEMPTION",
@@ -493,25 +481,15 @@
   },
   "regime": {
    "1h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.133 به 9.165 رفت (+0.032، بالاتر از میانهٔ 0.015) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "INSUFFICIENT",
     "window_min": 60,
-    "threshold": 0.015,
-    "stable_d": 9.165,
-    "d_stable_d": 0.032,
-    "usdt_d": 6.563,
-    "d_usdt_d": 0.022,
-    "cause": "REDEMPTION",
-    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
-    "naive_usdt_only": "SHORT_BIAS",
-    "disagrees_with_naive": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
    },
    "4h": {
     "bias": "LONG_BIAS",
-    "why": "STABLE.D از 9.232 به 9.165 آمد (-0.067، بزرگ‌تر از میانهٔ 0.031) — پول از حاشیه به دارایی رفته، ریسک‌آن",
+    "why": "STABLE.D از 9.232 به 9.165 آمد (-0.067، بزرگ‌تر از میانهٔ 0.033) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 240,
-    "threshold": 0.031,
+    "threshold": 0.033,
     "stable_d": 9.165,
     "d_stable_d": -0.067,
     "usdt_d": 6.563,
