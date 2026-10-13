@@ -1,5 +1,5 @@
 {
- "generated": 1791885366960,
+ "generated": 1791885751514,
  "engine": "E03",
  "panel": "لیام تریدر ۹",
  "ok": true,
@@ -35,22 +35,22 @@
   },
   "1h": {
    "tf": "1h",
-   "bars": 375,
+   "bars": 376,
    "pts_per_bar": 11.0,
    "resolution_ok": true,
-   "trend": "up",
-   "px": 6.547,
+   "trend": "range",
+   "px": 6.56,
    "threshold": 0.024,
    "threshold_stats": {
-    "n": 374,
+    "n": 375,
     "pctl": 0.75,
     "median": 0.01,
     "p90": 0.048
    },
-   "delta": 0.024,
-   "meaningful": true,
-   "regime": "BEARISH",
-   "note": "USDT.D در 1h: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0240 در برابر آستانهٔ 0.0240 (صدک 0.75 همین تایم‌فریم)"
+   "delta": 0.013,
+   "meaningful": false,
+   "regime": "RANGE",
+   "note": "USDT.D در 1h: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0130 در برابر آستانهٔ 0.0240 (صدک 0.75 همین تایم‌فریم)"
   },
   "15m": {
    "tf": "15m",
@@ -58,7 +58,7 @@
    "pts_per_bar": 3.0,
    "resolution_ok": true,
    "trend": "down",
-   "px": 6.57,
+   "px": 6.56,
    "threshold": 0.009,
    "threshold_stats": {
     "n": 1439,
@@ -66,10 +66,10 @@
     "median": 0.004,
     "p90": 0.015
    },
-   "delta": 0.009,
+   "delta": -0.01,
    "meaningful": true,
    "regime": "BULLISH",
-   "note": "USDT.D در 15m: روند down → رژیم BULLISH؛ تغییر آخرین کندل +0.0090 در برابر آستانهٔ 0.0090 (صدک 0.75 همین تایم‌فریم)"
+   "note": "USDT.D در 15m: روند down → رژیم BULLISH؛ تغییر آخرین کندل -0.0100 در برابر آستانهٔ 0.0090 (صدک 0.75 همین تایم‌فریم)"
   },
   "5m": {
    "tf": "5m",
@@ -101,21 +101,21 @@
   },
   "1h": {
    "tf": "1h",
-   "bars": 375,
+   "bars": 376,
    "pts_per_bar": 11.0,
    "resolution_ok": true,
    "trend": "down",
-   "px": 59.73,
+   "px": 59.84,
    "threshold": 0.05,
    "threshold_stats": {
-    "n": 374,
+    "n": 375,
     "pctl": 0.75,
     "median": 0.02,
     "p90": 0.1
    },
-   "delta": -0.03,
-   "meaningful": false,
-   "note": "BTC.D در 1h: روند down؛ تغییر آخرین کندل -0.0300"
+   "delta": 0.11,
+   "meaningful": true,
+   "note": "BTC.D در 1h: روند down؛ تغییر آخرین کندل +0.1100"
   },
   "15m": {
    "tf": "15m",
@@ -123,7 +123,7 @@
    "pts_per_bar": 3.0,
    "resolution_ok": true,
    "trend": "up",
-   "px": 59.8,
+   "px": 59.84,
    "threshold": 0.02,
    "threshold_stats": {
     "n": 1439,
@@ -131,9 +131,9 @@
     "median": 0.01,
     "p90": 0.03
    },
-   "delta": 0.02,
+   "delta": 0.04,
    "meaningful": true,
-   "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0200"
+   "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0400"
   },
   "5m": {
    "tf": "5m",
@@ -145,7 +145,7 @@
   }
  },
  "weighted": {
-  "score": 0.333,
+  "score": 0.667,
   "regime": "BULLISH",
   "used": [
    {
@@ -155,7 +155,7 @@
    },
    {
     "tf": "1h",
-    "regime": "BEARISH",
+    "regime": "RANGE",
     "weight": 0.7
    },
    {
@@ -170,7 +170,7 @@
     "why": "سریِ دامیننس برای کندل 5m رزولوشن ندارد (میانهٔ 1 نقطه در هر کندل، حداقل 2.0) — عدد جعل نمی‌شود (قانون ۱)"
    }
   ],
-  "why": "رأی وزنی 0.333 از 3 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
+  "why": "رأی وزنی 0.667 از 3 تایم‌فریم — ۴س وزن 1.0 و ۵د وزن 0.2: روند کلی از ریزتایم مهم‌تر است (دستور حمید)"
  },
  "tf_weights": {
   "4h": 1.0,
@@ -245,81 +245,60 @@
     "where": "پایین میدلاین"
    },
    "1h": {
-    "px": 6.547,
+    "px": 6.56,
     "levels": [
-     {
-      "level": 6.367212766,
-      "touches_wick": 81,
-      "touches_body": 75,
-      "role": "support",
-      "dist_pct": 2.746
-     },
-     {
-      "level": 6.53212,
-      "touches_wick": 68,
-      "touches_body": 64,
-      "role": "support",
-      "dist_pct": 0.227
-     },
      {
       "level": 6.2655,
       "touches_wick": 36,
       "touches_body": 31,
       "role": "support",
-      "dist_pct": 4.3
+      "dist_pct": 4.489
+     },
+     {
+      "level": 6.4250410959,
+      "touches_wick": 26,
+      "touches_body": 25,
+      "role": "support",
+      "dist_pct": 2.057
      },
      {
       "level": 6.628,
       "touches_wick": 15,
       "touches_body": 14,
       "role": "resistance",
-      "dist_pct": 1.237
+      "dist_pct": 1.037
      },
      {
       "level": 6.2185,
       "touches_wick": 12,
       "touches_body": 11,
       "role": "support",
-      "dist_pct": 5.018
+      "dist_pct": 5.206
      }
     ],
     "channel": {
      "dir": "up",
      "slope_pct_per_bar": 0.0101,
-     "pos_pct": 46.7,
-     "mid_dist_pct": -0.237,
-     "width_pct": 7.187,
+     "pos_pct": 49.3,
+     "mid_dist_pct": -0.05,
+     "width_pct": 7.173,
      "touches_top": 2,
      "touches_bottom": 3,
-     "touches_mid": 110,
-     "top": 6.7978153442,
-     "bottom": 6.3272512702,
-     "mid": 6.5625333072
+     "touches_mid": 112,
+     "top": 6.7985456093,
+     "bottom": 6.3280116891,
+     "mid": 6.5632786492
     },
-    "pos_pct": 46.7,
+    "pos_pct": 49.3,
     "where": "حوالی میدلاین"
    }
   },
   "confluence": [
    {
-    "price": 6.369106383,
-    "lines": [
-     "S/R@4h",
-     "S/R@1h"
-    ]
-   },
-   {
-    "price": 6.3305006351,
+    "price": 6.3308808446,
     "lines": [
      "S/R@4h",
      "channel_bottom@1h"
-    ]
-   },
-   {
-    "price": 6.53306,
-    "lines": [
-     "S/R@4h",
-     "S/R@1h"
     ]
    },
    {
@@ -330,21 +309,21 @@
     ]
    },
    {
-    "price": 6.7943449618,
+    "price": 6.7947100944,
     "lines": [
      "channel_top@4h",
      "channel_top@1h"
     ]
    },
    {
-    "price": 6.3234216199,
+    "price": 6.3238018293,
     "lines": [
      "channel_bottom@4h",
      "channel_bottom@1h"
     ]
    },
    {
-    "price": 6.5588832909,
+    "price": 6.5592559619,
     "lines": [
      "channel_mid@4h",
      "channel_mid@1h"
