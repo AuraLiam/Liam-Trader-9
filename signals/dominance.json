@@ -1,5 +1,5 @@
 {
- "generated": 1792067522076,
+ "generated": 1792067877622,
  "usdt_dominance": 6.721,
  "btc_dominance": 59.49,
  "chg_1h": {
@@ -11,21 +11,21 @@
   "btc": -0.52
  },
  "points": 4000,
- "verdict": "USDT.D پایین می‌آید: پول وارد ریسک می‌شود — به نفع لانگ؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رویدادهای کلان پیش رو: Fed Chairman Warsh Speaks (15.0س) + Core PPI m/m (-0.0س) + PPI m/m (-0.0س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: UNSAFE (USDT.D ساختار ۱س up · ۴س range)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 3361/6648 (51٪)؛ بنچمارکِ همیشه‌تخت 48٪؛ بسترِ استیبل: LONG_ALT_STRONG",
+ "verdict": "USDT.D پایین می‌آید: پول وارد ریسک می‌شود — به نفع لانگ؛ BTC.D پایین: فصل آلت‌ها محتمل‌تر؛ رویدادهای کلان پیش رو: Core PPI m/m (-0.1س) + PPI m/m (-0.1س) + Fed Chairman Warsh Speaks (14.9س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BEARISH (USDT.D ساختار ۱س up · ۴س range)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار بالا رفته و سهم تتر خودبه‌خود کم شده؛ کارنامهٔ پیش‌بینی: 3361/6650 (51٪)؛ بنچمارکِ همیشه‌تخت 48٪؛ بسترِ استیبل: LONG_ALT_STRONG",
  "macro": [
   {
    "title": "Core PPI m/m",
-   "in_hours": -0.0,
+   "in_hours": -0.1,
    "country": "USD"
   },
   {
    "title": "PPI m/m",
-   "in_hours": -0.0,
+   "in_hours": -0.1,
    "country": "USD"
   },
   {
    "title": "Fed Chairman Warsh Speaks",
-   "in_hours": 15.0,
+   "in_hours": 14.9,
    "country": "USD"
   }
  ],
@@ -34,7 +34,7 @@
  "structure": {
   "bars_1h": 357,
   "bars_4h": 90,
-  "regime": "UNSAFE",
+  "regime": "BEARISH",
   "usdt": {
    "trend_1h": "up",
    "px": 6.776,
@@ -45,8 +45,8 @@
   "btc_d": {
    "trend_1h": "range"
   },
-  "unsafe_reason": "رویداد کلان تا ۲ ساعت: Core PPI m/m",
-  "why": "USDT.D ساختار ۱س up · ۴س range"
+  "why": "USDT.D ساختار ۱س up · ۴س range",
+  "invalidation": "ابطال رژیم: شکست USDT.D زیر 6.593"
  },
  "multi_tf": {
   "usdt": {
@@ -115,8 +115,42 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.15,
+     "DOWN": 0.083,
+     "FLAT": 0.767
+    },
+    "p_claim": 0.767,
+    "p_n": 60,
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 30,
+    "path": "DOWN",
+    "reasons": [
+     "دلتای ۱س BTC.D = -0.550",
+     "دلتای ۴س BTC.D = -0.520"
+    ],
+    "hist": {
+     "n": 7,
+     "hit_pct": 57.1
+    },
+    "p": null,
+    "p_n": 7,
+    "p_why": "نمونه 7 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 2
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
     "n": 635,
@@ -124,12 +158,12 @@
     "hit_pct": 27.1,
     "dir_n": 7,
     "dir_hit_pct": 28.6,
-    "baseline_flat_pct": 26.3,
-    "skill": 0.8,
+    "baseline_flat_pct": 27.0,
+    "skill": 0.1,
     "brier": 0.6763,
     "brier_n": 441,
-    "brier_climate": 0.6593,
-    "brier_skill": -0.017
+    "brier_climate": 0.6607,
+    "brier_skill": -0.0156
    },
    "BTC.D|1440m": {
     "n": 43,
@@ -150,30 +184,30 @@
     "skill": 9.5
    },
    "BTC.D|30m": {
-    "n": 2385,
+    "n": 2386,
     "hit": 1041,
     "hit_pct": 43.6,
     "dir_n": 18,
     "dir_hit_pct": 50.0,
-    "baseline_flat_pct": 37.4,
-    "skill": 6.2,
-    "brier": 0.6483,
-    "brier_n": 1681,
-    "brier_climate": 0.6641,
-    "brier_skill": 0.0158
+    "baseline_flat_pct": 37.1,
+    "skill": 6.5,
+    "brier": 0.6484,
+    "brier_n": 1682,
+    "brier_climate": 0.6645,
+    "brier_skill": 0.0161
    },
    "USDT.D|120m": {
     "n": 635,
     "hit": 318,
     "hit_pct": 50.1,
-    "dir_n": 13,
-    "dir_hit_pct": 23.1,
-    "baseline_flat_pct": 31.6,
-    "skill": 18.5,
+    "dir_n": 12,
+    "dir_hit_pct": 16.7,
+    "baseline_flat_pct": 32.4,
+    "skill": 17.7,
     "brier": 0.6055,
     "brier_n": 318,
-    "brier_climate": 0.6662,
-    "brier_skill": 0.0607
+    "brier_climate": 0.6666,
+    "brier_skill": 0.0611
    },
    "USDT.D|1440m": {
     "n": 43,
@@ -194,17 +228,17 @@
     "skill": 12.9
    },
    "USDT.D|30m": {
-    "n": 2385,
+    "n": 2386,
     "hit": 1616,
-    "hit_pct": 67.8,
+    "hit_pct": 67.7,
     "dir_n": 38,
     "dir_hit_pct": 7.9,
-    "baseline_flat_pct": 74.8,
-    "skill": -7.0,
-    "brier": 0.3037,
-    "brier_n": 1696,
-    "brier_climate": 0.4085,
-    "brier_skill": 0.1048
+    "baseline_flat_pct": 74.3,
+    "skill": -6.6,
+    "brier": 0.3041,
+    "brier_n": 1697,
+    "brier_climate": 0.4151,
+    "brier_skill": 0.111
    }
   },
   "open": 8
@@ -249,16 +283,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.541,
+   "usdt_d_from": 6.61,
    "usdt_d_to": 6.721,
-   "d_dom_pct": 2.715,
-   "supply_effect_pct": 0.002,
-   "mcap_effect_pct": 2.712,
-   "supply_share": 0.001,
-   "mcap_share": 0.999,
-   "supply_usd_from": 183624175900,
+   "d_dom_pct": 1.665,
+   "supply_effect_pct": 0.136,
+   "mcap_effect_pct": 1.53,
+   "supply_share": 0.082,
+   "mcap_share": 0.918,
+   "supply_usd_from": 183379350339,
    "supply_usd_to": 183628587927,
-   "mcap_usd_from": 2807279863937,
+   "mcap_usd_from": 2774271563377,
    "mcap_usd_to": 2732161701047,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -279,8 +313,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": 0.18,
-    "usdc_d_delta": 0.066,
+    "usdt_d_delta": 0.111,
+    "usdc_d_delta": 0.039,
     "usdt_d": 6.721,
     "usdc_d": 2.655,
     "label": "RISK_OFF",
@@ -306,10 +340,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": -2.676,
-    "total2_pct": -1.828,
-    "total3_pct": -0.313,
-    "gap_t3_total": 2.363,
+    "total_pct": -1.518,
+    "total2_pct": -0.783,
+    "total3_pct": 0.633,
+    "gap_t3_total": 2.15,
     "total_usd": 2732161701047,
     "total2_usd": 1106798705094,
     "total3_usd": 818282429464,
@@ -341,14 +375,14 @@
   "15m": {
    "usdt": {
     "tf": "15m",
-    "bars": 1398,
+    "bars": 1397,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "up",
     "px": 6.726,
     "threshold": 0.009,
     "threshold_stats": {
-     "n": 1397,
+     "n": 1396,
      "pctl": 0.75,
      "median": 0.004,
      "p90": 0.015
@@ -360,14 +394,14 @@
    },
    "btc_d": {
     "tf": "15m",
-    "bars": 1398,
+    "bars": 1397,
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "up",
     "px": 59.48,
     "threshold": 0.02,
     "threshold_stats": {
-     "n": 1397,
+     "n": 1396,
      "pctl": 0.75,
      "median": 0.01,
      "p90": 0.03
@@ -468,9 +502,21 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "MARKET_RISE",
+    "why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.064,
+    "d_stable_d": -0.089,
+    "supply_growth": {
+     "USDT": -0.000339,
+     "USDC": -0.000234
+    },
+    "supply_growth_total": -0.00031,
+    "mcap_growth": 0.009138,
+    "usdt_d": 6.721,
+    "stable_d": 9.376,
+    "misleading": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "cause": "MARKET_RISE",
@@ -492,15 +538,25 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "LONG_BIAS",
+    "why": "STABLE.D از 9.465 به 9.376 آمد (-0.089، بزرگ‌تر از میانهٔ 0.016) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.016,
+    "stable_d": 9.376,
+    "d_stable_d": -0.089,
+    "usdt_d": 6.721,
+    "d_usdt_d": -0.064,
+    "cause": "MARKET_RISE",
+    "cause_why": "عرضه ثابت و کل بازار بالا رفته — مخرج بزرگ شده، ریسک‌آن",
+    "naive_usdt_only": "LONG_BIAS",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "LONG_BIAS",
-    "why": "STABLE.D از 9.441 به 9.376 آمد (-0.065، بزرگ‌تر از میانهٔ 0.04) — پول از حاشیه به دارایی رفته، ریسک‌آن",
+    "why": "STABLE.D از 9.441 به 9.376 آمد (-0.065، بزرگ‌تر از میانهٔ 0.043) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 240,
-    "threshold": 0.04,
+    "threshold": 0.043,
     "stable_d": 9.376,
     "d_stable_d": -0.065,
     "usdt_d": 6.721,
