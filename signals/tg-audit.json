@@ -1,15 +1,15 @@
 {
- "generated": 1792022460283,
+ "generated": 1792023950620,
  "window_days": 7,
- "since": 1791417660283,
+ "since": 1791419150620,
  "census": {
-  "days": 7,
+  "days": 8,
   "per_day": {
    "2026-10-08": {
-    "outcome": 24,
-    "signal": 24,
+    "outcome": 23,
     "dom_report": 26,
     "pump_report": 5,
+    "signal": 22,
     "work_report": 4
    },
    "2026-10-09": {
@@ -54,13 +54,16 @@
     "dom_report": 24,
     "pump_report": 3,
     "work_report": 3
+   },
+   "2026-10-15": {
+    "signal": 2
    }
   },
   "total": {
-   "outcome": 172,
-   "signal": 157,
+   "outcome": 171,
    "dom_report": 176,
    "pump_report": 28,
+   "signal": 157,
    "work_report": 24,
    "trade_mgmt": 1
   },
@@ -85,8 +88,8 @@
   "n": 157,
   "per_day": {
    "2026-10-08": {
-    "n": 24,
-    "first": "00:06",
+    "n": 22,
+    "first": "01:18",
     "last": "23:50"
    },
    "2026-10-09": {
@@ -118,20 +121,25 @@
     "n": 22,
     "first": "00:22",
     "last": "22:29"
+   },
+   "2026-10-15": {
+    "n": 2,
+    "first": "00:19",
+    "last": "00:21"
    }
   },
   "strategy": {
-   "smc": 145,
-   "hamid": 3,
-   "ibs": 9
+   "smc": 146,
+   "ibs": 9,
+   "hamid": 2
   },
   "tf": {
    "5m": 131,
    "15m": 26
   },
   "dir": {
-   "LONG": 82,
-   "SHORT": 75
+   "LONG": 80,
+   "SHORT": 77
   },
   "hour_utc": {
    "0": 18,
@@ -162,17 +170,17 @@
  },
  "outcomes": {
   "sent": 157,
-  "matched": 155,
-  "unmatched": 2,
-  "match_pct": 98.7,
+  "matched": 153,
+  "unmatched": 4,
+  "match_pct": 97.5,
   "overall": {
-   "n": 155,
-   "mean_net": -0.034,
-   "sum_net": -5.3,
-   "win_pct": 65.8,
+   "n": 153,
+   "mean_net": -0.035,
+   "sum_net": -5.4,
+   "win_pct": 66.0,
    "outcomes": {
-    "trail": 101,
-    "expired": 27,
+    "expired": 26,
+    "trail": 100,
     "stop": 25,
     "timeout": 1,
     "target": 1
@@ -181,25 +189,15 @@
   "by": {
    "strategy": {
     "smc": {
-     "n": 143,
-     "mean_net": -0.03,
-     "sum_net": -4.3,
-     "win_pct": 67.1,
+     "n": 142,
+     "mean_net": -0.033,
+     "sum_net": -4.6,
+     "win_pct": 66.9,
      "outcomes": {
-      "trail": 96,
       "expired": 24,
+      "trail": 95,
       "stop": 22,
       "timeout": 1
-     }
-    },
-    "hamid": {
-     "n": 3,
-     "mean_net": 0.023,
-     "sum_net": 0.1,
-     "win_pct": 33.3,
-     "outcomes": {
-      "expired": 2,
-      "trail": 1
      }
     },
     "ibs": {
@@ -213,43 +211,53 @@
       "target": 1,
       "expired": 1
      }
+    },
+    "hamid": {
+     "n": 2,
+     "mean_net": 0.159,
+     "sum_net": 0.3,
+     "win_pct": 50.0,
+     "outcomes": {
+      "trail": 1,
+      "expired": 1
+     }
     }
    },
    "tf": {
     "5m": {
-     "n": 129,
-     "mean_net": -0.034,
-     "sum_net": -4.4,
-     "win_pct": 65.1,
+     "n": 128,
+     "mean_net": -0.037,
+     "sum_net": -4.7,
+     "win_pct": 64.8,
      "outcomes": {
-      "trail": 84,
       "expired": 23,
+      "trail": 83,
       "stop": 21,
       "timeout": 1
      }
     },
     "15m": {
-     "n": 26,
-     "mean_net": -0.036,
-     "sum_net": -0.9,
-     "win_pct": 69.2,
+     "n": 25,
+     "mean_net": -0.028,
+     "sum_net": -0.7,
+     "win_pct": 72.0,
      "outcomes": {
-      "expired": 4,
       "trail": 17,
       "stop": 4,
-      "target": 1
+      "target": 1,
+      "expired": 3
      }
     }
    },
    "dir": {
     "LONG": {
-     "n": 82,
-     "mean_net": 0.005,
-     "sum_net": 0.4,
-     "win_pct": 59.8,
+     "n": 80,
+     "mean_net": 0.004,
+     "sum_net": 0.3,
+     "win_pct": 60.0,
      "outcomes": {
-      "trail": 49,
-      "expired": 20,
+      "expired": 19,
+      "trail": 48,
       "stop": 13
      }
     },
@@ -268,8 +276,8 @@
     }
    }
   },
-  "trail_zero_share_pct": 10.9,
-  "open_or_unfound": 2,
+  "trail_zero_share_pct": 11.0,
+  "open_or_unfound": 4,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
