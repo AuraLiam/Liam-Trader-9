@@ -1,79 +1,79 @@
 {
- "generated": "2026-10-15 08:28 UTC",
- "symbols": 69,
+ "generated": "2026-10-16 03:31 UTC",
+ "symbols": 70,
  "days": 30,
  "tf": "15m",
- "total": 3681,
+ "total": 3755,
  "strategies": {
   "ibs": {
    "strategy": "ibs",
-   "n": 2040,
-   "win": 31.2,
-   "ev": 0.021,
+   "n": 2058,
+   "win": 32.2,
+   "ev": 0.046,
    "ev_is": "gross",
    "ci": [
-    -0.039,
-    0.081
+    -0.014,
+    0.111
    ],
-   "ev_net": -0.291,
+   "ev_net": -0.268,
    "ci_net": [
-    -0.354,
-    -0.224
+    -0.333,
+    -0.204
    ],
-   "fee_r_mean": 0.312,
+   "fee_r_mean": 0.314,
    "fee_model": "round-trip 0.15% of notional ÷ stop distance",
    "long": {
-    "n": 1020,
-    "ev": 0.093,
-    "win": 32.9
+    "n": 1035,
+    "ev": 0.109,
+    "win": 33.3
    },
    "short": {
-    "n": 1020,
-    "ev": -0.051,
-    "win": 29.5
+    "n": 1023,
+    "ev": -0.017,
+    "win": 31.0
    },
    "exits": {
-    "breakeven": 254,
-    "stop": 1290,
-    "target2": 377,
-    "timeout": 119
+    "breakeven": 261,
+    "stop": 1297,
+    "target2": 399,
+    "timeout": 101
    },
-   "symbols": 68
+   "symbols": 69
   },
   "smc": {
    "strategy": "smc",
-   "n": 1641,
-   "win": 25.8,
-   "ev": 0.124,
+   "n": 1697,
+   "win": 26.0,
+   "ev": 0.125,
    "ev_is": "gross",
    "ci": [
-    0.045,
-    0.202
+    0.05,
+    0.204
    ],
-   "ev_net": -0.034,
+   "ev_net": -0.031,
    "ci_net": [
-    -0.113,
-    0.045
+    -0.108,
+    0.046
    ],
-   "fee_r_mean": 0.158,
+   "fee_r_mean": 0.156,
    "fee_model": "round-trip 0.15% of notional ÷ stop distance",
    "long": {
-    "n": 843,
-    "ev": 0.076,
-    "win": 26.3
+    "n": 874,
+    "ev": 0.092,
+    "win": 26.7
    },
    "short": {
-    "n": 798,
-    "ev": 0.174,
-    "win": 25.2
+    "n": 823,
+    "ev": 0.16,
+    "win": 25.4
    },
    "exits": {
-    "breakeven": 134,
-    "stop": 931,
-    "target2": 203,
-    "timeout": 373
+    "breakeven": 148,
+    "stop": 959,
+    "target2": 204,
+    "timeout": 386
    },
-   "symbols": 66
+   "symbols": 67
   }
  },
  "reasons": {
@@ -81,56 +81,70 @@
    {
     "condition": "لانگ خلاف بیت‌کوین",
     "strategy": "ibs",
-    "n": 219,
-    "hit_rate": 20.1,
-    "ev": -0.297,
-    "baseline": 0.021,
-    "delta": -0.356,
+    "n": 215,
+    "hit_rate": 25.6,
+    "ev": -0.151,
+    "baseline": 0.046,
+    "delta": -0.22,
     "ci": [
-     -0.537,
-     -0.165
+     -0.411,
+     -0.014
     ],
     "verdict": "منفی"
    },
    {
     "condition": "داخل اردر بلاک",
     "strategy": "ibs",
-    "n": 781,
-    "hit_rate": 34.7,
-    "ev": 0.139,
-    "baseline": 0.021,
-    "delta": 0.191,
+    "n": 772,
+    "hit_rate": 36.5,
+    "ev": 0.18,
+    "baseline": 0.046,
+    "delta": 0.214,
     "ci": [
-     0.061,
-     0.322
+     0.08,
+     0.346
     ],
     "verdict": "مثبت"
    },
    {
-    "condition": "شورت همسو با بیت‌کوین",
+    "condition": "CHOCH دارد",
     "strategy": "ibs",
-    "n": 178,
-    "hit_rate": 34.8,
-    "ev": 0.163,
-    "baseline": 0.021,
-    "delta": 0.156,
+    "n": 512,
+    "hit_rate": 28.1,
+    "ev": -0.086,
+    "baseline": 0.046,
+    "delta": -0.176,
     "ci": [
-     -0.068,
-     0.381
+     -0.313,
+     -0.033
     ],
-    "verdict": "بی‌اثر"
+    "verdict": "منفی"
    },
    {
     "condition": "لانگ همسو با بیت‌کوین",
     "strategy": "ibs",
     "n": 248,
-    "hit_rate": 35.5,
-    "ev": 0.149,
-    "baseline": 0.021,
-    "delta": 0.146,
+    "hit_rate": 34.7,
+    "ev": 0.137,
+    "baseline": 0.046,
+    "delta": 0.103,
     "ci": [
-     -0.042,
-     0.337
+     -0.093,
+     0.299
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "شورت همسو با بیت‌کوین",
+    "strategy": "ibs",
+    "n": 182,
+    "hit_rate": 34.6,
+    "ev": 0.135,
+    "baseline": 0.046,
+    "delta": 0.097,
+    "ci": [
+     -0.123,
+     0.323
     ],
     "verdict": "بی‌اثر"
    },
@@ -138,267 +152,253 @@
     "condition": "بیت‌کوین نزولی",
     "strategy": "ibs",
     "n": 397,
-    "hit_rate": 26.7,
-    "ev": -0.091,
-    "baseline": 0.021,
-    "delta": -0.138,
+    "hit_rate": 29.7,
+    "ev": -0.02,
+    "baseline": 0.046,
+    "delta": -0.082,
     "ci": [
-     -0.293,
-     0.022
-    ],
-    "verdict": "بی‌اثر"
-   },
-   {
-    "condition": "CHOCH دارد",
-    "strategy": "ibs",
-    "n": 521,
-    "hit_rate": 27.8,
-    "ev": -0.066,
-    "baseline": 0.021,
-    "delta": -0.117,
-    "ci": [
-     -0.256,
-     0.029
-    ],
-    "verdict": "بی‌اثر"
-   },
-   {
-    "condition": "شورت خلاف بیت‌کوین",
-    "strategy": "ibs",
-    "n": 298,
-    "hit_rate": 28.9,
-    "ev": -0.064,
-    "baseline": 0.021,
-    "delta": -0.099,
-    "ci": [
-     -0.266,
-     0.07
+     -0.24,
+     0.077
     ],
     "verdict": "بی‌اثر"
    },
    {
     "condition": "بیت‌کوین صعودی",
     "strategy": "ibs",
-    "n": 546,
-    "hit_rate": 31.9,
-    "ev": 0.033,
-    "baseline": 0.021,
-    "delta": 0.017,
+    "n": 526,
+    "hit_rate": 33.5,
+    "ev": 0.076,
+    "baseline": 0.046,
+    "delta": 0.04,
     "ci": [
-     -0.122,
-     0.161
+     -0.097,
+     0.183
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "شورت خلاف بیت‌کوین",
+    "strategy": "ibs",
+    "n": 278,
+    "hit_rate": 32.4,
+    "ev": 0.022,
+    "baseline": 0.046,
+    "delta": -0.028,
+    "ci": [
+     -0.21,
+     0.158
     ],
     "verdict": "بی‌اثر"
    }
   ],
   "smc": [
    {
-    "condition": "بیت‌کوین صعودی",
-    "strategy": "smc",
-    "n": 407,
-    "hit_rate": 23.8,
-    "ev": -0.063,
-    "baseline": 0.124,
-    "delta": -0.248,
-    "ci": [
-     -0.42,
-     -0.073
-    ],
-    "verdict": "منفی"
-   },
-   {
-    "condition": "لانگ همسو با بیت‌کوین",
-    "strategy": "smc",
-    "n": 317,
-    "hit_rate": 24.0,
-    "ev": -0.067,
-    "baseline": 0.124,
-    "delta": -0.236,
-    "ci": [
-     -0.428,
-     -0.051
-    ],
-    "verdict": "منفی"
-   },
-   {
     "condition": "شورت خلاف بیت‌کوین",
     "strategy": "smc",
-    "n": 90,
-    "hit_rate": 23.3,
-    "ev": -0.051,
-    "baseline": 0.124,
-    "delta": -0.185,
+    "n": 95,
+    "hit_rate": 22.1,
+    "ev": -0.124,
+    "baseline": 0.125,
+    "delta": -0.263,
     "ci": [
-     -0.477,
-     0.123
+     -0.546,
+     0.032
     ],
     "verdict": "بی‌اثر"
    },
    {
-    "condition": "روی سطح کلیدی",
+    "condition": "بیت‌کوین صعودی",
     "strategy": "smc",
-    "n": 1260,
-    "hit_rate": 26.8,
-    "ev": 0.16,
-    "baseline": 0.124,
-    "delta": 0.154,
+    "n": 422,
+    "hit_rate": 24.9,
+    "ev": -0.011,
+    "baseline": 0.125,
+    "delta": -0.181,
     "ci": [
-     -0.024,
-     0.329
+     -0.346,
+     -0.008
     ],
-    "verdict": "بی‌اثر"
+    "verdict": "منفی"
    },
    {
     "condition": "کانال هم‌جهت با ستاپ",
     "strategy": "smc",
-    "n": 690,
-    "hit_rate": 24.6,
-    "ev": 0.063,
-    "baseline": 0.124,
-    "delta": -0.105,
+    "n": 683,
+    "hit_rate": 24.5,
+    "ev": 0.021,
+    "baseline": 0.125,
+    "delta": -0.174,
     "ci": [
-     -0.264,
-     0.05
+     -0.33,
+     -0.021
     ],
-    "verdict": "بی‌اثر"
+    "verdict": "منفی"
    },
    {
     "condition": "کانال خلاف ستاپ",
     "strategy": "smc",
-    "n": 951,
-    "hit_rate": 26.6,
-    "ev": 0.168,
-    "baseline": 0.124,
-    "delta": 0.105,
+    "n": 1014,
+    "hit_rate": 27.1,
+    "ev": 0.195,
+    "baseline": 0.125,
+    "delta": 0.174,
     "ci": [
-     -0.049,
-     0.261
+     0.022,
+     0.326
     ],
-    "verdict": "بی‌اثر"
+    "verdict": "مثبت"
    },
    {
-    "condition": "R:R بالای ۲.۵",
+    "condition": "روی سطح کلیدی",
     "strategy": "smc",
-    "n": 166,
-    "hit_rate": 18.7,
-    "ev": 0.039,
-    "baseline": 0.124,
-    "delta": -0.094,
+    "n": 1315,
+    "hit_rate": 27.1,
+    "ev": 0.162,
+    "baseline": 0.125,
+    "delta": 0.164,
     "ci": [
-     -0.427,
-     0.27
-    ],
-    "verdict": "بی‌اثر"
-   },
-   {
-    "condition": "لانگ خلاف بیت‌کوین",
-    "strategy": "smc",
-    "n": 105,
-    "hit_rate": 26.7,
-    "ev": 0.056,
-    "baseline": 0.124,
-    "delta": -0.073,
-    "ci": [
-     -0.397,
-     0.271
+     -0.003,
+     0.331
     ],
     "verdict": "بی‌اثر"
    },
    {
     "condition": "پولبک دوم یا بیشتر",
     "strategy": "smc",
-    "n": 128,
-    "hit_rate": 26.6,
-    "ev": 0.177,
-    "baseline": 0.124,
-    "delta": 0.058,
+    "n": 133,
+    "hit_rate": 29.3,
+    "ev": 0.258,
+    "baseline": 0.125,
+    "delta": 0.144,
     "ci": [
-     -0.271,
-     0.42
+     -0.194,
+     0.494
     ],
     "verdict": "بی‌اثر"
    },
    {
-    "condition": "شورت همسو با بیت‌کوین",
+    "condition": "لانگ همسو با بیت‌کوین",
     "strategy": "smc",
-    "n": 415,
-    "hit_rate": 22.2,
-    "ev": 0.163,
-    "baseline": 0.124,
-    "delta": 0.052,
+    "n": 327,
+    "hit_rate": 25.7,
+    "ev": 0.021,
+    "baseline": 0.125,
+    "delta": -0.128,
     "ci": [
-     -0.118,
-     0.223
+     -0.316,
+     0.058
     ],
     "verdict": "بی‌اثر"
    },
    {
-    "condition": "نقدینگی جمع شده",
+    "condition": "لانگ خلاف بیت‌کوین",
     "strategy": "smc",
-    "n": 1374,
-    "hit_rate": 25.6,
-    "ev": 0.131,
-    "baseline": 0.124,
-    "delta": 0.043,
+    "n": 108,
+    "hit_rate": 25.0,
+    "ev": 0.011,
+    "baseline": 0.125,
+    "delta": -0.122,
     "ci": [
-     -0.177,
-     0.27
-    ],
-    "verdict": "بی‌اثر"
-   },
-   {
-    "condition": "جای حرکت کمتر از ۱ برابر",
-    "strategy": "smc",
-    "n": 893,
-    "hit_rate": 27.7,
-    "ev": 0.137,
-    "baseline": 0.124,
-    "delta": 0.03,
-    "ci": [
-     -0.133,
+     -0.418,
      0.19
     ],
     "verdict": "بی‌اثر"
    },
    {
-    "condition": "بیت‌کوین نزولی",
+    "condition": "R:R بالای ۲.۵",
     "strategy": "smc",
-    "n": 520,
-    "hit_rate": 23.1,
-    "ev": 0.141,
-    "baseline": 0.124,
-    "delta": 0.025,
+    "n": 170,
+    "hit_rate": 18.2,
+    "ev": 0.032,
+    "baseline": 0.125,
+    "delta": -0.103,
     "ci": [
-     -0.136,
-     0.188
+     -0.438,
+     0.225
     ],
     "verdict": "بی‌اثر"
    },
    {
     "condition": "FVG هم‌جهت دارد",
     "strategy": "smc",
-    "n": 1579,
-    "hit_rate": 25.6,
-    "ev": 0.125,
-    "baseline": 0.124,
-    "delta": 0.022,
+    "n": 1637,
+    "hit_rate": 25.8,
+    "ev": 0.122,
+    "baseline": 0.125,
+    "delta": -0.077,
     "ci": [
-     -0.356,
-     0.396
+     -0.505,
+     0.307
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "شورت همسو با بیت‌کوین",
+    "strategy": "smc",
+    "n": 422,
+    "hit_rate": 22.5,
+    "ev": 0.152,
+    "baseline": 0.125,
+    "delta": 0.036,
+    "ci": [
+     -0.135,
+     0.207
     ],
     "verdict": "بی‌اثر"
    },
    {
     "condition": "جای حرکت بیش از ۱.۵ برابر",
     "strategy": "smc",
-    "n": 674,
-    "hit_rate": 23.6,
-    "ev": 0.115,
-    "baseline": 0.124,
+    "n": 650,
+    "hit_rate": 25.2,
+    "ev": 0.145,
+    "baseline": 0.125,
+    "delta": 0.032,
+    "ci": [
+     -0.127,
+     0.186
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "نقدینگی جمع شده",
+    "strategy": "smc",
+    "n": 1424,
+    "hit_rate": 25.7,
+    "ev": 0.122,
+    "baseline": 0.125,
+    "delta": -0.018,
+    "ci": [
+     -0.235,
+     0.2
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "جای حرکت کمتر از ۱ برابر",
+    "strategy": "smc",
+    "n": 966,
+    "hit_rate": 26.8,
+    "ev": 0.119,
+    "baseline": 0.125,
     "delta": -0.014,
     "ci": [
-     -0.171,
-     0.144
+     -0.167,
+     0.143
+    ],
+    "verdict": "بی‌اثر"
+   },
+   {
+    "condition": "بیت‌کوین نزولی",
+    "strategy": "smc",
+    "n": 530,
+    "hit_rate": 23.0,
+    "ev": 0.123,
+    "baseline": 0.125,
+    "delta": -0.003,
+    "ci": [
+     -0.168,
+     0.158
     ],
     "verdict": "بی‌اثر"
    }
