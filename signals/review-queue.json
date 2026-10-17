@@ -1,151 +1,23 @@
 {
- "generated": 1792219616754,
- "buckets_at": 1792219616717,
- "n_agents": 14,
- "n_todo": 13,
+ "generated": 1792219916852,
+ "buckets_at": 1792219916816,
+ "n_agents": 9,
+ "n_todo": 8,
  "todo": [
-  "E11",
-  "E16",
-  "E18",
-  "E18",
-  "E22",
   "execution",
   "market-structure",
-  "research",
   "data-quality",
   "lead-lag",
   "liquidity",
   "macro-dominance",
-  "order-block"
+  "order-block",
+  "research"
  ],
  "idle": [
   "post-trade-learning"
  ],
- "events": [
-  {
-   "kind": "backtest_new",
-   "what": "بک‌تست تازه: 2026-10-17 05:52 UTC",
-   "read": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ]
-  },
-  {
-   "kind": "verdict_flip",
-   "what": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED",
-   "read": [
-    "signals/geometry-verdict.json"
-   ]
-  }
- ],
+ "events": [],
  "rows": [
-  {
-   "agent": "E11",
-   "engines": [
-    "E11"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-  },
-  {
-   "agent": "E16",
-   "engines": [
-    "E16"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-  },
-  {
-   "agent": "E18",
-   "engines": [
-    "E18"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-10-17 05:52 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-10-17 05:52 UTC"
-  },
-  {
-   "agent": "E18",
-   "engines": [
-    "E18"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-  },
-  {
-   "agent": "E22",
-   "engines": [
-    "E22"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-10-17 05:52 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-10-17 05:52 UTC"
-  },
   {
    "agent": "execution",
    "engines": [
@@ -173,7 +45,8 @@
       "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance.json",
-      "state:latest.json"
+      "state:latest.json",
+      "state:trail-alert.json"
      ]
     }
    ],
@@ -182,9 +55,10 @@
     "signals/dominance.json",
     "signals/latest.json",
     "signals/risk-desk.json",
-    "signals/structure-room.json"
+    "signals/structure-room.json",
+    "signals/trail-alert.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E03: 4 آیتم ·"
   },
   {
    "agent": "market-structure",
@@ -228,44 +102,6 @@
     "signals/structure-room.json"
    ],
    "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · "
-  },
-  {
-   "agent": "research",
-   "engines": [
-    "E22",
-    "E13"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:scorecard.json"
-     ]
-    },
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-10-17 05:52 UTC"
-     ]
-    },
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: ibs|long: PROMOTE→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json",
-    "signals/scorecard.json"
-   ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "data-quality",
@@ -387,6 +223,28 @@
    ],
    "read_next": [],
    "digest": "E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:funding باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
+   "agent": "research",
+   "engines": [
+    "E22",
+    "E13"
+   ],
+   "needs_reasoning": true,
+   "priority": 2,
+   "reasons": [
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:scorecard.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/scorecard.json"
+   ],
+   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "post-trade-learning",
