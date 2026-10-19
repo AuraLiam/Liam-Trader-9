@@ -1,16 +1,16 @@
 {
- "generated": 1792413433158,
+ "generated": 1792416123987,
  "window_days": 7,
- "since": 1791808633158,
+ "since": 1791811323987,
  "census": {
   "days": 8,
   "per_day": {
    "2026-10-12": {
-    "signal": 14,
-    "work_report": 2,
-    "outcome": 11,
     "dom_report": 12,
-    "pump_report": 1
+    "outcome": 10,
+    "signal": 9,
+    "pump_report": 1,
+    "work_report": 1
    },
    "2026-10-13": {
     "signal": 19,
@@ -57,17 +57,17 @@
    "2026-10-19": {
     "signal": 9,
     "dom_report": 13,
-    "outcome": 14,
+    "outcome": 15,
     "work_report": 2,
     "pump_report": 2
    }
   },
   "total": {
-   "signal": 156,
-   "work_report": 23,
-   "outcome": 175,
    "dom_report": 176,
-   "pump_report": 27
+   "outcome": 175,
+   "signal": 151,
+   "pump_report": 27,
+   "work_report": 22
   },
   "alert_classes": {},
   "useless_kinds": {},
@@ -88,11 +88,11 @@
   }
  },
  "signals": {
-  "n": 156,
+  "n": 151,
   "per_day": {
    "2026-10-12": {
-    "n": 14,
-    "first": "12:42",
+    "n": 9,
+    "first": "14:56",
     "last": "22:03"
    },
    "2026-10-13": {
@@ -132,16 +132,16 @@
    }
   },
   "strategy": {
-   "smc": 144,
-   "ibs": 10,
+   "smc": 140,
+   "ibs": 9,
    "hamid": 2
   },
   "tf": {
-   "15m": 31,
-   "5m": 125
+   "5m": 124,
+   "15m": 27
   },
   "dir": {
-   "SHORT": 111,
+   "SHORT": 106,
    "LONG": 45
   },
   "hour_utc": {
@@ -157,8 +157,8 @@
    "9": 4,
    "10": 6,
    "11": 1,
-   "12": 8,
-   "13": 19,
+   "12": 5,
+   "13": 17,
    "14": 7,
    "15": 10,
    "16": 4,
@@ -172,43 +172,42 @@
   }
  },
  "outcomes": {
-  "sent": 156,
-  "matched": 155,
-  "unmatched": 1,
-  "match_pct": 99.4,
+  "sent": 151,
+  "matched": 151,
+  "unmatched": 0,
+  "match_pct": 100.0,
   "overall": {
-   "n": 155,
-   "mean_net": -0.019,
+   "n": 151,
+   "mean_net": -0.02,
    "sum_net": -3.0,
-   "win_pct": 69.7,
+   "win_pct": 70.2,
    "outcomes": {
-    "stop": 24,
-    "trail": 106,
-    "target": 2,
-    "expired": 23
+    "trail": 105,
+    "stop": 23,
+    "expired": 22,
+    "target": 1
    }
   },
   "by": {
    "strategy": {
     "smc": {
-     "n": 143,
-     "mean_net": -0.016,
-     "sum_net": -2.3,
-     "win_pct": 70.6,
+     "n": 140,
+     "mean_net": -0.007,
+     "sum_net": -1.0,
+     "win_pct": 71.4,
      "outcomes": {
-      "stop": 22,
-      "trail": 100,
-      "expired": 20,
+      "trail": 99,
+      "stop": 21,
+      "expired": 19,
       "target": 1
      }
     },
     "ibs": {
-     "n": 10,
-     "mean_net": -0.097,
-     "sum_net": -1.0,
-     "win_pct": 60.0,
+     "n": 9,
+     "mean_net": -0.251,
+     "sum_net": -2.3,
+     "win_pct": 55.6,
      "outcomes": {
-      "target": 1,
       "stop": 2,
       "expired": 2,
       "trail": 5
@@ -226,18 +225,6 @@
     }
    },
    "tf": {
-    "15m": {
-     "n": 31,
-     "mean_net": 0.006,
-     "sum_net": 0.2,
-     "win_pct": 74.2,
-     "outcomes": {
-      "stop": 3,
-      "trail": 22,
-      "target": 1,
-      "expired": 5
-     }
-    },
     "5m": {
      "n": 124,
      "mean_net": -0.025,
@@ -249,19 +236,30 @@
       "expired": 18,
       "target": 1
      }
+    },
+    "15m": {
+     "n": 27,
+     "mean_net": 0.007,
+     "sum_net": 0.2,
+     "win_pct": 77.8,
+     "outcomes": {
+      "trail": 21,
+      "stop": 2,
+      "expired": 4
+     }
     }
    },
    "dir": {
     "SHORT": {
-     "n": 110,
+     "n": 106,
      "mean_net": 0.008,
      "sum_net": 0.9,
-     "win_pct": 71.8,
+     "win_pct": 72.6,
      "outcomes": {
-      "stop": 14,
-      "trail": 77,
-      "target": 2,
-      "expired": 17
+      "trail": 76,
+      "expired": 16,
+      "stop": 13,
+      "target": 1
      }
     },
     "LONG": {
@@ -277,8 +275,8 @@
     }
    }
   },
-  "trail_zero_share_pct": 8.5,
-  "open_or_unfound": 1,
+  "trail_zero_share_pct": 8.6,
+  "open_or_unfound": 0,
   "method": "تطبیق دقیق نماد+تایم+جهت+ورود، opened در ±۳۰د از ارسال؛ ردیف بدون stage_tag؛ R خالص از R_net"
  },
  "boundary": "فقط پیام‌های خودِ بات از دفتر ارسال؛ پیام‌های حمید به بات جدا (brain/fomo). نتیجه‌ها روی دفتر پیپر (فیل کامل، بی‌لغزش) — سقف خوش‌بینانهٔ اجرای دستی.",
