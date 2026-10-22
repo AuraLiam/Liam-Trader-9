@@ -6663,19 +6663,9 @@
 "to": "mod:hamid.stack"
 },
 {
-"from": "mod:hamid.analyze_btc",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
 "from": "mod:hamid.analyze_pump",
 "rel": "imports",
 "to": "mod:hamid.cycle"
-},
-{
-"from": "mod:hamid.analyze_pump",
-"rel": "imports",
-"to": "mod:hamid.orderblock"
 },
 {
 "from": "mod:hamid.analyze_pump",
@@ -6684,13 +6674,13 @@
 },
 {
 "from": "mod:hamid.analyze_pump",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.analyze_pump",
 "rel": "produces",
 "to": "state:signals/pump-analysis.json"
+},
+{
+"from": "mod:hamid.announce",
+"rel": "imports",
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.backtest",
@@ -6701,6 +6691,11 @@
 "from": "mod:hamid.backtest",
 "rel": "imports",
 "to": "mod:hamid.stack"
+},
+{
+"from": "mod:hamid.bandit",
+"rel": "imports",
+"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.bandit",
@@ -6719,11 +6714,6 @@
 },
 {
 "from": "mod:hamid.big_money_backtest",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.big_money_backtest",
 "rel": "produces",
 "to": "state:signals/big-money-backtest.json"
 },
@@ -6733,19 +6723,14 @@
 "to": "mod:hamid.paper"
 },
 {
-"from": "mod:hamid.bridge",
+"from": "mod:hamid.btc_patterns",
 "rel": "imports",
-"to": "mod:hamid.trainer"
+"to": "mod:hamid.dominance"
 },
 {
 "from": "mod:hamid.btc_patterns",
 "rel": "imports",
-"to": "mod:hamid.lagcorr"
-},
-{
-"from": "mod:hamid.btc_patterns",
-"rel": "imports",
-"to": "mod:hamid.patterns"
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.btc_patterns",
@@ -6754,13 +6739,23 @@
 },
 {
 "from": "mod:hamid.btc_sensitivity",
-"rel": "imports",
-"to": "mod:hamid.lagcorr"
-},
-{
-"from": "mod:hamid.btc_sensitivity",
 "rel": "produces",
 "to": "state:signals/btc-sensitivity.json"
+},
+{
+"from": "mod:hamid.bubbles",
+"rel": "imports",
+"to": "mod:hamid.analyze_pump"
+},
+{
+"from": "mod:hamid.bubbles",
+"rel": "imports",
+"to": "mod:hamid.pump_radar"
+},
+{
+"from": "mod:hamid.bubbles",
+"rel": "imports",
+"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.bubbles",
@@ -6774,13 +6769,43 @@
 },
 {
 "from": "mod:hamid.classify",
+"rel": "imports",
+"to": "mod:hamid.fees"
+},
+{
+"from": "mod:hamid.classify",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.classify",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.classify",
 "rel": "produces",
 "to": "state:signals/classify.json"
+},
+{
+"from": "mod:hamid.coin_history",
+"rel": "imports",
+"to": "mod:hamid.dominance"
+},
+{
+"from": "mod:hamid.coin_history",
+"rel": "imports",
+"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.conformance",
 "rel": "produces",
 "to": "state:signals/conformance.json"
+},
+{
+"from": "mod:hamid.control",
+"rel": "imports",
+"to": "mod:hamid.cycle"
 },
 {
 "from": "mod:hamid.control",
@@ -6794,33 +6819,13 @@
 },
 {
 "from": "mod:hamid.curriculum",
-"rel": "imports",
-"to": "mod:hamid.scorecard"
-},
-{
-"from": "mod:hamid.curriculum",
 "rel": "produces",
 "to": "state:signals/curriculum.json"
 },
 {
 "from": "mod:hamid.cycle",
 "rel": "imports",
-"to": "mod:hamid.announce"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
 "to": "mod:hamid.bridge"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.cases"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.classify"
 },
 {
 "from": "mod:hamid.cycle",
@@ -6835,12 +6840,12 @@
 {
 "from": "mod:hamid.cycle",
 "rel": "imports",
-"to": "mod:hamid.lagcorr"
+"to": "mod:hamid.liqmap"
 },
 {
 "from": "mod:hamid.cycle",
 "rel": "imports",
-"to": "mod:hamid.liqmap"
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.cycle",
@@ -6855,32 +6860,12 @@
 {
 "from": "mod:hamid.cycle",
 "rel": "imports",
-"to": "mod:hamid.research"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.rewards"
+"to": "mod:hamid.revalidate"
 },
 {
 "from": "mod:hamid.cycle",
 "rel": "imports",
 "to": "mod:hamid.stack"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.universe"
-},
-{
-"from": "mod:hamid.cycle",
-"rel": "imports",
-"to": "mod:hamid.venues"
 },
 {
 "from": "mod:hamid.cycle",
@@ -6920,12 +6905,12 @@
 {
 "from": "mod:hamid.dedupe_closed",
 "rel": "imports",
-"to": "mod:hamid.paper"
+"to": "mod:hamid.ledger"
 },
 {
-"from": "mod:hamid.deep",
+"from": "mod:hamid.dedupe_closed",
 "rel": "imports",
-"to": "mod:hamid.lagcorr"
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.deep",
@@ -6935,22 +6920,22 @@
 {
 "from": "mod:hamid.deep",
 "rel": "imports",
+"to": "mod:hamid.memory"
+},
+{
+"from": "mod:hamid.deep",
+"rel": "imports",
 "to": "mod:hamid.ob_intel"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.patterns"
-},
-{
-"from": "mod:hamid.deep",
-"rel": "imports",
-"to": "mod:hamid.stack"
 },
 {
 "from": "mod:hamid.depth_bos",
 "rel": "imports",
 "to": "mod:hamid.depth_collector"
+},
+{
+"from": "mod:hamid.depth_bos",
+"rel": "imports",
+"to": "mod:hamid.microstructure"
 },
 {
 "from": "mod:hamid.depth_bos",
@@ -6965,7 +6950,7 @@
 {
 "from": "mod:hamid.direction_autopsy",
 "rel": "imports",
-"to": "mod:hamid.fees"
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.direction_autopsy",
@@ -6973,24 +6958,19 @@
 "to": "mod:hamid.paper"
 },
 {
-"from": "mod:hamid.direction_autopsy",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
 "from": "mod:hamid.direction_lessons",
 "rel": "imports",
-"to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.direction_lessons",
-"rel": "imports",
-"to": "mod:hamid.trainer"
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.direction_lessons",
 "rel": "produces",
 "to": "state:signals/direction-lessons.json"
+},
+{
+"from": "mod:hamid.dispatch",
+"rel": "imports",
+"to": "mod:hamid.intake"
 },
 {
 "from": "mod:hamid.dispatch",
@@ -7010,22 +6990,7 @@
 {
 "from": "mod:hamid.dom_tf_study",
 "rel": "imports",
-"to": "mod:hamid.dom_tf"
-},
-{
-"from": "mod:hamid.dominance",
-"rel": "imports",
-"to": "mod:hamid.dom_decomp"
-},
-{
-"from": "mod:hamid.dominance",
-"rel": "imports",
-"to": "mod:hamid.dom_forecast"
-},
-{
-"from": "mod:hamid.dominance",
-"rel": "imports",
-"to": "mod:hamid.dom_tf"
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.dominance",
@@ -7039,16 +7004,6 @@
 },
 {
 "from": "mod:hamid.dominance",
-"rel": "imports",
-"to": "mod:hamid.stables"
-},
-{
-"from": "mod:hamid.dominance",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.dominance",
 "rel": "produces",
 "to": "state:signals/dominance.json"
 },
@@ -7056,11 +7011,6 @@
 "from": "mod:hamid.dominance_desk",
 "rel": "imports",
 "to": "mod:hamid.base_map"
-},
-{
-"from": "mod:hamid.dominance_desk",
-"rel": "imports",
-"to": "mod:hamid.dom_tf"
 },
 {
 "from": "mod:hamid.dominance_desk",
@@ -7078,14 +7028,29 @@
 "to": "state:signals/edge.json"
 },
 {
+"from": "mod:hamid.engine_dossier",
+"rel": "imports",
+"to": "mod:hamid.engine_map"
+},
+{
 "from": "mod:hamid.engine_nurse",
 "rel": "imports",
-"to": "mod:hamid.skill_ledger"
+"to": "mod:hamid.state_bus"
 },
 {
 "from": "mod:hamid.engine_nurse",
 "rel": "produces",
 "to": "state:signals/nurse.json"
+},
+{
+"from": "mod:hamid.escalation",
+"rel": "imports",
+"to": "mod:hamid.alert_gate"
+},
+{
+"from": "mod:hamid.escalation",
+"rel": "imports",
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.escalation",
@@ -7104,13 +7069,23 @@
 },
 {
 "from": "mod:hamid.execution_gate",
+"rel": "imports",
+"to": "mod:hamid.killswitch"
+},
+{
+"from": "mod:hamid.execution_gate",
+"rel": "imports",
+"to": "mod:hamid.sizing"
+},
+{
+"from": "mod:hamid.execution_gate",
 "rel": "produces",
 "to": "state:signals/exec-outbox.json"
 },
 {
 "from": "mod:hamid.experience_effect",
 "rel": "imports",
-"to": "mod:hamid.fees"
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.experience_effect",
@@ -7119,13 +7094,18 @@
 },
 {
 "from": "mod:hamid.feed_watch",
-"rel": "imports",
-"to": "mod:hamid.alert_gate"
-},
-{
-"from": "mod:hamid.feed_watch",
 "rel": "produces",
 "to": "state:signals/feed-health.json"
+},
+{
+"from": "mod:hamid.fill_books",
+"rel": "imports",
+"to": "mod:hamid.cycle"
+},
+{
+"from": "mod:hamid.fill_books",
+"rel": "imports",
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.fill_books",
@@ -7140,7 +7120,12 @@
 {
 "from": "mod:hamid.fill_books",
 "rel": "imports",
-"to": "mod:hamid.trainer"
+"to": "mod:hamid.tv_indicators"
+},
+{
+"from": "mod:hamid.fomo",
+"rel": "imports",
+"to": "mod:hamid.intel"
 },
 {
 "from": "mod:hamid.fomo",
@@ -7154,18 +7139,8 @@
 },
 {
 "from": "mod:hamid.gainer_radar",
-"rel": "imports",
-"to": "mod:hamid.alert_gate"
-},
-{
-"from": "mod:hamid.gainer_radar",
 "rel": "produces",
 "to": "state:signals/gainer-radar.json"
-},
-{
-"from": "mod:hamid.gate_verdict",
-"rel": "imports",
-"to": "mod:hamid.fees"
 },
 {
 "from": "mod:hamid.gate_verdict",
@@ -7199,13 +7174,48 @@
 },
 {
 "from": "mod:hamid.guardian_delta",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.guardian_delta",
 "rel": "produces",
 "to": "state:signals/guardian-delta.json"
 },
 {
 "from": "mod:hamid.guardian_desk",
+"rel": "imports",
+"to": "mod:hamid.fees"
+},
+{
+"from": "mod:hamid.guardian_desk",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.guardian_desk",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.guardian_desk",
 "rel": "produces",
 "to": "state:signals/guardian-desks.json"
+},
+{
+"from": "mod:hamid.guardian_exam",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.guardian_exam",
+"rel": "imports",
+"to": "mod:hamid.ob_lab"
+},
+{
+"from": "mod:hamid.guardian_exam",
+"rel": "imports",
+"to": "mod:hamid.state_bus"
 },
 {
 "from": "mod:hamid.guardian_exam",
@@ -7218,6 +7228,16 @@
 "to": "state:signals/guardian-lab.json"
 },
 {
+"from": "mod:hamid.guardian_live",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.guardian_live",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
 "from": "mod:hamid.h1_backtest",
 "rel": "produces",
 "to": "state:signals/h1-backtest.json"
@@ -7228,6 +7248,11 @@
 "to": "mod:hamid.research"
 },
 {
+"from": "mod:hamid.history_backtest",
+"rel": "imports",
+"to": "mod:hamid.history_ingest"
+},
+{
 "from": "mod:hamid.history_room",
 "rel": "produces",
 "to": "state:signals/history-room.json"
@@ -7236,6 +7261,11 @@
 "from": "mod:hamid.holding_intake",
 "rel": "produces",
 "to": "state:signals/holding.json"
+},
+{
+"from": "mod:hamid.improve",
+"rel": "imports",
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.improve",
@@ -7254,11 +7284,6 @@
 },
 {
 "from": "mod:hamid.intel",
-"rel": "imports",
-"to": "mod:hamid.research"
-},
-{
-"from": "mod:hamid.intel",
 "rel": "produces",
 "to": "state:signals/news.json"
 },
@@ -7269,6 +7294,11 @@
 },
 {
 "from": "mod:hamid.learning_proof",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.learning_proof",
 "rel": "produces",
 "to": "state:signals/learning-proof.json"
 },
@@ -7276,11 +7306,6 @@
 "from": "mod:hamid.ledger",
 "rel": "imports",
 "to": "mod:hamid.paper"
-},
-{
-"from": "mod:hamid.levels_db",
-"rel": "imports",
-"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.levels_db",
@@ -7304,18 +7329,23 @@
 },
 {
 "from": "mod:hamid.live_results",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.live_results",
 "rel": "produces",
 "to": "state:signals/live-results.json"
 },
 {
 "from": "mod:hamid.live_service",
-"rel": "produces",
-"to": "state:signals/live-heartbeat.json"
+"rel": "imports",
+"to": "mod:hamid.pump_watchlist"
 },
 {
-"from": "mod:hamid.loop_audit",
-"rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"from": "mod:hamid.live_service",
+"rel": "produces",
+"to": "state:signals/live-heartbeat.json"
 },
 {
 "from": "mod:hamid.loop_audit",
@@ -7334,13 +7364,13 @@
 },
 {
 "from": "mod:hamid.macro_guard",
-"rel": "produces",
-"to": "state:signals/macro-guard.json"
+"rel": "imports",
+"to": "mod:hamid.intel"
 },
 {
-"from": "mod:hamid.market_stance",
-"rel": "imports",
-"to": "mod:hamid.structure"
+"from": "mod:hamid.macro_guard",
+"rel": "produces",
+"to": "state:signals/macro-guard.json"
 },
 {
 "from": "mod:hamid.market_stance",
@@ -7350,17 +7380,12 @@
 {
 "from": "mod:hamid.mcp_server",
 "rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"to": "mod:hamid.guardian_delta"
 },
 {
 "from": "mod:hamid.mcp_server",
 "rel": "imports",
-"to": "mod:hamid.geometry_verdict"
-},
-{
-"from": "mod:hamid.mcp_server",
-"rel": "imports",
-"to": "mod:hamid.handoff"
+"to": "mod:hamid.killswitch"
 },
 {
 "from": "mod:hamid.mcp_server",
@@ -7368,14 +7393,9 @@
 "to": "mod:hamid.review_queue"
 },
 {
-"from": "mod:hamid.memory",
+"from": "mod:hamid.mcp_server",
 "rel": "imports",
-"to": "mod:hamid.cases"
-},
-{
-"from": "mod:hamid.memory",
-"rel": "imports",
-"to": "mod:hamid.direction_lessons"
+"to": "mod:hamid.state_bus"
 },
 {
 "from": "mod:hamid.memory",
@@ -7386,11 +7406,6 @@
 "from": "mod:hamid.msg_budget",
 "rel": "produces",
 "to": "state:signals/msg-budget.json"
-},
-{
-"from": "mod:hamid.news_poll",
-"rel": "imports",
-"to": "mod:hamid.evidence_packet"
 },
 {
 "from": "mod:hamid.news_poll",
@@ -7414,11 +7429,6 @@
 },
 {
 "from": "mod:hamid.ob_intel",
-"rel": "imports",
-"to": "mod:hamid.lagcorr"
-},
-{
-"from": "mod:hamid.ob_intel",
 "rel": "produces",
 "to": "state:signals/ob-radar.json"
 },
@@ -7431,11 +7441,6 @@
 "from": "mod:hamid.ob_lab",
 "rel": "imports",
 "to": "mod:hamid.orderblocks"
-},
-{
-"from": "mod:hamid.ob_lab",
-"rel": "imports",
-"to": "mod:hamid.stairs"
 },
 {
 "from": "mod:hamid.ob_lab",
@@ -7456,21 +7461,6 @@
 "from": "mod:hamid.overseer",
 "rel": "produces",
 "to": "state:signals/overseer.json"
-},
-{
-"from": "mod:hamid.paper",
-"rel": "imports",
-"to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.paper",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.paper",
-"rel": "imports",
-"to": "mod:hamid.universe"
 },
 {
 "from": "mod:hamid.paper",
@@ -7506,6 +7496,16 @@
 "from": "mod:hamid.polymarket",
 "rel": "produces",
 "to": "state:signals/polymarket.json"
+},
+{
+"from": "mod:hamid.position_watch",
+"rel": "imports",
+"to": "mod:hamid.alert_gate"
+},
+{
+"from": "mod:hamid.position_watch",
+"rel": "imports",
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.position_watch",
@@ -7569,11 +7569,6 @@
 },
 {
 "from": "mod:hamid.publish_top_liquidity",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.publish_top_liquidity",
 "rel": "produces",
 "to": "state:signals/top-liquidity.json"
 },
@@ -7585,17 +7580,32 @@
 {
 "from": "mod:hamid.pump_probe",
 "rel": "imports",
-"to": "mod:hamid.lagcorr"
+"to": "mod:hamid.analyze_pump"
 },
 {
-"from": "mod:hamid.pump_profile",
+"from": "mod:hamid.pump_probe",
 "rel": "imports",
-"to": "mod:hamid.direction_autopsy"
+"to": "mod:hamid.memory"
+},
+{
+"from": "mod:hamid.pump_probe",
+"rel": "imports",
+"to": "mod:hamid.orderblocks"
+},
+{
+"from": "mod:hamid.pump_probe",
+"rel": "imports",
+"to": "mod:hamid.patterns"
 },
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.bubbles"
+"to": "mod:hamid.analyze_pump"
+},
+{
+"from": "mod:hamid.pump_radar",
+"rel": "imports",
+"to": "mod:hamid.cadence_gate"
 },
 {
 "from": "mod:hamid.pump_radar",
@@ -7610,17 +7620,22 @@
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.pump_radar",
+"rel": "imports",
 "to": "mod:hamid.liqmap"
 },
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.merge_sent"
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
-"to": "mod:hamid.orderblock"
+"to": "mod:hamid.merge_sent"
 },
 {
 "from": "mod:hamid.pump_radar",
@@ -7635,6 +7650,11 @@
 {
 "from": "mod:hamid.pump_radar",
 "rel": "imports",
+"to": "mod:hamid.pump_watchlist"
+},
+{
+"from": "mod:hamid.pump_radar",
+"rel": "imports",
 "to": "mod:hamid.structure"
 },
 {
@@ -7643,24 +7663,14 @@
 "to": "state:signals/pump-radar.json"
 },
 {
-"from": "mod:hamid.pump_watchlist",
-"rel": "imports",
-"to": "mod:hamid.memory"
-},
-{
-"from": "mod:hamid.pump_watchlist",
-"rel": "imports",
-"to": "mod:hamid.trend_gate"
-},
-{
 "from": "mod:hamid.receipts_guard",
 "rel": "imports",
 "to": "mod:hamid.paper"
 },
 {
-"from": "mod:hamid.regime_verdict",
+"from": "mod:hamid.reconcile",
 "rel": "imports",
-"to": "mod:hamid.geometry_verdict"
+"to": "mod:hamid.killswitch"
 },
 {
 "from": "mod:hamid.regime_verdict",
@@ -7670,7 +7680,12 @@
 {
 "from": "mod:hamid.revalidate",
 "rel": "imports",
-"to": "mod:hamid.universe"
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.revalidate",
+"rel": "imports",
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.review_queue",
@@ -7689,11 +7704,6 @@
 },
 {
 "from": "mod:hamid.risk_desk",
-"rel": "imports",
-"to": "mod:hamid.latest_setups"
-},
-{
-"from": "mod:hamid.risk_desk",
 "rel": "produces",
 "to": "state:signals/risk-desk.json"
 },
@@ -7704,13 +7714,23 @@
 },
 {
 "from": "mod:hamid.scalp",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.scalp",
+"rel": "imports",
+"to": "mod:hamid.trainer"
+},
+{
+"from": "mod:hamid.scalp",
 "rel": "produces",
 "to": "state:signals/scalp.json"
 },
 {
 "from": "mod:hamid.scalp1m",
 "rel": "imports",
-"to": "mod:hamid.latest_setups"
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.scalp1m",
@@ -7721,11 +7741,6 @@
 "from": "mod:hamid.scalp1m",
 "rel": "produces",
 "to": "state:signals/scalp1m.json"
-},
-{
-"from": "mod:hamid.scalp_dash_backtest",
-"rel": "imports",
-"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.scalp_dash_backtest",
@@ -7743,9 +7758,14 @@
 "to": "state:signals/scalp-exec.json"
 },
 {
+"from": "mod:hamid.scalp_report",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
 "from": "mod:hamid.scalp_sweep",
 "rel": "imports",
-"to": "mod:hamid.scalp"
+"to": "mod:hamid.microstructure"
 },
 {
 "from": "mod:hamid.scalp_sweep",
@@ -7754,33 +7774,18 @@
 },
 {
 "from": "mod:hamid.scalp_sweep",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.scalp_sweep",
 "rel": "produces",
 "to": "state:signals/scalp-sweep.json"
 },
 {
 "from": "mod:hamid.scalp_verdict",
+"rel": "imports",
+"to": "mod:hamid.ledger"
+},
+{
+"from": "mod:hamid.scalp_verdict",
 "rel": "produces",
 "to": "state:signals/scalp-verdict.json"
-},
-{
-"from": "mod:hamid.scenario_backtest",
-"rel": "imports",
-"to": "mod:hamid.scenarios"
-},
-{
-"from": "mod:hamid.scenario_backtest",
-"rel": "imports",
-"to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.scenario_backtest",
-"rel": "imports",
-"to": "mod:hamid.volatility_universe"
 },
 {
 "from": "mod:hamid.scenario_backtest",
@@ -7793,9 +7798,9 @@
 "to": "state:signals/scenario-sweep.json"
 },
 {
-"from": "mod:hamid.scheduler",
+"from": "mod:hamid.scenarios",
 "rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"to": "mod:hamid.microstructure"
 },
 {
 "from": "mod:hamid.scheduler",
@@ -7805,7 +7810,17 @@
 {
 "from": "mod:hamid.scorecard",
 "rel": "imports",
+"to": "mod:hamid.direction_autopsy"
+},
+{
+"from": "mod:hamid.scorecard",
+"rel": "imports",
 "to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.scorecard",
+"rel": "imports",
+"to": "mod:hamid.pump_profile"
 },
 {
 "from": "mod:hamid.scorecard",
@@ -7820,17 +7835,7 @@
 {
 "from": "mod:hamid.selfcheck",
 "rel": "imports",
-"to": "mod:hamid.orderblock"
-},
-{
-"from": "mod:hamid.selfcheck",
-"rel": "imports",
 "to": "mod:hamid.stack"
-},
-{
-"from": "mod:hamid.selfcheck",
-"rel": "imports",
-"to": "mod:hamid.structure"
 },
 {
 "from": "mod:hamid.sentinel",
@@ -7840,32 +7845,12 @@
 {
 "from": "mod:hamid.shock_desk",
 "rel": "imports",
-"to": "mod:hamid.trainer"
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.shock_desk",
 "rel": "produces",
 "to": "state:signals/shock.json"
-},
-{
-"from": "mod:hamid.short_backtest",
-"rel": "imports",
-"to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.short_backtest",
-"rel": "imports",
-"to": "mod:hamid.history_backtest"
-},
-{
-"from": "mod:hamid.short_backtest",
-"rel": "imports",
-"to": "mod:hamid.history_ingest"
-},
-{
-"from": "mod:hamid.short_backtest",
-"rel": "imports",
-"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.short_backtest",
@@ -7878,12 +7863,17 @@
 "to": "state:signals/short-backtest.json"
 },
 {
-"from": "mod:hamid.short_sampler",
+"from": "mod:hamid.short_lab",
 "rel": "imports",
-"to": "mod:hamid.bandit"
+"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.short_sampler",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.signal_audit",
 "rel": "imports",
 "to": "mod:hamid.paper"
 },
@@ -7895,17 +7885,17 @@
 {
 "from": "mod:hamid.skeptic",
 "rel": "imports",
-"to": "mod:hamid.alert_gate"
-},
-{
-"from": "mod:hamid.skeptic",
-"rel": "imports",
 "to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.skeptic",
 "rel": "produces",
 "to": "state:signals/skeptic.json"
+},
+{
+"from": "mod:hamid.skill_ledger",
+"rel": "imports",
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.skill_ledger",
@@ -7926,21 +7916,6 @@
 "from": "mod:hamid.specialist_forward",
 "rel": "produces",
 "to": "state:signals/specialist-forward.json"
-},
-{
-"from": "mod:hamid.specialist_lab",
-"rel": "imports",
-"to": "mod:hamid.fees"
-},
-{
-"from": "mod:hamid.specialist_lab",
-"rel": "imports",
-"to": "mod:hamid.test_specialist_lab"
-},
-{
-"from": "mod:hamid.specialist_lab",
-"rel": "imports",
-"to": "mod:hamid.trainer"
 },
 {
 "from": "mod:hamid.specialist_lab",
@@ -7965,17 +7940,12 @@
 {
 "from": "mod:hamid.stairs",
 "rel": "imports",
-"to": "mod:hamid.orderblocks"
+"to": "mod:hamid.microstructure"
 },
 {
 "from": "mod:hamid.stairs",
 "rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.state_bus",
-"rel": "imports",
-"to": "mod:hamid.evidence_packet"
+"to": "mod:hamid.orderblocks"
 },
 {
 "from": "mod:hamid.state_bus",
@@ -7983,24 +7953,19 @@
 "to": "state:signals/system-state.json"
 },
 {
-"from": "mod:hamid.strategy_api",
-"rel": "imports",
-"to": "mod:hamid.deep"
-},
-{
-"from": "mod:hamid.strategy_duo",
-"rel": "imports",
-"to": "mod:hamid.history_backtest"
-},
-{
 "from": "mod:hamid.strategy_duo",
 "rel": "imports",
 "to": "mod:hamid.history_ingest"
 },
 {
+"from": "mod:hamid.structure",
+"rel": "imports",
+"to": "mod:hamid.selfcheck"
+},
+{
 "from": "mod:hamid.structure_room",
 "rel": "imports",
-"to": "mod:hamid.latest_setups"
+"to": "mod:hamid.lines_wf"
 },
 {
 "from": "mod:hamid.structure_room",
@@ -8009,28 +7974,13 @@
 },
 {
 "from": "mod:hamid.structure_room",
-"rel": "imports",
-"to": "mod:hamid.structure"
-},
-{
-"from": "mod:hamid.structure_room",
 "rel": "produces",
 "to": "state:signals/structure-room.json"
 },
 {
-"from": "mod:hamid.test_alert_gate",
+"from": "mod:hamid.test_announce",
 "rel": "tests",
-"to": "mod:hamid.alert_gate"
-},
-{
-"from": "mod:hamid.test_bandit",
-"rel": "tests",
-"to": "mod:hamid.bandit"
-},
-{
-"from": "mod:hamid.test_big_money",
-"rel": "tests",
-"to": "mod:hamid.big_money"
+"to": "mod:hamid.announce"
 },
 {
 "from": "mod:hamid.test_big_money_backtest",
@@ -8043,14 +7993,9 @@
 "to": "mod:hamid.bridge"
 },
 {
-"from": "mod:hamid.test_classify",
+"from": "mod:hamid.test_candles5m",
 "rel": "tests",
-"to": "mod:hamid.classify"
-},
-{
-"from": "mod:hamid.test_coin_history",
-"rel": "tests",
-"to": "mod:hamid.coin_history"
+"to": "mod:hamid.candles5m"
 },
 {
 "from": "mod:hamid.test_conformance",
@@ -8063,11 +8008,6 @@
 "to": "mod:hamid.data_requests"
 },
 {
-"from": "mod:hamid.test_deep",
-"rel": "tests",
-"to": "mod:hamid.deep"
-},
-{
 "from": "mod:hamid.test_direction_lessons",
 "rel": "tests",
 "to": "mod:hamid.direction_lessons"
@@ -8078,19 +8018,19 @@
 "to": "mod:hamid.docs_probe"
 },
 {
-"from": "mod:hamid.test_dom_decomp",
-"rel": "tests",
-"to": "mod:hamid.dom_decomp"
-},
-{
 "from": "mod:hamid.test_dom_forecast",
 "rel": "tests",
 "to": "mod:hamid.dom_forecast"
 },
 {
-"from": "mod:hamid.test_dom_tf",
+"from": "mod:hamid.test_dominance_desk",
 "rel": "tests",
-"to": "mod:hamid.dom_tf"
+"to": "mod:hamid.dominance_desk"
+},
+{
+"from": "mod:hamid.test_edge_export",
+"rel": "tests",
+"to": "mod:hamid.edge_export"
 },
 {
 "from": "mod:hamid.test_engine_dossier",
@@ -8098,19 +8038,14 @@
 "to": "mod:hamid.engine_dossier"
 },
 {
+"from": "mod:hamid.test_engine_map",
+"rel": "tests",
+"to": "mod:hamid.engine_map"
+},
+{
 "from": "mod:hamid.test_engine_nurse",
 "rel": "tests",
 "to": "mod:hamid.engine_nurse"
-},
-{
-"from": "mod:hamid.test_escalation",
-"rel": "tests",
-"to": "mod:hamid.escalation"
-},
-{
-"from": "mod:hamid.test_evidence_packet",
-"rel": "tests",
-"to": "mod:hamid.evidence_packet"
 },
 {
 "from": "mod:hamid.test_experience_effect",
@@ -8138,29 +8073,14 @@
 "to": "mod:hamid.gainer_radar"
 },
 {
-"from": "mod:hamid.test_guardian_lab",
+"from": "mod:hamid.test_gate_verdict",
 "rel": "tests",
-"to": "mod:hamid.guardian_lab"
+"to": "mod:hamid.gate_verdict"
 },
 {
 "from": "mod:hamid.test_history_analysis",
 "rel": "tests",
 "to": "mod:hamid.history_analysis"
-},
-{
-"from": "mod:hamid.test_history_backtest",
-"rel": "tests",
-"to": "mod:hamid.history_backtest"
-},
-{
-"from": "mod:hamid.test_history_ingest",
-"rel": "tests",
-"to": "mod:hamid.history_ingest"
-},
-{
-"from": "mod:hamid.test_improve",
-"rel": "tests",
-"to": "mod:hamid.improve"
 },
 {
 "from": "mod:hamid.test_latest_setups",
@@ -8173,14 +8093,9 @@
 "to": "mod:hamid.liam9d"
 },
 {
-"from": "mod:hamid.test_library_verify",
+"from": "mod:hamid.test_lines_wf",
 "rel": "tests",
-"to": "mod:hamid.library_verify"
-},
-{
-"from": "mod:hamid.test_live_service",
-"rel": "tests",
-"to": "mod:hamid.live_service"
+"to": "mod:hamid.lines_wf"
 },
 {
 "from": "mod:hamid.test_loop_audit",
@@ -8193,19 +8108,19 @@
 "to": "mod:hamid.macro_guard"
 },
 {
-"from": "mod:hamid.test_market_stance",
+"from": "mod:hamid.test_memory",
 "rel": "tests",
-"to": "mod:hamid.market_stance"
-},
-{
-"from": "mod:hamid.test_mcp_server",
-"rel": "tests",
-"to": "mod:hamid.mcp_server"
+"to": "mod:hamid.memory"
 },
 {
 "from": "mod:hamid.test_microstructure",
 "rel": "tests",
 "to": "mod:hamid.microstructure"
+},
+{
+"from": "mod:hamid.test_news_poll",
+"rel": "tests",
+"to": "mod:hamid.news_poll"
 },
 {
 "from": "mod:hamid.test_newsboard",
@@ -8223,24 +8138,14 @@
 "to": "mod:hamid.orderblocks"
 },
 {
-"from": "mod:hamid.test_overseer",
-"rel": "tests",
-"to": "mod:hamid.overseer"
-},
-{
 "from": "mod:hamid.test_paper",
 "rel": "tests",
 "to": "mod:hamid.paper"
 },
 {
-"from": "mod:hamid.test_patterns",
+"from": "mod:hamid.test_polymarket",
 "rel": "tests",
-"to": "mod:hamid.patterns"
-},
-{
-"from": "mod:hamid.test_position_watch",
-"rel": "tests",
-"to": "mod:hamid.position_watch"
+"to": "mod:hamid.polymarket"
 },
 {
 "from": "mod:hamid.test_publish_top_liquidity",
@@ -8258,9 +8163,9 @@
 "to": "mod:hamid.pump_profile"
 },
 {
-"from": "mod:hamid.test_pump_radar",
+"from": "mod:hamid.test_pump_study",
 "rel": "tests",
-"to": "mod:hamid.pump_radar"
+"to": "mod:hamid.pump_study"
 },
 {
 "from": "mod:hamid.test_pump_watchlist",
@@ -8268,24 +8173,14 @@
 "to": "mod:hamid.pump_watchlist"
 },
 {
-"from": "mod:hamid.test_router",
+"from": "mod:hamid.test_receipts_guard",
 "rel": "tests",
-"to": "mod:hamid.router"
+"to": "mod:hamid.receipts_guard"
 },
 {
-"from": "mod:hamid.test_scalp",
+"from": "mod:hamid.test_risk_desk",
 "rel": "tests",
-"to": "mod:hamid.scalp"
-},
-{
-"from": "mod:hamid.test_scalp1m",
-"rel": "tests",
-"to": "mod:hamid.scalp1m"
-},
-{
-"from": "mod:hamid.test_scalp_dash_backtest",
-"rel": "tests",
-"to": "mod:hamid.scalp_dash_backtest"
+"to": "mod:hamid.risk_desk"
 },
 {
 "from": "mod:hamid.test_scalp_exec",
@@ -8293,9 +8188,24 @@
 "to": "mod:hamid.scalp_exec"
 },
 {
+"from": "mod:hamid.test_scalp_sweep",
+"rel": "tests",
+"to": "mod:hamid.scalp_sweep"
+},
+{
 "from": "mod:hamid.test_scalp_verdict",
 "rel": "tests",
 "to": "mod:hamid.scalp_verdict"
+},
+{
+"from": "mod:hamid.test_scenario_backtest",
+"rel": "tests",
+"to": "mod:hamid.scenario_backtest"
+},
+{
+"from": "mod:hamid.test_scheduler",
+"rel": "tests",
+"to": "mod:hamid.scheduler"
 },
 {
 "from": "mod:hamid.test_scorecard",
@@ -8318,14 +8228,14 @@
 "to": "mod:hamid.short_lab"
 },
 {
-"from": "mod:hamid.test_skill_ledger",
+"from": "mod:hamid.test_short_sampler",
 "rel": "tests",
-"to": "mod:hamid.skill_ledger"
+"to": "mod:hamid.short_sampler"
 },
 {
-"from": "mod:hamid.test_spec_check",
+"from": "mod:hamid.test_specialist_lab",
 "rel": "tests",
-"to": "mod:hamid.spec_check"
+"to": "mod:hamid.specialist_lab"
 },
 {
 "from": "mod:hamid.test_stables",
@@ -8333,14 +8243,14 @@
 "to": "mod:hamid.stables"
 },
 {
-"from": "mod:hamid.test_stairs",
+"from": "mod:hamid.test_state_bus",
 "rel": "tests",
-"to": "mod:hamid.stairs"
+"to": "mod:hamid.state_bus"
 },
 {
-"from": "mod:hamid.test_trail_alert",
+"from": "mod:hamid.test_tf_geo_arms",
 "rel": "tests",
-"to": "mod:hamid.trail_alert"
+"to": "mod:hamid.tf_geo_arms"
 },
 {
 "from": "mod:hamid.test_trail_arms",
@@ -8348,19 +8258,9 @@
 "to": "mod:hamid.trail_arms"
 },
 {
-"from": "mod:hamid.test_trail_lab",
-"rel": "tests",
-"to": "mod:hamid.trail_lab"
-},
-{
 "from": "mod:hamid.test_trainer",
 "rel": "tests",
 "to": "mod:hamid.trainer"
-},
-{
-"from": "mod:hamid.test_trend_gate",
-"rel": "tests",
-"to": "mod:hamid.trend_gate"
 },
 {
 "from": "mod:hamid.test_tv_indicators",
@@ -8373,11 +8273,6 @@
 "to": "mod:hamid.venue_probe"
 },
 {
-"from": "mod:hamid.test_venues",
-"rel": "tests",
-"to": "mod:hamid.venues"
-},
-{
 "from": "mod:hamid.tf_geo_arms",
 "rel": "imports",
 "to": "mod:hamid.paper"
@@ -8386,6 +8281,11 @@
 "from": "mod:hamid.tf_geo_arms",
 "rel": "produces",
 "to": "state:signals/tf-geo-arms.json"
+},
+{
+"from": "mod:hamid.tg_audit",
+"rel": "imports",
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.tg_audit",
@@ -8404,8 +8304,18 @@
 },
 {
 "from": "mod:hamid.trail_arms",
+"rel": "imports",
+"to": "mod:hamid.paper"
+},
+{
+"from": "mod:hamid.trail_arms",
 "rel": "produces",
 "to": "state:signals/trail-arms.json"
+},
+{
+"from": "mod:hamid.trail_lab",
+"rel": "imports",
+"to": "mod:hamid.direction_autopsy"
 },
 {
 "from": "mod:hamid.trail_lab",
@@ -8415,12 +8325,27 @@
 {
 "from": "mod:hamid.trainer",
 "rel": "imports",
+"to": "mod:hamid.memory"
+},
+{
+"from": "mod:hamid.trainer",
+"rel": "imports",
 "to": "mod:hamid.ob_intel"
+},
+{
+"from": "mod:hamid.trainer",
+"rel": "imports",
+"to": "mod:hamid.paper"
 },
 {
 "from": "mod:hamid.venue_probe",
 "rel": "produces",
 "to": "state:signals/venue-compare.json"
+},
+{
+"from": "mod:hamid.volatility_universe",
+"rel": "imports",
+"to": "mod:hamid.scenario_backtest"
 },
 {
 "from": "mod:hamid.volatility_universe",
@@ -8433,19 +8358,9 @@
 "to": "state:signals/volatile-universe.json"
 },
 {
-"from": "mod:hamid.volume_impact",
+"from": "mod:hamid.work_report",
 "rel": "imports",
-"to": "mod:hamid.dash_backtest"
-},
-{
-"from": "mod:hamid.volume_impact",
-"rel": "imports",
-"to": "mod:hamid.history_analysis"
-},
-{
-"from": "mod:hamid.volume_impact",
-"rel": "imports",
-"to": "mod:hamid.history_ingest"
+"to": "mod:hamid.cadence_gate"
 },
 {
 "from": "mod:hamid.work_report",
@@ -8456,6 +8371,11 @@
 "from": "mod:hamid.work_report",
 "rel": "imports",
 "to": "mod:hamid.fees"
+},
+{
+"from": "mod:hamid.work_report",
+"rel": "imports",
+"to": "mod:hamid.ledger"
 },
 {
 "from": "mod:hamid.work_report",
@@ -8489,8 +8409,18 @@
 },
 {
 "from": "mod:liam9_link",
+"rel": "imports",
+"to": "mod:brain"
+},
+{
+"from": "mod:liam9_link",
 "rel": "produces",
 "to": "state:signals/link-commands.json"
+},
+{
+"from": "mod:liam9_shock_strategy",
+"rel": "imports",
+"to": "mod:brain"
 },
 {
 "from": "mod:liam9_short_dash",
@@ -8579,6 +8509,16 @@
 },
 {
 "from": "mod:scan",
+"rel": "imports",
+"to": "mod:sources"
+},
+{
+"from": "mod:scan",
+"rel": "imports",
+"to": "mod:telegram"
+},
+{
+"from": "mod:scan",
 "rel": "produces",
 "to": "state:signals/funnel.json"
 },
@@ -8595,12 +8535,22 @@
 {
 "from": "mod:selftest",
 "rel": "imports",
+"to": "mod:chart"
+},
+{
+"from": "mod:selftest",
+"rel": "imports",
 "to": "mod:hamid.paper"
 },
 {
 "from": "mod:selftest",
 "rel": "imports",
 "to": "mod:hamid.premortem"
+},
+{
+"from": "mod:selftest",
+"rel": "imports",
+"to": "mod:sources"
 },
 {
 "from": "mod:telegram",
@@ -8659,6 +8609,11 @@
 },
 {
 "from": "mod:telegram",
+"rel": "imports",
+"to": "mod:sources"
+},
+{
+"from": "mod:telegram",
 "rel": "produces",
 "to": "state:signals/sent.json"
 },
@@ -8676,16 +8631,6 @@
 "from": "mod:tg_batch",
 "rel": "imports",
 "to": "mod:hamid.structure"
-},
-{
-"from": "mod:tg_batch",
-"rel": "imports",
-"to": "mod:telegram"
-},
-{
-"from": "mod:tg_health",
-"rel": "imports",
-"to": "mod:telegram"
 },
 {
 "from": "rule:03-learning-memory-governance",
