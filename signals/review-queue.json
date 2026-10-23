@@ -1,9 +1,14 @@
 {
- "generated": 1792756135192,
- "buckets_at": 1792756135162,
- "n_agents": 9,
- "n_todo": 9,
+ "generated": 1792756459341,
+ "buckets_at": 1792756459307,
+ "n_agents": 14,
+ "n_todo": 14,
  "todo": [
+  "E11",
+  "E16",
+  "E18",
+  "E18",
+  "E22",
   "data-quality",
   "execution",
   "liquidity",
@@ -15,8 +20,131 @@
   "lead-lag"
  ],
  "idle": [],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-10-23 10:45 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  },
+  {
+   "kind": "verdict_flip",
+   "what": "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE",
+   "read": [
+    "signals/geometry-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E11",
+   "engines": [
+    "E11"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+  },
+  {
+   "agent": "E16",
+   "engines": [
+    "E16"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-23 10:45 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-10-23 10:45 UTC"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-23 10:45 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-10-23 10:45 UTC"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -31,11 +159,7 @@
      "engine": "E23",
      "items": [
       "escalation.json",
-      "funnel.json",
-      "nurse.json",
-      "scheduler.json",
       "sentinel.json",
-      "skeptic.json",
       "tg-audit.json"
      ]
     },
@@ -43,8 +167,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:conformance.json",
-      "state:depth-health.json",
       "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
@@ -53,8 +175,6 @@
     }
    ],
    "read_next": [
-    "signals/conformance.json",
-    "signals/depth-health.json",
     "signals/escalation.json",
     "signals/funnel.json",
     "signals/nurse.json",
@@ -63,7 +183,7 @@
     "signals/skeptic.json",
     "signals/tg-audit.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 1 تازه · 7 کهنه · 0 شکست · 5 تغییر از دورِ قبل. تغییر: state:conformance.json، state:funnel.json، state:nurse.json، state:scheduler.json، state:skepti"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
   },
   {
    "agent": "execution",
@@ -83,7 +203,6 @@
      "items": [
       "gate-verdict.json",
       "hamid-latest.json",
-      "latest.json",
       "risk-desk.json",
       "structure-room.json"
      ]
@@ -92,14 +211,11 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance-report.json",
       "state:dominance.json",
-      "state:latest.json",
-      "state:position-watch.json",
-      "state:scalp-exec.json",
-      "state:scalp.json",
-      "state:scalp1m.json"
+      "state:latest.json"
      ]
     }
    ],
@@ -110,14 +226,10 @@
     "signals/gate-verdict.json",
     "signals/hamid-latest.json",
     "signals/latest.json",
-    "signals/position-watch.json",
     "signals/risk-desk.json",
-    "signals/scalp-exec.json",
-    "signals/scalp.json",
-    "signals/scalp1m.json",
     "signals/structure-room.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:scalp-exec.json، state:scalp.json، state:scalp1m.json باز کن: signals/scalp-exec.json، sig | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:position-watch.json، state:scalp1m.json، state:trail-alert.json باز کن: signals/position-w | E17: 5 آیتم · 0 تازه · 5 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 4 تغییر"
   },
   {
    "agent": "liquidity",
@@ -162,7 +274,6 @@
      "kind": "stale",
      "engine": "E05",
      "items": [
-      "macro-guard.json",
       "market-stance.json"
      ]
     },
@@ -170,6 +281,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:calendar",
       "state:btc-patterns.json",
       "state:dominance-desk.json",
       "state:dominance-report.json",
@@ -186,7 +298,7 @@
     "signals/macro-guard.json",
     "signals/market-stance.json"
    ],
-   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json دیدگاه (نه دروازه — | E05: 4 آیتم · 0 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:macro-guard.json کهنه: macro-guard.json، market-stance.json دیدگاه (نه دروازه — قانون ۱۵): | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
+   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json، ext:calendar دیدگا | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:macro-guard.json، ext:calendar کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
   },
   {
    "agent": "market-structure",
@@ -212,7 +324,6 @@
      "items": [
       "gate-verdict.json",
       "hamid-latest.json",
-      "latest.json",
       "risk-desk.json",
       "structure-room.json"
      ]
@@ -242,7 +353,7 @@
     "signals/risk-desk.json",
     "signals/structure-room.json"
    ],
-   "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 0 تازه · 5 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، latest.json، risk-desk.json، struc | E08: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: ob-radar.json باز کن: signals/ob-radar"
+   "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E08: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: ob-radar.json باز کن: signals/ob-radar"
   },
   {
    "agent": "order-block",
@@ -306,13 +417,6 @@
       "learning-proof.json",
       "skills.json"
      ]
-    },
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:work-report.json"
-     ]
     }
    ],
    "read_next": [
@@ -320,10 +424,9 @@
     "signals/experience.json",
     "signals/learning-proof.json",
     "signals/loss-analysis.json",
-    "signals/skills.json",
-    "signals/work-report.json"
+    "signals/skills.json"
    ],
-   "digest": "E20: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:work-report.json کهنه: direction-lessons.json، loss-analysis.json باز کن: signals/directio | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
+   "digest": "E20: 3 آیتم · 1 تازه · 2 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: direction-lessons.json، loss-analysis.json باز کن: signals/direction-lessons.json، signals/loss-a | E21: 3 آیتم · 0 تازه · 3 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: experience.json، learning-proof.json، skills.json باز کن: signals/experience.json، signals/learni"
   },
   {
    "agent": "research",
@@ -346,24 +449,32 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:curriculum.json",
-      "state:engine-focus.json",
-      "state:improve.json",
-      "state:reading.json",
       "state:scorecard.json"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-10-23 10:45 UTC"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: ibs|long: UNDECIDED→PROMOTE"
      ]
     }
    ],
    "read_next": [
-    "signals/curriculum.json",
-    "signals/engine-focus.json",
     "signals/experience-effect.json",
-    "signals/improve.json",
-    "signals/reading.json",
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json",
     "signals/rewards.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 7 تازه · 2 کهنه · 0 شکست · 5 تغییر از دورِ قبل. تغییر: state:curriculum.json، state:engine-focus.json، state:improve.json، state:reading.json، state:sc | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E22: 9 آیتم · 7 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: experience-effect.json، rewards.json باز کن: signals/experience-effec | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "lead-lag",
@@ -378,27 +489,20 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
-      "state:btc-patterns.json",
-      "state:bubbles.json",
-      "state:pump-desk.json",
-      "state:pump-radar.json"
+      "state:btc-patterns.json"
      ]
     }
    ],
    "read_next": [
-    "signals/btc-patterns.json",
-    "signals/bubbles.json",
-    "signals/pump-desk.json",
-    "signals/pump-radar.json"
+    "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json، ext:trending دیدگاه (نه دروازه  | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1792738022427,
+  "generated": 1792756309730,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "REJECT",
@@ -410,7 +514,7 @@
    "widebuf|long": "REJECT",
    "widebuf|short": "REJECT",
    "ibs|overall": "PROMOTE",
-   "ibs|long": "UNDECIDED",
+   "ibs|long": "PROMOTE",
    "ibs|short": "PROMOTE",
    "ibs_g2|overall": "PROMOTE",
    "ibs_g2|long": "UNDECIDED",
