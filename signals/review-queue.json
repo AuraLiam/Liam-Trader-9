@@ -1,6 +1,6 @@
 {
- "generated": 1792770593989,
- "buckets_at": 1792770593957,
+ "generated": 1792770976596,
+ "buckets_at": 1792770976564,
  "n_agents": 9,
  "n_todo": 9,
  "todo": [
@@ -39,6 +39,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
       "state:skeptic.json"
@@ -47,13 +48,14 @@
    ],
    "read_next": [
     "signals/escalation.json",
+    "signals/funnel.json",
     "signals/nurse.json",
     "signals/scheduler.json",
     "signals/sentinel.json",
     "signals/skeptic.json",
     "signals/tg-audit.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation.json، sentinel.json"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
   },
   {
    "agent": "execution",
@@ -82,21 +84,23 @@
      "engine": null,
      "items": [
       "state:dominance-desk.json",
-      "state:dominance-report.json",
-      "state:dominance.json"
+      "state:dominance.json",
+      "state:latest.json",
+      "state:trail-alert.json"
      ]
     }
    ],
    "read_next": [
     "signals/dominance-desk.json",
-    "signals/dominance-report.json",
     "signals/dominance.json",
     "signals/gate-verdict.json",
     "signals/hamid-latest.json",
+    "signals/latest.json",
     "signals/risk-desk.json",
-    "signals/structure-room.json"
+    "signals/structure-room.json",
+    "signals/trail-alert.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.json باز کن: signals/gate-ve | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E03: 4 آیتم ·"
   },
   {
    "agent": "liquidity",
@@ -150,7 +154,6 @@
      "items": [
       "state:btc-patterns.json",
       "state:dominance-desk.json",
-      "state:dominance-report.json",
       "state:dominance.json",
       "state:macro-guard.json"
      ]
@@ -159,12 +162,11 @@
    "read_next": [
     "signals/btc-patterns.json",
     "signals/dominance-desk.json",
-    "signals/dominance-report.json",
     "signals/dominance.json",
     "signals/macro-guard.json",
     "signals/market-stance.json"
    ],
-   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance-report.json، state:dominance.json دیدگاه (نه دروازه — | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:macro-guard.json کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، e | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
+   "digest": "E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:dominance-desk.json، state:dominance.json دیدگاه (نه دروازه — قانون ۱۵): ext:calendar باز  | E05: 4 آیتم · 1 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:macro-guard.json کهنه: market-stance.json دیدگاه (نه دروازه — قانون ۱۵): ext:fear_greed، e | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
   },
   {
    "agent": "market-structure",
@@ -205,7 +207,8 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:btc-patterns.json"
+      "state:btc-patterns.json",
+      "state:latest.json"
      ]
     }
    ],
@@ -213,11 +216,12 @@
     "signals/btc-patterns.json",
     "signals/gate-verdict.json",
     "signals/hamid-latest.json",
+    "signals/latest.json",
     "signals/ob-radar.json",
     "signals/risk-desk.json",
     "signals/structure-room.json"
    ],
-   "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.json باز کن: signals/gate-ve | E08: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: ob-radar.json باز کن: signals/ob-radar"
+   "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E08: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: ob-radar.json باز کن: signals/ob-radar"
   },
   {
    "agent": "order-block",
