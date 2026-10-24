@@ -1,10 +1,10 @@
 {
- "generated": 1792834174513,
+ "generated": 1792834576684,
  "usdt_dominance": 6.779,
  "btc_dominance": 60.11,
  "chg_1h": {
   "usdt": 0.084,
-  "btc": 0.59
+  "btc": 0.58
  },
  "chg_4h": {
   "usdt": 0.089,
@@ -203,13 +203,13 @@
    "usdt_d_from": 6.695,
    "usdt_d_to": 6.779,
    "d_dom_pct": 1.247,
-   "supply_effect_pct": -0.065,
-   "mcap_effect_pct": 1.311,
-   "supply_share": 0.047,
-   "mcap_share": 0.953,
-   "supply_usd_from": 182092845587,
+   "supply_effect_pct": 0.015,
+   "mcap_effect_pct": 1.232,
+   "supply_share": 0.012,
+   "mcap_share": 0.988,
+   "supply_usd_from": 181948036588,
    "supply_usd_to": 181975229490,
-   "mcap_usd_from": 2719833391884,
+   "mcap_usd_from": 2717670449412,
    "mcap_usd_to": 2684396363617,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -332,7 +332,7 @@
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 6.77,
+    "px": 6.779,
     "threshold": 0.009,
     "threshold_stats": {
      "n": 1470,
@@ -340,10 +340,10 @@
      "median": 0.005,
      "p90": 0.016
     },
-    "delta": 0.002,
-    "meaningful": false,
+    "delta": 0.009,
+    "meaningful": true,
     "regime": "BEARISH",
-    "note": "USDT.D در 15m: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0020 در برابر آستانهٔ 0.0090 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 15m: روند up → رژیم BEARISH؛ تغییر آخرین کندل +0.0090 در برابر آستانهٔ 0.0090 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
@@ -351,7 +351,7 @@
     "pts_per_bar": 3.0,
     "resolution_ok": true,
     "trend": "range",
-    "px": 60.09,
+    "px": 60.11,
     "threshold": 0.02,
     "threshold_stats": {
      "n": 1470,
@@ -359,9 +359,9 @@
      "median": 0.01,
      "p90": 0.03
     },
-    "delta": 0.01,
-    "meaningful": false,
-    "note": "BTC.D در 15m: روند range؛ تغییر آخرین کندل +0.0100"
+    "delta": 0.02,
+    "meaningful": true,
+    "note": "BTC.D در 15m: روند range؛ تغییر آخرین کندل +0.0200"
    }
   },
   "1h": {
@@ -455,21 +455,9 @@
   },
   "cause": {
    "1h": {
-    "cause": "MARKET_FALL",
-    "why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
+    "cause": "INSUFFICIENT",
     "window_min": 60,
-    "d_usdt_d": 0.084,
-    "d_stable_d": 0.117,
-    "supply_growth": {
-     "USDT": -0.000646,
-     "USDC": -0.000641
-    },
-    "supply_growth_total": -0.000645,
-    "mcap_growth": -0.013115,
-    "usdt_d": 6.779,
-    "stable_d": 9.441,
-    "misleading": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
    },
    "4h": {
     "cause": "MARKET_FALL",
@@ -491,25 +479,15 @@
   },
   "regime": {
    "1h": {
-    "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.324 به 9.441 رفت (+0.117، بالاتر از میانهٔ 0.015) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "bias": "INSUFFICIENT",
     "window_min": 60,
-    "threshold": 0.015,
-    "stable_d": 9.441,
-    "d_stable_d": 0.117,
-    "usdt_d": 6.779,
-    "d_usdt_d": 0.084,
-    "cause": "MARKET_FALL",
-    "cause_why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
-    "naive_usdt_only": "SHORT_BIAS",
-    "disagrees_with_naive": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
    },
    "4h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.316 به 9.441 رفت (+0.125، بالاتر از میانهٔ 0.029) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 9.316 به 9.441 رفت (+0.125، بالاتر از میانهٔ 0.028) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "threshold": 0.029,
+    "threshold": 0.028,
     "stable_d": 9.441,
     "d_stable_d": 0.125,
     "usdt_d": 6.779,
