@@ -1,5 +1,5 @@
 {
- "generated": 1792923726379,
+ "generated": 1792924076499,
  "usdt_dominance": 6.795,
  "btc_dominance": 60.14,
  "chg_1h": {
@@ -11,10 +11,10 @@
   "btc": 0.65
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 3990/7830 (51٪)؛ بنچمارکِ همیشه‌تخت 61٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س up)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 3990/7830 (51٪)؛ بنچمارکِ همیشه‌تخت 61٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
  "macro": [],
- "calendar_ok": "CACHED",
- "calendar_why": "حافظهٔ 4د پیش؛ منبع: HTTPError:429 / HTTPError:403",
+ "calendar_ok": true,
+ "calendar_why": null,
  "structure": {
   "bars_1h": 383,
   "bars_4h": 96,
@@ -451,22 +451,34 @@
   },
   "cause": {
    "1h": {
-    "cause": "INSUFFICIENT",
+    "cause": "NEW_MONEY",
+    "why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
     "window_min": 60,
-    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
+    "d_usdt_d": -0.021,
+    "d_stable_d": -0.029,
+    "supply_growth": {
+     "USDT": 0.002086,
+     "USDC": 0.002175
+    },
+    "supply_growth_total": 0.002111,
+    "mcap_growth": 0.005172,
+    "usdt_d": 6.795,
+    "stable_d": 9.461,
+    "misleading": true,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
-    "cause": "REDEMPTION",
-    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "cause": "MARKET_FALL",
+    "why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
     "window_min": 240,
-    "d_usdt_d": 0.092,
-    "d_stable_d": 0.129,
+    "d_usdt_d": 0.095,
+    "d_stable_d": 0.133,
     "supply_growth": {
-     "USDT": -0.001053,
-     "USDC": -0.000709
+     "USDT": -0.00066,
+     "USDC": -0.000383
     },
-    "supply_growth_total": -0.000956,
-    "mcap_growth": -0.014685,
+    "supply_growth_total": -0.000582,
+    "mcap_growth": -0.014739,
     "usdt_d": 6.795,
     "stable_d": 9.461,
     "misleading": false,
@@ -475,21 +487,31 @@
   },
   "regime": {
    "1h": {
-    "bias": "INSUFFICIENT",
+    "bias": "LONG_BIAS",
+    "why": "STABLE.D از 9.490 به 9.461 آمد (-0.029، بزرگ‌تر از میانهٔ 0.015) — پول از حاشیه به دارایی رفته، ریسک‌آن",
     "window_min": 60,
-    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
+    "threshold": 0.015,
+    "stable_d": 9.461,
+    "d_stable_d": -0.029,
+    "usdt_d": 6.795,
+    "d_usdt_d": -0.021,
+    "cause": "NEW_MONEY",
+    "cause_why": "کلِ عرضهٔ استیبل بالا رفته — پولِ تازه وارد شده و هنوز نخریده",
+    "naive_usdt_only": "LONG_BIAS",
+    "disagrees_with_naive": false,
+    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
    },
    "4h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 9.332 به 9.461 رفت (+0.129، بالاتر از میانهٔ 0.043) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 9.328 به 9.461 رفت (+0.133، بالاتر از میانهٔ 0.035) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "threshold": 0.043,
+    "threshold": 0.035,
     "stable_d": 9.461,
-    "d_stable_d": 0.129,
+    "d_stable_d": 0.133,
     "usdt_d": 6.795,
-    "d_usdt_d": 0.092,
-    "cause": "REDEMPTION",
-    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "d_usdt_d": 0.095,
+    "cause": "MARKET_FALL",
+    "cause_why": "عرضه ثابت و کل بازار ریخته — مخرج کوچک شده، ریسک‌آفِ واقعی",
     "naive_usdt_only": "SHORT_BIAS",
     "disagrees_with_naive": false,
     "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
@@ -499,13 +521,13 @@
    "stance": "SHORT_ALT_STRONG",
    "why": "هم پول به استیبل رفته هم BTC.D بالا — بدترین بسترِ آلت",
    "bias": "SHORT_BIAS",
-   "d_btc_d": 0.66,
-   "cause": "REDEMPTION",
+   "d_btc_d": 0.65,
+   "cause": "MARKET_FALL",
    "disagrees_with_naive": false,
    "stable_d": 9.461,
-   "d_stable_d": 0.129,
+   "d_stable_d": 0.133,
    "usdt_d": 6.795,
-   "d_usdt_d": 0.092,
+   "d_usdt_d": 0.095,
    "window_min": 240,
    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
   }
