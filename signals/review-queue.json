@@ -1,6 +1,6 @@
 {
- "generated": 1793060447506,
- "buckets_at": 1793060447451,
+ "generated": 1793060742120,
+ "buckets_at": 1793060742089,
  "n_agents": 9,
  "n_todo": 9,
  "todo": [
@@ -39,6 +39,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:depth-health.json",
       "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
@@ -47,6 +48,7 @@
     }
    ],
    "read_next": [
+    "signals/depth-health.json",
     "signals/escalation.json",
     "signals/funnel.json",
     "signals/nurse.json",
@@ -55,7 +57,7 @@
     "signals/skeptic.json",
     "signals/tg-audit.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
   },
   {
    "agent": "execution",
@@ -93,8 +95,7 @@
       "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance.json",
-      "state:latest.json",
-      "state:trail-alert.json"
+      "state:latest.json"
      ]
     }
    ],
@@ -106,10 +107,9 @@
     "signals/latest.json",
     "signals/risk-desk.json",
     "signals/router.json",
-    "signals/structure-room.json",
-    "signals/trail-alert.json"
+    "signals/structure-room.json"
    ],
-   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: router.json باز کن: signals/router.json | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.j"
+   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: router.json باز کن: signals/router.json | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E03: 4 آیتم · 3 تازه · 0 کهنه "
   },
   {
    "agent": "liquidity",
@@ -349,7 +349,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -357,7 +356,7 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
