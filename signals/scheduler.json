@@ -1,18 +1,19 @@
 {
- "generated": 1793445589951,
+ "generated": 1793445987178,
  "owner": "E23",
  "producer": "hamid/scheduler.py",
  "mode": "dispatch",
  "n_workflows": 33,
  "n_managed": 31,
- "n_due": 3,
- "n_dispatched": 3,
+ "n_due": 4,
+ "n_dispatched": 4,
  "dispatched": [
-  "medic.yml",
-  "scout.yml",
-  "trainer.yml"
+  "dominance-report.yml",
+  "hamid-cycle.yml",
+  "live-scan.yml",
+  "scalp.yml"
  ],
- "api_calls": 8,
+ "api_calls": 9,
  "error": null,
  "rows": [
   {
@@ -26,7 +27,7 @@
    "prev_due": "2026-10-31T05:37:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T11:09:02+00:00",
-   "lag_min": 10.8,
+   "lag_min": 17.4,
    "verdict": "running",
    "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
   },
@@ -41,7 +42,7 @@
    "prev_due": "2026-10-31T07:41:00+00:00",
    "interval_min": 360,
    "last_run": "2026-10-31T10:39:12+00:00",
-   "lag_min": 40.6,
+   "lag_min": 47.3,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -56,7 +57,7 @@
    "prev_due": "2026-10-31T10:29:00+00:00",
    "interval_min": 120,
    "last_run": "2026-10-31T10:39:13+00:00",
-   "lag_min": 40.6,
+   "lag_min": 47.2,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -71,7 +72,7 @@
    "prev_due": "2026-10-31T04:23:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T10:26:40+00:00",
-   "lag_min": 53.2,
+   "lag_min": 59.8,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -86,7 +87,7 @@
    "prev_due": "2026-10-31T11:01:00+00:00",
    "interval_min": 60,
    "last_run": "2026-10-31T11:08:53+00:00",
-   "lag_min": 10.9,
+   "lag_min": 17.6,
    "verdict": "running",
    "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
   },
@@ -101,9 +102,12 @@
    "prev_due": "2026-10-31T11:19:00+00:00",
    "interval_min": 60,
    "last_run": "2026-10-31T10:24:54+00:00",
-   "lag_min": 54.9,
-   "verdict": "grace",
-   "why": "سررسید تازه است (<4د) — فرصت به کرونِ گیت‌هاب"
+   "lag_min": 61.6,
+   "verdict": "due",
+   "overdue_min": 7.5,
+   "why": "سررسید 11:19 گذشته، آخرین اجرا 10-31 10:24",
+   "dispatched": true,
+   "http": 204
   },
   {
    "workflow": "dominance.yml",
@@ -116,7 +120,7 @@
    "prev_due": "2026-10-31T11:07:00+00:00",
    "interval_min": 30,
    "last_run": "2026-10-31T11:09:31+00:00",
-   "lag_min": 10.3,
+   "lag_min": 16.9,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -128,12 +132,12 @@
    ],
    "dispatchable": true,
    "mode": "managed",
-   "prev_due": "2026-10-31T10:53:00+00:00",
+   "prev_due": "2026-10-31T11:23:00+00:00",
    "interval_min": 30,
    "last_run": "2026-10-31T11:16:01+00:00",
-   "lag_min": 3.8,
+   "lag_min": 10.4,
    "verdict": "on_time",
-   "why": "از آخرین سررسید اجرا شده"
+   "why": "اجرای تازه (10د < نصفِ فاصلهٔ 30د)"
   },
   {
    "workflow": "guardian-lab.yml",
@@ -146,7 +150,7 @@
    "prev_due": "2026-10-25T03:37:00+00:00",
    "interval_min": 10080,
    "last_run": "2026-10-25T08:40:27+00:00",
-   "lag_min": 8799.4,
+   "lag_min": 8806.0,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -161,7 +165,7 @@
    "prev_due": "2026-10-31T05:41:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T11:14:03+00:00",
-   "lag_min": 5.8,
+   "lag_min": 12.4,
    "verdict": "running",
    "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
   },
@@ -176,7 +180,7 @@
    "prev_due": "2026-10-31T03:41:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T09:55:47+00:00",
-   "lag_min": 84.0,
+   "lag_min": 90.7,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -191,9 +195,12 @@
    "prev_due": "2026-10-31T11:17:00+00:00",
    "interval_min": 30,
    "last_run": "2026-10-31T10:55:37+00:00",
-   "lag_min": 24.2,
-   "verdict": "running",
-   "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
+   "lag_min": 30.8,
+   "verdict": "due",
+   "overdue_min": 9.5,
+   "why": "سررسید 11:17 گذشته، آخرین اجرا 10-31 10:55",
+   "dispatched": true,
+   "http": 204
   },
   {
    "workflow": "health.yml",
@@ -206,7 +213,7 @@
    "prev_due": "2026-10-31T05:23:00+00:00",
    "interval_min": 720,
    "last_run": "2026-10-31T10:59:17+00:00",
-   "lag_min": 20.5,
+   "lag_min": 27.2,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -232,7 +239,7 @@
    "prev_due": "2026-10-31T10:41:00+00:00",
    "interval_min": 60,
    "last_run": "2026-10-31T10:45:14+00:00",
-   "lag_min": 34.6,
+   "lag_min": 41.2,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -247,7 +254,7 @@
    "prev_due": "2026-10-31T05:23:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T10:58:36+00:00",
-   "lag_min": 21.2,
+   "lag_min": 27.9,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -259,12 +266,15 @@
    ],
    "dispatchable": true,
    "mode": "managed",
-   "prev_due": "2026-10-31T11:07:00+00:00",
+   "prev_due": "2026-10-31T11:22:00+00:00",
    "interval_min": 15,
    "last_run": "2026-10-31T11:14:36+00:00",
-   "lag_min": 5.2,
-   "verdict": "running",
-   "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
+   "lag_min": 11.9,
+   "verdict": "due",
+   "overdue_min": 4.5,
+   "why": "سررسید 11:22 گذشته، آخرین اجرا 10-31 11:14",
+   "dispatched": true,
+   "http": 204
   },
   {
    "workflow": "medic.yml",
@@ -276,13 +286,10 @@
    "mode": "managed",
    "prev_due": "2026-10-31T11:15:00+00:00",
    "interval_min": 15,
-   "last_run": "2026-10-31T11:08:55+00:00",
-   "lag_min": 10.9,
-   "verdict": "due",
-   "overdue_min": 4.8,
-   "why": "سررسید 11:15 گذشته، آخرین اجرا 10-31 11:08",
-   "dispatched": true,
-   "http": 204
+   "last_run": "2026-10-31T11:19:54+00:00",
+   "lag_min": 6.6,
+   "verdict": "on_time",
+   "why": "از آخرین سررسید اجرا شده"
   },
   {
    "workflow": "mine.yml",
@@ -295,7 +302,7 @@
    "prev_due": "2026-10-31T03:23:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T09:47:18+00:00",
-   "lag_min": 92.5,
+   "lag_min": 99.2,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -310,7 +317,7 @@
    "prev_due": "2026-10-31T09:37:00+00:00",
    "interval_min": 180,
    "last_run": "2026-10-31T09:42:26+00:00",
-   "lag_min": 97.4,
+   "lag_min": 104.0,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -325,7 +332,7 @@
    "prev_due": "2026-10-31T10:13:00+00:00",
    "interval_min": 120,
    "last_run": "2026-10-31T10:19:43+00:00",
-   "lag_min": 60.1,
+   "lag_min": 66.7,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -340,7 +347,7 @@
    "prev_due": "2026-10-31T04:41:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T10:35:32+00:00",
-   "lag_min": 44.3,
+   "lag_min": 50.9,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -366,7 +373,7 @@
    "prev_due": "2026-10-31T07:13:00+00:00",
    "interval_min": 300,
    "last_run": "2026-10-31T08:21:22+00:00",
-   "lag_min": 178.5,
+   "lag_min": 185.1,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -381,7 +388,7 @@
    "prev_due": "2026-10-31T09:53:00+00:00",
    "interval_min": 180,
    "last_run": "2026-10-31T09:58:12+00:00",
-   "lag_min": 81.6,
+   "lag_min": 88.3,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -396,9 +403,9 @@
    "prev_due": "2026-10-31T04:37:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T10:34:05+00:00",
-   "lag_min": 45.7,
-   "verdict": "running",
-   "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
+   "lag_min": 52.4,
+   "verdict": "on_time",
+   "why": "از آخرین سررسید اجرا شده"
   },
   {
    "workflow": "scalp.yml",
@@ -411,9 +418,12 @@
    "prev_due": "2026-10-31T11:18:00+00:00",
    "interval_min": 15,
    "last_run": "2026-10-31T11:08:56+00:00",
-   "lag_min": 10.9,
-   "verdict": "grace",
-   "why": "سررسید تازه است (<4د) — فرصت به کرونِ گیت‌هاب"
+   "lag_min": 17.5,
+   "verdict": "due",
+   "overdue_min": 8.5,
+   "why": "سررسید 11:18 گذشته، آخرین اجرا 10-31 11:08",
+   "dispatched": true,
+   "http": 204
   },
   {
    "workflow": "scout.yml",
@@ -425,13 +435,10 @@
    "mode": "managed",
    "prev_due": "2026-10-31T11:11:00+00:00",
    "interval_min": 30,
-   "last_run": "2026-10-31T10:45:16+00:00",
-   "lag_min": 34.6,
-   "verdict": "due",
-   "overdue_min": 8.8,
-   "why": "سررسید 11:11 گذشته، آخرین اجرا 10-31 10:45",
-   "dispatched": true,
-   "http": 204
+   "last_run": "2026-10-31T11:19:55+00:00",
+   "lag_min": 6.5,
+   "verdict": "on_time",
+   "why": "از آخرین سررسید اجرا شده"
   },
   {
    "workflow": "search.yml",
@@ -444,7 +451,7 @@
    "prev_due": "2026-10-31T01:41:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T07:29:03+00:00",
-   "lag_min": 230.8,
+   "lag_min": 237.4,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -459,7 +466,7 @@
    "prev_due": "2026-10-31T03:41:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T09:55:52+00:00",
-   "lag_min": 84.0,
+   "lag_min": 90.6,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -474,7 +481,7 @@
    "prev_due": "2026-10-31T03:11:00+00:00",
    "interval_min": 1440,
    "last_run": "2026-10-31T09:31:32+00:00",
-   "lag_min": 108.3,
+   "lag_min": 114.9,
    "verdict": "on_time",
    "why": "از آخرین سررسید اجرا شده"
   },
@@ -488,13 +495,10 @@
    "mode": "managed",
    "prev_due": "2026-10-31T11:11:00+00:00",
    "interval_min": 30,
-   "last_run": "2026-10-31T10:45:17+00:00",
-   "lag_min": 34.5,
-   "verdict": "due",
-   "overdue_min": 8.8,
-   "why": "سررسید 11:11 گذشته، آخرین اجرا 10-31 10:45",
-   "dispatched": true,
-   "http": 204
+   "last_run": "2026-10-31T11:19:56+00:00",
+   "lag_min": 6.5,
+   "verdict": "running",
+   "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
   },
   {
    "workflow": "work-report.yml",
@@ -507,9 +511,9 @@
    "prev_due": "2026-10-31T05:30:00+00:00",
    "interval_min": 660,
    "last_run": "2026-10-31T10:59:48+00:00",
-   "lag_min": 20.0,
-   "verdict": "running",
-   "why": "1 اجرا در حال اجرا/صف — دست نمی‌زنم"
+   "lag_min": 26.7,
+   "verdict": "on_time",
+   "why": "از آخرین سررسید اجرا شده"
   }
  ],
  "wakes": {
@@ -518,16 +522,16 @@
    "overdue_min": 8.1
   },
   "live-scan.yml": {
-   "t": 1793445272478,
-   "overdue_min": 7.5
+   "t": 1793445987178,
+   "overdue_min": 4.5
   },
   "fomo.yml": {
    "t": 1793439067658,
    "overdue_min": 8.1
   },
   "scalp.yml": {
-   "t": 1793444929016,
-   "overdue_min": 5.8
+   "t": 1793445987178,
+   "overdue_min": 8.5
   },
   "scout.yml": {
    "t": 1793445589951,
@@ -542,8 +546,8 @@
    "overdue_min": 7.8
   },
   "hamid-cycle.yml": {
-   "t": 1793444132141,
-   "overdue_min": 8.5
+   "t": 1793445987178,
+   "overdue_min": 9.5
   },
   "medic.yml": {
    "t": 1793445589951,
@@ -554,8 +558,8 @@
    "overdue_min": 4.1
   },
   "dominance-report.yml": {
-   "t": 1793438681697,
-   "overdue_min": 5.7
+   "t": 1793445987178,
+   "overdue_min": 7.5
   },
   "conformance.yml": {
    "t": 1793443147421,
@@ -639,13 +643,13 @@
   }
  },
  "packet": {
-  "claim": "31 خطِ کرون‌دار زیر نظر است؛ 3 خط از سررسید گذشته بود و 3 خط بیدار شد",
+  "claim": "31 خطِ کرون‌دار زیر نظر است؛ 4 خط از سررسید گذشته بود و 4 خط بیدار شد",
   "numbers": {
    "خط": 31,
-   "سررسیدگذشته": 3,
-   "بیدارشده": 3,
-   "تماس API": 8,
-   "میانهٔ فاصله از آخرین اجرا (د)": 40.6
+   "سررسیدگذشته": 4,
+   "بیدارشده": 4,
+   "تماس API": 9,
+   "میانهٔ فاصله از آخرین اجرا (د)": 47.2
   },
   "track_record": "پیش از این زمان‌بند (۲۸–۲۹ سپتامبر): کرونِ گیت‌هاب هر خط را ~۳.۵–۴.۲ بار در روز اجرا می‌کرد، فارغ از کرونش (live-scan ۹۶→۴.۲، medic ۹۶→۴.۲، dominance ۴۸→۴.۲)",
   "scenario_up": "هر خط در فاصلهٔ کرونش + چند دقیقه اجرا می‌شود → سنِ فایل‌های وضعیت داخل سقفِ قرارداد می‌ماند",
