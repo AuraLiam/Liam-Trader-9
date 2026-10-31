@@ -1,5 +1,5 @@
 {
- "generated": 1793417867610,
+ "generated": 1793418191689,
  "usdt_dominance": 6.836,
  "btc_dominance": 59.2,
  "chg_1h": {
@@ -11,10 +11,10 @@
   "btc": 0.1
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range · BTC.D ۱س down)؛ عرضهٔ تتر عوض شده، نه قیمتِ بازار — تتر از سیستم خارج شده (پول رفته یا خرج شده)؛ کارنامهٔ پیش‌بینی: 4304/8522 (51٪)؛ بنچمارکِ همیشه‌تخت 52٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 5د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س range · BTC.D ۱س down)؛ عرضهٔ تتر عوض شده، نه قیمتِ بازار — تتر از سیستم خارج شده (پول رفته یا خرج شده)؛ کارنامهٔ پیش‌بینی: 4304/8522 (51٪)؛ بنچمارکِ همیشه‌تخت 52٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 5د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 407,
   "bars_4h": 101,
@@ -232,19 +232,19 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 6.859,
+   "usdt_d_from": 6.83,
    "usdt_d_to": 6.836,
-   "d_dom_pct": -0.336,
-   "supply_effect_pct": -0.472,
-   "mcap_effect_pct": 0.136,
-   "supply_share": 0.777,
-   "mcap_share": 0.223,
-   "supply_usd_from": 180014396155,
+   "d_dom_pct": 0.088,
+   "supply_effect_pct": -0.841,
+   "mcap_effect_pct": 0.929,
+   "supply_share": 0.475,
+   "mcap_share": 0.525,
+   "supply_usd_from": 180680256190,
    "supply_usd_to": 179167456858,
-   "mcap_usd_from": 2624499142072,
+   "mcap_usd_from": 2645391745089,
    "mcap_usd_to": 2620939977450,
-   "label": "SUPPLY_DRIVEN",
-   "story": "عرضهٔ تتر عوض شده، نه قیمتِ بازار — تتر از سیستم خارج شده (پول رفته یا خرج شده)",
+   "label": "MIXED",
+   "story": "هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
   },
   "stable_split": {
@@ -262,8 +262,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": -0.023,
-    "usdc_d_delta": 0.015,
+    "usdt_d_delta": 0.006,
+    "usdc_d_delta": 0.027,
     "usdt_d": 6.836,
     "usdc_d": 2.726,
     "label": "PARTIAL",
@@ -289,10 +289,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": -0.136,
-    "total2_pct": 0.036,
-    "total3_pct": -0.201,
-    "gap_t3_total": -0.066,
+    "total_pct": -0.924,
+    "total2_pct": -0.608,
+    "total3_pct": -0.859,
+    "gap_t3_total": 0.065,
     "total_usd": 2620939977450,
     "total2_usd": 1069343510800,
     "total3_usd": 796765753145,
@@ -451,21 +451,9 @@
   },
   "cause": {
    "1h": {
-    "cause": "REDEMPTION",
-    "why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
+    "cause": "INSUFFICIENT",
     "window_min": 60,
-    "d_usdt_d": -0.002,
-    "d_stable_d": -0.002,
-    "supply_growth": {
-     "USDT": -0.000923,
-     "USDC": -0.000631
-    },
-    "supply_growth_total": -0.00084,
-    "mcap_growth": -0.000631,
-    "usdt_d": 6.836,
-    "stable_d": 9.562,
-    "misleading": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای عرضه در دو سرِ پنجرهٔ 60د نیست — عدد ساخته نمی‌شود (قانون ۰۱ بند ۱)"
    },
    "4h": {
     "cause": "REDEMPTION",
@@ -487,25 +475,15 @@
   },
   "regime": {
    "1h": {
-    "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.002، زیر میانهٔ 0.017) — بستر جهت نمی‌دهد",
+    "bias": "INSUFFICIENT",
     "window_min": 60,
-    "threshold": 0.017,
-    "stable_d": 9.562,
-    "d_stable_d": -0.002,
-    "usdt_d": 6.836,
-    "d_usdt_d": -0.002,
-    "cause": "REDEMPTION",
-    "cause_why": "کلِ عرضهٔ استیبل پایین آمده — پول از اکوسیستم بیرون رفته",
-    "naive_usdt_only": "NEUTRAL",
-    "disagrees_with_naive": false,
-    "coverage": "فقط USDT و USDC — منبع فقط همین دو را در سهم‌های ده‌تایی گزارش می‌کند؛ DAI و بقیه شمرده نمی‌شوند"
+    "why": "نقطهٔ دارای استیبل در دو سرِ پنجرهٔ 60د نیست"
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (-0.033، زیر میانهٔ 0.037) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (-0.033، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.037,
+    "threshold": 0.034,
     "stable_d": 9.562,
     "d_stable_d": -0.033,
     "usdt_d": 6.836,
@@ -519,7 +497,7 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (-0.033، زیر میانهٔ 0.037) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (-0.033، زیر میانهٔ 0.034) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
    "d_btc_d": 0.1,
    "cause": "REDEMPTION",
