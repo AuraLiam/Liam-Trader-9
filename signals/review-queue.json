@@ -1,11 +1,9 @@
 {
- "generated": 1793714448408,
- "buckets_at": 1793714448370,
- "n_agents": 11,
- "n_todo": 10,
+ "generated": 1793714823382,
+ "buckets_at": 1793714823343,
+ "n_agents": 9,
+ "n_todo": 8,
  "todo": [
-  "E18",
-  "E22",
   "execution",
   "market-structure",
   "research",
@@ -18,61 +16,8 @@
  "idle": [
   "post-trade-learning"
  ],
- "events": [
-  {
-   "kind": "backtest_new",
-   "what": "بک‌تست تازه: 2026-11-03 13:13 UTC",
-   "read": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ]
-  }
- ],
+ "events": [],
  "rows": [
-  {
-   "agent": "E18",
-   "engines": [
-    "E18"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-03 13:13 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-11-03 13:13 UTC"
-  },
-  {
-   "agent": "E22",
-   "engines": [
-    "E22"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-03 13:13 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-11-03 13:13 UTC"
-  },
   {
    "agent": "execution",
    "engines": [
@@ -100,7 +45,10 @@
       "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance.json",
-      "state:latest.json"
+      "state:latest.json",
+      "state:scalp-exec.json",
+      "state:scalp.json",
+      "state:scalp1m.json"
      ]
     }
    ],
@@ -109,9 +57,12 @@
     "signals/dominance.json",
     "signals/latest.json",
     "signals/risk-desk.json",
+    "signals/scalp-exec.json",
+    "signals/scalp.json",
+    "signals/scalp1m.json",
     "signals/structure-room.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:scalp-exec.json، state:scalp.json، state:scalp1m.json باز کن: signals/scalp-exec.json، sig | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scalp1m.json باز کن: signals/scalp1m.json | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، stru"
   },
   {
    "agent": "market-structure",
@@ -176,24 +127,17 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:improve.json",
       "state:scorecard.json"
-     ]
-    },
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-03 13:13 UTC"
      ]
     }
    ],
    "read_next": [
     "signals/engine-focus.json",
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json",
+    "signals/improve.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 8 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: engine-focus.json باز کن: signals/engine-focus.json، signals/scorecar | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+   "digest": "E22: 9 آیتم · 8 تازه · 1 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:improve.json، state:scorecard.json کهنه: engine-focus.json باز کن: signals/engine-focus.js | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "data-quality",
@@ -208,7 +152,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:depth-health.json",
       "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
@@ -217,13 +160,12 @@
     }
    ],
    "read_next": [
-    "signals/depth-health.json",
     "signals/funnel.json",
     "signals/nurse.json",
     "signals/scheduler.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json باز کن: signals/f"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json باز کن: signals/f"
   },
   {
    "agent": "lead-lag",
