@@ -1,17 +1,17 @@
 {
- "generated": 1793846218934,
- "buckets_at": 1793846218898,
+ "generated": 1793846711288,
+ "buckets_at": 1793846711253,
  "n_agents": 9,
  "n_todo": 8,
  "todo": [
   "execution",
   "market-structure",
+  "research",
   "data-quality",
   "lead-lag",
   "liquidity",
   "macro-dominance",
-  "order-block",
-  "research"
+  "order-block"
  ],
  "idle": [
   "post-trade-learning"
@@ -46,7 +46,10 @@
       "state:dominance-desk.json",
       "state:dominance-report.json",
       "state:dominance.json",
-      "state:latest.json"
+      "state:latest.json",
+      "state:position-watch.json",
+      "state:scalp-exec.json",
+      "state:scalp.json"
      ]
     }
    ],
@@ -55,10 +58,15 @@
     "signals/dominance-report.json",
     "signals/dominance.json",
     "signals/latest.json",
+    "signals/position-watch.json",
     "signals/risk-desk.json",
-    "signals/structure-room.json"
+    "signals/scalp-exec.json",
+    "signals/scalp.json",
+    "signals/scalp1m.json",
+    "signals/structure-room.json",
+    "signals/trail-alert.json"
    ],
-   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E03: 4 آیتم · 3 تازه · 0 کهنه · 0 شکست · 4 تغییر"
+   "digest": "E11: 4 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:scalp-exec.json، state:scalp.json، state:scalp1m.json باز کن: signals/scalp-exec.json، sig | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:position-watch.json، state:scalp1m.json، state:trail-alert.json باز کن: signals/position-w | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغ"
   },
   {
    "agent": "market-structure",
@@ -104,6 +112,36 @@
    "digest": "E07: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: structure-room.json باز کن: signals/structure-room.json | E17: 5 آیتم · 3 تازه · 2 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: risk-desk.json، structure-room.json باز کن: signals/latest.json، signals | E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · "
   },
   {
+   "agent": "research",
+   "engines": [
+    "E22",
+    "E13"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "stale",
+     "engine": "E22",
+     "items": [
+      "engine-focus.json"
+     ]
+    },
+    {
+     "kind": "changed",
+     "engine": null,
+     "items": [
+      "state:scorecard.json"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/engine-focus.json",
+    "signals/scorecard.json"
+   ],
+   "digest": "E22: 9 آیتم · 8 تازه · 1 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: engine-focus.json باز کن: signals/engine-focus.json، signals/scorecar | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
+  },
+  {
    "agent": "data-quality",
    "engines": [
     "E02",
@@ -116,6 +154,8 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "state:conformance.json",
+      "state:depth-health.json",
       "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
@@ -124,12 +164,14 @@
     }
    ],
    "read_next": [
+    "signals/conformance.json",
+    "signals/depth-health.json",
     "signals/funnel.json",
     "signals/nurse.json",
     "signals/scheduler.json",
     "signals/skeptic.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json باز کن: signals/f"
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 8 تازه · 0 کهنه · 0 شکست · 5 تغییر از دورِ قبل. تغییر: state:conformance.json، state:funnel.json، state:nurse.json، state:scheduler.json، state:skepti"
   },
   {
    "agent": "lead-lag",
@@ -144,7 +186,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -152,7 +193,7 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   },
   {
    "agent": "liquidity",
@@ -225,28 +266,6 @@
    ],
    "read_next": [],
    "digest": "E08: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E10: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:funding باز کن: هیچ — چیزی عوض نشده"
-  },
-  {
-   "agent": "research",
-   "engines": [
-    "E22",
-    "E13"
-   ],
-   "needs_reasoning": true,
-   "priority": 2,
-   "reasons": [
-    {
-     "kind": "changed",
-     "engine": null,
-     "items": [
-      "state:scorecard.json"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/scorecard.json"
-   ],
-   "digest": "E22: 9 آیتم · 9 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json باز کن: signals/scorecard.json | E13: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده"
   },
   {
    "agent": "post-trade-learning",
