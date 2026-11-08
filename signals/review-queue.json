@@ -1,9 +1,14 @@
 {
- "generated": 1794121879063,
- "buckets_at": 1794121879036,
- "n_agents": 9,
- "n_todo": 9,
+ "generated": 1794122228166,
+ "buckets_at": 1794122228140,
+ "n_agents": 14,
+ "n_todo": 14,
  "todo": [
+  "E11",
+  "E16",
+  "E18",
+  "E18",
+  "E22",
   "data-quality",
   "execution",
   "liquidity",
@@ -15,8 +20,131 @@
   "lead-lag"
  ],
  "idle": [],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-11-08 06:04 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  },
+  {
+   "kind": "verdict_flip",
+   "what": "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED",
+   "read": [
+    "signals/geometry-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E11",
+   "engines": [
+    "E11"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E16",
+   "engines": [
+    "E16"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-08 06:04 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-11-08 06:04 UTC"
+  },
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json"
+   ],
+   "digest": "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-08 06:04 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-11-08 06:04 UTC"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -93,7 +221,9 @@
       "state:dominance-desk.json",
       "state:dominance.json",
       "state:latest.json",
-      "state:trail-alert.json"
+      "state:scalp-exec.json",
+      "state:scalp.json",
+      "state:scalp1m.json"
      ]
     }
    ],
@@ -104,10 +234,12 @@
     "signals/latest.json",
     "signals/risk-desk.json",
     "signals/router.json",
-    "signals/structure-room.json",
-    "signals/trail-alert.json"
+    "signals/scalp-exec.json",
+    "signals/scalp.json",
+    "signals/scalp1m.json",
+    "signals/structure-room.json"
    ],
-   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: router.json باز کن: signals/router.json | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 2 تازه · 3 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، risk-desk.json، structure-room.json باز کن: signals"
+   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:scalp-exec.json، state:scalp.json، state:scalp1m.json کهنه: router.json باز کن: signals/ro | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scalp1m.json باز کن: signals/scalp1m.json | E17: 5 آیتم · 2 تازه · 3 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، r"
   },
   {
    "agent": "liquidity",
@@ -333,8 +465,21 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:improve.json",
       "state:scorecard.json"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-08 06:04 UTC"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "verdict_flip",
+     "items": [
+      "حکم عوض شد: widebuf|short: REJECT→UNDECIDED؛ ibs_g3|short: PROMOTE→UNDECIDED"
      ]
     }
    ],
@@ -344,11 +489,12 @@
     "signals/edge.json",
     "signals/engine-focus.json",
     "signals/experience-effect.json",
+    "signals/geometry-verdict.json",
     "signals/history-room.json",
-    "signals/improve.json",
+    "signals/regime-verdict.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 4 تازه · 5 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:improve.json، state:scorecard.json کهنه: agent-weights.json، curriculum.json، edge.json، e | E13: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: history-room.json باز کن: signals/history-room.json"
+   "digest": "E22: 9 آیتم · 4 تازه · 5 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: agent-weights.json، curriculum.json، edge.json، engine-focus.json، ex | E13: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: history-room.json باز کن: signals/history-room.json"
   },
   {
    "agent": "lead-lag",
@@ -363,7 +509,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -371,13 +516,13 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1794057513395,
+  "generated": 1794121891017,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "REJECT",
@@ -387,7 +532,7 @@
    "channel|short": "UNDECIDED",
    "widebuf|overall": "REJECT",
    "widebuf|long": "REJECT",
-   "widebuf|short": "REJECT",
+   "widebuf|short": "UNDECIDED",
    "ibs|overall": "PROMOTE",
    "ibs|long": "UNDECIDED",
    "ibs|short": "PROMOTE",
@@ -396,7 +541,7 @@
    "ibs_g2|short": "PROMOTE",
    "ibs_g3|overall": "PROMOTE",
    "ibs_g3|long": "UNDECIDED",
-   "ibs_g3|short": "PROMOTE",
+   "ibs_g3|short": "UNDECIDED",
    "ibs_floor|overall": "REJECT",
    "ibs_floor|long": "UNDECIDED",
    "ibs_floor|short": "UNDECIDED",
