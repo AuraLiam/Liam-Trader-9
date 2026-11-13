@@ -1,26 +1,26 @@
 {
- "generated": 1794569020390,
+ "generated": 1794569377616,
  "usdt_dominance": 7.518,
  "btc_dominance": 59.73,
  "chg_1h": {
-  "usdt": 0.0,
-  "btc": 0.01
+  "usdt": -0.01,
+  "btc": 0.02
  },
  "chg_4h": {
   "usdt": 0.057,
   "btc": 0.69
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Core PPI m/m (2.1س) + PPI m/m (2.1س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: BEARISH (USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 5034/10106 (50٪)؛ بنچمارکِ همیشه‌تخت 46٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
+ "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Core PPI m/m (2.0س) + PPI m/m (2.0س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: UNSAFE (USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س down)؛ کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)؛ کارنامهٔ پیش‌بینی: 5035/10108 (50٪)؛ بنچمارکِ همیشه‌تخت 46٪؛ بسترِ استیبل: SHORT_ALT_STRONG",
  "macro": [
   {
    "title": "Core PPI m/m",
-   "in_hours": 2.1,
+   "in_hours": 2.0,
    "country": "USD"
   },
   {
    "title": "PPI m/m",
-   "in_hours": 2.1,
+   "in_hours": 2.0,
    "country": "USD"
   }
  ],
@@ -29,7 +29,7 @@
  "structure": {
   "bars_1h": 455,
   "bars_4h": 113,
-  "regime": "BEARISH",
+  "regime": "UNSAFE",
   "usdt": {
    "trend_1h": "up",
    "px": 7.527,
@@ -40,8 +40,8 @@
   "btc_d": {
    "trend_1h": "down"
   },
-  "why": "USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س down",
-  "invalidation": "ابطال رژیم: شکست USDT.D زیر 6.957"
+  "unsafe_reason": "رویداد کلان تا ۲ ساعت: Core PPI m/m",
+  "why": "USDT.D ساختار ۱س up · ۴س up · BTC.D ۱س down"
  },
  "multi_tf": {
   "usdt": {
@@ -113,8 +113,49 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 30,
+    "path": "UP",
+    "reasons": [
+     "ادعای UP با اعتماد کم صادر شد — کارنامهٔ همین ادعا در 60 نوبت اخیر فقط 20.0٪ اصابت داشت؛ حکم پس گرفته نشد تا نمونه‌گیری زنده بماند (بند ۱، ۲۹ اوت)",
+     "شاهد: ساختار ۱س USDT.D: up",
+     "شاهد: ساختار ۴س USDT.D: up"
+    ],
+    "hist": {
+     "n": 60,
+     "hit_pct": 20.0
+    },
+    "low_confidence": true,
+    "confidence": 0.25,
+    "p": {
+     "UP": 0.176,
+     "DOWN": 0.098,
+     "FLAT": 0.725
+    },
+    "p_claim": 0.176,
+    "p_n": 51,
+    "ev_n": 2
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 30,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.267,
+     "DOWN": 0.35,
+     "FLAT": 0.383
+    },
+    "p_claim": 0.383,
+    "p_n": 60,
+    "ev_n": 2
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
     "n": 969,
@@ -148,15 +189,15 @@
     "skill": 4.1
    },
    "BTC.D|30m": {
-    "n": 3583,
-    "hit": 1601,
+    "n": 3584,
+    "hit": 1602,
     "hit_pct": 44.7,
     "dir_n": 31,
     "dir_hit_pct": 38.7,
     "baseline_flat_pct": 35.8,
     "skill": 8.9,
     "brier": 0.6413,
-    "brier_n": 2703,
+    "brier_n": 2704,
     "brier_climate": 0.6658,
     "brier_skill": 0.0245
    },
@@ -192,17 +233,17 @@
     "skill": 12.7
    },
    "USDT.D|30m": {
-    "n": 3583,
+    "n": 3584,
     "hit": 2346,
     "hit_pct": 65.5,
-    "dir_n": 62,
-    "dir_hit_pct": 21.0,
+    "dir_n": 63,
+    "dir_hit_pct": 20.6,
     "baseline_flat_pct": 69.3,
     "skill": -3.8,
-    "brier": 0.319,
-    "brier_n": 2758,
+    "brier": 0.3189,
+    "brier_n": 2759,
     "brier_climate": 0.4722,
-    "brier_skill": 0.1532
+    "brier_skill": 0.1533
    }
   },
   "open": 8
@@ -211,19 +252,19 @@
   "60m": {
    "status": "OK",
    "minutes": 60,
-   "usdt_d_from": 7.518,
+   "usdt_d_from": 7.528,
    "usdt_d_to": 7.518,
-   "d_dom_pct": 0.0,
-   "supply_effect_pct": 0.214,
-   "mcap_effect_pct": -0.214,
-   "supply_share": 0.5,
-   "mcap_share": 0.5,
-   "supply_usd_from": 175197615474,
+   "d_dom_pct": -0.133,
+   "supply_effect_pct": 0.232,
+   "mcap_effect_pct": -0.365,
+   "supply_share": 0.389,
+   "mcap_share": 0.611,
+   "supply_usd_from": 175165792072,
    "supply_usd_to": 175572551441,
-   "mcap_usd_from": 2330375305581,
+   "mcap_usd_from": 2326856961639,
    "mcap_usd_to": 2335362482582,
-   "label": "FLAT",
-   "story": "دامیننس تتر در این بازه تکان معناداری نخورد",
+   "label": "MIXED",
+   "story": "هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع",
    "limit": "عرضهٔ تتر مستقیم خوانده نشده؛ از نسبت × کل بازار ساخته شده. شاهد است نه دروازه (قانون ۰۳)."
   },
   "240m": {
@@ -247,16 +288,16 @@
   "1440m": {
    "status": "OK",
    "minutes": 1440,
-   "usdt_d_from": 7.207,
+   "usdt_d_from": 7.213,
    "usdt_d_to": 7.518,
-   "d_dom_pct": 4.225,
-   "supply_effect_pct": 0.136,
-   "mcap_effect_pct": 4.088,
-   "supply_share": 0.032,
-   "mcap_share": 0.968,
-   "supply_usd_from": 175333505063,
+   "d_dom_pct": 4.142,
+   "supply_effect_pct": 0.15,
+   "mcap_effect_pct": 3.992,
+   "supply_share": 0.036,
+   "mcap_share": 0.964,
+   "supply_usd_from": 175309942586,
    "supply_usd_to": 175572551441,
-   "mcap_usd_from": 2432822326397,
+   "mcap_usd_from": 2430471961537,
    "mcap_usd_to": 2335362482582,
    "label": "MARKET_DRIVEN",
    "story": "کل ارزش بازار عوض شده، نه عرضهٔ تتر — بازار ریخته و سهم تتر خودبه‌خود بالا رفته (ریزشِ واقعی)",
@@ -277,8 +318,8 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "usdt_d_delta": 0.311,
-    "usdc_d_delta": 0.108,
+    "usdt_d_delta": 0.305,
+    "usdc_d_delta": 0.105,
     "usdt_d": 7.518,
     "usdc_d": 2.957,
     "label": "RISK_OFF",
@@ -304,10 +345,10 @@
    "1440m": {
     "status": "OK",
     "minutes": 1440,
-    "total_pct": -4.006,
-    "total2_pct": -2.11,
-    "total3_pct": -1.381,
-    "gap_t3_total": 2.625,
+    "total_pct": -3.913,
+    "total2_pct": -2.04,
+    "total3_pct": -1.319,
+    "gap_t3_total": 2.594,
     "total_usd": 2335362482582,
     "total2_usd": 940450471736,
     "total3_usd": 701776426016,
@@ -518,9 +559,9 @@
    },
    "4h": {
     "bias": "SHORT_BIAS",
-    "why": "STABLE.D از 10.400 به 10.475 رفت (+0.075، بالاتر از میانهٔ 0.029) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
+    "why": "STABLE.D از 10.400 به 10.475 رفت (+0.075، بالاتر از میانهٔ 0.044) — سهمِ نقدِ نشسته بیشتر شده، ریسک‌آف",
     "window_min": 240,
-    "threshold": 0.029,
+    "threshold": 0.044,
     "stable_d": 10.475,
     "d_stable_d": 0.075,
     "usdt_d": 7.518,
