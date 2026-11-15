@@ -1,9 +1,11 @@
 {
- "generated": 1794751613240,
- "buckets_at": 1794751613203,
- "n_agents": 9,
- "n_todo": 9,
+ "generated": 1794752034319,
+ "buckets_at": 1794752034281,
+ "n_agents": 11,
+ "n_todo": 11,
  "todo": [
+  "E18",
+  "E22",
   "data-quality",
   "execution",
   "liquidity",
@@ -15,8 +17,61 @@
   "lead-lag"
  ],
  "idle": [],
- "events": [],
+ "events": [
+  {
+   "kind": "backtest_new",
+   "what": "بک‌تست تازه: 2026-11-15 13:11 UTC",
+   "read": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ]
+  }
+ ],
  "rows": [
+  {
+   "agent": "E18",
+   "engines": [
+    "E18"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-15 13:11 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-11-15 13:11 UTC"
+  },
+  {
+   "agent": "E22",
+   "engines": [
+    "E22"
+   ],
+   "needs_reasoning": true,
+   "priority": 1,
+   "reasons": [
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-15 13:11 UTC"
+     ]
+    }
+   ],
+   "read_next": [
+    "signals/geometry-verdict.json",
+    "signals/regime-verdict.json"
+   ],
+   "digest": "بک‌تست تازه: 2026-11-15 13:11 UTC"
+  },
   {
    "agent": "data-quality",
    "engines": [
@@ -39,7 +94,6 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:depth-health.json",
       "state:funnel.json",
       "state:nurse.json",
       "state:scheduler.json",
@@ -48,7 +102,6 @@
     }
    ],
    "read_next": [
-    "signals/depth-health.json",
     "signals/escalation.json",
     "signals/funnel.json",
     "signals/nurse.json",
@@ -57,7 +110,7 @@
     "signals/skeptic.json",
     "signals/tg-audit.json"
    ],
-   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:depth-health.json باز کن: signals/depth-health.json | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
+   "digest": "E02: 2 آیتم · 1 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E23: 10 آیتم · 5 تازه · 3 کهنه · 0 شکست · 4 تغییر از دورِ قبل. تغییر: state:funnel.json، state:nurse.json، state:scheduler.json، state:skeptic.json کهنه: escalation."
   },
   {
    "agent": "execution",
@@ -95,7 +148,8 @@
       "ext:calendar",
       "state:dominance-desk.json",
       "state:dominance.json",
-      "state:latest.json"
+      "state:latest.json",
+      "state:trail-alert.json"
      ]
     }
    ],
@@ -107,9 +161,10 @@
     "signals/latest.json",
     "signals/risk-desk.json",
     "signals/router.json",
-    "signals/structure-room.json"
+    "signals/structure-room.json",
+    "signals/trail-alert.json"
    ],
-   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: router.json باز کن: signals/router.json | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. باز کن: هیچ — چیزی عوض نشده | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.jso | E03: 4 آیتم · 3 تازه · 0 کهنه "
+   "digest": "E11: 4 آیتم · 3 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: router.json باز کن: signals/router.json | E19: 3 آیتم · 3 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:trail-alert.json باز کن: signals/trail-alert.json | E17: 5 آیتم · 1 تازه · 4 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:latest.json کهنه: gate-verdict.json، hamid-latest.json، risk-desk.json، structure-room.j"
   },
   {
    "agent": "liquidity",
@@ -339,8 +394,14 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "state:improve.json",
       "state:scorecard.json"
+     ]
+    },
+    {
+     "kind": "event",
+     "engine": "backtest_new",
+     "items": [
+      "بک‌تست تازه: 2026-11-15 13:11 UTC"
      ]
     }
    ],
@@ -349,12 +410,13 @@
     "signals/edge.json",
     "signals/engine-focus.json",
     "signals/experience-effect.json",
+    "signals/geometry-verdict.json",
     "signals/history-room.json",
-    "signals/improve.json",
+    "signals/regime-verdict.json",
     "signals/rewards.json",
     "signals/scorecard.json"
    ],
-   "digest": "E22: 9 آیتم · 4 تازه · 5 کهنه · 0 شکست · 2 تغییر از دورِ قبل. تغییر: state:improve.json، state:scorecard.json کهنه: agent-weights.json، edge.json، engine-focus.json، | E13: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: history-room.json باز کن: signals/history-room.json"
+   "digest": "E22: 9 آیتم · 4 تازه · 5 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:scorecard.json کهنه: agent-weights.json، edge.json، engine-focus.json، experience-effect.j | E13: 1 آیتم · 0 تازه · 1 کهنه · 0 شکست · 0 تغییر از دورِ قبل. کهنه: history-room.json باز کن: signals/history-room.json"
   },
   {
    "agent": "lead-lag",
@@ -369,6 +431,7 @@
      "kind": "changed",
      "engine": null,
      "items": [
+      "ext:trending",
       "state:btc-patterns.json"
      ]
     }
@@ -376,13 +439,13 @@
    "read_next": [
     "signals/btc-patterns.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 0 تغییر از دورِ قبل. دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
  "boundary": "این صف اهمیت را قضاوت نمی‌کند و هیچ دروازه/امتیازی نمی‌سازد؛ فقط «چه عوض شد و چه کسی نگاه کند» (قانون ۰۵/۱۵).",
  "_geometry": {
-  "generated": 1794726306432,
+  "generated": 1794751818918,
   "verdicts": {
    "base|overall": "REJECT",
    "base|long": "REJECT",
