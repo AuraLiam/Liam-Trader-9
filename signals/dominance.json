@@ -1,5 +1,5 @@
 {
- "generated": 1794864340585,
+ "generated": 1794864688550,
  "usdt_dominance": 7.871,
  "btc_dominance": 58.66,
  "chg_1h": {
@@ -11,26 +11,26 @@
   "btc": 0.07
  },
  "points": 4000,
- "verdict": "USDT.D خنثی است؛ رویدادهای کلان پیش رو: Inflation Expectations q/q (4.6س) + CPI y/y (33.6س) + FOMC Meeting Minutes (45.6س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س up · BTC.D ۱س down)؛ هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع؛ کارنامهٔ پیش‌بینی: 5175/10522 (49٪)؛ بنچمارکِ همیشه‌تخت 38٪؛ بسترِ استیبل: NEUTRAL",
+ "verdict": "USDT.D خنثی است؛ ℹ️ تقویم از حافظهٔ 6د پیش؛ منبع: HTTPError:429 / HTTPError:403؛ رویدادهای کلان پیش رو: Inflation Expectations q/q (4.5س) + CPI y/y (33.5س) + FOMC Meeting Minutes (45.5س) — نزدیکشان سایز کوچک؛ رژیم ساختاری: RANGE (USDT.D ساختار ۱س range · ۴س up · BTC.D ۱س down)؛ هر دو ریشه هم‌زمان اثر دارند — تفسیر یک‌طرفه ممنوع؛ کارنامهٔ پیش‌بینی: 5176/10524 (49٪)؛ بنچمارکِ همیشه‌تخت 38٪؛ بسترِ استیبل: NEUTRAL",
  "macro": [
   {
    "title": "Inflation Expectations q/q",
-   "in_hours": 4.6,
+   "in_hours": 4.5,
    "country": "NZD"
   },
   {
    "title": "CPI y/y",
-   "in_hours": 33.6,
+   "in_hours": 33.5,
    "country": "GBP"
   },
   {
    "title": "FOMC Meeting Minutes",
-   "in_hours": 45.6,
+   "in_hours": 45.5,
    "country": "USD"
   }
  ],
- "calendar_ok": true,
- "calendar_why": null,
+ "calendar_ok": "CACHED",
+ "calendar_why": "حافظهٔ 6د پیش؛ منبع: HTTPError:429 / HTTPError:403",
  "structure": {
   "bars_1h": 460,
   "bars_4h": 115,
@@ -117,21 +117,50 @@
   }
  },
  "forecast": {
-  "made_now": [],
-  "graded_now": 0,
+  "made_now": [
+   {
+    "metric": "USDT.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (1↑/0↓)"
+    ],
+    "p": null,
+    "p_n": 12,
+    "p_why": "نمونه 12 < 25 — احتمال شمرده نمی‌شود (قانون ۱)",
+    "ev_n": 1
+   },
+   {
+    "metric": "BTC.D",
+    "horizon_min": 120,
+    "path": "FLAT",
+    "reasons": [
+     "شواهد ناهم‌جهت یا ناکافی (0↑/1↓)"
+    ],
+    "p": {
+     "UP": 0.321,
+     "DOWN": 0.464,
+     "FLAT": 0.214
+    },
+    "p_claim": 0.214,
+    "p_n": 28,
+    "ev_n": 1
+   }
+  ],
+  "graded_now": 2,
   "scoreboard": {
    "BTC.D|120m": {
-    "n": 1008,
+    "n": 1009,
     "hit": 280,
     "hit_pct": 27.8,
     "dir_n": 11,
     "dir_hit_pct": 27.3,
-    "baseline_flat_pct": 18.4,
-    "skill": 9.4,
-    "brier": 0.6808,
-    "brier_n": 742,
-    "brier_climate": 0.6333,
-    "brier_skill": -0.0475
+    "baseline_flat_pct": 17.9,
+    "skill": 9.9,
+    "brier": 0.681,
+    "brier_n": 743,
+    "brier_climate": 0.6312,
+    "brier_skill": -0.0498
    },
    "BTC.D|1440m": {
     "n": 75,
@@ -155,27 +184,27 @@
     "n": 3729,
     "hit": 1643,
     "hit_pct": 44.1,
-    "dir_n": 35,
-    "dir_hit_pct": 20.0,
-    "baseline_flat_pct": 31.4,
-    "skill": 12.7,
+    "dir_n": 34,
+    "dir_hit_pct": 20.6,
+    "baseline_flat_pct": 30.9,
+    "skill": 13.2,
     "brier": 0.6429,
     "brier_n": 2832,
-    "brier_climate": 0.6661,
-    "brier_skill": 0.0232
+    "brier_climate": 0.6658,
+    "brier_skill": 0.0229
    },
    "USDT.D|120m": {
-    "n": 1008,
-    "hit": 487,
-    "hit_pct": 48.3,
+    "n": 1009,
+    "hit": 488,
+    "hit_pct": 48.4,
     "dir_n": 27,
     "dir_hit_pct": 40.7,
-    "baseline_flat_pct": 28.9,
-    "skill": 19.4,
+    "baseline_flat_pct": 30.8,
+    "skill": 17.6,
     "brier": 0.6203,
     "brier_n": 501,
-    "brier_climate": 0.6638,
-    "brier_skill": 0.0435
+    "brier_climate": 0.6657,
+    "brier_skill": 0.0454
    },
    "USDT.D|1440m": {
     "n": 75,
@@ -199,14 +228,14 @@
     "n": 3729,
     "hit": 2408,
     "hit_pct": 64.6,
-    "dir_n": 86,
-    "dir_hit_pct": 29.1,
-    "baseline_flat_pct": 57.9,
-    "skill": 6.7,
+    "dir_n": 85,
+    "dir_hit_pct": 28.2,
+    "baseline_flat_pct": 58.3,
+    "skill": 6.3,
     "brier": 0.3326,
     "brier_n": 2904,
-    "brier_climate": 0.5764,
-    "brier_skill": 0.2438
+    "brier_climate": 0.5734,
+    "brier_skill": 0.2408
    }
   },
   "open": 8
@@ -347,7 +376,7 @@
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "range",
-    "px": 7.87,
+    "px": 7.871,
     "threshold": 0.014,
     "threshold_stats": {
      "n": 1773,
@@ -355,10 +384,10 @@
      "median": 0.007,
      "p90": 0.027
     },
-    "delta": 0.002,
+    "delta": 0.001,
     "meaningful": false,
     "regime": "RANGE",
-    "note": "USDT.D در 15m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0020 در برابر آستانهٔ 0.0140 (صدک 0.75 همین تایم‌فریم)"
+    "note": "USDT.D در 15m: روند range → رژیم RANGE؛ تغییر آخرین کندل +0.0010 در برابر آستانهٔ 0.0140 (صدک 0.75 همین تایم‌فریم)"
    },
    "btc_d": {
     "tf": "15m",
@@ -366,7 +395,7 @@
     "pts_per_bar": 2.0,
     "resolution_ok": true,
     "trend": "up",
-    "px": 58.69,
+    "px": 58.66,
     "threshold": 0.03,
     "threshold_stats": {
      "n": 1773,
@@ -374,9 +403,9 @@
      "median": 0.01,
      "p90": 0.04
     },
-    "delta": 0.04,
+    "delta": -0.03,
     "meaningful": true,
-    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل +0.0400"
+    "note": "BTC.D در 15m: روند up؛ تغییر آخرین کندل -0.0300"
    }
   },
   "1h": {
@@ -507,9 +536,9 @@
   "regime": {
    "1h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (+0.005، زیر میانهٔ 0.022) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (+0.005، زیر میانهٔ 0.023) — بستر جهت نمی‌دهد",
     "window_min": 60,
-    "threshold": 0.022,
+    "threshold": 0.023,
     "stable_d": 10.968,
     "d_stable_d": 0.005,
     "usdt_d": 7.871,
@@ -522,9 +551,9 @@
    },
    "4h": {
     "bias": "NEUTRAL",
-    "why": "STABLE.D تقریباً ثابت (+0.023، زیر میانهٔ 0.047) — بستر جهت نمی‌دهد",
+    "why": "STABLE.D تقریباً ثابت (+0.023، زیر میانهٔ 0.041) — بستر جهت نمی‌دهد",
     "window_min": 240,
-    "threshold": 0.047,
+    "threshold": 0.041,
     "stable_d": 10.968,
     "d_stable_d": 0.023,
     "usdt_d": 7.871,
@@ -538,7 +567,7 @@
   },
   "alt_stance": {
    "stance": "NEUTRAL",
-   "why": "STABLE.D تقریباً ثابت (+0.023، زیر میانهٔ 0.047) — بستر جهت نمی‌دهد",
+   "why": "STABLE.D تقریباً ثابت (+0.023، زیر میانهٔ 0.041) — بستر جهت نمی‌دهد",
    "bias": "NEUTRAL",
    "d_btc_d": 0.07,
    "cause": "NEW_MONEY",
