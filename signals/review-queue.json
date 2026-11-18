@@ -1,14 +1,9 @@
 {
- "generated": 1794986492729,
- "buckets_at": 1794986492693,
- "n_agents": 14,
- "n_todo": 14,
+ "generated": 1794986859709,
+ "buckets_at": 1794986859673,
+ "n_agents": 9,
+ "n_todo": 9,
  "todo": [
-  "E11",
-  "E16",
-  "E18",
-  "E18",
-  "E22",
   "data-quality",
   "execution",
   "liquidity",
@@ -20,131 +15,8 @@
   "lead-lag"
  ],
  "idle": [],
- "events": [
-  {
-   "kind": "backtest_new",
-   "what": "بک‌تست تازه: 2026-11-18 06:04 UTC",
-   "read": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ]
-  },
-  {
-   "kind": "verdict_flip",
-   "what": "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED",
-   "read": [
-    "signals/geometry-verdict.json"
-   ]
-  }
- ],
+ "events": [],
  "rows": [
-  {
-   "agent": "E11",
-   "engines": [
-    "E11"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-  },
-  {
-   "agent": "E16",
-   "engines": [
-    "E16"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-  },
-  {
-   "agent": "E18",
-   "engines": [
-    "E18"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-18 06:04 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-11-18 06:04 UTC"
-  },
-  {
-   "agent": "E18",
-   "engines": [
-    "E18"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json"
-   ],
-   "digest": "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-  },
-  {
-   "agent": "E22",
-   "engines": [
-    "E22"
-   ],
-   "needs_reasoning": true,
-   "priority": 1,
-   "reasons": [
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-18 06:04 UTC"
-     ]
-    }
-   ],
-   "read_next": [
-    "signals/geometry-verdict.json",
-    "signals/regime-verdict.json"
-   ],
-   "digest": "بک‌تست تازه: 2026-11-18 06:04 UTC"
-  },
   {
    "agent": "data-quality",
    "engines": [
@@ -468,20 +340,6 @@
      "items": [
       "state:scorecard.json"
      ]
-    },
-    {
-     "kind": "event",
-     "engine": "backtest_new",
-     "items": [
-      "بک‌تست تازه: 2026-11-18 06:04 UTC"
-     ]
-    },
-    {
-     "kind": "event",
-     "engine": "verdict_flip",
-     "items": [
-      "حکم عوض شد: base|short: UNDECIDED→REJECT؛ ibs_floor|overall: REJECT→UNDECIDED"
-     ]
     }
    ],
    "read_next": [
@@ -490,9 +348,7 @@
     "signals/edge.json",
     "signals/engine-focus.json",
     "signals/experience-effect.json",
-    "signals/geometry-verdict.json",
     "signals/history-room.json",
-    "signals/regime-verdict.json",
     "signals/rewards.json",
     "signals/scorecard.json"
    ],
@@ -511,15 +367,20 @@
      "kind": "changed",
      "engine": null,
      "items": [
-      "ext:trending",
-      "state:btc-patterns.json"
+      "state:btc-patterns.json",
+      "state:bubbles.json",
+      "state:pump-desk.json",
+      "state:pump-radar.json"
      ]
     }
    ],
    "read_next": [
-    "signals/btc-patterns.json"
+    "signals/btc-patterns.json",
+    "signals/bubbles.json",
+    "signals/pump-desk.json",
+    "signals/pump-radar.json"
    ],
-   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: ext:trending دیدگاه (نه دروازه — قانون ۱۵): ext:trending باز کن: هیچ — چیزی عوض نشده | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
+   "digest": "E12: 5 آیتم · 4 تازه · 0 کهنه · 0 شکست · 3 تغییر از دورِ قبل. تغییر: state:bubbles.json، state:pump-desk.json، state:pump-radar.json دیدگاه (نه دروازه — قانون ۱۵): e | E06: 1 آیتم · 1 تازه · 0 کهنه · 0 شکست · 1 تغییر از دورِ قبل. تغییر: state:btc-patterns.json باز کن: signals/btc-patterns.json"
   }
  ],
  "how_to_use": "ارکستراتور فقط ردیف‌های needs_reasoning را به زیرایجنت می‌دهد، با read_next و reasons به‌عنوان ورودی؛ ایجنتِ idle صدا زده نمی‌شود (قانون ۱۷/۱۸). ابزار = انجام؛ ایجنت = بررسی.",
